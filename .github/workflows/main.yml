@@ -18,7 +18,6 @@ jobs:
       run: |
         pip install requests
         pip install pytz
-        pip install sys
     - name: Test2
       run: |
         git clone https://github.com/Kengxxiao/ArknightsGameData.git
