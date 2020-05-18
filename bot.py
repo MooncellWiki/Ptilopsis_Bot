@@ -34,6 +34,8 @@ activity_table = json.loads(open(path + 'excel/activity_table.json', 'r', encodi
 old_num = 137
 skin_list = []
 
+print('run:', time.time())
+
 # bot_basic.create_char(se, url, old_num, character_table, skill_table, building_data, item_table, team_table, gamedata_const, stories_table, skin_table, id_table)
 # bot_charword.create_charword(se, url, old_num, character_table, charword_table, id_table)
 # bot_buildingBuff.update_buildingBuff_list(se, url, building_data, gamedata_const)
@@ -45,11 +47,11 @@ skin_list = []
 # bot_skin.update_skin(se, url, character_table, skin_table, skin_list)
 # bot_demand.update_mat_demand(se, url, character_table, item_table)
 
-# bot_mission.update_mission(se, url, mission_table, item_table)
-# bot_activity.update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table)
+bot_mission.update_mission(se, url, mission_table, item_table)
+bot_activity.update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table)
 bot_charattr.get_char_attr(se, url, character_table, id_table)
-# bot_skin.update_skin_handbook(se, url, character_table, skin_table)
-# bot_buildingBuff.update_buildingBuff_data(se, url, building_data, character_table, gamedata_const)
+bot_skin.update_skin_handbook(se, url, character_table, skin_table)
+bot_buildingBuff.update_buildingBuff_data(se, url, building_data, character_table, gamedata_const)
 
 # bot_furni.update_furni(se, url, building_data, item_table)
 # bot_charword.update_charword(se, url, character_table, charword_table)
