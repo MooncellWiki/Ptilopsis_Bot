@@ -17,6 +17,7 @@ jobs:
     - name: Test
       run: |
         pip install requests
+        pip install pytz
         python bot_test.py
     - name: Test2
       run: |
