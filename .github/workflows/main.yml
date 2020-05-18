@@ -17,6 +17,9 @@ jobs:
     - name: Test
       run: |
         pip install requests
+        python bot_test.py
     - name: Test2
       run: |
-        python bot_test.py
+        git clone https://github.com/Kengxxiao/ArknightsGameData.git
+        python bot.py
+
