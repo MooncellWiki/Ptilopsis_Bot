@@ -6,10 +6,17 @@ name: main
 on: [push]
 
 jobs:
-  build:
+  push:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
     - name: Test
       run: |
         ls -a
+    - name: Test2
+      run: |
         python bot_test.py
