@@ -9,7 +9,7 @@ a = read_wiki_repeat(se, url, '用户:Seniorious')
 print(a)
 
 b = a + '\ntest action: {}.'.format(time.time())
-write_wiki(se, url, '用户:Seniorious', '')
+write_wiki(se, url, '用户:Seniorious', b, 'test action')
 
 
 
