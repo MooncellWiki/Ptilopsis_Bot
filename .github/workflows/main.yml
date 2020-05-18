@@ -14,13 +14,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
-    - name: Test
+    - name: install
       run: |
         pip install requests
         pip install pytz
-        python bot_test.py
+        pip install sys
     - name: Test2
       run: |
         git clone https://github.com/Kengxxiao/ArknightsGameData.git
-        python bot.py
+        python bot.py ${{secrets.PASSWORD}}
 
