@@ -17,7 +17,6 @@ jobs:
     - name: Test
       run: |
         pip install requests
-        pip install json
     - name: Test2
       run: |
         python bot_test.py
