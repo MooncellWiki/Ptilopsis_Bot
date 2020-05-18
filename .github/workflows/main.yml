@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron: '0-30/5 10,15,16 * * *'
+    - cron: '0-30/5 7,8 * * *'
 
 jobs:
   push:
@@ -18,12 +18,23 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
-    - name: install
+    - name: Cache Dependencies
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: ArknightsGameData
+        key: ${{runner.OS}}-ArknightsGameData
+    - name: Install Dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: git clone https://github.com/Kengxxiao/ArknightsGameData.git
+    - name: pull repo
+      run: |
+        cd ArknightsGameData
+        git pull
+        cd ../
+    - name: Test2
       run: |
         pip install requests
         pip install pytz
-    - name: Test2
-      run: |
-        git clone https://github.com/Kengxxiao/ArknightsGameData.git
         python bot.py ${{secrets.PASSWORD}}
 
