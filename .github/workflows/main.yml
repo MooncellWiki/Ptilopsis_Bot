@@ -16,7 +16,8 @@ jobs:
         python-version: 3.7
     - name: Test
       run: |
-        ls -a
+        pip install requests
+        pip install json
     - name: Test2
       run: |
         python bot_test.py
