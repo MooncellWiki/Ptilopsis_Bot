@@ -6,7 +6,8 @@ name: main
 on: 
   push:
     branches: [ master ]
-#   schedule:
+  schedule:
+    - cron: '30 8 * * *'
 #     - cron: '0-30/5 2,8 * * *'
 
 jobs:
