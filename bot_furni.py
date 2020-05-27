@@ -4,57 +4,21 @@ import time
 from wikiapi import *
 
 
-def update_furni(se, url, buildingData, itemTable):
-    furniFormat = '''{{{{家具信息
-|名称={name}
-|类型={type}
-|稀有度={rarity}
-|氛围={comfort}
-|分解获得={destroyObtain}
-|大小={size}
-|描述={description}
-|用途={usage}
-|获得方式={obtainApproach}
-|所属套装={themes}
-|所属组件={groups}
-}}}}'''
-
+def update_furni_desc(se, url, buildingData):
     for furni in buildingData['customData']['furnitures']:
         furniData = buildingData['customData']['furnitures'][furni]
-        if furniData['canBeDestroy']:
-            furniDestroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
-                name = itemTable['items'][furniData['processedProductId']]['name'],
-                number = furniData['processedProductCount']
-            )
+        
+        fin2 = read_wiki_repeat(se, url, furniData['name'])
+        
+        num1 = fin2.find('|描述=')
+        num2 = fin2.find('|', num1 + 4)
+        furniInfo = fin2[:num1] + '|描述={}\n'.format(furniData['description']) + fin2[num2:]
+        
+        if furniInfo != fin2:
+            write_wiki(se, url, furniData['name'], furniInfo, '')
+            print(furniData['name'], 'updated.')
         else:
-            furniDestroy = '不可分解'
-
-        groups = ''
-        themes = ''
-        for groupsId in buildingData['customData']['groups']:
-            groupsData = buildingData['customData']['groups'][groupsId]
-            if furniData['id'] in groupsData['furniture']:
-                groups = groupsData['name']
-                themes = buildingData['customData']['themes'][groupsData['themeId']]['name']
-                break
-
-        furniInfo = furniFormat.format(
-            name = furniData['name'],
-            type = buildingData['customData']['types'][furniData['type']]['name'],
-            rarity = furniData['rarity'],
-            comfort = furniData['comfort'],
-            size = str(furniData['width']) + '×' + str(furniData['depth']) + '×' + str(furniData['height']),
-            usage = furniData['usage'],
-            themes = themes,
-            groups = groups,
-            description = furniData['description'],
-            obtainApproach = furniData['obtainApproach'],
-            destroyObtain = furniDestroy
-        )
-
-        write_wiki(se, url, furniData['name'], furniInfo, '')
-        # print(furniInfo)
-        print(furniData['name'], 'updated.')
+            print(furniData['name'], 'same.')
 
 
 def create_furni(se, url, buildingData, itemTable):
@@ -66,6 +30,7 @@ def create_furni(se, url, buildingData, itemTable):
 
     furniFormat = '''{{{{家具信息
 |名称={name}
+|iconId={id}
 |类型={type}
 |稀有度={rarity}
 |氛围={comfort}
@@ -106,6 +71,7 @@ def create_furni(se, url, buildingData, itemTable):
 
             furniInfo = furniFormat.format(
                 name = furniData['name'],
+                id = furniData['id'],
                 type = buildingData['customData']['types'][furniData['type']]['name'],
                 rarity = furniData['rarity'],
                 comfort = furniData['comfort'],

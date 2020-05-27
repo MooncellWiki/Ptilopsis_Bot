@@ -7,16 +7,21 @@ import bot_furni
 import bot_buildingBuff
 import bot_charword
 import bot_demand
+import bot_formula
 import bot_skin
 import bot_mission
 import bot_sidebar
 import bot_stage
 import bot_activity
 import bot_charattr
+import bot_updateJp
 
 url = 'http://edit.ak.mooncell.wiki/api.php'
 se = login_wiki('botPtilopsis', sys.argv[1], url)
 path = './ArknightsGameData/zh_CN/gamedata/'
+path_jp = './ArknightsGameData/ja_JP/gamedata/'
+path_us = './ArknightsGameData/en_US/gamedata/'
+path_kr = './ArknightsGameData/ko_KR/gamedata/'
 
 character_table = json.loads(open(path + 'excel/character_table.json', 'r', encoding='utf-8').read())
 skill_table = json.loads(open(path + 'excel/skill_table.json', 'r', encoding='utf-8').read())
@@ -37,21 +42,37 @@ skin_list = []
 
 # bot_basic.create_char(se, url, old_num, character_table, skill_table, building_data, item_table, team_table, gamedata_const, stories_table, skin_table, id_table)
 # bot_charword.create_charword(se, url, old_num, character_table, charword_table, id_table)
-bot_buildingBuff.update_buildingBuff_list(se, url, building_data, gamedata_const)
 # bot_sidebar.update_sidebar(se, url, old_num, id_table)
 # bot_skin.update_randomFig(se, url, character_table, skin_table)
+# bot_demand.update_mat_demand(se, url, character_table, item_table)
+
+bot_buildingBuff.update_buildingBuff_list(se, url, building_data, gamedata_const)
 bot_stage.create_stage(se, url, building_data, item_table, character_table, gamedata_const, path)
 bot_furni.create_furni(se, url, building_data, item_table)
 bot_furni.create_themes(se, url, building_data)
 # bot_skin.update_skin(se, url, character_table, skin_table, skin_list)
-# bot_demand.update_mat_demand(se, url, character_table, item_table)
 
 bot_mission.update_mission(se, url, mission_table, item_table)
 bot_activity.update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table)
 bot_charattr.get_char_attr(se, url, character_table, id_table)
 bot_skin.update_skin_handbook(se, url, character_table, skin_table)
+bot_formula.update_workshop_formulas(se, url, building_data, item_table, stage_table)
 # bot_buildingBuff.update_buildingBuff_data(se, url, building_data, character_table, gamedata_const)
 
-# bot_furni.update_furni(se, url, building_data, item_table)
+# bot_furni.update_furni_desc(se, url, building_data, item_table)
 # bot_charword.update_charword(se, url, character_table, charword_table)
+
+building_data_jp = json.loads(open(path_jp + 'excel/building_data.json', 'r', encoding='utf-8').read())
+character_table_jp = json.loads(open(path_jp + 'excel/character_table.json', 'r', encoding='utf-8').read())
+skill_table_jp = json.loads(open(path_jp + 'excel/skill_table.json', 'r', encoding='utf-8').read())
+charword_table_jp = json.loads(open(path_jp + 'excel/charword_table.json', 'r', encoding='utf-8').read())
+building_data_en = json.loads(open(path_us + 'excel/building_data.json', 'r', encoding='utf-8').read())
+character_table_en = json.loads(open(path_us + 'excel/character_table.json', 'r', encoding='utf-8').read())
+skill_table_en = json.loads(open(path_us + 'excel/skill_table.json', 'r', encoding='utf-8').read())
+
+bot_updateJp.update_char_name(character_table, character_table_jp)
+bot_updateJp.update_skill_name(character_table, skill_table, character_table_jp, skill_table_jp, character_table_en, skill_table_en)
+bot_updateJp.update_charword_jp(character_table, charword_table, character_table_jp, charword_table_jp)
+bot_updateJp.update_furni_info(building_data, building_data_jp, building_data_en)
+
 

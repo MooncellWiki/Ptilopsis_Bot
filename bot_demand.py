@@ -21,7 +21,7 @@ def mat_add(mat_type, material, char_name, amount):
     if material not in mat_dic:
         mat_dic[material] = {}
     if char_name not in mat_dic[material]:
-        mat_dic[material][char_name] = {'1': 0, '2': 0, '3': 0}
+        mat_dic[material][char_name] = {'1': 0, '2': 0, '3': 0, '4':0, '5': 0}
     mat_dic[material][char_name][str(mat_type)] += amount
 
 
@@ -45,7 +45,7 @@ def update_mat_demand(se, url, character_table, item_table):
                         for i in [8, 9, 10]:
                             skill_levelup_material = char_detail['skills'][skill_id]['levelUpCostCond'][i - 8]['levelUpCost']
                             for material_id in range(len(skill_levelup_material)):
-                                mat_add(3, skill_levelup_material[material_id]['id'], char, skill_levelup_material[material_id]['count'])
+                                mat_add(skill_id + 3, skill_levelup_material[material_id]['id'], char, skill_levelup_material[material_id]['count'])
 
     for material in mat_dic:
         fin2 = read_wiki_repeat(se, url, item_table['items'][material]['name'])
@@ -56,12 +56,20 @@ def update_mat_demand(se, url, character_table, item_table):
         for mat_char in mat_dic[material]:
             count1 += mat_dic[material][mat_char]['1']
             count2 += mat_dic[material][mat_char]['2']
-            count3 += mat_dic[material][mat_char]['3']
+            sum3 = mat_dic[material][mat_char]['3'] + mat_dic[material][mat_char]['4'] + mat_dic[material][mat_char]['5']
+            count3 += sum3
+            if sum3 == 0:
+                num3 = '0'
+            else:
+                if character_table[mat_char]['rarity'] == 5 or character_table[mat_char]['name'] == '阿米娅':
+                    num3 = '{}/{}/{}'.format(mat_dic[material][mat_char]['3'], mat_dic[material][mat_char]['4'], mat_dic[material][mat_char]['5'])
+                else:
+                    num3 = '{}/{}'.format(mat_dic[material][mat_char]['3'], mat_dic[material][mat_char]['4'])
             mat_text[character_table[mat_char]['rarity']] += '\n|{char_name}|{num1}|{num2}|{num3}'.format(
                 char_name = character_table[mat_char]['name'],
                 num1 = mat_dic[material][mat_char]['1'],
                 num2 = mat_dic[material][mat_char]['2'],
-                num3 = mat_dic[material][mat_char]['3']
+                num3 = num3
             )
         for i in reversed(range(len(mat_text))):
             if mat_text[i] != '':

@@ -4,13 +4,13 @@ from wikiapi import *
 
 def special_buff(buffName , description):
     if buffName == '坚毅随和':
-        description = description.replace('额外降低心情消耗}}', '额外降低心情消耗}}{{color|#F49800|(心情每小时消耗-0.15)}}')
+        description = description.replace('额外降低心情消耗}}', '额外降低心情消耗}}{{color|#F49800|（心情每小时消耗-0.15）}}')
     elif buffName == '神经质':
-        description += '{{color|#F49800|(心情每小时消耗+1.5)}}'
+        description += '{{color|#F49800|（心情每小时消耗+1.5）}}'
     elif buffName == '至察':
-        description += '{{color|#F49800|(心情每小时消耗+0.5)}}'
+        description += '{{color|#F49800|（心情每小时消耗+0.5）}}'
     elif buffName in ['裁缝·α', '裁缝·β']:
-        description += '{{color|#F49800|(同类效果取最高)}}'
+        description += '{{color|#F49800|（同类效果取最高）}}'
     return description
 
 
