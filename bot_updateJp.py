@@ -69,8 +69,8 @@ def replace_story_condition(text, num):
 def update_charword_jp(character_table, charword_table, character_table_jp, charword_table_jp):
     for char in character_table_jp:
         char_detail = character_table[char]
-        # if char_detail['name'] not in ['赫拉格', '桃金娘'] or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
-        if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+        if char_detail['name'] in ['安洁莉娜'] or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+        # if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
         else:
             fin = read_wiki(se, url, character_table[char]['name'] + '/语音记录')
