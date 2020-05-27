@@ -66,7 +66,7 @@ def replace_story_condition(text, num):
     return text
 
 
-def update_charword_jp(character_table, charword_table, character_table_jp, charword_table_jp):
+def update_charword_jp(se, url, character_table, charword_table, character_table_jp, charword_table_jp):
     for char in character_table_jp:
         char_detail = character_table[char]
         if char_detail['name'] in ['安洁莉娜'] or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
@@ -92,7 +92,7 @@ def update_charword_jp(character_table, charword_table, character_table_jp, char
                             print('Write {} fail. Skip.'.format(char_detail['name'] + '/语音记录'))
 
 
-def update_skill_name(character_table, skill_table, character_table_jp, skill_table_jp, character_table_en, skill_table_en):
+def update_skill_name(se, url, character_table, skill_table, character_table_jp, skill_table_jp, character_table_en, skill_table_en):
     for char in character_table_jp:
         char_detail = character_table[char]
         # if char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
@@ -125,14 +125,14 @@ def update_skill_name(character_table, skill_table, character_table_jp, skill_ta
                 print(char_detail['name'] + ' updated.')
 
 
-def update_char_name(character_table, character_table_jp):
+def update_char_name(se, url, character_table, character_table_jp):
     for char in character_table_jp:
         char_detail = character_table[char]
         # if char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
         else:
-            fin2 = read_wiki(se, url, char_detail['name'])
+            fin2 = read_wiki_repeat(se, url, char_detail['name'])
 
             name_jp = character_table_jp[char]['name']
 
@@ -145,7 +145,7 @@ def update_char_name(character_table, character_table_jp):
                 print(char_detail['name'] + ' updated.')
 
 
-def update_furni_info(building_data, building_data_jp, building_data_en):
+def update_furni_info(se, url, building_data, building_data_jp, building_data_en):
     for furni in building_data['customData']['furnitures']:
         if furni not in building_data_jp['customData']['furnitures'] or furni not in building_data_en['customData']['furnitures']:
             continue
