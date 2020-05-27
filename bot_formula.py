@@ -43,4 +43,5 @@ def update_workshop_formulas(se, url, building_data, item_table, stage_table):
     
     write_wiki(se, url, '用户:Seniorious/workshopFormulas', formulas_text, '')
     # print(formulas_text)
+    print('Update: 用户:Seniorious/workshopFormulas.')
  
