@@ -269,6 +269,9 @@ def get_normal_data(stage_detail, stage_table, zone_table, enemy_table, characte
         stage_data += '|演习消耗=-1\n'
     if stage_detail['stageDropInfo']['displayDetailRewards']:
         stage_data += analyze_rewards(stage_detail['stageDropInfo']['displayDetailRewards'], character_table, building_data, item_table)
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '}}'
 
     if stage_detail['levelId']:
