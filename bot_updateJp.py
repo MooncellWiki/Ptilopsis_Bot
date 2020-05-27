@@ -139,10 +139,13 @@ def update_char_name(se, url, character_table, character_table_jp):
             num1 = fin2.find('|干员名={}'.format(char_detail['name']))
             num2 = fin2.find('|干员外文名=')
             fin = fin2[:num1] + '|干员名={}\n'.format(char_detail['name']) + '|干员名jp={}\n'.format(name_jp) + fin2[num2:]
-            
+
             if fin != fin2:
                 write_wiki_minor(se, url, char_detail['name'], fin, '')
                 print(char_detail['name'] + ' updated.')
+
+            redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
+            write_wiki(se, url, name_jp, redirect_text, '')
 
 
 def update_furni_info(se, url, building_data, building_data_jp, building_data_en):
