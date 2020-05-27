@@ -35,6 +35,7 @@ skin_table = json.loads(open(path + 'excel/skin_table.json', 'r', encoding='utf-
 id_table = json.loads(open('character_id.json', 'r', encoding='utf-8').read())
 mission_table = json.loads(open(path + 'excel/mission_table.json', 'r', encoding='utf-8').read())
 activity_table = json.loads(open(path + 'excel/activity_table.json', 'r', encoding='utf-8').read())
+stage_table = json.loads(open(path + 'excel/stage_table.json', 'r', encoding = 'utf-8').read())
 
 old_num = 137
 skin_list = []
@@ -47,7 +48,7 @@ skin_list = []
 # bot_demand.update_mat_demand(se, url, character_table, item_table)
 
 bot_buildingBuff.update_buildingBuff_list(se, url, building_data, gamedata_const)
-bot_stage.create_stage(se, url, building_data, item_table, character_table, gamedata_const, path)
+bot_stage.create_stage(se, url, building_data, item_table, character_table, gamedata_const, stage_table, path)
 bot_furni.create_furni(se, url, building_data, item_table)
 bot_furni.create_themes(se, url, building_data)
 # bot_skin.update_skin(se, url, character_table, skin_table, skin_list)

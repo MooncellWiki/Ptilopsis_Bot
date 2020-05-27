@@ -402,7 +402,7 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
     return stage_4star_data
 
 
-def create_stage(se, url, building_data, item_table, character_table, gamedata_const, path):
+def create_stage(se, url, building_data, item_table, character_table, gamedata_const, stage_table, path):
     res = se.post(url, data = {'format': 'json', 'action': 'query', 'list': 'categorymembers', 'cmtitle': '分类:普通难度关卡',
                                'cmlimit': 5000})
     ret = res.json()['query']['categorymembers']
@@ -410,7 +410,6 @@ def create_stage(se, url, building_data, item_table, character_table, gamedata_c
     for stage in ret:
         stage_list.append(stage['title'])
 
-    stage_table = json.loads(open(path + 'excel/stage_table.json', 'r', encoding = 'utf-8').read())
     zone_table = json.loads(open(path + 'excel/zone_table.json', 'r', encoding = 'utf-8').read())
     enemy_table = json.loads(open(path + 'excel/enemy_handbook_table.json', 'r', encoding = 'utf-8').read())
 
