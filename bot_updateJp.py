@@ -144,8 +144,9 @@ def update_char_name(se, url, character_table, character_table_jp):
                 write_wiki_minor(se, url, char_detail['name'], fin, '')
                 print(char_detail['name'] + ' updated.')
 
-            redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
-            write_wiki(se, url, name_jp, redirect_text, '')
+            if char_detail['name'] != name_jp:
+                redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
+                write_wiki(se, url, name_jp, redirect_text, '')
 
 
 def update_furni_info(se, url, building_data, building_data_jp, building_data_en):

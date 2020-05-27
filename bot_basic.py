@@ -717,5 +717,6 @@ def create_char(se, url, old_num, character_table, skill_table, building_data, i
         # print(fin)
         print('Create: {}.'.format(char_detail['name']))
 
-        redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
-        write_wiki(se, url, char_detail['appellation'], redirect_text, '')
+        if char_detail['name'] != char_detail['appellation']:
+            redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
+            write_wiki(se, url, char_detail['appellation'], redirect_text, '')
