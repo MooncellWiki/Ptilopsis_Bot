@@ -73,7 +73,7 @@ def update_charword_jp(se, url, character_table, charword_table, character_table
         # if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
         else:
-            fin = read_wiki(se, url, character_table[char]['name'] + '/语音记录')
+            fin = read_wiki_repeat(se, url, character_table[char]['name'] + '/语音记录')
             charword_data = get_charword_data_jp(char, char_detail['name'], charword_table, charword_table_jp)
             charword_data += '\n<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
 

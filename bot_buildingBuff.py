@@ -10,7 +10,7 @@ def special_buff(buffName , description):
     elif buffName == '至察':
         description += '{{color|#F49800|（心情每小时消耗+0.5）}}'
     elif buffName in ['裁缝·α', '裁缝·β']:
-        description += description.replace('的出现概率', '的出现概率{{color|#F49800|（同类效果取最高）}}')
+        description = description.replace('的出现概率', '的出现概率{{color|#F49800|（同类效果取最高）}}')
     return description
 
 
