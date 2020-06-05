@@ -244,22 +244,21 @@ def get_skill_list(char_detail, skill_table, gamedata_const):
 
 
 def get_building_skill(building_data, char_key):
-    building_skill = '{{后勤技能\n'
-    building_skill_count = 1
+    building_skill = '{{后勤技能'
     if char_key in building_data['chars']:
         char_building_skill = building_data['chars'][char_key]
         for building_skill_id in range(len(char_building_skill['buffChar'])):
             for building_skill_id_2 in range(len(char_building_skill['buffChar'][building_skill_id]['buffData'])):
+                buff_count_text = '后勤技能{}-{}'.format(building_skill_id + 1, building_skill_id_2 + 1)
                 temp = char_building_skill['buffChar'][building_skill_id]['buffData'][building_skill_id_2]
-                buff_name = building_data['buffs'][temp['buffId']]['buffName']
-                buff_cond = [temp['cond']['phase'], temp['cond']['level']]
-                buff_cond_lv = ''
-                if buff_cond[1] != 1:
-                    buff_cond_lv = '|后勤技能' + str(building_skill_count) + '等级=' + str(buff_cond[1]) + '级\n'
-                building_skill += '|后勤技能' + str(building_skill_count) + '=' + buff_name + '\n' + '|后勤技能' + str(
-                    building_skill_count) + '阶段=精英' + str(buff_cond[0]) + '\n' + buff_cond_lv
-                building_skill_count += 1
-    building_skill += '}}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->'
+                building_skill += '\n|{count_text}={name}\n|{count_text}阶段=精英{phase}'.format(
+                    count_text = buff_count_text,
+                    name = building_data['buffs'][temp['buffId']]['buffName'],
+                    phase = temp['cond']['phase']
+                )
+                if temp['cond']['level'] != 1:
+                    building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
+    building_skill += '\n}}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->'
     return building_skill
 
 

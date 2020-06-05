@@ -37,7 +37,7 @@ mission_table = json.loads(open(path + 'excel/mission_table.json', 'r', encoding
 activity_table = json.loads(open(path + 'excel/activity_table.json', 'r', encoding='utf-8').read())
 stage_table = json.loads(open(path + 'excel/stage_table.json', 'r', encoding = 'utf-8').read())
 
-old_num = 137
+old_num = 139
 skin_list = []
 
 
