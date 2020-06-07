@@ -22,7 +22,9 @@ def update_buildingBuff_list(se, url, buildingData, gamedata_const):
 |技能描述={description}
 }}}}'''
     roomFormat = '''=={roomName}==
-{{|class="wikitable" style="text-align:center; width:1000px; display:table; white-space:normal;"
+{{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:1000px; display:table; white-space:normal;"
+! colspan="4" | {roomName}
+|-
 ! width="30px" |
 ! width="100px" |名称
 ! width="520px" |描述
