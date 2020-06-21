@@ -232,7 +232,7 @@ def get_normal_data(stage_detail, stage_table, zone_table, enemy_table, characte
         unlock_cond = '{num}星通关[[{code} {name}]]'.format(
             num = unlock_id['completeState'],
             code = stage_table['stages'][unlock_id['stageId']]['code'],
-            name = stage_table['stages'][unlock_id['stageId']]['name'].replace('.', '')
+            name = stage_table['stages'][unlock_id['stageId']]['name']
         )
         unlock_cond_list.append(unlock_cond)
     stage_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
@@ -353,13 +353,13 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
             unlock_cond = '{num}星通关[[{code} {name}]]'.format(
                 num = unlock_id['completeState'],
                 code = stage_table['stages'][unlock_id['stageId']]['code'],
-                name = stage_table['stages'][unlock_id['stageId']]['name'].replace('.', '')
+                name = stage_table['stages'][unlock_id['stageId']]['name']
             )
         else:
             unlock_cond = '{num}星通关[[#普通|{code} {name}]]普通难度'.format(
                 num = unlock_id['completeState'],
                 code = stage_table['stages'][unlock_id['stageId']]['code'],
-                name = stage_table['stages'][unlock_id['stageId']]['name'].replace('.', '')
+                name = stage_table['stages'][unlock_id['stageId']]['name']
             )
         unlock_cond_list.append(unlock_cond)
     stage_4star_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
@@ -421,7 +421,7 @@ def create_stage(se, url, building_data, item_table, character_table, gamedata_c
         if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY'] or stage_detail['difficulty'] == 'FOUR_STAR':
             continue
         stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
-        stage_page_name = stage_page_name.replace('.', '')
+        stage_page_name = stage_page_name
         if stage_page_name in stage_list:
             continue
         # if '6-14' not in stage_detail['code']:
