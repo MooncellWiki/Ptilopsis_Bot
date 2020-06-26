@@ -19,14 +19,23 @@ def read_wiki(session, api_url, title):
     
     return ret["revisions"][0]["*"]
 
-def read_wiki_exist(session, api_url, title):
-    res = session.post(api_url, data={'format': 'json', 'action': 'query', 'assert': 'user', 'titles': title})
+def read_wiki_exist(session, api_url, title, num_trial=3):
+    for attempt in range(num_trial):
+        try:
+            res = session.post(api_url, data={'format': 'json', 'action': 'query', 'assert': 'user', 'titles': title})
 
-    ret = json.loads(res.text)['query']['pages']
-    if '-1' in ret:
-        return False
-    else:
-        return True
+            ret = json.loads(res.text)['query']['pages']
+            if '-1' in ret:
+                return False
+            else:
+                return True
+        except:
+            if attempt < num_trial - 1:
+                print("Error: Read {} Fail. Try again.".format(title))
+            else:
+                raise RuntimeError(res.text)
+    return None
+
 
 def read_wiki_repeat(session, api_url, title, num_trial=5):
     for attempt in range(num_trial):
@@ -45,23 +54,41 @@ def read_wiki_repeat(session, api_url, title, num_trial=5):
                 raise RuntimeError(res.text)
     return None
 
-def write_wiki(session, api_url, title, text, summary, **others):
-    token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
-    post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
-                 'token': token.json()['query']['tokens']['csrftoken'], 'bot': 1}
-    for k in others:
-        post_data[k] = others[k]
-    r = session.post(api_url, data=post_data)
-    # print(r.text)
+def write_wiki(session, api_url, title, text, summary, **others, num_trial=3):
+    for attempt in range(num_trial):
+        try:
+            token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
+            post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
+                         'token': token.json()['query']['tokens']['csrftoken'], 'bot': 1}
+            for k in others:
+                post_data[k] = others[k]
+            r = session.post(api_url, data=post_data)
+            # print(r.text)
+            return
+        except:
+            if attempt < num_trial - 1:
+                print("Error: Write {} Fail. Try again.".format(title))
+            else:
+                raise RuntimeError
+    return None
 
-def write_wiki_minor(session, api_url, title, text, summary, **others):
-    token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
-    post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
-                 'token': token.json()['query']['tokens']['csrftoken'], 'minor': 1}
-    for k in others:
-        post_data[k] = others[k]
-    r = session.post(api_url, data=post_data)
-    # print(r.text)
+def write_wiki_minor(session, api_url, title, text, summary, **others, num_trial=3):
+    for attempt in range(num_trial):
+        try:
+            token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
+            post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
+                         'token': token.json()['query']['tokens']['csrftoken'], 'minor': 1}
+            for k in others:
+                post_data[k] = others[k]
+            r = session.post(api_url, data=post_data)
+            # print(r.text)
+            return
+        except:
+            if attempt < num_trial - 1:
+                print("Error: Write {} Fail. Try again.".format(title))
+            else:
+                raise RuntimeError
+    return None
 
 
 def login_wiki(username, password, api_url):
