@@ -54,8 +54,8 @@ def read_wiki_repeat(session, api_url, title, num_trial=5):
                 raise RuntimeError(res.text)
     return None
 
-def write_wiki(session, api_url, title, text, summary, **others, num_trial=3):
-    for attempt in range(num_trial):
+def write_wiki(session, api_url, title, text, summary, **others):
+    for attempt in range(3):
         try:
             token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
             post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
@@ -72,8 +72,8 @@ def write_wiki(session, api_url, title, text, summary, **others, num_trial=3):
                 raise RuntimeError
     return None
 
-def write_wiki_minor(session, api_url, title, text, summary, **others, num_trial=3):
-    for attempt in range(num_trial):
+def write_wiki_minor(session, api_url, title, text, summary, **others):
+    for attempt in range(3):
         try:
             token = session.get(api_url, params={'format': 'json', 'action': 'query', 'meta': 'tokens', })
             post_data = {'format': 'json', 'action': 'edit', 'assert': 'user', 'text': text, 'summary': summary, 'title': title,
