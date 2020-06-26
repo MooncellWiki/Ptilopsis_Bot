@@ -14,7 +14,6 @@ import bot_sidebar
 import bot_stage
 import bot_activity
 import bot_charattr
-import bot_updateJp
 
 url = 'http://edit.ak.mooncell.wiki/api.php'
 se = login_wiki('botPtilopsis', sys.argv[1], url)
@@ -37,9 +36,8 @@ mission_table = json.loads(open(path + 'excel/mission_table.json', 'r', encoding
 activity_table = json.loads(open(path + 'excel/activity_table.json', 'r', encoding='utf-8').read())
 stage_table = json.loads(open(path + 'excel/stage_table.json', 'r', encoding = 'utf-8').read())
 
-old_num = 139
-skin_list = []
-
+# old_num = 139
+# skin_list = []
 
 # bot_basic.create_char(se, url, old_num, character_table, skill_table, building_data, item_table, team_table, gamedata_const, stories_table, skin_table, id_table)
 # bot_charword.create_charword(se, url, old_num, character_table, charword_table, id_table)
@@ -62,18 +60,4 @@ bot_formula.update_workshop_formulas(se, url, building_data, item_table, stage_t
 
 # bot_furni.update_furni_desc(se, url, building_data, item_table)
 # bot_charword.update_charword(se, url, character_table, charword_table)
-
-building_data_jp = json.loads(open(path_jp + 'excel/building_data.json', 'r', encoding='utf-8').read())
-character_table_jp = json.loads(open(path_jp + 'excel/character_table.json', 'r', encoding='utf-8').read())
-skill_table_jp = json.loads(open(path_jp + 'excel/skill_table.json', 'r', encoding='utf-8').read())
-charword_table_jp = json.loads(open(path_jp + 'excel/charword_table.json', 'r', encoding='utf-8').read())
-building_data_en = json.loads(open(path_us + 'excel/building_data.json', 'r', encoding='utf-8').read())
-character_table_en = json.loads(open(path_us + 'excel/character_table.json', 'r', encoding='utf-8').read())
-skill_table_en = json.loads(open(path_us + 'excel/skill_table.json', 'r', encoding='utf-8').read())
-
-bot_updateJp.update_char_name(se, url, character_table, character_table_jp)
-bot_updateJp.update_skill_name(se, url, character_table, skill_table, character_table_jp, skill_table_jp, character_table_en, skill_table_en)
-bot_updateJp.update_charword_jp(se, url, character_table, charword_table, character_table_jp, charword_table_jp)
-bot_updateJp.update_furni_info(se, url, building_data, building_data_jp, building_data_en)
-
 

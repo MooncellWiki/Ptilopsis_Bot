@@ -22,7 +22,7 @@ def update_buildingBuff_list(se, url, buildingData, gamedata_const):
 |技能描述={description}
 }}}}'''
     roomFormat = '''=={roomName}==
-{{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:1000px; display:table; white-space:normal;"
+{{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
 ! colspan="4" | {roomName}
 |-
 ! width="30px" |
@@ -77,7 +77,7 @@ def update_buildingBuff_list(se, url, buildingData, gamedata_const):
 
 def update_buildingBuff_data(se, url, buildingData, character_table, gamedata_const):
     roomFormat = '''=={roomName}==
-{{|class="wikitable" style="text-align:center; width:1000px; display:table; white-space:normal;"
+{{|class="wikitable" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
 !width="60%"|描述
 !width="40%"|干员{buffInfoAll}
 |}}'''
