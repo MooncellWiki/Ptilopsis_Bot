@@ -125,7 +125,7 @@ def update_skill_name(se, url, character_table, skill_table, character_table_jp,
                 print(char_detail['name'] + ' updated.')
 
 
-def update_char_name(se, url, character_table, character_table_jp):
+def update_char_name(se, url, character_table, character_table_jp, character_table_en):
     for char in character_table_jp:
         char_detail = character_table[char]
         # if char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
@@ -135,10 +135,17 @@ def update_char_name(se, url, character_table, character_table_jp):
             fin2 = read_wiki_repeat(se, url, char_detail['name'])
 
             name_jp = character_table_jp[char]['name']
+            if char in character_table_en:
+                name_en = character_table_en[char]['name']
+            else:
+                name_en = char_detail['name']
 
             num1 = fin2.find('|干员名={}'.format(char_detail['name']))
             num2 = fin2.find('|干员外文名=')
             fin = fin2[:num1] + '|干员名={}\n'.format(char_detail['name']) + '|干员名jp={}\n'.format(name_jp) + fin2[num2:]
+
+            num1 = fin.find('{{pathnav2|干员一览}}')
+            fin = '{{{{干员页面名|{}|{}|{}}}}}'.format(char_detail['name'], name_en, name_jp) + fin[num1:]
 
             if fin != fin2:
                 write_wiki_minor(se, url, char_detail['name'], fin, '')

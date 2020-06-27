@@ -24,7 +24,7 @@ building_data_en = json.loads(open(path_us + 'excel/building_data.json', 'r', en
 character_table_en = json.loads(open(path_us + 'excel/character_table.json', 'r', encoding='utf-8').read())
 skill_table_en = json.loads(open(path_us + 'excel/skill_table.json', 'r', encoding='utf-8').read())
 
-bot_updateJp.update_char_name(se, url, character_table, character_table_jp)
+bot_updateJp.update_char_name(se, url, character_table, character_table_jp, character_table_en)
 bot_updateJp.update_skill_name(se, url, character_table, skill_table, character_table_jp, skill_table_jp, character_table_en, skill_table_en)
 bot_updateJp.update_charword_jp(se, url, character_table, charword_table, character_table_jp, charword_table_jp)
 bot_updateJp.update_furni_info(se, url, building_data, building_data_jp, building_data_en)
