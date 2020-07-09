@@ -2,6 +2,7 @@ import re
 import time
 from datetime import datetime, timedelta
 import pytz
+from bot_textStyle import RichTextStyles
 
 from wikiapi import *
 
@@ -64,7 +65,7 @@ def parse_collection(collection, item_table, building_data, character_table, ski
         )
 
 
-def update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table):
+def update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table, gamedata_const):
     activity_dict = {}
     for activity in activity_table['missionData']:
         activity_dict[activity['id']] = {
@@ -93,7 +94,7 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
                 print(mission_id, 'group not match!')
             activity_text_dict[mission['id']] += '\n|-\n|{id}\n|{desc}\n|{reward}'.format(
                 id = activity_dict[mission_id]['id'],
-                desc = activity_dict[mission_id]['description'],
+                desc = RichTextStyles(gamedata_const).compile(activity_dict[mission_id]['description']),
                 reward = activity_dict[mission_id]['rewards']
             )
         activity_text_dict[mission['id']] += '\n|}'
