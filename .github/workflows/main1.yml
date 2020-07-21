@@ -4,8 +4,6 @@
 name: main
 
 on: 
-  push:
-    branches: [ master ]
   schedule:
     - cron: '4,30 8 * * *'
 

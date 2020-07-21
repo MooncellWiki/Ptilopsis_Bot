@@ -252,13 +252,21 @@ def get_normal_data(stage_detail, stage_table, zone_table, enemy_table, characte
         stage_data += '|COST上限={}\n'.format(level_table['options']['maxCost'])
         stage_data += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
         enemy_count = 0
+        min_time = 0.0
         for wave in level_table['waves']:
+            min_time += wave['preDelay'] + wave['postDelay']
             for fragment in wave['fragments']:
+                min_time += fragment['preDelay']
+                min_time += max([action['preDelay'] + (action['count']-1) * action['interval'] for action in fragment['actions']])
                 for unit in fragment['actions']:
                     if unit['actionType'] == 0:
                         enemy_count += unit['count']
         stage_data += '|敌人数量={}\n'.format(enemy_count)
         stage_data += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
+        if abs(min_time - int(min_time)) < 0.00001:
+            stage_data += '|最短用时={}分{}秒\n'.format(int(min_time/60), int(min_time%60))
+        else:
+            stage_data += '|最短用时={}分{:.1f}秒\n'.format(int(min_time/60), min_time%60)
     stage_data += '|关卡描述={desc}\n'.format(
         desc = RichTextStyles(gamedata_const).compile(stage_detail['description'].replace('\\n', '<br/>'))
     )
@@ -396,9 +404,14 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
         stage_4star_data += analyze_rewards(stage_detail['stageDropInfo']['displayDetailRewards'], character_table, building_data, item_table)
     stage_4star_data += '<!--|情报=\n'
     if ebuff['flag'] == 1:
-        stage_4star_data += '敌方单位的攻击力提升至{0:.0%}，防御力提升至{1:.0%}，生命值提升至{2:.0%}\n'.format(
-            ebuff['atk'], ebuff['def'], ebuff['max_hp'],
-        )
+        ebuff_desc = []
+        if ebuff['atk'] != 1.0:
+            ebuff_desc.append('攻击力提升至{0:.0%}'.format(ebuff['atk']))
+        if ebuff['def'] != 1.0:
+            ebuff_desc.append('防御力提升至{0:.0%}'.format(ebuff['def']))
+        if ebuff['max_hp'] != 1.0:
+            ebuff_desc.append('生命值提升至{0:.0%}'.format(ebuff['max_hp']))
+        stage_4star_data += '敌方单位的' + '，'.join(ebuff_desc) + '\n'
     stage_4star_data += parse_rune(level_table['runes'])
     stage_4star_data += '-->\n}}'
 

@@ -2,14 +2,13 @@ import re
 import time
 from datetime import datetime, timedelta
 import pytz
-from bot_textStyle import RichTextStyles
 
 from wikiapi import *
 
 table_title = '{|class = "wikitable mw-collapsed mw-collapsible" style = "text-align:center; display:table; white-space:normal; width:800px;"'
 
 
-def update_mission(se, url, mission_table, item_table, gamedata_const):
+def update_mission(se, url, mission_table, item_table):
     group_mission_list = []
     daily_text = '==日常任务=='
     count = 1
@@ -38,7 +37,7 @@ def update_mission(se, url, mission_table, item_table, gamedata_const):
                     )
                 mission_list += '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
                     mission_id = mission_table['missions'][mission_id]['id'],
-                    mission_text = RichTextStyles(gamedata_const).compile(mission_table['missions'][mission_id]['description']),
+                    mission_text = mission_table['missions'][mission_id]['description'],
                     mission_reward = mission_reward
                 )
             mission_list += '\n|}'
@@ -89,7 +88,7 @@ def update_mission(se, url, mission_table, item_table, gamedata_const):
                     )
                 weekly_text += '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
                     mission_id = mission_table['missions'][mission_id]['id'],
-                    mission_text = RichTextStyles(gamedata_const).compile(mission_table['missions'][mission_id]['description']),
+                    mission_text = mission_table['missions'][mission_id]['description'],
                     mission_reward = mission_reward
                 )
             weekly_text += '\n|}'
@@ -147,7 +146,7 @@ def update_mission(se, url, mission_table, item_table, gamedata_const):
                 )
             text = '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
                 mission_id = mission_table['missions'][mission]['id'],
-                mission_text = RichTextStyles(gamedata_const).compile(mission_table['missions'][mission]['description']),
+                mission_text = mission_table['missions'][mission]['description'],
                 mission_reward = mission_reward
             )
             if 'main_' in mission_table['missions'][mission]['id']:
