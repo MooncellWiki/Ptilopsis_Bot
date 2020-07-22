@@ -20,7 +20,7 @@ template = '''<noinclude>{{{{cbox2|lv=1|title=该页面可能与实际情况不�
 |当期素材6={material6}
 |寻访池开启时间={time_begin}
 |寻访池关闭时间={time_end}
-|}}<noinclude>[[分类:需要长期关注及更新的条目]]</noinclude>'''
+}}}}<noinclude>[[分类:需要长期关注及更新的条目]]</noinclude>'''
 
 
 class Weedy(Job):
