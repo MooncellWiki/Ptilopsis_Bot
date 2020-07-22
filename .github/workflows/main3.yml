@@ -24,5 +24,5 @@ jobs:
         pip install pytz
         pip install requests
         pip install retrying
-        python main.py update_weedy
+        python main.py update-weedy
 
