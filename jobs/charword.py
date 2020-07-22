@@ -1,7 +1,6 @@
 import re
-import time
 
-from wikiapi import *
+from utils.job import Job
 
 
 def get_charword_data(char_id, char_name, charword_table):
@@ -42,7 +41,8 @@ def get_charword_data(char_id, char_name, charword_table):
                     title = charword_table[charword_id]['voiceTitle'],
                     text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
                     voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'], charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
+                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'],
+                        charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
                 )
     char_word += '}}'
     return char_word
@@ -96,7 +96,8 @@ def update_charword_data(char_id, char_name, origin_text, charword_table):
                     text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
                     text_jp = text_jp,
                     voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'], charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
+                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'],
+                        charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
                 )
     char_word += '}}'
     return char_word
@@ -111,47 +112,62 @@ def replace_story_condition(text, num):
     return text
 
 
-def create_charword(se, url, old_num, character_table, charword_table, id_table):
-    for char in character_table:
-        char_detail = character_table[char]
-        if (char_detail['name'] in id_table and int(id_table[char_detail['name']]['id']) <= old_num) or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
-        # if char_detail['name'] != '苇草' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+def create_charword(wiki, character_table, charword_table):
+    charword_list = wiki.category('分类:干员语音')
+
+    for char_id in character_table:
+        char_detail = character_table[char_id]
+        if (char_detail['name'] + '/语音记录') in charword_list or char_detail['profession'] == 'TRAP' or char_detail[
+            'profession'] == 'TOKEN':
+            # if char_detail['name'] != '苇草' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
-        else:
-            charword_data = get_charword_data(char, char_detail['name'], charword_table)
 
-            write_wiki_minor(se, url, char_detail['name'] + '/语音记录', charword_data, '')
-            # print(charword_data)
-            print('Create: {}/语音记录.'.format(char_detail['name']))
+        charword_data = get_charword_data(char_id, char_detail['name'], charword_table)
+
+        wiki.edit(
+            title = char_detail['name'] + '/语音记录',
+            text = charword_data,
+            summary = 'init'
+        )
+        # print(charword_data)
+        print('Created: {}.'.format(char_detail['name'] + '/语音记录'))
 
 
-def update_charword(se, url, character_table, charword_table):
+def update_charword(wiki, character_table, charword_table):
     for char in character_table:
         char_detail = character_table[char]
-        # if char_detail['name'] not in ['安德切尔','芙兰卡','麦哲伦'] or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+            # if char_detail['name'] != '安洁莉娜' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
+
+        origin_text = wiki.read(char_detail['name'] + '/语音记录')
+
+        new_text = update_charword_data(char, char_detail['name'], origin_text, charword_table)
+        num1 = origin_text.find('\n<noinclude>[[分类')
+        if num1 != -1:
+            new_text += origin_text[num1:]
+
+        if origin_text != new_text:
+            wiki.edit(
+                title = char_detail['name'] + '/语音记录',
+                text = new_text,
+                summary = 'update'
+            )
+            # print(new_text)
+            print('Update: {}.'.format(char_detail['name'] + '/语音记录'))
         else:
-            fin = read_wiki_repeat(se, url, char_detail['name'] + '/语音记录')
+            print('Same: {}.'.format(char_detail['name'] + '/语音记录'))
 
-            charword_data = update_charword_data(char, char_detail['name'], fin, charword_table)
-            num1 = fin.find('\n<noinclude>[[分类')
-            if num1 != -1:
-                charword_data += fin[num1:]
 
-            if charword_data != fin:
-                num_trial = 5
-                for i in range(num_trial):
-                    try:
-                        write_wiki_minor(se, url, char_detail['name'] + '/语音记录', charword_data, '')
-                        # print(charword_data)
-                        print('Update: {}.'.format(char_detail['name'] + '/语音记录'))
-                        break
-                    except:
-                        if i < num_trial:
-                            print('Write {} fail. Try again.'.format(char_detail['name'] + '/语音记录'))
-                        else:
-                            print('Write {} fail. Skip.'.format(char_detail['name'] + '/语音记录'))
-            else:
-                print('Same: {}.'.format(char_detail['name'] + '/语音记录'))
+class Charword(Job):
+    def _run(self):
+        character_table = self.getgd('excel/character_table.json')
+        charword_table = self.getgd('excel/charword_table.json')
 
+        create_charword(self.wiki, character_table, charword_table)
+
+    def _run_update(self):
+        character_table = self.getgd('excel/character_table.json')
+        charword_table = self.getgd('excel/charword_table.json')
+
+        update_charword(self.wiki, character_table, charword_table)

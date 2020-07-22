@@ -1,9 +1,9 @@
-import re
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
+
 import pytz
 
-from wikiapi import *
+from utils.job import Job
+from utils.richTextStyles import RichTextStyles
 
 table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:800px;"'
 
@@ -20,18 +20,18 @@ def parse_reward(reward, item_table, building_data, character_table, skin_table)
     elif reward['type'] == 'CHAR_SKIN':
         skin_count = 0
         char_key = skin_table['charSkins'][reward['id']]['charId'] + '@'
-        for skin_id in skin_table['charSkins']:
-            if char_key in skin_id:
-                skin_count += 1
-            if reward['id'] == skin_id:
-                break
+        skin_list = [skin_table['charSkins'][skin_id] for skin_id in skin_table['charSkins'] if char_key in skin_id]
+        skin_list.sort(key = lambda x: x['displaySkin']['onYear'] * 12 + x['displaySkin']['onPeriod'])
+        for skin_data in skin_list:
+            if skin_data['skinId'] == reward['id']:
+                skin_count = skin_list.index(skin_data) + 1
         return '{{{{皮肤头像|{name}|50px|{no}}}}}'.format(
             name = character_table[skin_table['charSkins'][reward['id']]['charId']]['name'],
             no = skin_count
         )
     else:
         return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
-            name = item_table['items'][reward['id']]['name'],
+            name = item_table['items'][reward['id']]['name'] if reward['id'] in item_table['items'] else reward['id'],
             count = reward['count']
         )
 
@@ -46,13 +46,13 @@ def parse_collection(collection, item_table, building_data, character_table, ski
             name = character_table[collection['itemId']]['name']
         )
     elif collection['itemType'] == 'CHAR_SKIN':
-        skin_count = 0
+        skin_count = -1
         char_key = skin_table['charSkins'][collection['itemId']]['charId'] + '@'
-        for skin_id in skin_table['charSkins']:
-            if char_key in skin_id:
-                skin_count += 1
-            if collection['itemId'] == skin_id:
-                break
+        skin_list = [skin_table['charSkins'][skin_id] for skin_id in skin_table['charSkins'] if char_key in skin_id]
+        skin_list.sort(key = lambda x: x['displaySkin']['onYear'] * 12 + x['displaySkin']['onPeriod'])
+        for skin_data in skin_list:
+            if skin_data['skinId'] == collection['itemId']:
+                skin_count = skin_list.index(skin_data) + 1
         return '{{{{皮肤头像|{name}|50px|{no}}}}}'.format(
             name = character_table[skin_table['charSkins'][collection['itemId']]['charId']]['name'],
             no = skin_count
@@ -64,7 +64,7 @@ def parse_collection(collection, item_table, building_data, character_table, ski
         )
 
 
-def update_activity(se, url, activity_table, item_table, building_data, character_table, skin_table):
+def update_activity(activity_table, item_table, building_data, character_table, skin_table, rts):
     activity_dict = {}
     for activity in activity_table['missionData']:
         activity_dict[activity['id']] = {
@@ -74,16 +74,22 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
             'rewards': ''
         }
         for reward in activity['rewards']:
-            activity_dict[activity['id']]['rewards'] += parse_reward(reward, item_table, building_data, character_table, skin_table)
+            activity_dict[activity['id']]['rewards'] += parse_reward(reward, item_table, building_data, character_table,
+                skin_table)
     activity_text_dict = {}
     for mission in activity_table['missionGroup']:
         activity_text_dict[mission['id']] = ''
-        if activity_table['basicInfo'][mission['id']]['startTime'] != mission['startTs'] or activity_table['basicInfo'][mission['id']]['rewardEndTime'] != mission['endTs']:
+        if activity_table['basicInfo'][mission['id']]['startTime'] != mission['startTs'] or \
+                activity_table['basicInfo'][mission['id']]['rewardEndTime'] != mission['endTs']:
             print(mission['id'], 'time not match!')
-        start_time = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['startTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
-        end_time = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['endTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
-        end_time2 = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['rewardEndTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
-        activity_text_dict[mission['id']] += table_title + '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
+        start_time = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['startTime'],
+            pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['endTime'],
+            pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+        end_time2 = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['rewardEndTime'],
+            pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+        activity_text_dict[
+            mission['id']] += table_title + '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
             s_t = start_time,
             e_t = end_time,
             e_t2 = end_time2
@@ -93,7 +99,7 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
                 print(mission_id, 'group not match!')
             activity_text_dict[mission['id']] += '\n|-\n|{id}\n|{desc}\n|{reward}'.format(
                 id = activity_dict[mission_id]['id'],
-                desc = activity_dict[mission_id]['description'],
+                desc = rts.compile(activity_dict[mission_id]['description']).replace('\n', '<br/>'),
                 reward = activity_dict[mission_id]['rewards']
             )
         activity_text_dict[mission['id']] += '\n|}'
@@ -107,14 +113,17 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
         else:
             activity_text += '{|class = "wikitable" style = "text-align:center; display:table; white-space:normal; width:800px;"'
             activity_text += '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
-                s_t = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['startTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S'),
-                e_t = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['endTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S'),
-                e_t2 = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['rewardEndTime'], pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+                s_t = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['startTime'],
+                    pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S'),
+                e_t = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['endTime'],
+                    pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S'),
+                e_t2 = datetime.fromtimestamp(activity_table['basicInfo'][act_info]['rewardEndTime'],
+                    pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
             ) + '\n|}'
 
         if activity_table['basicInfo'][act_info]['type'] == 'COLLECTION':
             item_list = '\n' + table_title + '\n!colspan="8"|奖励列表\n|-'
-            item_list += '\n!width="12.5%"|点数\n!width="12.5%"|奖励'*4
+            item_list += '\n!width="12.5%"|点数\n!width="12.5%"|奖励' * 4
             item_count = 0
             for collection in activity_table['activity']['COLLECTION'][act_info]['collections']:
                 if item_count % 4 == 0:
@@ -143,7 +152,8 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
             item_list += '\n|}'
             activity_text += item_list
         elif activity_table['basicInfo'][act_info]['type'] == 'TYPE_ACT4D0':
-            milestone_name = item_table['items'][activity_table['activity']['TYPE_ACT4D0'][act_info]['tokenItem']['id']]['name']
+            milestone_name = \
+                item_table['items'][activity_table['activity']['TYPE_ACT4D0'][act_info]['tokenItem']['id']]['name']
             item_list = '\n{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:500px;"'
             item_list += '\n!道具点数!!奖励'
             milestone_list = {}
@@ -167,7 +177,24 @@ def update_activity(se, url, activity_table, item_table, building_data, characte
             item_list += '\n|}'
             activity_text += item_list
 
-    write_wiki(se, url, '用户:Seniorious/activities', activity_text, '')
-    # print(activity_text)
-    print('Update: 用户:Seniorious/activities.')
+    return activity_text
 
+
+class Activity(Job):
+    def _run(self):
+        activity_table = self.getgd('excel/activity_table.json')
+        item_table = self.getgd('excel/item_table.json')
+        building_data = self.getgd('excel/building_data.json')
+        character_table = self.getgd('excel/character_table.json')
+        skin_table = self.getgd('excel/skin_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        content = update_activity(activity_table, item_table, building_data, character_table, skin_table, rts)
+
+        self.wiki.edit(
+            title = '用户:Seniorious/activities',
+            text = content,
+            summary = 'update'
+        )
+        # print(content)
+        print('Updated: {}.'.format('用户:Seniorious/activities'))

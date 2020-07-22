@@ -1,11 +1,24 @@
-import re
-import time
+import json
 
-from wikiapi import *
+from utils.job import Job
+from utils.richTextStyles import RichTextStyles
 
 
-def get_char_attr(se, url, character_table, id_table):
-    content = {}
+def trans_profession(profession):
+    return {
+        'TANK': '重装',
+        'PIONEER': '先锋',
+        'SUPPORT': '辅助',
+        'SNIPER': '狙击',
+        'MEDIC': '医疗',
+        'WARRIOR': '近卫',
+        'CASTER': '术师',
+        'SPECIAL': '特种',
+    }[profession]
+
+
+def get_char_attr(character_table, id_table, rts):
+    content = []
     for char in character_table:
         char_detail = character_table[char]
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
@@ -30,32 +43,28 @@ def get_char_attr(se, url, character_table, id_table):
         for potentialRank in char_detail['potentialRanks']:
             if potentialRank['type'] == 0:
                 attributeType = potentialRank['buff']['attributes']['attributeModifiers'][0]['attributeType']
-                if attributeType == 4:
-                    cost += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 21:
-                    respawnTime += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
+                if attributeType == 0:
+                    maxHp += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 elif attributeType == 1:
                     atk += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 elif attributeType == 2:
                     defence += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 0:
-                    maxHp += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 elif attributeType == 3:
                     magicResistance += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
+                elif attributeType == 4:
+                    cost += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 elif attributeType == 7:
                     attackSpeed += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
+                elif attributeType == 21:
+                    respawnTime += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 else:
-                    print('Error! Char {name} attributeType {num} dont know!'.format(
+                    print('Error! Char {name} attributeType {num} don\'t know!'.format(
                         name = char_detail['name'],
                         num = attributeType
                     ))
 
-        remark = ""
-        for talent_id in range(len(char_detail['talents'])):
-            talent_table = char_detail['talents'][talent_id]['candidates']
-            remark += replace_talpu(talent_table[len(talent_table) - 1]['description'])
-            if talent_id != len(char_detail['talents']) - 1:
-                remark += "<br/>"
+        remark = '<br/>'.join(
+            [rts.compile(talent['candidates'][-1]['description']) for talent in char_detail['talents']])
 
         desc = '|[[{name}]]||{rarity}||{profession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s'.format(
             name = char_detail['name'],
@@ -71,42 +80,39 @@ def get_char_attr(se, url, character_table, id_table):
             baseAttackTime = baseAttackTime,
             respawnTime = respawnTime
         )
-        desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="12"|{}'.format(remark)
+        desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="12"|{}'.format(
+            remark
+        )
 
-        content[id_table[char_detail['name']]['id']] = desc
+        content.append({
+            'sortId': id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else 1000,
+            'text': desc
+        })
 
     table = '''{{cbox2|lv=2|text=以下为全体干员\'\'\'满精英化 满级 满潜能 满信赖\'\'\'时的面板白值，\'\'\'不包括\'\'\'天赋和技能加成。}}
 {|class="wikitable sortable" style="text-align:center; width:1000px; display:table; white-space:normal;"
-!名字!!稀有度!!职业!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署'''
-    for i in reversed(range(200)):
-        if str(i) in content:
-            table += '\n|-\n{}'.format(content[str(i)])
+!名字!!稀有度!!职业!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署
+|-
+'''
+    table += '\n|-\n'.join([data['text'] for data in sorted(content, key = lambda x: x['sortId'], reverse = True)])
     table += '\n|}'
 
-    write_wiki(se, url, '用户:Seniorious/attribute', table, '')
-    # print(table)
-    print('Update: 用户:Seniorious/attribute.')
+    return table
 
 
-def trans_profession(profession):
-    return {
-        'TANK': '重装',
-        'PIONEER': '先锋',
-        'SUPPORT': '辅助',
-        'SNIPER': '狙击',
-        'MEDIC': '医疗',
-        'WARRIOR': '近卫',
-        'CASTER': '术师',
-        'SPECIAL': '特种',
-    }[profession]
+class CharAttr(Job):
+    def _run(self):
+        character_table = self.getgd('excel/character_table.json')
+        with open('character_id.json', 'r', encoding = 'utf-8') as file:
+            id_table = json.loads(file.read())
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
+        content = get_char_attr(character_table, id_table, rts)
 
-def replace_talpu(text):
-    p1 = r"(.*)<\@ba\.talpu>(.*)<\/>(.*)"
-    pattern1 = re.compile(p1)
-    result = re.search(pattern1, text)
-    if result:
-        text = result.group(1) + '{{color|#F49800|' + result.group(2) + '}}' + result.group(3)
-        text = replace_talpu(text)
-        # print(result.groups())
-    return text
+        self.wiki.edit(
+            title = '用户:Seniorious/activities',
+            text = content,
+            summary = 'update'
+        )
+        # print(content)
+        print('Updated: {}.'.format('用户:Seniorious/activities'))

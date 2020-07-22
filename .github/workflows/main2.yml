@@ -4,6 +4,8 @@
 name: main
 
 on: 
+  push:
+    branches: [ master ]
   schedule:
     - cron: '30 7 * * *'
 #     - cron: '0-30/5 2,8 * * *'
@@ -22,5 +24,5 @@ jobs:
         git clone https://github.com/Kengxxiao/ArknightsGameData.git
         pip install requests
         pip install pytz
-        python bot2.py ${{secrets.PASSWORD}}
+        python main.py update-jp
 
