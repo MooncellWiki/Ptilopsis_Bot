@@ -27,7 +27,7 @@ class Weedy(Job):
     def _run(self):
         session = requests.Session()
         good_list = session.get('https://weedy.baka.icu/shop/high').json()['goodList']
-        print(good_list)
+        # print(good_list)
 
         content = template.format(
             star6 = good_list[0]['displayName'],

@@ -19,8 +19,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.7
-    - name: update-jp
+    - name: weedy_high
       run: |
-        pip install -r requirements.txt
+        pip install pytz
+        pip install requests
         python main.py update_weedy
 
