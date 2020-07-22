@@ -1,5 +1,11 @@
 ArknightsGameData/
 .idea/
+jobs2/
+UnpackerData/
+diff.txt
+new.txt
+old.txt
+route.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
