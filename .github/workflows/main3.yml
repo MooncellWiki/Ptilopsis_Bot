@@ -1,0 +1,26 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: main
+
+on: 
+  push:
+    branches: [ master ]
+  schedule:
+    - cron: '1,10 20 * * *'
+#     - cron: '0-30/5 2,8 * * *'
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: update-jp
+      run: |
+        pip install -r requirements.txt
+        python main.py update_weedy
+

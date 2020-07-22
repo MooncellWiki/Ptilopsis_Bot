@@ -20,12 +20,13 @@ from jobs.formula import Formula
 from jobs.sidebar import Sidebar
 from jobs.route import Route
 from jobs.basic import Basic
+from jobs.weedy import Weedy
 
 if __name__ == '__main__':
     wiki = Wiki(config['api_url'], config['username'], config['password'],
                 ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config = config, source = 'ArknightsGameData')
-    gameData = GameData(config = config, source = 'UnpackerData')
+    # gameData = GameData(config = config, source = 'UnpackerData')
 
     if 'update-daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
@@ -55,6 +56,9 @@ if __name__ == '__main__':
     if 'update-special' in sys.argv:
         Furni(wiki, gameData)._run_update()
         Charword(wiki, gameData)._run_update()
+
+    if 'update-weedy' in sys.argv:
+        Weedy(wiki, gameData).run()
 
     # Route(wiki, gameData).run()
     # Formula(wiki, gameData).run()
