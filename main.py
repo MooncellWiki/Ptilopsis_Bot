@@ -25,6 +25,7 @@ if __name__ == '__main__':
     wiki = Wiki(config['api_url'], config['username'], config['password'],
                 ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config = config, source = 'ArknightsGameData')
+    gameData = GameData(config = config, source = 'UnpackerData')
 
     if 'update-daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()

@@ -9,8 +9,13 @@ class GameData:
         self.config = config
 
     def get(self, path, region):
-        fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
-                                path)
+        if self.source == 'UnpackerData':
+            fullpath = os.path.join(self.source, path)
+            if path == 'levels/enemydata/enemy_database.json':
+                fullpath = os.path.join(self.source, 'levels/enemy_database.json')
+        else:
+            fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
+                path)
         if fullpath in self.data:
             return self.data[fullpath]
         else:
@@ -21,7 +26,7 @@ class GameData:
 
     def get_txt(self, path, region):
         fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
-                                path)
+            path)
         with open(fullpath, 'r', encoding = 'utf-8') as file:
             text = file.read()
             return text
