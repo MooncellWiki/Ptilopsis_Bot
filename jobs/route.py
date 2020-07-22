@@ -1,0 +1,228 @@
+from utils.job import Job
+
+
+def format_time(time):
+    return '{}分{:.1f}秒'.format(int(time / 60), time % 60)
+
+
+def parse_checkpoint(checkpoint):
+    if checkpoint['randomizeReachOffset'] == True:
+        print('randomizeReachOffset = True')
+    if checkpoint['reachDistance'] != 0.0:
+        print('reachDistance =', checkpoint['reachDistance'])
+
+    if checkpoint['reachOffset']['x'] == 0.0:
+        x_pos = '{}'.format(checkpoint['position']['col'])
+    else:
+        x_pos = '{}'.format(checkpoint['position']['col'] + checkpoint['reachOffset']['x'])
+    if checkpoint['reachOffset']['y'] == 0.0:
+        y_pos = '{}'.format(checkpoint['position']['row'])
+    else:
+        y_pos = '{}'.format(checkpoint['position']['row'] + checkpoint['reachOffset']['y'])
+    text = parse_checkPointType(checkpoint['type'], checkpoint['time'], x_pos, y_pos)
+    return text
+
+
+def parse_route(route):
+    if not route:
+        return None
+    route_result = ''
+    start_x = '{}'.format(route['startPosition']['col'])
+    if route['spawnRandomRange']['x'] != 0.0:
+        start_x += '±{}'.format(route['spawnRandomRange']['x'])
+    if route['spawnOffset']['x'] != 0.0:
+        start_x += '+{}'.format(route['spawnOffset']['x'])
+    start_y = '{}'.format(route['startPosition']['row'])
+    if route['spawnRandomRange']['y'] != 0.0:
+        start_y += '±{}'.format(route['spawnRandomRange']['y'])
+    if route['spawnOffset']['y'] != 0.0:
+        start_y += '+{}'.format(route['spawnOffset']['y'])
+    route_result += '({}, {})'.format(start_x, start_y)
+    for checkpoint in route['checkpoints']:
+        route_result += parse_checkpoint(checkpoint)
+    route_result += '→({}, {})'.format(route['endPosition']['col'], route['endPosition']['row'])
+    return route_result
+
+
+def parse_motionMode(motionMode):
+    try:
+        return {
+            0: 'WALK',
+            1: 'FLY',
+        }[motionMode]
+    except:
+        # print('Unexpected motionMode {}.'.format(motionMode))
+        # return 'E_NUM' if motionMode == 2 else 'UNKNOWN'
+        print('Unexpected motionMode.')
+        return 'E_NUM'
+
+
+def parse_actionType(action_count, key, actionType):
+    if actionType == 0:
+        pass
+    elif actionType == 1:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'PREVIEW_CURSOR'))
+    elif actionType == 2:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'STORY'))
+    elif actionType == 3:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'TUTORIAL'))
+    elif actionType == 4:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'PLAY_BGM'))
+    elif actionType == 5:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'DISPLAY_ENEMY_INFO'))
+    elif actionType == 6:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'ACTIVATE_PREDEFINED'))
+    elif actionType == 7:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'E_NUM'))
+    else:
+        print('No.{} {} actionType: {}'.format(action_count, key, 'UNKNOWN'))
+
+
+def parse_checkPointType(checkpoint_type, time, x, y):
+    try:
+        return {
+            0: '→({}, {})'.format(x, y),
+            1: '(WAIT: {}s)'.format(time),
+            2: '(WAIT_PLAY: {}s)'.format(time),
+            3: '(WAIT_FRAGMENT: {}s)'.format(time),
+            4: '(WAIT_WAVE: {}s)'.format(time),
+            5: '→通道',
+            6: '→({}, {})'.format(x, y)
+        }[checkpoint_type]
+    except:
+        return '(UNKNOWN)'
+
+
+def get_routes(level_routes):
+    return [parse_route(route) for route in level_routes]
+    # route_id = -1
+    # for route in level_routes:
+    #     route_id += 1
+    #     if route == None:
+    #         continue
+    #     print('%d: ' % route_id)
+    #     print('motionMode:', parse_motionMode(route['motionMode']))
+    #     if route['allowDiagonalMove'] == False:
+    #         print('ADM = False')
+    #     if route['visitEveryTileCenter'] == True:
+    #         print('VETC = True')
+    #     if route['visitEveryNodeCenter'] == True:
+    #         print('VENC = True')
+    #     print(parse_route(route))
+
+
+def get_waves(level_waves):
+    wave_count = -1
+    min_time = 0.0
+    for wave in level_waves:
+        wave_count += 1
+        # print('wave {} name: {}'.format(wave_count, wave['name']))
+        min_time += wave['preDelay']
+        fragment_count = -1
+        for fragment in wave['fragments']:
+            fragment_count += 1
+            # print('fragment {} name: {}'.format(fragment_count, fragment['name']))
+            min_time += fragment['preDelay']
+            # min_time += max([action['preDelay'] + (action['count']-1) * action['interval'] + int(action['autoPreviewRoute'])*1.5 for action in fragment['actions']])
+            min_time += max(
+                [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+            action_count = -1
+            for action in fragment['actions']:
+                if action['actionType'] != 0:
+                    continue
+                action_count += 1
+                # parse_actionType(action_count, action['key'], action['actionType'])
+                # if action['managedByScheduler'] == False:
+                #     print('No.{} {} managedByScheduler = False.'.format(action_count, action['key']))
+                # if action['blockFragment'] == True:
+                #     print('No.{} {} blockFragment = True.'.format(action_count, action['key']))
+                # if action['autoPreviewRoute'] == False:
+                #     print('No.{} {} autoPreviewRoute = False.'.format(action_count, action['key']))
+                # if action['isUnharmfulAndAlwaysCountAsKilled'] == True:
+                #     print('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
+                # if 'hiddenGroup' in action and action['hiddenGroup'] != None:
+                #     print('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['key'], action['hiddenGroup']))
+            # min_time += 0.3
+        min_time += wave['postDelay']
+        # min_time += 0.5
+    print(format_time(min_time))
+
+
+def get_waves_table(level_waves, routes, enemy_table):
+    wave_table = '{|class="wikitable sortable" style="text-align:center; width:800px; display:table; white-space:normal;"\n!No.!!头像!!名字!!总时间!!当前波次时间'
+    total_time = 0.0
+    enemy_dict = []
+    for wave in level_waves:
+        wave_time = wave['preDelay']
+        total_time += wave['preDelay']
+        for fragment in wave['fragments']:
+            wave_time += fragment['preDelay']
+            total_time += fragment['preDelay']
+            for action in fragment['actions']:
+                if action['actionType'] != 0:
+                    continue
+                for action_count in range(action['count']):
+                    if action['key'] not in enemy_table:
+                        name = '未知'
+                    else:
+                        name = enemy_table[action['key']]['name']
+                    enemy_dict.append({
+                        'time_w': wave_time + action['preDelay'] + action_count * action['interval'],
+                        'time_t': total_time + action['preDelay'] + action_count * action['interval'],
+                        'name': name,
+                        'route': routes[action['routeIndex']]
+                    })
+            wave_time += max(
+                [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+            total_time += max(
+                [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+        total_time += wave['postDelay']
+
+    sorted_enemy = sorted(enemy_dict, key = lambda x: x['time_t'])
+
+    count = 0
+    for enemy in sorted_enemy:
+        count += 1
+        wave_table += '\n|-\n|{}\n|{{{{敌人头像|{}|px=50}}}}\n|{}\n|{}\n|{}'.format(count, enemy['name'], enemy['name'],
+            format_time(enemy['time_t']), format_time(enemy['time_w']))
+        wave_table += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="5"|{}'.format(
+            enemy['route'])
+    wave_table += '\n|}'
+
+    return wave_table
+
+
+class Route(Job):
+    def _run(self):
+        enemy_table = self.getgd('excel/enemy_handbook_table.json')
+        stage_table = self.getgd('excel/stage_table.json')
+        enemy_db = self.getgd('levels/enemydata/enemy_database.json')
+
+
+        # levelId = 'Obt/Weekly/level_weekly_fly_5'  # 技能书5
+        # levelId = 'Obt/Campaign/level_camp_03'  # 市区
+        # levelId = 'Obt/Weekly/level_weekly_melee_5'  # 钱5
+        # levelId = 'Activities/ACT5D0/level_act5d0_06'
+        # levelId = 'Obt/Hard/level_hard_07-02'  # H7-2
+        levelId = 'Activities/ACT11D0/level_act11d0_mo01'
+
+        level_table = self.getgd('levels/' + levelId + '.json')
+        routes = get_routes(level_table['routes'])
+        get_waves(level_table['waves'])
+        wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+
+        # for stage in stage_table['stages']:
+        #     levelId = stage_table['stages'][stage]['levelId']
+        #     if levelId != None and stage_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
+        #         print('==={} {}==='.format(stage_table['stages'][stage]['code'], stage_table['stages'][stage]['name']))
+        #         level_table = self.getgd('levels/' + levelId + '.json')
+        #         routes = get_routes(level_table['routes'])
+        #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+
+        self.wiki.edit(
+            title = '用户:Seniorious/route',
+            text = wave_table,
+            summary = 'update'
+        )
+        # print(wave_table)
+        print('Updated: {}.'.format('用户:Seniorious/route'))

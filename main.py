@@ -17,6 +17,9 @@ from jobs.charword import Charword
 from jobs.range import Range
 from jobs.skin import Skin
 from jobs.formula import Formula
+from jobs.sidebar import Sidebar
+from jobs.route import Route
+from jobs.basic import Basic
 
 if __name__ == '__main__':
     wiki = Wiki(config['api_url'], config['username'], config['password'],
@@ -35,7 +38,10 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'update-new' in sys.argv:
+        old_num = 147
+        Basic(wiki, gameData)._run_update(old_num)  # 需id_table
         Charword(wiki, gameData).run()
+        Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
         Demand(wiki, gameData).run()
 
     if 'update-skin' in sys.argv:
@@ -46,8 +52,10 @@ if __name__ == '__main__':
         UpdateJp(wiki, gameData).run()
 
     if 'update-special' in sys.argv:
-        Formula(wiki, gameData).run()
-        Range(wiki, gameData).run()
         Furni(wiki, gameData)._run_update()
         Charword(wiki, gameData)._run_update()
+
+    # Route(wiki, gameData).run()
+    # Formula(wiki, gameData).run()
+    # Range(wiki, gameData).run()
 

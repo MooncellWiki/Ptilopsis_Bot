@@ -110,9 +110,9 @@ class CharAttr(Job):
         content = get_char_attr(character_table, id_table, rts)
 
         self.wiki.edit(
-            title = '用户:Seniorious/activities',
+            title = '用户:Seniorious/attribute',
             text = content,
             summary = 'update'
         )
         # print(content)
-        print('Updated: {}.'.format('用户:Seniorious/activities'))
+        print('Updated: {}.'.format('用户:Seniorious/attribute'))
