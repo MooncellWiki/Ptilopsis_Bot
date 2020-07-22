@@ -21,7 +21,7 @@ jobs:
         python-version: 3.7
     - name: update-jp
       run: |
-        git clone https://github.com/Kengxxiao/ArknightsGameData.git
         pip install -r requirements.txt
+        git clone https://github.com/Kengxxiao/ArknightsGameData.git
         python main.py update-jp
 
