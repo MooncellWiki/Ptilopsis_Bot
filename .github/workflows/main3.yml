@@ -23,5 +23,6 @@ jobs:
       run: |
         pip install pytz
         pip install requests
+        pip install retrying
         python main.py update_weedy
 
