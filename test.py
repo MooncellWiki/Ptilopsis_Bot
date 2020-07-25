@@ -5,7 +5,8 @@ from utils.wiki import Wiki
 
 # from jobs.route import Route
 # from jobs.gacha import Gacha
-from jobs.crisis import Crisis
+# from jobs.crisis import Crisis
+from jobs.weedy import Weedy
 
 
 if __name__ == '__main__':
@@ -14,5 +15,5 @@ if __name__ == '__main__':
     # gameData = GameData(config = config, source = 'ArknightsGameData')
     gameData = GameData(config = config, source = 'UnpackerData')
 
-    Crisis(wiki, gameData).run()
+    Weedy(wiki, gameData).run()
 
