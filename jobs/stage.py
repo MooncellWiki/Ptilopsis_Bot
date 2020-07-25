@@ -432,7 +432,6 @@ class Stage(Job):
                 # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
             stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
-            stage_page_name = stage_page_name
             if stage_page_name in stage_list:
                 continue
             # if stage_detail['code'] not in ['GT-HX-3']:

@@ -3,23 +3,28 @@ from config import config
 from utils.data_local import GameData
 from utils.wiki import Wiki
 
+from jobs.basic import Basic
+from jobs.charword import Charword
+from jobs.sidebar import Sidebar
+from jobs.demand import Demand
+
 from jobs.building_buff import BuildingBuff
-from jobs.char_attr import CharAttr
+from jobs.stage import Stage
+from jobs.furni import Furni
+from jobs.skin import Skin
+
 from jobs.activity import Activity
 from jobs.mission import Mission
-from jobs.stage import Stage
-from jobs.update_jp import UpdateJp
-from jobs.furni import Furni
-from jobs.demand import Demand
+from jobs.char_attr import CharAttr
 from jobs.medal import Medal
 from jobs.story_review import StoryReview
-from jobs.charword import Charword
+
+from jobs.update_jp import UpdateJp
+
 from jobs.range import Range
-from jobs.skin import Skin
 from jobs.formula import Formula
-from jobs.sidebar import Sidebar
 from jobs.route import Route
-from jobs.basic import Basic
+from jobs.crisis import Crisis
 from jobs.weedy import Weedy
 
 if __name__ == '__main__':
@@ -63,4 +68,5 @@ if __name__ == '__main__':
     # Route(wiki, gameData).run()
     # Formula(wiki, gameData).run()
     # Range(wiki, gameData).run()
+    # Crisis(wiki, gameData).run()
 

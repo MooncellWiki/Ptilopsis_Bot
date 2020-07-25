@@ -198,13 +198,8 @@ class Route(Job):
         stage_table = self.getgd('excel/stage_table.json')
         enemy_db = self.getgd('levels/enemydata/enemy_database.json')
 
-
-        # levelId = 'Obt/Weekly/level_weekly_fly_5'  # 技能书5
         # levelId = 'Obt/Campaign/level_camp_03'  # 市区
-        # levelId = 'Obt/Weekly/level_weekly_melee_5'  # 钱5
-        # levelId = 'Activities/ACT5D0/level_act5d0_06'
-        # levelId = 'Obt/Hard/level_hard_07-02'  # H7-2
-        levelId = 'Activities/ACT11D0/level_act11d0_mo01'
+        levelId = 'Obt/Main/level_main_07-01'
 
         level_table = self.getgd('levels/' + levelId + '.json')
         routes = get_routes(level_table['routes'])
@@ -219,10 +214,10 @@ class Route(Job):
         #         routes = get_routes(level_table['routes'])
         #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
-        self.wiki.edit(
-            title = '用户:Seniorious/route',
-            text = wave_table,
-            summary = 'update'
-        )
-        # print(wave_table)
+        # self.wiki.edit(
+        #     title = '用户:Seniorious/route',
+        #     text = wave_table,
+        #     summary = 'update'
+        # )
+        print(wave_table)
         print('Updated: {}.'.format('用户:Seniorious/route'))
