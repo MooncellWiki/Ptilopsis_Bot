@@ -20,7 +20,9 @@ def update_menusidebar(wiki, old_num, id_table):
     wiki.edit(
         title = 'MediaWiki:MenuSidebar',
         text = new_text,
-        summary = 'update'
+        summary = 'update',
+        bot = None,
+        minor = True
     )
     # print(new_text)
     print('Update: {}.'.format('MediaWiki:MenuSidebar'))

@@ -189,7 +189,8 @@ class Crisis(Job):
                 title = stage_page_name,
                 text = stage_content,
                 summary = 'init',
-                bot = False
+                bot = None,
+                minor = True
             )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))

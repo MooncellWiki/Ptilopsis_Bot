@@ -205,7 +205,9 @@ def create_themes(wiki, building_data):
             title = themesData['name'],
             text = themesContent,
             summary = 'init',
-            createonly = True
+            createonly = True,
+            bot = None,
+            minor = True
         )
         # print(themesContent)
         print('Created: {}.'.format(themesData['name']))

@@ -51,7 +51,9 @@ def update_skin(wiki, character_table, skin_table, skin_list):
             wiki.edit(
                 title = char_detail['name'],
                 text = new_text,
-                summary = 'update'
+                summary = 'update',
+                bot = None,
+                minor = True
             )
             # print(new_text)
             print('Update: {}.'.format(char_detail['name']))

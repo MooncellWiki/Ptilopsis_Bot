@@ -826,7 +826,9 @@ class Basic(Job):
             self.wiki.edit(
                 title = char_detail['name'],
                 text = fin,
-                summary = 'init'
+                summary = 'init',
+                bot = None,
+                minor = True
             )
             self.wiki.protect(
                 title = char_detail['name'],

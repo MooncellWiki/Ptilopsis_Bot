@@ -72,7 +72,7 @@ class BuildingBuff(Job):
             title = '后勤技能一览',
             text = content,
             summary = 'update',
-            bot = False,
+            bot = None,
             minor = True
         )
         # print(content)

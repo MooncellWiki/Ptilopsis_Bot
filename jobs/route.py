@@ -214,10 +214,10 @@ class Route(Job):
         #         routes = get_routes(level_table['routes'])
         #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
-        # self.wiki.edit(
-        #     title = '用户:Seniorious/route',
-        #     text = wave_table,
-        #     summary = 'update'
-        # )
-        print(wave_table)
+        self.wiki.edit(
+            title = '用户:Seniorious/route',
+            text = wave_table,
+            summary = 'update'
+        )
+        # print(wave_table)
         print('Updated: {}.'.format('用户:Seniorious/route'))

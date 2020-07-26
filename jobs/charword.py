@@ -127,7 +127,9 @@ def create_charword(wiki, character_table, charword_table):
         wiki.edit(
             title = char_detail['name'] + '/语音记录',
             text = charword_data,
-            summary = 'init'
+            summary = 'init',
+            bot = None,
+            minor = True
         )
         # print(charword_data)
         print('Created: {}.'.format(char_detail['name'] + '/语音记录'))

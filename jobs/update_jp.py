@@ -150,7 +150,7 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
                 title = name_jp,
                 text = redirect_text,
                 summary = 'init',
-                createonly = True
+                createonly = '1'
             )
 
 
