@@ -62,7 +62,7 @@ def update_rune(wiki):
 {{|class="wikitable mw-collapsible mw-collapsed mw-collapsible-dark" style="display:table; text-align:center; width:500px;"
 ! colspan=12 |{stage_type}：{code} {name}
 |-
-!width=100px |支援合约
+! width=100px |支援合约
 ! 
 ! colspan=5 |任选合约{content}
 |}}
@@ -120,11 +120,11 @@ def update_rune(wiki):
         summary = 'update'
     )
     # print(content)
-    print('Updated: {}.'.format('daily-rune'))
+    print('Updated: {}.'.format('用户:Seniorious/daily-rune'))
 
 
 class Weedy(Job):
     def _run(self):
-        if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
-            update_yellow(self.wiki)
+        # if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
+        #     update_yellow(self.wiki)
         update_rune(self.wiki)
