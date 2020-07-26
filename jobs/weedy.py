@@ -97,7 +97,7 @@ def update_rune(wiki):
                 rank_count -= 1
         rune_text = ['\n'.join(rune_list[r]) for r in rune_list]
         if rune_text[1] != '':
-            text += rank1 + '\n' + rune_text[1].replace('|', '|width=50px|')
+            text += rank1 + '\n' + rune_text[1].replace('|{{', '|width=50px|{{')
         if rune_text[2] != '':
             text += rank2 + '\n' + rune_text[2]
         if rune_text[3] != '':
