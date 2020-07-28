@@ -61,7 +61,7 @@ def parse_rune_profession(professionMask):
     if p_list[1] == '1':
         p_text.append('障碍物')
     if p_list[2] == '1':
-        p_text.append('？')
+        p_text.append('召唤物')
     if p_list[3] == '1':
         p_text.append('特种')
     if p_list[4] == '1':

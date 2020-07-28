@@ -199,7 +199,7 @@ class Route(Job):
         enemy_db = self.getgd('levels/enemydata/enemy_database.json')
 
         # levelId = 'Obt/Campaign/level_camp_03'  # 市区
-        levelId = 'Obt/Main/level_main_07-01'
+        levelId = 'obt/rune/level_rune_04-01'
 
         level_table = self.getgd('levels/' + levelId + '.json')
         routes = get_routes(level_table['routes'])

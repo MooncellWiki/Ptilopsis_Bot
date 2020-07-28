@@ -2,6 +2,7 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 import json
+import requests
 
 def parse_overwritten_data(overwritten_data, count):
     return_data = ''
@@ -90,7 +91,8 @@ def get_normal_data(stage_detail, level_table, rts):
         else:
             stage_data += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
     stage_data += '|关卡描述={desc}\n'.format(
-        desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+        # desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+        desc = rts.compile(stage_detail['desc'].replace('\\n', '<br/>'))
     )
     stage_data += '|作战消耗={}\n'.format(0)
     stage_data += '|演习消耗=-1\n'
@@ -156,12 +158,20 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
 
 class Crisis(Job):
     def _run(self):
-        with open('crisis_info.json', 'r', encoding = 'utf-8') as file:
-            stage_table = json.loads(file.read())
+        # with open('crisis_info.json', 'r', encoding = 'utf-8') as file:
+        #     stage_table = json.loads(file.read())
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
-            stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+        session = requests.Session()
+        stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
+        stage_list = [stage_list[0]]
+
+        # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
+        #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+        for stage_key in stage_list:
+            stage_detail = stage_key
+            stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
+
             stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
 
             if stage_detail['levelId']:

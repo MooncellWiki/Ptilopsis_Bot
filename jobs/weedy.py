@@ -60,11 +60,11 @@ def update_rune(wiki):
     template = '''<section begin={date} />
 ===={date}====
 {{|class="wikitable mw-collapsible mw-collapsed mw-collapsible-dark" style="display:table; text-align:center; width:500px;"
-! colspan=12 |{stage_type}：{code} {name}
+! colspan={col_n1} |{stage_type}：{code} {name}
 |-
 ! width=100px |支援合约
 ! 
-! colspan=5 |任选合约{content}
+! colspan={col_n2} |任选合约{content}
 |}}
 <section end={date} />'''
 
@@ -78,11 +78,18 @@ def update_rune(wiki):
 
     content = ''
     for stage in stage_list:
+        col_num = 5
         rune_list = {0: [], 1: [], 2: [], 3: []}
+        mission_list = set()
+        if 'clearMissions' in stage:
+            for r1 in stage['clearMissions']:
+                for r2 in r1['runes']:
+                    mission_list.add(r2)
         text = ''
         for rune_key in stage['runes']:
             rune_list[stage['runes'][rune_key]['points']].append(
-                '|{{{{危机合约词条|{key}|{name}|{point}|{desc}}}}}'.format(
+                '|{addition}{{{{危机合约词条|{key}|{name}|{point}|{desc}}}}}'.format(
+                    addition = 'style="position:relative;"|{{合约标记|挑战}}' if rune_key in mission_list else '',
                     key = rune_key,
                     name = stage['runes'][rune_key]['name'],
                     point = stage['runes'][rune_key]['points'],
@@ -90,14 +97,15 @@ def update_rune(wiki):
                 )
             )
         rank_count = 3
+        col_num = max([len(rune_list[r]) for r in rune_list] + [col_num])
         for r in rune_list:
-            if r != 0 and 0 < len(rune_list[r]) < 5:
-                rune_list[r] += '|' * (5 - len(rune_list[r]))
-            if len(rune_list[r]) == 0:
+            if r != 0 and 0 < len(rune_list[r]) < col_num:
+                rune_list[r] += '|' * (col_num - len(rune_list[r]))
+            if r != 0 and len(rune_list[r]) == 0:
                 rank_count -= 1
         rune_text = ['\n'.join(rune_list[r]) for r in rune_list]
         if rune_text[1] != '':
-            text += rank1 + '\n' + rune_text[1].replace('|{{', '|width=50px|{{')
+            text += rank1 + '\n' + rune_text[1].replace('"|{{合约标记', '" width=50px|{{合约标记').replace('|{{危机合约词条', '|width=50px|{{危机合约词条')
         if rune_text[2] != '':
             text += rank2 + '\n' + rune_text[2]
         if rune_text[3] != '':
@@ -105,13 +113,18 @@ def update_rune(wiki):
         if rune_text[0] != '':
             num1 = text.find('|style="background')
             text = text[:num1] + rank0.format(rank_count) + rune_text[0] + '\n' + text[num1:]
+        else:
+            num1 = text.find('|style="background')
+            text = text[:num1] + rank0.format(rank_count) + '|' + '\n' + text[num1:]
         content += template.format(
             stage_type = '训练场' if 'tr' in stage['id'] else '轮换行动地点',
             # date = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y年%m月%d日 %H:%M'),
             date = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y年%m月%d日'),
             code = stage['code'],
             name = stage['name'],
-            content = text
+            content = text,
+            col_n1 = col_num + 2,
+            col_n2 = col_num
         )
 
     wiki.edit(

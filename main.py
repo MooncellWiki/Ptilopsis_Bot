@@ -11,6 +11,7 @@ from jobs.demand import Demand
 from jobs.building_buff import BuildingBuff
 from jobs.stage import Stage
 from jobs.furni import Furni
+from jobs.item import Item
 from jobs.skin import Skin
 
 from jobs.activity import Activity
@@ -33,10 +34,18 @@ if __name__ == '__main__':
     gameData = GameData(config = config, source = 'ArknightsGameData')
     # gameData = GameData(config = config, source = 'UnpackerData')
 
+    if 'update-new' in sys.argv:
+        old_num = 150
+        Basic(wiki, gameData)._run_update(old_num)  # 需id_table
+        Charword(wiki, gameData).run()
+        Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
+        Demand(wiki, gameData).run()
+
     if 'update-daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
         Furni(wiki, gameData).run()
+        # Item(wiki, gameData).run()
 
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()
@@ -44,15 +53,8 @@ if __name__ == '__main__':
         Medal(wiki, gameData).run()
         StoryReview(wiki, gameData).run()
 
-    if 'update-new' in sys.argv:
-        old_num = 147
-        Basic(wiki, gameData)._run_update(old_num)  # 需id_table
-        Charword(wiki, gameData).run()
-        Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
-        Demand(wiki, gameData).run()
-
     if 'update-skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['暗索', '临光'])
+        Skin(wiki, gameData)._run_update(skin_list = [''])
         Skin(wiki, gameData).run()
 
     if 'update-jp' in sys.argv:

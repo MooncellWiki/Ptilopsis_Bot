@@ -410,10 +410,17 @@ def get_token_info(wiki, char_detail, update_token_page, character_table):
             wiki.edit(
                 title = token_detail['name'],
                 text = token_page,
-                summary = 'init'
+                summary = 'update'
             )
-            # print(token_page)
-            print('Created: {}.'.format(token_detail['name']))
+        else:
+            wiki.edit(
+                title = token_detail['name'],
+                text = token_page,
+                summary = 'init',
+                createonly = '1'
+            )
+        # print(token_page)
+        print('Created: {}.'.format(token_detail['name']))
     return token_info
 
 
@@ -558,7 +565,8 @@ def get_stories_list(char_detail, stories_table, char_key):
     char_stories = stories_table['handbookDict'][char_key]
     for stories_id in range(len(char_stories['storyTextAudio'])):
         storyText = char_stories['storyTextAudio'][stories_id]['stories'][0]['storyText']
-        storyText = storyText.replace('\r\n', '<br/>').replace('\n', '<br/>')
+        # storyText = storyText.replace('\r\n', '<br/>').replace('\n', '<br/>')
+        storyText = storyText.replace('\r\n', '\n')
         if char_detail['name'] == '伊芙利特':
             storyText = handle_ifrit(storyText)
         storyTitle = char_stories['storyTextAudio'][stories_id]['storyTitle']
@@ -785,9 +793,9 @@ class Basic(Job):
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            # if (char_detail['name'] in id_table and old_num >= int(id_table[char_detail['name']]['id'])):
-            # if char_detail['name'] not in ['铃兰'] or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
-            if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+            if (char_detail['name'] in id_table and old_num >= int(id_table[char_detail['name']]['id'])):
+            # if char_detail['name'] not in ['稀音']:
+            # if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
@@ -835,9 +843,6 @@ class Basic(Job):
                 protections = 'edit=autoconfirmed|move=sysop',
                 reason = 'protect'
             )
-            # print(fin)
-            print('Created: {}.'.format(char_detail['name']))
-
             if char_detail['name'] != char_detail['appellation']:
                 redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
                 self.wiki.edit(
@@ -845,6 +850,9 @@ class Basic(Job):
                     text = redirect_text,
                     summary = 'init'
                 )
+            # print(fin)
+            print('Created: {}.'.format(char_detail['name']))
+
 
             # origin_text = self.wiki.read(char_detail['name'])
 
