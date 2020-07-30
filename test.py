@@ -22,7 +22,7 @@ if __name__ == '__main__':
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
 
     # Route(wiki, gameData).run()
-    # Weedy(wiki, gameData).run()
-    Basic(wiki, gameData)._run_update(147)
+    Weedy(wiki, gameData).run()
+    # Basic(wiki, gameData)._run_update(147)
     # Crisis(wiki, gameData).run()
 

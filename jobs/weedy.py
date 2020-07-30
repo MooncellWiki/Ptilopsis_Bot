@@ -100,7 +100,8 @@ def update_rune(wiki):
         col_num = max([len(rune_list[r]) for r in rune_list] + [col_num])
         for r in rune_list:
             if r != 0 and 0 < len(rune_list[r]) < col_num:
-                rune_list[r] += '|' * (col_num - len(rune_list[r]))
+                for i in range(col_num - len(rune_list[r])):
+                    rune_list[r].append('|width=50px|')
             if r != 0 and len(rune_list[r]) == 0:
                 rank_count -= 1
         rune_text = ['\n'.join(rune_list[r]) for r in rune_list]
