@@ -100,13 +100,12 @@ def update_rune(wiki):
         col_num = max([len(rune_list[r]) for r in rune_list] + [col_num])
         for r in rune_list:
             if r != 0 and 0 < len(rune_list[r]) < col_num:
-                for i in range(col_num - len(rune_list[r])):
-                    rune_list[r].append('|width=50px|')
+                rune_list[r] += '|' * (col_num - len(rune_list[r]))
             if r != 0 and len(rune_list[r]) == 0:
                 rank_count -= 1
         rune_text = ['\n'.join(rune_list[r]) for r in rune_list]
         if rune_text[1] != '':
-            text += rank1 + '\n' + rune_text[1].replace('"|{{合约标记', '" width=50px|{{合约标记').replace('|{{危机合约词条', '|width=50px|{{危机合约词条')
+            text += rank1 + '\n' + rune_text[1].replace('"|{{合约标记', '" width=50px|{{合约标记').replace('|{{危机合约词条', '|width=50px|{{危机合约词条').replace('|\n', '|width=50px|\n')
         if rune_text[2] != '':
             text += rank2 + '\n' + rune_text[2]
         if rune_text[3] != '':
