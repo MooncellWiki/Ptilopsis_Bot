@@ -7,7 +7,7 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts):
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|团队={team}\n|情报编号={displayNumber}\n|默认logo={displayLogo}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}'.format(
+    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|团队={team}\n|情报编号={displayNumber}\n|默认logo={displayLogo}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_id = id_table[char_detail['name']]['id'],
@@ -20,7 +20,8 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
         drawName = stories_table['handbookDict'][char_key]['drawName'],
-        infoName = stories_table['handbookDict'][char_key]['infoName']
+        infoName = stories_table['handbookDict'][char_key]['infoName'],
+        limit = '\n|限定=1' if id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
     )
     if char_detail['trait'] != None:
         override_desc_text = ''

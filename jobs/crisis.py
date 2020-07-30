@@ -186,7 +186,7 @@ class Crisis(Job):
             stage_normal_data = get_normal_data(stage_detail, level_table, rts)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
 
-            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n{{关卡导航}}\n[[分类:危机合约关卡]]'
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==合约详情==\n{{合约详情}}\n{{关卡导航}}\n[[分类:危机合约关卡]]'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
