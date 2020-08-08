@@ -794,9 +794,12 @@ class Basic(Job):
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            if (char_detail['name'] in id_table and old_num >= int(id_table[char_detail['name']]['id'])):
-            # if char_detail['name'] not in ['稀音']:
-                continue
+            if char_detail['name'] in id_table:
+                if old_num >= int(id_table[char_detail['name']]['id']):
+                # if char_detail['name'] not in ['稀音']:
+                    continue
+            else:
+                print('Unknown Character: {}.'.format(char_detail['name']))
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
             char_approach = get_char_approach(char_detail, id_table)

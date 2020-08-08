@@ -63,7 +63,7 @@ class Wiki:
         if self.mode != 'product':
             print('\n' + str(args) + '\n')
             return
-        boolargs = {'mirror', 'createonly', 'nocreate', 'redirect', 'bot'}
+        boolargs = {'minor', 'createonly', 'nocreate', 'redirect', 'bot'}
         token = self.session.get(self.api_url, params={
             'format': 'json',
             'action': 'query',
