@@ -25,4 +25,3 @@ if __name__ == '__main__':
     Weedy(wiki, gameData).run()
     # Basic(wiki, gameData)._run_update(147)
     # Crisis(wiki, gameData).run()
-

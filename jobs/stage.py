@@ -453,7 +453,7 @@ class Stage(Job):
                 zone_table, character_table, building_data, item_table, level_table, rts) if stage_detail[
                 'hardStagedId'] else ''
 
-            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + '\n{{关卡导航}}'
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
