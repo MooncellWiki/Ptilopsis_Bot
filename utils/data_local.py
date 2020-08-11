@@ -9,10 +9,10 @@ class GameData:
         self.config = config
 
     def get(self, path, region):
-        if self.source == 'UnpackerData':
-            fullpath = os.path.join(self.source, path)
+        if self._source() == 'UnpackerData':
+            fullpath = os.path.join(self._source(), path)
             if path == 'levels/enemydata/enemy_database.json':
-                fullpath = os.path.join(self.source, 'levels/enemy_database.json')
+                fullpath = os.path.join(self._source(), 'levels/enemy_database.json')
         else:
             fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
                 path)
@@ -25,7 +25,9 @@ class GameData:
                 return data
 
     def get_txt(self, path, region):
-        fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
+        # fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
+        #     path)
+        fullpath = os.path.join('ArknightsGameData', self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
             path)
         with open(fullpath, 'r', encoding = 'utf-8') as file:
             text = file.read()

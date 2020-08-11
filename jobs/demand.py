@@ -93,7 +93,7 @@ def update_mat_demand(wiki, character_table, item_table):
         if num_flag2 != -1:
             new_text = origin_text[:num_flag1] + mat_desc + origin_text[num_flag2:]
         else:
-            new_text = origin_text[:num_flag1] + mat_desc + '<references/>\n{{道具导航}}'
+            new_text = origin_text[:num_flag1] + mat_desc + '==注释与链接==\n<references/>\n{{道具导航}}'
 
         # edit wiki
         if origin_text != new_text:

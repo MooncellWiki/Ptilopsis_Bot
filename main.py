@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # gameData = GameData(config = config, source = 'UnpackerData')
 
     if 'update-new' in sys.argv:
-        old_num = 150
+        old_num = 153
         Basic(wiki, gameData)._run_update(old_num)  # 需id_table
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
         Furni(wiki, gameData).run()
-        # Item(wiki, gameData).run()
+        Item(wiki, gameData).run()
 
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'update-skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['普罗旺斯', '白金', '斯卡蒂'])
+        Skin(wiki, gameData)._run_update(skin_list = [''])
         Skin(wiki, gameData).run()
 
     if 'update-jp' in sys.argv:
