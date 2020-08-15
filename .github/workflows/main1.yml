@@ -22,5 +22,5 @@ jobs:
       run: |
         pip install -r requirements.txt
         git clone https://github.com/Kengxxiao/ArknightsGameData.git
-        python main.py update-daily
+        python main.py daily
 
