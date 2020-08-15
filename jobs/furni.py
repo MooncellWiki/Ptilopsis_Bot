@@ -90,7 +90,15 @@ def create_furni(wiki, building_data, item_table):
         print('Created: {}.'.format(furni_data['name']))
 
     if individual_furni != []:
-        print('新家具单件:', ''.join(individual_furni))
+        wiki.edit(
+            title = '首页/新增单件',
+            text = ''.join(individual_furni),
+            summary = 'update',
+            bot = None,
+            minor = True
+        )
+        # print(''.join(individual_furni))
+        print('Updated: {}.'.format('首页/新增单件'))
 
 
 def create_themes(wiki, building_data):
@@ -197,7 +205,7 @@ def create_themes(wiki, building_data):
             refContent = refContent
         )
 
-        new_theme.append('[[文件:主题 {name}.png|100px|link={name}]]'.format(
+        new_theme.append('{{{{家具主题|{name}}}}}'.format(
             name = themesData['name'].replace('/', '')
         ))
 
@@ -213,7 +221,15 @@ def create_themes(wiki, building_data):
         print('Created: {}.'.format(themesData['name']))
 
     if new_theme != []:
-        print('新家具主题:', ''.join(new_theme))
+        wiki.edit(
+            title = '首页/新增主题',
+            text = ' '.join(new_theme),
+            summary = 'update',
+            bot = None,
+            minor = True
+        )
+        # print(' '.join(new_theme))
+        print('Updated: {}.'.format('首页/新增主题'))
 
 
 class Furni(Job):

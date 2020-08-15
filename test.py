@@ -30,3 +30,5 @@ if __name__ == '__main__':
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
     Stage(wiki, gameData).run()
+
+
