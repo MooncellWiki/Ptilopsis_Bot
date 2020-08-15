@@ -8,8 +8,10 @@ from utils.wiki import Wiki
 # from jobs.gacha import Gacha
 # from jobs.crisis import Crisis
 # from jobs.stage import Stage
-from jobs.weedy import Weedy
-from jobs.basic import Basic
+# from jobs.weedy import Weedy
+# from jobs.sidebar import Sidebar
+# from jobs.skin import Skin
+from jobs.stage import Stage
 
 
 if __name__ == '__main__':
@@ -22,6 +24,9 @@ if __name__ == '__main__':
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
 
     # Route(wiki, gameData).run()
-    Weedy(wiki, gameData).run()
+    # Weedy(wiki, gameData).run()
     # Basic(wiki, gameData)._run_update(147)
+    # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
+    # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
+    Stage(wiki, gameData).run()

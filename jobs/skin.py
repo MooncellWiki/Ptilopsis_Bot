@@ -33,6 +33,7 @@ def get_skin_info(char_key, skin_table):
 
 
 def update_skin(wiki, character_table, skin_table, skin_list):
+    skin_data = []
     for char_id in character_table:
         char_detail = character_table[char_id]
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
@@ -46,6 +47,10 @@ def update_skin(wiki, character_table, skin_table, skin_list):
         num2 = origin_text.find('==获得方式==')
         skin_info, count = get_skin_info(char_id, skin_table)
         new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
+        skin_data.append('1={name}:skin={count}'.format(
+            name = char_detail['name'],
+            count = count
+        ))
 
         if origin_text != new_text:
             wiki.edit(
@@ -59,6 +64,16 @@ def update_skin(wiki, character_table, skin_table, skin_list):
             print('Update: {}.'.format(char_detail['name']))
         else:
             print('Same: {}.'.format(char_detail['name']))
+
+    wiki.edit(
+        title = '首页/亮点干员/新增皮肤/数据',
+        text = ','.join(skin_data),
+        summary = 'update',
+        bot = None,
+        minor = True
+    )
+    # print(','.join(skin_data))
+    print('Update: {}.'.format('首页/亮点干员/新增皮肤/数据'))
 
 
 def update_randomFig(wiki, character_table, skin_table):

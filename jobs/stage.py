@@ -424,6 +424,7 @@ class Stage(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         stage_list = self.wiki.category('分类:普通难度关卡')
+        new_stage_list = []
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
@@ -471,6 +472,19 @@ class Stage(Job):
             )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
+
+            new_stage_list.append('* [[{}]]'.format(stage_page_name))
+
+        if new_stage_list != []:
+            self.wiki.edit(
+                title = '首页/新增关卡',
+                text = '\n'.join(new_stage_list),
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print('\n'.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
 
     def _run_enemy_data(self, level_table):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')

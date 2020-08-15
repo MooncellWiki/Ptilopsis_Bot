@@ -1,4 +1,5 @@
 import json
+import re
 
 from utils.job import Job
 
@@ -49,6 +50,23 @@ def update_mainpage(wiki, old_num, id_table):
     print('Update: {}.'.format('首页'))
 
 
+def update_gameinfo(wiki, old_num, id_table, character_table):
+    origin_text = wiki.read('PRTS:Gameinfo/国服/干员一览')
+    char_list = [character_table[char]['name'] for char in character_table]
+    new_num = max([id_table[char]['id'] for char in id_table if char in char_list])
+    new_text = re.sub(r'cnotrs />([0-9]*)<section', '>{}<section'.format(new_num), origin_text)
+    new_text = re.sub(r'cnprevotrs />([0-9]*)<section', '>{}<section'.format(old_num), new_text)
+    wiki.edit(
+        title = 'PRTS:Gameinfo/国服/干员一览',
+        text = new_text,
+        summary = 'update',
+        bot = None,
+        minor = True
+    )
+    # print(new_text)
+    print('Update: {}.'.format('PRTS:Gameinfo/国服/干员一览'))
+
+
 class Sidebar(Job):
     def _run(self):
         pass
@@ -56,4 +74,6 @@ class Sidebar(Job):
     def _run_update(self, old_num):
         with open('character_id.json', 'r', encoding = 'utf-8') as file:
             id_table = json.loads(file.read())
+        character_table = self.getgd('excel/character_table.json')
         update_menusidebar(self.wiki, old_num, id_table)
+        update_gameinfo(self.wiki, old_num, id_table, character_table)
