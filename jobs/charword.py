@@ -119,9 +119,11 @@ def create_charword(wiki, character_table, charword_table):
         char_detail = character_table[char_id]
         if (char_detail['name'] + '/语音记录') in charword_list or char_detail['profession'] == 'TRAP' or char_detail[
             'profession'] == 'TOKEN':
-            # if char_detail['name'] != '苇草' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+        # if char_detail['name'] != '预备干员-近战' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
-
+        #
+        if len([k for k in charword_table if char_id in k]) == 0:
+            continue
         charword_data = get_charword_data(char_id, char_detail['name'], charword_table)
 
         wiki.edit(
@@ -140,6 +142,9 @@ def update_charword(wiki, character_table, charword_table):
         char_detail = character_table[char]
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             # if char_detail['name'] != '安洁莉娜' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+            continue
+
+        if len([k for k in charword_table if char in k]) == 0:
             continue
 
         origin_text = wiki.read(char_detail['name'] + '/语音记录')

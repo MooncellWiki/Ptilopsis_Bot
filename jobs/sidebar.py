@@ -54,8 +54,8 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
     origin_text = wiki.read('PRTS:Gameinfo/国服/干员一览')
     char_list = [character_table[char]['name'] for char in character_table]
     new_num = max([id_table[char]['id'] for char in id_table if char in char_list])
-    new_text = re.sub(r'cnotrs />([0-9]*)<section', '>{}<section'.format(new_num), origin_text)
-    new_text = re.sub(r'cnprevotrs />([0-9]*)<section', '>{}<section'.format(old_num), new_text)
+    new_text = re.sub(r'cnotrs />([0-9]*)<section', 'cnotrs />{}<section'.format(new_num), origin_text)
+    new_text = re.sub(r'cnprevotrs />([0-9]*)<section', 'cnprevotrs />{}<section'.format(old_num), new_text)
     wiki.edit(
         title = 'PRTS:Gameinfo/国服/干员一览',
         text = new_text,

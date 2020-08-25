@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # gameData = GameData(config = config, source = 'UnpackerData')
 
     if 'new' in sys.argv:
-        old_num = 153
+        old_num = 157
         Basic(wiki, gameData)._run_update(old_num)  # 需id_table
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['宴', '银灰', '刻俄柏', '可颂'])
+        Skin(wiki, gameData)._run_update(skin_list = [''])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:

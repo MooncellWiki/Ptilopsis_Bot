@@ -11,7 +11,9 @@ from utils.wiki import Wiki
 # from jobs.weedy import Weedy
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
-from jobs.stage import Stage
+# from jobs.stage import Stage
+from jobs.rogue_stage import RougeStage
+
 
 
 if __name__ == '__main__':
@@ -29,6 +31,6 @@ if __name__ == '__main__':
     # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
-    Stage(wiki, gameData).run()
+    RougeStage(wiki, gameData).run()
 
 

@@ -63,8 +63,6 @@ def get_char_attr(character_table, id_table, rts):
                         num = attributeType
                     ))
 
-        remark = '<br/>'.join(
-            [rts.compile(talent['candidates'][-1]['description']) for talent in char_detail['talents']])
 
         desc = '|[[{name}]]||{rarity}||{profession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s'.format(
             name = char_detail['name'],
@@ -80,9 +78,12 @@ def get_char_attr(character_table, id_table, rts):
             baseAttackTime = baseAttackTime,
             respawnTime = respawnTime
         )
-        desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="12"|{}'.format(
-            remark
-        )
+        if char_detail['talents']:
+            remark = '<br/>'.join(
+                [rts.compile(talent['candidates'][-1]['description']) for talent in char_detail['talents']])
+            desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="12"|{}'.format(
+                remark
+            )
 
         content.append({
             'sortId': id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else 1000,

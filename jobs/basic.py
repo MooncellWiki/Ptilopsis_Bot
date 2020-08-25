@@ -10,7 +10,7 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
     basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|团队={team}\n|情报编号={displayNumber}\n|默认logo={displayLogo}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
-        char_id = id_table[char_detail['name']]['id'],
+        char_id = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1,
         displayLogo = trans_display_logo(char_detail['displayLogo']),
         description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
         rarity = char_detail['rarity'],
@@ -19,9 +19,9 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         displayNumber = char_detail['displayNumber'],
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
-        drawName = stories_table['handbookDict'][char_key]['drawName'],
-        infoName = stories_table['handbookDict'][char_key]['infoName'],
-        limit = '\n|限定=1' if id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
+        drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
+        infoName = stories_table['handbookDict'][char_key]['infoName'] if char_key in stories_table['handbookDict'] else '',
+        limit = '\n|限定=1' if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
     )
     if char_detail['trait'] != None:
         override_desc_text = ''
@@ -81,13 +81,13 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
 
 
 def get_char_approach(char_detail, id_table):
-    if id_table[char_detail['name']]['approach']:
+    if char_detail['name'] in id_table and id_table[char_detail['name']]['approach']:
         itemObtainApproach = id_table[char_detail['name']]['approach']
     else:
         itemObtainApproach = char_detail['itemObtainApproach']
     text = '{{{{干员获得方式\n|获得方式={}\n|上线时间={}\n}}}}'.format(
         itemObtainApproach,
-        id_table[char_detail['name']]['date']
+        id_table[char_detail['name']]['date'] if char_detail['name'] in id_table else ''
     )
     return text
 
@@ -251,6 +251,8 @@ def get_range_data(char_detail):
 
 
 def get_talent_list(char_detail, rts):
+    if char_detail['talents'] == None:
+        return '该干员没有天赋'
     talent_list = '{{天赋列表\n'
     for talent_id in range(len(char_detail['talents'])):
         talent_table = char_detail['talents'][talent_id]['candidates']
@@ -440,6 +442,8 @@ def get_building_skill(building_data, char_key):
                 )
                 if temp['cond']['level'] != 1:
                     building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
+    else:
+        return '该干员无后勤技能'
     building_skill += '\n}}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->'
     return building_skill
 
@@ -448,6 +452,9 @@ def get_phase_list(char_detail, gamedata_const, item_table):
     phase_list = '{{精英化材料\n'
     if len(char_detail['phases']) >= 2:
         for phase_id in range(1, len(char_detail['phases'])):
+            if char_detail['phases'][phase_id]['evolveCost'] == None:
+                phase_list = '该干员无精英化材料需求'
+                return phase_list
             money = gamedata_const['evolveGoldCost'][char_detail['rarity']][phase_id - 1]
             if int(money / 10000) == money / 10000:
                 money_str = str(int(money / 10000))
@@ -470,6 +477,9 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
     skill_levelUp_list = '{{技能升级材料\n'
     if char_detail['skills']:
         for allSkillLvlup_id in range(len(char_detail['allSkillLvlup'])):
+            if char_detail['phases'][allSkillLvlup_id]['evolveCost'] == None:
+                skill_levelUp_list = '该干员无技能升级材料需求'
+                return skill_levelUp_list
             skill_levelUp_list += '|' + str(allSkillLvlup_id + 2) + '='
             common_material_list = ''
             for common_material_id in range(len(char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'])):
@@ -508,7 +518,7 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
 
 
 def get_related_item(char_detail, item_table):
-    if char_detail['potentialItemId']:
+    if char_detail['potentialItemId'] and char_detail['potentialItemId'] in item_table['items']:
         return '{{{{相关道具\n|干员简介={itemUsage}\n|干员简介补充={itemDesc}\n|信物用途={potentialUsage}\n|信物描述={potentialDesc}\n}}}}'.format(
             itemUsage = char_detail['itemUsage'],
             itemDesc = char_detail['itemDesc'],
@@ -523,6 +533,8 @@ def get_related_item(char_detail, item_table):
 
 
 def get_stories_list(char_detail, stories_table, char_key):
+    if char_key not in stories_table['handbookDict']:
+        return '', '该干员没有档案'
     stories_list_set = '{{人员档案set\n'
     stories1 = stories_table['handbookDict'][char_key]['storyTextAudio'][0]['stories'][0]['storyText']
     stories2 = stories_table['handbookDict'][char_key]['storyTextAudio'][1]['stories'][0]['storyText']
@@ -626,6 +638,7 @@ def trans_display_logo(display_logo):
             'logo_siesta': '汐斯塔',
             'logo_yan': '炎国',
             'logo_babel': '巴别塔',
+            'logo_sargon': '萨尔贡',
         }[display_logo]
     except:
         print('出现未知logo: {}.'.format(display_logo))
@@ -795,11 +808,12 @@ class Basic(Job):
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
             if char_detail['name'] in id_table:
-                if old_num >= int(id_table[char_detail['name']]['id']):
+                if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
                 # if char_detail['name'] not in ['稀音']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
+                # continue
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
@@ -885,7 +899,7 @@ class Basic(Job):
             #         text = new_text,
             #         summary = 'update'
             #     )
-            #     print(new_text)
+            #     # print(new_text)
             #     print('Updated: {}.'.format(char_detail['name']))
             # else:
             #     print('Same: {}.'.format(char_detail['name']))

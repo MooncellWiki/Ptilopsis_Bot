@@ -29,24 +29,27 @@ def update_mat_demand(wiki, character_table, item_table):
             continue
 
         for phase_id in range(1, len(char_detail['phases'])):
-            for material_id in range(len(char_detail['phases'][phase_id]['evolveCost'])):
-                mat_add(1, char_detail['phases'][phase_id]['evolveCost'][material_id]['id'], char,
-                    char_detail['phases'][phase_id]['evolveCost'][material_id]['count'])
+            if char_detail['phases'][phase_id]['evolveCost']:
+                for material_id in range(len(char_detail['phases'][phase_id]['evolveCost'])):
+                    mat_add(1, char_detail['phases'][phase_id]['evolveCost'][material_id]['id'], char,
+                        char_detail['phases'][phase_id]['evolveCost'][material_id]['count'])
 
         if char_detail['skills']:
             for allSkillLvlup_id in range(len(char_detail['allSkillLvlup'])):
-                for common_material_id in range(len(char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'])):
-                    mat_add(2, char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['id'],
-                        char, char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['count'])
+                if char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost']:
+                    for common_material_id in range(len(char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'])):
+                        mat_add(2, char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['id'],
+                            char, char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['count'])
 
             for skill_id in range(len(char_detail['skills'])):
                 if char_detail['skills'][skill_id]['levelUpCostCond']:
                     for i in [8, 9, 10]:
                         skill_levelup_material = char_detail['skills'][skill_id]['levelUpCostCond'][i - 8][
                             'levelUpCost']
-                        for material_id in range(len(skill_levelup_material)):
-                            mat_add(skill_id + 3, skill_levelup_material[material_id]['id'], char,
-                                skill_levelup_material[material_id]['count'])
+                        if skill_levelup_material:
+                            for material_id in range(len(skill_levelup_material)):
+                                mat_add(skill_id + 3, skill_levelup_material[material_id]['id'], char,
+                                    skill_levelup_material[material_id]['count'])
 
     for material in mat_dic:
         origin_text = wiki.read(item_table['items'][material]['name'])
