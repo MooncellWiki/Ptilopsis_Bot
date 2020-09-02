@@ -64,4 +64,4 @@ if __name__ == '__main__':
     # Route(wiki, gameData).run()
     # Formula(wiki, gameData).run()
     # Range(wiki, gameData).run()
-    # Crisis(wiki, gameData).run()  # 需crisis_info
+    # Stage(wiki, gameData)._run_crisis()  # 需crisis_info

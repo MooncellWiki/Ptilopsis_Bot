@@ -1,16 +1,22 @@
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
+import json
+import requests
+
 
 def parse_stage_type(stage_type):
-    return {
-        'MAIN': '主线',
-        'SUB': '支线',
-        'DAILY': '日常',
-        'GUIDE': '教程',
-        'ACTIVITY': '活动',
-        'CAMPAIGN': '剿灭'
-    }[stage_type]
+    try:
+        return {
+            'MAIN': '主线',
+            'SUB': '支线',
+            'DAILY': '日常',
+            'GUIDE': '教程',
+            'ACTIVITY': '活动',
+            'CAMPAIGN': '剿灭'
+        }[stage_type]
+    except:
+        return '未知类型'
 
 
 def parse_drop_type(drop_type):
@@ -115,16 +121,19 @@ def parse_rune(runes):
 
 
 def parse_drop_item(drop_item, character_table, building_data, item_table):
-    if drop_item['type'] == 'CHAR':
-        return character_table[drop_item['id']]['name']
-    elif drop_item['type'] == 'FURN':
-        return building_data['customData']['furnitures'][drop_item['id']]['name']
-    elif drop_item['type'] in ['MATERIAL', 'CARD_EXP', 'TKT_RECRUIT', 'GOLD', 'ACTIVITY_COIN', 'ACTIVITY_ITEM',
-        'ET_STAGE', 'DIAMOND']:
-        return item_table['items'][drop_item['id']]['name']
-    else:
-        print('Unknown drop item {}'.format(drop_item['id']))
-        return item_table['items'][drop_item['id']]['name']
+    try:
+        if drop_item['type'] == 'CHAR':
+            return character_table[drop_item['id']]['name']
+        elif drop_item['type'] == 'FURN':
+            return building_data['customData']['furnitures'][drop_item['id']]['name']
+        elif drop_item['type'] in ['MATERIAL', 'CARD_EXP', 'TKT_RECRUIT', 'GOLD', 'ACTIVITY_COIN', 'ACTIVITY_ITEM',
+            'ET_STAGE', 'DIAMOND']:
+            return item_table['items'][drop_item['id']]['name']
+        else:
+            print('Unknown drop item {}'.format(drop_item['id']))
+            return item_table['items'][drop_item['id']]['name']
+    except:
+        return '物品{}'.format(drop_item['id'])
 
 
 def parse_overwritten_data(overwritten_data, count):
@@ -209,81 +218,29 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
     return rewards_data
 
 
-def get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table,
-        rts):
-    stage_data = '\n==普通==\n{{普通关卡信息\n'
-    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
-    stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
-    if stage_detail['hilightMark'] == True:
-        stage_data += '|子类型=难关\n'
-    elif stage_detail['appearanceStyle'] == 4:
-        stage_data += '|子类型=绝境\n'
-    elif stage_detail['appearanceStyle'] == 5:
-        stage_data += '|子类型=迷雾\n'
-    if stage_detail['bossMark'] == True:
-        stage_data += '|领袖标志=Yes\n'
-    stage_data += '|关卡难度={}\n'.format(stage_detail['difficulty'])
-    if stage_detail['levelId'] == None:
-        stage_data += '|战斗关卡=false\n'
-    unlock_cond_list = []
-    for unlock_id in stage_detail['unlockCondition']:
-        unlock_cond = '{num}星通关[[{code} {name}]]'.format(
-            num = unlock_id['completeState'],
-            code = stage_table['stages'][unlock_id['stageId']]['code'],
-            name = stage_table['stages'][unlock_id['stageId']]['name']
-        )
-        unlock_cond_list.append(unlock_cond)
-    stage_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
-    stage_data += '|推荐等级={}\n'.format(stage_detail['dangerLevel'])
-    if zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst']:
-        stage_data += '|所属区域={name_1} {name_2}\n'.format(
-            name_1 = zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst'],
-            name_2 = zone_table['zones'][stage_detail['zoneId']]['zoneNameSecond']
-        )
+def analyze_level_info(level_table):
+    level_info = ''
+    level_info += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
+    level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
+    level_info += '|COST上限={}\n'.format(level_table['options']['maxCost'])
+    level_info += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
+    enemy_count = 0
+    min_time = 0.0
+    for wave in level_table['waves']:
+        min_time += wave['preDelay'] + wave['postDelay']
+        for fragment in wave['fragments']:
+            min_time += fragment['preDelay']
+            min_time += max([action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+            for unit in fragment['actions']:
+                if unit['actionType'] == 0:
+                    enemy_count += unit['count']
+    level_info += '|敌人数量={}\n'.format(enemy_count)
+    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
+    if abs(min_time - int(min_time)) < 0.0001:
+        level_info += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
     else:
-        stage_data += '|所属区域={name_2}\n'.format(
-            name_2 = zone_table['zones'][stage_detail['zoneId']]['zoneNameSecond']
-        )
-    if stage_detail['levelId']:
-        stage_data += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
-        stage_data += '|初始COST={}\n'.format(level_table['options']['initialCost'])
-        stage_data += '|COST上限={}\n'.format(level_table['options']['maxCost'])
-        stage_data += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
-        enemy_count = 0
-        min_time = 0.0
-        for wave in level_table['waves']:
-            min_time += wave['preDelay'] + wave['postDelay']
-            for fragment in wave['fragments']:
-                min_time += fragment['preDelay']
-                min_time += max(
-                    [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
-                for unit in fragment['actions']:
-                    if unit['actionType'] == 0:
-                        enemy_count += unit['count']
-        stage_data += '|敌人数量={}\n'.format(enemy_count)
-        stage_data += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
-        if abs(min_time - int(min_time)) < 0.00001:
-            stage_data += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
-        else:
-            stage_data += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
-    stage_data += '|关卡描述={desc}\n'.format(
-        desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
-    )
-    stage_data += '|作战消耗={}\n'.format(stage_detail['apCost'])
-    if stage_detail['canPractice'] == True:
-        stage_data += '|演习消耗={}\n'.format(stage_detail['practiceTicketCost'])
-    else:
-        stage_data += '|演习消耗=-1\n'
-    if stage_detail['stageDropInfo']['displayDetailRewards']:
-        stage_data += analyze_rewards(stage_detail['stageDropInfo']['displayDetailRewards'], character_table,
-            building_data, item_table)
-    if stage_detail['levelId']:
-        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
-            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
-    stage_data += '}}'
-
-    return stage_data
+        level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
+    return  level_info
 
 
 def get_enemy_data(level_table, enemy_table, enemy_database):
@@ -339,6 +296,63 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
         count += 1
     enemy_data += '}}'
     return enemy_data
+
+
+def get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table,
+        rts):
+    stage_data = '\n==普通==\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
+    if stage_detail['hilightMark'] == True:
+        stage_data += '|子类型=难关\n'
+    elif stage_detail['appearanceStyle'] == 4:
+        stage_data += '|子类型=绝境\n'
+    elif stage_detail['appearanceStyle'] == 5:
+        stage_data += '|子类型=迷雾\n'
+    if stage_detail['bossMark'] == True:
+        stage_data += '|领袖标志=Yes\n'
+    stage_data += '|关卡难度={}\n'.format(stage_detail['difficulty'])
+    if stage_detail['levelId'] == None:
+        stage_data += '|战斗关卡=false\n'
+    unlock_cond_list = []
+    for unlock_id in stage_detail['unlockCondition']:
+        unlock_cond = '{num}星通关[[{code} {name}]]'.format(
+            num = unlock_id['completeState'],
+            code = stage_table['stages'][unlock_id['stageId']]['code'],
+            name = stage_table['stages'][unlock_id['stageId']]['name']
+        )
+        unlock_cond_list.append(unlock_cond)
+    stage_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
+    stage_data += '|推荐等级={}\n'.format(stage_detail['dangerLevel'])
+    if zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst']:
+        stage_data += '|所属区域={name_1} {name_2}\n'.format(
+            name_1 = zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst'],
+            name_2 = zone_table['zones'][stage_detail['zoneId']]['zoneNameSecond']
+        )
+    else:
+        stage_data += '|所属区域={name_2}\n'.format(
+            name_2 = zone_table['zones'][stage_detail['zoneId']]['zoneNameSecond']
+        )
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+    )
+    stage_data += '|作战消耗={}\n'.format(stage_detail['apCost'])
+    if stage_detail['canPractice'] == True:
+        stage_data += '|演习消耗={}\n'.format(stage_detail['practiceTicketCost'])
+    else:
+        stage_data += '|演习消耗=-1\n'
+    if stage_detail['stageDropInfo']['displayDetailRewards']:
+        stage_data += analyze_rewards(stage_detail['stageDropInfo']['displayDetailRewards'], character_table,
+            building_data, item_table)
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
+    stage_data += '}}'
+
+    return stage_data
 
 
 def get_4star_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table, rts):
@@ -409,6 +423,93 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
         else:
             stage_4star_data += '敌方单位无变化\n'
     stage_4star_data += parse_rune(level_table['runes'])
+    stage_4star_data += '-->\n}}'
+
+    return stage_4star_data
+
+
+def get_crisis_data(stage_detail, level_table, rts):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡类型={}\n'.format('活动')
+    stage_data += '|关卡难度={}\n'.format('NORMAL')
+    stage_data += '|解锁条件={}\n'.format('—')
+    stage_data += '|推荐等级={}\n'.format('—')
+    stage_data += '|所属区域={}\n'.format(stage_detail['code'])
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        # desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))  # crisis_info
+        desc = rts.compile(stage_detail['desc'].replace('\\n', '<br/>'))  # weedy
+    )
+    stage_data += '|作战消耗={}\n'.format(0)
+    stage_data += '|演习消耗=-1\n'
+    stage_data += '}}'
+
+    return stage_data
+
+
+def get_roguelike_data(stage_detail, level_table, rts):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡类型={}\n'.format('活动')
+    stage_data += '|关卡难度={}\n'.format('NORMAL')
+    stage_data += '|解锁条件={}\n'.format('—')
+    stage_data += '|推荐等级={}\n'.format('—')
+    stage_data += '|所属区域={}\n'.format('—')
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+    )
+    stage_data += '|作战消耗={}\n'.format(0)
+    stage_data += '|演习消耗=-1\n'
+    stage_data += '}}'
+
+    return stage_data
+
+
+def get_roguelike_4star_data(stage_detail, level_table, rts):
+    stage_4star_data = '\n==紧急作战==\n{{突袭关卡信息\n'
+    stage_4star_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_4star_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_4star_data += '|关卡类型={}\n'.format('活动')
+    stage_4star_data += '|子类型={}\n'.format('紧急作战')
+    stage_4star_data += '|关卡难度={}\n'.format('FOUR_STAR')
+    stage_4star_data += '|解锁条件={}\n'.format('-')
+    stage_4star_data += '|所属区域={}\n'.format('-')
+    climit = 0
+    ebuff = {'atk': 1.0, 'def': 1.0, 'max_hp': 1.0, 'flag': 0}
+    for rune in level_table['runes']:
+        if rune['key'] in ['gbuff_placable_char_num', 'global_placable_char_num_add']:
+            climit = int(rune['blackboard'][0]['value'])
+        if rune['key'] in ['enemy_attribute_mul', 'ebuff_attribute']:
+            ebuff['flag'] = 1
+            for i in rune['blackboard']:
+                ebuff[i['key']] = i['value']
+    stage_4star_data += '|部署上限={}\n'.format(level_table['options']['characterLimit'] + climit)
+    stage_4star_data += '|初始COST={}\n'.format(level_table['options']['initialCost'])
+    stage_4star_data += '|COST上限={}\n'.format(level_table['options']['maxCost'])
+    stage_4star_data += '|关卡描述={desc}\n'.format(
+        desc = rts.compile(stage_detail['eliteDesc'].replace('\\n', '<br/>'))
+    )
+    stage_4star_data += '|作战消耗={}\n'.format(0)
+    stage_4star_data += '|演习消耗=-1\n'
+    stage_4star_data += '<!--|情报=\n'
+    if ebuff['flag'] == 1:
+        ebuff_desc = []
+        if ebuff['atk'] != 1.0:
+            ebuff_desc.append('攻击力提升至{0:.0%}'.format(ebuff['atk']))
+        if ebuff['def'] != 1.0:
+            ebuff_desc.append('防御力提升至{0:.0%}'.format(ebuff['def']))
+        if ebuff['max_hp'] != 1.0:
+            ebuff_desc.append('生命值提升至{0:.0%}'.format(ebuff['max_hp']))
+        if ebuff_desc != []:
+            stage_4star_data += '敌方单位的' + '，'.join(ebuff_desc) + '\n'
+        else:
+            stage_4star_data += '敌方单位无变化\n'
     stage_4star_data += '-->\n}}'
 
     return stage_4star_data
@@ -485,6 +586,106 @@ class Stage(Job):
             )
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
+
+
+    def _run_crisis(self):
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        # 从 crisis_info 读
+        with open('crisis_info.json', 'r', encoding = 'utf-8') as file:
+            stage_table = json.loads(file.read())
+        for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
+            stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+
+        # 从 weedy 读
+        # session = requests.Session()
+        # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
+        # stage_list = [stage_list[0]]
+        # for stage_key in stage_list:
+        #     stage_detail = stage_key
+        #     stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
+
+            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+
+            if stage_detail['levelId']:
+                try:
+                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                except:
+                    print('Cannot find level data of {}.'.format(stage_page_name))
+                    continue
+            else:
+                level_table = {}
+
+            stage_normal_data = get_crisis_data(stage_detail, level_table, rts)
+            stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
+
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==合约详情==\n{{合约详情}}\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:危机合约关卡]]'
+            stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+
+            self.wiki.edit(
+                title = stage_detail['name'],
+                text = stage_redirect,
+                summary = 'init',
+                createonly = '1'
+            )
+            self.wiki.edit(
+                title = stage_page_name,
+                text = stage_content,
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_page_name))
+
+
+    def _run_rogue_like(self):
+        roguelike_table = self.getgd('excel/roguelike_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        for stage_key in roguelike_table['stages']:
+            stage_detail = roguelike_table['stages'][stage_key]
+            if stage_detail['difficulty'] == 'FOUR_STAR':
+                continue
+
+            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+
+            if stage_detail['levelId']:
+                try:
+                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                except:
+                    print('Cannot find level data of {}.'.format(stage_page_name))
+                    continue
+            else:
+                level_table = {}
+
+            stage_normal_data = get_roguelike_data(stage_detail, level_table, rts)
+            linkedStage = [k for k in roguelike_table['stages'] if roguelike_table['stages'][k]['linkedStageId'] == stage_key]
+            if len(linkedStage) >= 1:
+                stage_4star_data = get_roguelike_4star_data(roguelike_table['stages'][linkedStage[0]], level_table, rts)
+            else:
+                stage_4star_data = ''
+            stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
+
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:集成战略关卡]]'
+            stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+
+            self.wiki.edit(
+                title = stage_detail['name'],
+                text = stage_redirect,
+                summary = 'init',
+                createonly = '1'
+            )
+            self.wiki.edit(
+                title = stage_page_name,
+                text = stage_content,
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_page_name))
+
 
     def _run_enemy_data(self, level_table):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')

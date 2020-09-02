@@ -114,6 +114,7 @@ def get_routes(level_routes):
 def get_waves(level_waves):
     wave_count = -1
     min_time = 0.0
+    spawn_group = {}
     for wave in level_waves:
         wave_count += 1
         # print('wave {} name: {}'.format(wave_count, wave['name']))
@@ -128,6 +129,9 @@ def get_waves(level_waves):
                 [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
             action_count = -1
             for action in fragment['actions']:
+                if action['actionType'] != 0 and 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
+                    # if action['weight'] - action['weightValue'] != 0.0:
+                    print('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
                 if action['actionType'] != 0:
                     continue
                 action_count += 1
@@ -141,7 +145,7 @@ def get_waves(level_waves):
                 # if action['isUnharmfulAndAlwaysCountAsKilled'] == True:
                 #     print('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
                 # if 'hiddenGroup' in action and action['hiddenGroup'] != None:
-                #     print('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['key'], action['hiddenGroup']))
+                #     print('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['hiddenGroup']))
             # min_time += 0.3
         min_time += wave['postDelay']
         # min_time += 0.5
@@ -201,23 +205,32 @@ class Route(Job):
         # levelId = 'Obt/Campaign/level_camp_03'  # 市区
         levelId = 'obt/rune/level_rune_04-01'
 
-        level_table = self.getgd('levels/' + levelId + '.json')
-        routes = get_routes(level_table['routes'])
-        get_waves(level_table['waves'])
-        wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+        # level_table = self.getgd('levels/' + levelId + '.json')
+        # routes = get_routes(level_table['routes'])
+        # get_waves(level_table['waves'])
+        # wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
         # for stage in stage_table['stages']:
         #     levelId = stage_table['stages'][stage]['levelId']
         #     if levelId != None and stage_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
         #         print('==={} {}==='.format(stage_table['stages'][stage]['code'], stage_table['stages'][stage]['name']))
         #         level_table = self.getgd('levels/' + levelId + '.json')
+        #         get_waves(level_table['waves'])
         #         routes = get_routes(level_table['routes'])
         #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
-        self.wiki.edit(
-            title = '用户:Seniorious/route',
-            text = wave_table,
-            summary = 'update'
-        )
-        # print(wave_table)
-        print('Updated: {}.'.format('用户:Seniorious/route'))
+        roguelike_table = self.getgd('excel/roguelike_table.json')
+        for stage in roguelike_table['stages']:
+            levelId = roguelike_table['stages'][stage]['levelId']
+            if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
+                print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
+                level_table = self.getgd('levels/' + levelId + '.json')
+                get_waves(level_table['waves'])
+
+        # self.wiki.edit(
+        #     title = '用户:Seniorious/route',
+        #     text = wave_table,
+        #     summary = 'update'
+        # )
+        # # print(wave_table)
+        # print('Updated: {}.'.format('用户:Seniorious/route'))
