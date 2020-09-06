@@ -4,10 +4,10 @@ from config import config
 from utils.data_local import GameData
 from utils.wiki import Wiki
 
-# from jobs.route import Route
+from jobs.route import Route
 # from jobs.gacha import Gacha
 # from jobs.crisis import Crisis
-from jobs.stage import Stage
+# from jobs.stage import Stage
 # from jobs.weedy import Weedy
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin

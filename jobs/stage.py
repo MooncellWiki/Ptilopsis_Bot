@@ -232,7 +232,7 @@ def analyze_level_info(level_table):
             min_time += fragment['preDelay']
             min_time += max([action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
             for unit in fragment['actions']:
-                if unit['actionType'] == 0:
+                if unit['actionType'] == 0 and unit['key'] != '':
                     enemy_count += unit['count']
     level_info += '|敌人数量={}\n'.format(enemy_count)
     level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])

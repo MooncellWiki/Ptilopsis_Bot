@@ -1,5 +1,6 @@
 from utils.job import Job
 
+import copy
 
 def format_time(time):
     return '{}分{:.1f}秒'.format(int(time / 60), time % 60)
@@ -129,9 +130,6 @@ def get_waves(level_waves):
                 [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
             action_count = -1
             for action in fragment['actions']:
-                if action['actionType'] != 0 and 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
-                    # if action['weight'] - action['weightValue'] != 0.0:
-                    print('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
                 if action['actionType'] != 0:
                     continue
                 action_count += 1
@@ -146,10 +144,69 @@ def get_waves(level_waves):
                 #     print('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
                 # if 'hiddenGroup' in action and action['hiddenGroup'] != None:
                 #     print('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['hiddenGroup']))
+                # if action['actionType'] != 0 and 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
+                #     if action['weight'] - action['weightValue'] != 0.0:
+                #     print('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
             # min_time += 0.3
         min_time += wave['postDelay']
         # min_time += 0.5
     print(format_time(min_time))
+
+
+def count_enemy(level_waves):
+    e_num = 0
+    e_low = 0
+    e_high = 0
+    wave_count = -1
+    min_time = 0.0
+    min_time_low = 0.0
+    min_time_high = 0.0
+    for wave in level_waves:
+        wave_count += 1
+        min_time += wave['preDelay']
+        min_time_low += wave['preDelay']
+        min_time_high += wave['preDelay']
+        fragment_count = -1
+        for fragment in wave['fragments']:
+            fragment_count += 1
+            min_time += fragment['preDelay']
+            min_time_low += fragment['preDelay']
+            min_time_high += fragment['preDelay']
+            temp1 = [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']]
+            temp2_1 = [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions'] if 'randomSpawnGroupKey' not in action or action['randomSpawnGroupKey'] == None]
+            temp2_2 = copy.deepcopy(temp2_1)
+            min_time += max(temp1)
+
+            spawn_groups = {}
+            for action in fragment['actions']:
+                if action['actionType'] == 0:
+                    if 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
+                        if action['randomSpawnGroupKey'] not in spawn_groups:
+                            spawn_groups[action['randomSpawnGroupKey']] = []
+                        spawn_groups[action['randomSpawnGroupKey']].append(action)
+                    else:
+                        e_num += action['count']
+            for s_group in spawn_groups:
+                e_low += min([a['count'] if a['key'] != '' else 0 for a in spawn_groups[s_group]])
+                e_high += max([a['count'] if a['key'] != '' else 0 for a in spawn_groups[s_group]])
+                temp2_1.append(min([a['preDelay'] + (a['count'] - 1) * a['interval'] for a in spawn_groups[s_group]]))
+                temp2_2.append(max([a['preDelay'] + (a['count'] - 1) * a['interval'] for a in spawn_groups[s_group]]))
+
+            if temp2_1 != []:
+                min_time_low += max(temp2_1)
+            if temp2_2 != []:
+                min_time_high += max(temp2_2)
+
+        min_time += wave['postDelay']
+        min_time_low += wave['postDelay']
+    if e_low + e_num != e_high + e_num:
+        print('num: {}~{}'.format(e_low + e_num, e_high + e_num))
+    else:
+        print('num: {}'.format(e_low + e_num))
+    if min_time_low != min_time_high:
+        print('time: {}~{}'.format(format_time(min_time_low), format_time(min_time_high)))
+    else:
+        print('time: {}'.format(format_time(min_time_low)))
 
 
 def get_waves_table(level_waves, routes, enemy_table):
@@ -225,7 +282,7 @@ class Route(Job):
             if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
                 print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
                 level_table = self.getgd('levels/' + levelId + '.json')
-                get_waves(level_table['waves'])
+                count_enemy(level_table['waves'])
 
         # self.wiki.edit(
         #     title = '用户:Seniorious/route',
