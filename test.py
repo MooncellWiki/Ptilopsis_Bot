@@ -13,6 +13,7 @@ from jobs.route import Route
 # from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
+from jobs._temp import Temp
 
 
 
@@ -33,5 +34,6 @@ if __name__ == '__main__':
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
     # RougeStage(wiki, gameData).run()
     # Stage(wiki, gameData)._run_rogue_like()
+    Temp(wiki, gameData).run()
 
 
