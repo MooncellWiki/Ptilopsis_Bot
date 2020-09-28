@@ -1,4 +1,6 @@
 from utils.job import Job
+import json
+import re
 
 
 def get_skin_info(char_key, skin_table):
@@ -201,7 +203,7 @@ def update_outfit_gallery(wiki, skin_table, character_table):
 |干员名={char}
 |时装序号={{skin_id}}{tag}
 |干员外文名={appellation}
-|时装名={skin_name}
+|时装名={skin_name}{anchor}
 |时装系列={skin_series}
 }}}}}}}}'''
 
@@ -225,11 +227,17 @@ def update_outfit_gallery(wiki, skin_table, character_table):
             if skin_info['charId'] not in char_count:
                 char_count[skin_info['charId']] = 0
             char_count[skin_info['charId']] += 1
+            skin_name = skin_info['displaySkin']['skinName'].rstrip()
+            if ' ' in skin_name:
+                anchor = '\n|锚点={}'.format(skin_name.replace(' ', '_'))
+            else:
+                anchor = ''
             skin_half_desc = skin_half_format.format(
                 char = character_table[skin_info['charId']]['name'],
                 tag = tag,
                 appellation = appellation,
-                skin_name = skin_info['displaySkin']['skinName'].rstrip(),
+                skin_name = skin_name,
+                anchor = anchor,
                 skin_series = brand_list[skin_info['displaySkin']['skinGroupId']]
             )
             order = skin_info['displaySkin']['onYear'] * 12 + skin_info['displaySkin']['onPeriod']
@@ -239,11 +247,16 @@ def update_outfit_gallery(wiki, skin_table, character_table):
                         skin_info['displaySkin']['onPeriod']),
                     'content': {}
                 }
-            if skin_key != "char_123_fang@winter#1":
-                skin_dict[order]['content'][skin_info['displaySkin']['sortId']] = (skin_info['charId'], skin_half_desc)
-            else:
-                skin_dict[order]['content'][skin_info['displaySkin']['sortId'] - 4] = (
-                    skin_info['charId'], skin_half_desc)
+            sort_key = skin_info['displaySkin']['getTime'] + skin_info['displaySkin']['sortId']
+            while sort_key in skin_dict[order]['content']:
+                sort_key += 0.1
+                print('时装回廊 sort_key 重复')
+            skin_dict[order]['content'][sort_key] = (skin_info['charId'], skin_half_desc)
+            # if skin_key != "char_123_fang@winter#1":
+            #     skin_dict[order]['content'][skin_info['displaySkin']['sortId']] = (skin_info['charId'], skin_half_desc)
+            # else:
+            #     skin_dict[order]['content'][skin_info['displaySkin']['sortId'] - 4] = (
+            #         skin_info['charId'], skin_half_desc)
 
     skin_dict_sorted = [skin_dict[k] for k in sorted(skin_dict.keys(), reverse = True)]
 
@@ -260,12 +273,170 @@ def update_outfit_gallery(wiki, skin_table, character_table):
           + fin + '</div><div class="brandbtncontainer"><div class="brandbtncontroler">{{#Widget:Brandbtn}}</div></div></div>'
 
     wiki.edit(
-        title = '用户:Seniorious/gallery',
+        # title = '用户:Seniorious/gallery',
+        title = '模板:时装回廊',
         text = fin,
         summary = 'update'
     )
     # print(fin)
-    print('Update: {}.'.format('用户:Seniorious/gallery'))
+    # print('Update: {}.'.format('用户:Seniorious/gallery'))
+    print('Update: {}.'.format('模板:时装回廊'))
+
+
+def update_outfit_brand(wiki, skin_table, character_table):
+    skin_half_format = '''{{{{时装回廊/半身像
+|干员名={char}
+|时装序号={skin_id}{tag}
+|干员外文名={appellation}
+|时装名={skin_name}{anchor}
+|时装系列={skin_brand}
+}}}}'''
+
+    skin_format = '''
+{anchor}=={skinName}==
+{{{{干员时装
+|干员名={name}
+|皮肤序号={skinNo}
+|时装名={skinName}
+|画师={drawerName}
+|时装组名称={skinGroupName}
+|内容={content}
+|获得途径={obtainApproach}
+
+|dialog={dialog}
+|usage={usage}
+|desc={description}
+}}}}'''
+
+    brand_format = '''__NOTOC__
+{{{{时装回廊/轮播{pic}
+|名称={brand}
+|简介={brand_desc}
+}}}}
+<div class="centercontainer"><div class="centercontroler">
+{half_content}</div></div>{detail_content}'''
+    
+    skin_list = []
+    for skin_key in skin_table['charSkins']:
+        skin_info = skin_table['charSkins'][skin_key]
+        if skin_info['displaySkin']['skinGroupName'] == '默认服装' or 'token' in skin_key:
+            continue
+        skin_list.append(skin_info)
+    skin_list.sort(key = lambda x: x['displaySkin']['getTime'] + x['displaySkin']['sortId'])
+
+    brand_list = {}
+    skin_dict = {}
+    for v in sorted(skin_table['brandList'].values(), key = lambda x: x['sortId']):
+        brand_name = v['brandName'].replace('/', '-').rstrip()
+        skin_dict[brand_name] = {
+            'brandName': v['brandName'],
+            'description': v['description'].replace('\n', '<br/>'),
+            'kvImgNum': len(v['kvImgIdList']),
+            'half_content': '',
+            'detail_content': {}
+        }
+        for group in v['groupList']:
+            brand_list[group] = brand_name
+
+    char_count = {}
+    for skin_info in skin_list:
+        appellation = skin_info['displaySkin']['modelName']
+        if ord(appellation[0]) in range(97, 123) or ord(appellation[0]) in range(65, 91):
+            appellation = appellation.upper()
+        if skin_info['displaySkin']['displayTagId'] != None:
+            tag = '\n|时装注释={}'.format(skin_info['displaySkin']['displayTagId'])
+        else:
+            tag = ''
+        if skin_info['charId'] not in char_count:
+            char_count[skin_info['charId']] = 0
+        char_count[skin_info['charId']] += 1
+        skin_name = skin_info['displaySkin']['skinName'].rstrip()
+        if ' ' in skin_name:
+            anchor = '\n|锚点={}'.format(skin_name.replace(' ', '_'))
+        else:
+            anchor = ''
+        skin_brand = brand_list[skin_info['displaySkin']['skinGroupId']]
+        skin_half_desc = skin_half_format.format(
+            char = character_table[skin_info['charId']]['name'],
+            tag = tag,
+            appellation = appellation,
+            skin_name = skin_name,
+            skin_id = char_count[skin_info['charId']],
+            anchor = anchor,
+            skin_brand = skin_brand
+        )
+        skin_dict[skin_brand]['half_content'] += skin_half_desc
+
+        skin_detail_desc = skin_format.format(
+            anchor = '{{{{锚点|{}}}}}\n'.format(skin_name.replace(' ', '_')) if ' ' in skin_name else '',
+            name = character_table[skin_info['charId']]['name'],
+            skinName = skin_name,
+            skinNo = char_count[skin_info['charId']],
+            drawerName = skin_info['displaySkin']['drawerName'].rstrip(),
+            skinGroupName = skin_info['displaySkin']['skinGroupName'].rstrip(),
+            content = skin_info['displaySkin']['content'].replace('<color name=#ffffff>',
+                '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
+            obtainApproach = skin_info['displaySkin']['obtainApproach'],
+
+            dialog = skin_info['displaySkin']['dialog'],
+            usage = skin_info['displaySkin']['usage'],
+            description = skin_info['displaySkin']['description']
+        )
+        skin_dict[skin_brand]['detail_content'][skin_name] = skin_detail_desc
+
+    for brand in skin_dict:
+        pic = ''
+        detail = ''
+        flag_new = False
+
+        try:
+            old_content = wiki.read('时装回廊/' + brand)
+
+            for i in range(skin_dict[brand]['kvImgNum'] + 1):
+                result = re.search(r'\|图{}=([\s\S]+?)\n\|'.format(i+1), old_content)
+                if result:
+                    pic += '\n|图{}={}'.format(i+1, result.group(1).rstrip())
+                else:
+                    pic += '\n|图{}='.format(i+1)
+
+            for skin_name in skin_dict[brand]['detail_content']:
+                origin_detail = skin_dict[brand]['detail_content'][skin_name]
+                result = re.search(r'=={}==([\s\S]+?)\n'.format(skin_name)+'\}\}', old_content)
+                if result:
+                    text_part = result.group(1).rstrip()
+                    result2 = re.search(r'\|获得途径([\s\S]+?)\|dialog', text_part)
+                    if result2:
+                        result3 = re.search(r'\|获得途径([\s\S]+?)\|dialog', origin_detail).group(1).rstrip()
+                        origin_detail = origin_detail.replace(result3, result2.group(1).rstrip())
+                    else:
+                        print(skin_name, '获取方式 未匹配')
+                else:
+                    print(skin_name, 'detail 未匹配')
+                detail += origin_detail
+            flag_new = False
+        except:
+            pic = ''.join(['\n|图{}='.format(i + 1) for i in range(skin_dict[brand]['kvImgNum'] + 1)])
+            for s in skin_dict[brand]['detail_content']:
+                detail += skin_dict[brand]['detail_content'][s]
+            flag_new = True
+
+        content = brand_format.format(
+            pic = pic,
+            brand = brand,
+            brand_desc = skin_dict[brand]['description'],
+            half_content = skin_dict[brand]['half_content'],
+            detail_content = detail,
+        )
+        wiki.edit(
+            title = '时装回廊/' + brand,
+            text = content,
+            summary = 'init' if flag_new else 'update'
+        )
+        # print(content)
+        if flag_new:
+            print('Create: {}.'.format('时装回廊/' + brand))
+        else:
+            print('Update: {}.'.format('时装回廊/' + brand))
 
 
 class Skin(Job):
@@ -274,8 +445,9 @@ class Skin(Job):
         skin_table = self.getgd('excel/skin_table.json')
 
         update_randomFig(self.wiki, character_table, skin_table)
-        update_skin_handbook(self.wiki, character_table, skin_table)
+        # update_skin_handbook(self.wiki, character_table, skin_table)
         update_outfit_gallery(self.wiki, skin_table, character_table)
+        update_outfit_brand(self.wiki, skin_table, character_table)
 
     def _run_update(self, skin_list = None):
         character_table = self.getgd('excel/character_table.json')

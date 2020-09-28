@@ -477,7 +477,7 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
     skill_levelUp_list = '{{技能升级材料\n'
     if char_detail['skills']:
         for allSkillLvlup_id in range(len(char_detail['allSkillLvlup'])):
-            if char_detail['phases'][allSkillLvlup_id]['evolveCost'] == None:
+            if char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'] == None:
                 skill_levelUp_list = '该干员无技能升级材料需求'
                 return skill_levelUp_list
             skill_levelUp_list += '|' + str(allSkillLvlup_id + 2) + '='
@@ -809,7 +809,7 @@ class Basic(Job):
                 continue
             if char_detail['name'] in id_table:
                 if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['稀音']:
+                # if char_detail['name'] not in ['空']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))

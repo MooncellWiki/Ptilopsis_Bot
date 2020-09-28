@@ -142,6 +142,8 @@ def create_themes(wiki, building_data):
         themesData = building_data['customData']['themes'][themes]
         if themesData['name'] in themes_list:
             continue
+        # if themesData['name'] != '快捷连锁披萨店':
+            # continue
 
         groupsContent = ''
         quickSetupFurni = ''
