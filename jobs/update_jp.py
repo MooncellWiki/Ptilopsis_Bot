@@ -70,9 +70,7 @@ def update_charword_jp(wiki, character_table, charword_table, character_table_jp
     for char in character_table_jp:
         char_detail = character_table[char]
 
-        if char_detail['name'] in ['安洁莉娜'] or char_detail['profession'] == 'TRAP' or char_detail[
-            'profession'] == 'TOKEN':
-        # if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+        if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
 
         origin_text = wiki.read(character_table[char]['name'] + '/语音记录')
