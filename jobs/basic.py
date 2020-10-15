@@ -444,6 +444,8 @@ def get_building_skill(building_data, char_key):
                     building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
     else:
         return '该干员无后勤技能'
+    if building_skill == '{{后勤技能':
+        return '该干员无后勤技能'
     building_skill += '\n}}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->'
     return building_skill
 
@@ -620,6 +622,8 @@ def trans_profession(profession):
 
 
 def trans_display_logo(display_logo):
+    if display_logo == None:
+        return '未知logo'
     try:
         return {
             'logo_abyssal': '深海猎人',
@@ -892,7 +896,11 @@ class Basic(Job):
             # num1 = origin_text.find('==属性==')
             # num2 = origin_text.find('==攻击范围==')
             # new_text = origin_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
-            #
+            
+            # num1 = origin_text.find('==干员档案==')
+            # num2 = origin_text.find('==语音记录==')
+            # new_text = origin_text[:num1] + origin_text[num1:num2].rstrip() + '\n' + origin_text[num2:]
+            
             # if new_text != origin_text:
             #     self.wiki.edit(
             #         title = char_detail['name'],
@@ -907,13 +915,13 @@ class Basic(Job):
             # f_wiki = open('old.txt', 'w')
             # num1 = origin_text.find('==干员档案==')
             # num2 = origin_text.find('==语音记录==')
-            # num1 = origin_text.find('==技能==')
-            # num2 = origin_text.find('==后勤技能==')
+            # # num1 = origin_text.find('==技能==')
+            # # num2 = origin_text.find('==后勤技能==')
             # f_wiki.write(origin_text[num1:num2])
             # f_wiki.close()
             # f_new = open('new.txt', 'w')
             # f_new.write('==干员档案==\n{}\n'.format(stories_list))
-            # f_new.write('==技能=={}'.format(skill_list))
+            # # f_new.write('==技能=={}'.format(skill_list))
             # f_new.close()
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')

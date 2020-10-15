@@ -387,6 +387,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
     for brand in skin_dict:
         pic = ''
         detail = ''
+        old_content = ''
         flag_new = False
 
         try:
@@ -427,16 +428,17 @@ def update_outfit_brand(wiki, skin_table, character_table):
             half_content = skin_dict[brand]['half_content'],
             detail_content = detail,
         )
-        wiki.edit(
-            title = '时装回廊/' + brand,
-            text = content,
-            summary = 'init' if flag_new else 'update'
-        )
-        # print(content)
-        if flag_new:
-            print('Create: {}.'.format('时装回廊/' + brand))
-        else:
-            print('Update: {}.'.format('时装回廊/' + brand))
+        if content != old_content:
+            wiki.edit(
+                title = '时装回廊/' + brand,
+                text = content,
+                summary = 'init' if flag_new else 'update'
+            )
+            # print(content)
+            if flag_new:
+                print('Create: {}.'.format('时装回廊/' + brand))
+            else:
+                print('Update: {}.'.format('时装回廊/' + brand))
 
 
 class Skin(Job):

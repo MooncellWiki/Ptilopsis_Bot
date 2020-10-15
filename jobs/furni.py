@@ -1,7 +1,7 @@
 from utils.job import Job
 
 
-def update_furni_desc(wiki, building_data):
+def update_furni(wiki, building_data, item_table):
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
 
@@ -10,6 +10,24 @@ def update_furni_desc(wiki, building_data):
         num1 = origin_text.find('|描述=')
         num2 = origin_text.find('|', num1 + 4)
         new_text = origin_text[:num1] + '|描述={}\n'.format(furni_data['description']) + origin_text[num2:]
+        
+        if furni_data['canBeDestroy'] == True:
+            furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
+                name = item_table['items'][furni_data['processedProductId']]['name'],
+                number = furni_data['processedProductCount']
+            )
+        else:
+            furni_destroy = '不可分解'
+
+        num1 = origin_text.find('|类型=')
+        num2 = origin_text.find('|描述=')
+        new_text = new_text[:num1] + '|类型={type}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n'.format(
+            type = building_data['customData']['types'][furni_data['type']]['name'],
+            rarity = furni_data['rarity'],
+            comfort = furni_data['comfort'],
+            destroyObtain = furni_destroy,
+            size = str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height'])
+        ) + new_text[num2:]
 
         if origin_text != new_text:
             wiki.edit(
@@ -72,13 +90,13 @@ def create_furni(wiki, building_data, item_table):
             type = building_data['customData']['types'][furni_data['type']]['name'],
             rarity = furni_data['rarity'],
             comfort = furni_data['comfort'],
+            destroyObtain = furni_destroy,
             size = str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height']),
-            usage = furni_data['usage'],
-            themes = themes,
-            groups = groups,
             description = furni_data['description'],
+            usage = furni_data['usage'],
             obtainApproach = furni_data['obtainApproach'],
-            destroyObtain = furni_destroy
+            themes = themes,
+            groups = groups
         )
 
         wiki.edit(
@@ -244,5 +262,6 @@ class Furni(Job):
 
     def _run_update(self):
         building_data = self.getgd('excel/building_data.json')
+        item_table = self.getgd('excel/item_table.json')
 
-        update_furni_desc(self.wiki, building_data)
+        update_furni(self.wiki, building_data, item_table)

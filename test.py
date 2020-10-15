@@ -10,11 +10,11 @@ from jobs.route import Route
 # from jobs.stage import Stage
 # from jobs.weedy import Weedy
 # from jobs.sidebar import Sidebar
-from jobs.skin import Skin
+# from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
 # from jobs._temp import Temp
-# from jobs.basic import Basic
+from jobs.basic import Basic
 
 
 
@@ -33,11 +33,11 @@ if __name__ == '__main__':
     # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
-    Skin(wiki, gameData).run()
+    # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
     # Stage(wiki, gameData)._run_rogue_like()
     # Temp(wiki, gameData).run()
-    # Basic(wiki, gameData)._run_update(old_num = 157)
+    Basic(wiki, gameData)._run_update(old_num = 161)
 
 
 
