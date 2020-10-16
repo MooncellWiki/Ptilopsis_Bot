@@ -72,8 +72,9 @@ class Sidebar(Job):
         pass
 
     def _run_update(self, old_num):
-        with open('character_id.json', 'r', encoding = 'utf-8') as file:
-            id_table = json.loads(file.read())
+        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
+        #     id_table = json.loads(file.read())
+        id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         character_table = self.getgd('excel/character_table.json')
         update_menusidebar(self.wiki, old_num, id_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)

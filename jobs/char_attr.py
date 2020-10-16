@@ -104,8 +104,9 @@ def get_char_attr(character_table, id_table, rts):
 class CharAttr(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
-        with open('character_id.json', 'r', encoding = 'utf-8') as file:
-            id_table = json.loads(file.read())
+        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
+        #     id_table = json.loads(file.read())
+        id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         content = get_char_attr(character_table, id_table, rts)

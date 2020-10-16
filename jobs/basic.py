@@ -801,8 +801,9 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
-        with open('character_id.json', 'r', encoding = 'utf-8') as file:
-            id_table = json.loads(file.read())
+        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
+        #     id_table = json.loads(file.read())
+        id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         update_token_page = False
