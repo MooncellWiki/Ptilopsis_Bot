@@ -10,7 +10,7 @@ class GameData:
         self.config = config
         print('start with ' + self.source + ' mode')
         if self.source == 'UnpackerCN':
-            self.unpacker = UnpackerCN(config = config['unpacker'], update = True)
+            self.unpacker = UnpackerCN(config['unpacker'])
 
     def get(self, path, region):
         if self._source() == 'UnpackerCN':

@@ -11,7 +11,7 @@ from Crypto.Util.Padding import unpad
 
 
 class UnpackerCN:
-    def __init__(self, config, update = True):
+    def __init__(self, config):
         self.ua = {'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 6.0.1; vivo X9L Build/MMB29M)'}
         self.config = config['serverList']['cn']
         with open('./version.json', 'r') as f:
@@ -25,9 +25,9 @@ class UnpackerCN:
         if local_version != self.get_version():
             print('New version detect. Start to update gamedata.')
             self.get_update_list()
-            self.get_all_gamedata()
+            # self.get_all_gamedata()
             print('Finish download all gamedata AB.')
-            self.unpack_all_gamedata()
+            # self.unpack_all_gamedata()
             print('Finish decrypt all gamedata.')
             print('Current local CN version:', self.res_version)
             return True
@@ -62,6 +62,7 @@ class UnpackerCN:
             "{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version, dir.replace('/', '_'), no_postfix),
             headers = self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall('./UnpackerCN/ab/')
+        print(f'download: {path}')
 
     def get_all_gamedata(self):
         res_version = self.res_version
@@ -74,6 +75,7 @@ class UnpackerCN:
                 "{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version, dir.replace('/', '_'), no_postfix),
                 headers = self.ua)
             zipfile.ZipFile(io.BytesIO(r.content)).extractall('./UnpackerCN/ab/')
+            print(f"download: {ab_info['name']}")
 
     def unpack_all_gamedata(self):
         hot_update_list = self.hot_update_list
