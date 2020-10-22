@@ -1,0 +1,22 @@
+{
+    "cn": {
+        "resVersion": "20-10-12-06-54-26-a874dc",
+        "clientVersion": "1.1.90"
+    },
+    "jp": {
+        "resVersion": "20-10-12-12-34-55-4d2692",
+        "clientVersion": "1.1.50"
+    },
+    "us": {
+        "resVersion": "20-10-12-13-59-15-2039b1",
+        "clientVersion": "1.1.50"
+    },
+    "kr": {
+        "resVersion": "20-10-12-14-58-41-213292",
+        "clientVersion": "1.1.50"
+    },
+    "tw": {
+        "resVersion": "20-10-13-03-49-56-0772c1",
+        "clientVersion": "0.8.14"
+    }
+}

@@ -1,5 +1,5 @@
 config = {
-    'api_url': 'http://edit.ak.mooncell.wiki/api.php',
+    'api_url': 'http://prts.wiki/api.php',
     'username': 'botPtilopsis',
     'password': 'netVyc-3zurba-vupcow',
     # 'source': 'unpacker',

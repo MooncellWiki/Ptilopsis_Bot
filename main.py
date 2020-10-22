@@ -29,6 +29,10 @@ if __name__ == '__main__':
         gameData = GameData(config = config, source = 'UnpackerCN')
         # gameData = GameData(config = config, source = 'ArknightsGameData')
         # gameData = GameData(config = config, source = 'UnpackerData')
+        if '--check-cn' in sys.argv:
+            if not gameData.unpacker.check_update():
+                print('No version update. Program exit.')
+                exit()
 
     if 'new' in sys.argv:
         old_num = 165

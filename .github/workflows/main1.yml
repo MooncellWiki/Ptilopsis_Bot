@@ -4,8 +4,8 @@
 name: main
 
 on:
-#  push:
-#    branches: [ master ]
+  push:
+    branches: [ master ]
   schedule:
     - cron: '1,12 8 * * *'
 
@@ -21,6 +21,8 @@ jobs:
     - name: update-cn
       run: |
         pip install -r requirements.txt
-        git clone https://github.com/Kengxxiao/ArknightsGameData.git
-        python main.py --git-repo daily
+        python main.py --check-cn daily
+        git add .
+        git commit -m "auto update"
+        git push
 
