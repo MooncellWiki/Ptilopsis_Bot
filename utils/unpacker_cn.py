@@ -25,9 +25,9 @@ class UnpackerCN:
         if local_version != self.get_version():
             print('New version detect. Start to update gamedata.')
             self.get_update_list()
-            # self.get_all_gamedata()
+            self.get_all_gamedata()
             print('Finish download all gamedata AB.')
-            # self.unpack_all_gamedata()
+            self.unpack_all_gamedata()
             print('Finish decrypt all gamedata.')
             print('Current local CN version:', self.res_version)
             return True

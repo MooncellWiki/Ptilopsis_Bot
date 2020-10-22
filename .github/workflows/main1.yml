@@ -21,9 +21,10 @@ jobs:
     - name: update-cn
       run: |
         pip install -r requirements.txt
-        python main.py --check-cn
+        python main.py --check-cn daily
         git config user.email "1054329447@aq.com"
         git config user.name "Seniorious0"
+        git status
         git add .
         git commit -m "auto update"
         git push
