@@ -35,15 +35,19 @@ class UnpackerCN:
 
     def get_version(self):
         url = self.config['baseUrl'] + 'version?sign={}'.format(int(time.time()))
-        ret = requests.get(url, headers = self.ua).json()['resVersion']
-        self.res_version = ret
-        return ret
+        ret = requests.get(url, headers = self.ua).json()
+        self.res_version = ret['resVersion']
+        with open('./UnpackerCN/meta/version.json', 'w') as f:
+            json.dump(ret, f)
+        return ret['resVersion']
 
     def get_update_list(self):
         res_version = self.res_version
         ret = requests.get("{}assets/{}/hot_update_list.json".format(self.config['url'], res_version),
             headers = self.ua).json()
         self.hot_update_list = ret
+        with open('./UnpackerCN/meta/hot_update_list.json', 'w') as f:
+            json.dump(ret, f, indent = 4)
         return ret
 
     def get_ab(self, path):
