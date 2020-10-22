@@ -1,5 +1,6 @@
 import json
 import os
+from utils.unpacker_cn import UnpackerCN
 
 
 class GameData:
@@ -7,9 +8,14 @@ class GameData:
         self.data = {}
         self.source = source
         self.config = config
+        print('start with ' + self.source + ' mode')
+        if self.source == 'UnpackerCN':
+            self.unpacker = UnpackerCN(config = config['unpacker'], update = True)
 
     def get(self, path, region):
-        if self._source() == 'UnpackerData':
+        if self._source() == 'UnpackerCN':
+            fullpath = os.path.join(self._source(), 'gamedata', path)
+        elif self._source() == 'UnpackerData':
             fullpath = os.path.join(self._source(), path)
             if path == 'levels/enemydata/enemy_database.json':
                 fullpath = os.path.join(self._source(), 'levels/enemy_database.json')
@@ -27,8 +33,11 @@ class GameData:
     def get_txt(self, path, region):
         # fullpath = os.path.join(self._source(), self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
         #     path)
-        fullpath = os.path.join('ArknightsGameData', self.config['unpacker']['serverList'][region]['folder'], 'gamedata',
-            path)
+        if self._source() == 'UnpackerCN':
+            fullpath = os.path.join(self._source(), 'gamedata', path)
+        else:
+            fullpath = os.path.join('ArknightsGameData', self.config['unpacker']['serverList'][region]['folder'],
+                'gamedata', path)
         with open(fullpath, 'r', encoding = 'utf-8') as file:
             text = file.read()
             return text

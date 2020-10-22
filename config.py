@@ -11,8 +11,8 @@ config = {
                 "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
                 "tableSign": True,
                 "luaSign": True,
-                "url": "https://ak-fs.hycdn.cn/assetbundle/official/Android/",
-                "baseUrl": "http://47.102.12.24/assetbundle/official/Android/",
+                "url": "https://ak-hu.hycdn.cn/assetbundle/official/Android/",
+                "baseUrl": "http://ak-hu.hycdn.cn/assetbundle/official/Android/",
                 "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             },
             "jp": {

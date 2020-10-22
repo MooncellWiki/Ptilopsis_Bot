@@ -41,3 +41,15 @@ class Temp(Job):
                 # )
                 # # print(content)
                 # print('Updated: {}.'.format(enemy_datum['name']))
+
+    def _test(self):
+        self.wiki.edit(
+            title = '能天使' + '/spine',
+            text = '{}',
+            summary = 'init',
+            bot = None,
+            minor = True,
+            createonly = True,
+            contentmodel = 'json'
+        )
+

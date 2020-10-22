@@ -23,14 +23,18 @@ from utils.wiki import Wiki
 if __name__ == '__main__':
     wiki = Wiki(config['api_url'], config['username'], config['password'],
         ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config = config, source = 'ArknightsGameData')
-    # gameData = GameData(config = config, source = 'UnpackerData')
+    if '--git-repo' in sys.argv:
+        gameData = GameData(config = config, source = 'ArknightsGameData')
+    else:
+        gameData = GameData(config = config, source = 'UnpackerCN')
+        # gameData = GameData(config = config, source = 'ArknightsGameData')
+        # gameData = GameData(config = config, source = 'UnpackerData')
 
     if 'new' in sys.argv:
         old_num = 165
-        Basic(wiki, gameData)._run_update(old_num)  # 需id_table
+        Basic(wiki, gameData)._run_update(old_num)
         Charword(wiki, gameData).run()
-        Sidebar(wiki, gameData)._run_update(old_num)  # 需id_table
+        Sidebar(wiki, gameData)._run_update(old_num)
 
     if 'daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
@@ -40,7 +44,7 @@ if __name__ == '__main__':
 
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()
-        CharAttr(wiki, gameData).run()  # 需id_table
+        CharAttr(wiki, gameData).run()
         Medal(wiki, gameData).run()
         StoryReview(wiki, gameData).run()
 

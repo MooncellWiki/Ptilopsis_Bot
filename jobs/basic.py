@@ -782,7 +782,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 {{{{参阅三|{{{{FULLPAGENAME}}}}|yy}}}}
 {{{{:{{{{FULLPAGENAME}}}}/语音记录}}}}
 ==干员模型==
-{{{{doll}}}}
+{{{{spine}}}}
 ==注释与链接==
 <references/>
 {{{{干员导航}}}}'''
@@ -864,6 +864,15 @@ class Basic(Job):
                 title = char_detail['name'],
                 protections = 'edit=autoconfirmed|move=sysop',
                 reason = 'protect'
+            )
+            self.wiki.edit(
+                title = char_detail['name'] + '/spine',
+                text = '{}',
+                summary = 'init',
+                bot = None,
+                minor = True,
+                createonly = True,
+                contentmodel = 'json'
             )
             if char_detail['name'] != char_detail['appellation']:
                 redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
