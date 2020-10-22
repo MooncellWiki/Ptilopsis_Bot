@@ -8,6 +8,7 @@ import requests
 import unitypack
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from retrying import retry
 
 
 class UnpackerCN:
@@ -33,6 +34,7 @@ class UnpackerCN:
             return True
         return False
 
+    @retry(stop_max_attempt_number = 3)
     def get_version(self):
         url = self.config['baseUrl'] + 'version?sign={}'.format(int(time.time()))
         ret = requests.get(url, headers = self.ua).json()
@@ -45,6 +47,7 @@ class UnpackerCN:
             json.dump(ori_ver, f, indent = 4)
         return ret['resVersion']
 
+    @retry(stop_max_attempt_number = 3)
     def get_update_list(self):
         res_version = self.res_version
         ret = requests.get("{}assets/{}/hot_update_list.json".format(self.config['url'], res_version),

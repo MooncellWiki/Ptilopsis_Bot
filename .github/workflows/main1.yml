@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron: '1,12 8 * * *'
+    - cron: '0-30/10 2,8 * * *'
 
 jobs:
   push:
@@ -21,7 +21,7 @@ jobs:
     - name: update-cn
       run: |
         pip install -r requirements.txt
-        python main.py --check-cn daily
+        python main.py --check-cn new daily
         git config user.email "1054329447@aq.com"
         git config user.name "Seniorious0"
         git status

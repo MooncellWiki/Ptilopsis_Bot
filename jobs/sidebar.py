@@ -4,7 +4,12 @@ import re
 from utils.job import Job
 
 
-def update_menusidebar(wiki, old_num, id_table):
+def update_menusidebar(wiki, old_num, id_table, character_table):
+    char_list = [character_table[char]['name'] for char in character_table]
+    new_num = max([id_table[char]['id'] for char in id_table if char in char_list])
+    if new_num <= old_num:
+        return
+
     origin_text = wiki.read('MediaWiki:MenuSidebar')
     num1 = origin_text.find('*[[干员一览')
     num2 = origin_text.find('*[[干员一览')
@@ -30,6 +35,8 @@ def update_menusidebar(wiki, old_num, id_table):
 
 
 def update_mainpage(wiki, old_num, id_table):
+    # 已弃用
+
     fin2 = wiki.read('首页')
     num1 = fin2.find('==近期新增==')
     num2 = fin2.find('==网站信息==')
@@ -51,9 +58,12 @@ def update_mainpage(wiki, old_num, id_table):
 
 
 def update_gameinfo(wiki, old_num, id_table, character_table):
-    origin_text = wiki.read('PRTS:Gameinfo/国服/干员一览')
     char_list = [character_table[char]['name'] for char in character_table]
     new_num = max([id_table[char]['id'] for char in id_table if char in char_list])
+    if new_num <= old_num:
+        return
+
+    origin_text = wiki.read('PRTS:Gameinfo/国服/干员一览')
     new_text = re.sub(r'cnotrs />([0-9]*)<section', 'cnotrs />{}<section'.format(new_num), origin_text)
     new_text = re.sub(r'cnprevotrs />([0-9]*)<section', 'cnprevotrs />{}<section'.format(old_num), new_text)
     wiki.edit(
@@ -76,5 +86,5 @@ class Sidebar(Job):
         #     id_table = json.loads(file.read())
         id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         character_table = self.getgd('excel/character_table.json')
-        update_menusidebar(self.wiki, old_num, id_table)
+        update_menusidebar(self.wiki, old_num, id_table, character_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)
