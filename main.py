@@ -1,4 +1,5 @@
 import sys
+import os
 
 from config import config
 from jobs.activity import Activity
@@ -73,3 +74,9 @@ if __name__ == '__main__':
     # Formula(wiki, gameData).run()
     # Range(wiki, gameData).run()
     # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
+
+    if '--check-cn' in sys.argv:
+        os.system('git status')
+        os.system('git add .')
+        os.system('git commit -m "auto update"')
+        os.system('git push')
