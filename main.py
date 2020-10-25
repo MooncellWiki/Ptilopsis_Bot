@@ -54,7 +54,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = [])
+        Skin(wiki, gameData)._run_update(skin_list = ['W', '伊桑', '杜宾', '德克萨斯'])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
