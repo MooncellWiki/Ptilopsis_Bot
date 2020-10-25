@@ -1,8 +1,8 @@
 import io
+import json
 import os
 import time
 import zipfile
-import json
 
 import requests
 import unitypack
@@ -61,9 +61,8 @@ class UnpackerCN:
         res_version = self.res_version
         dir = os.path.dirname(path)
         no_postfix = os.path.splitext(os.path.split(path)[-1])[0]
-        r = requests.get(
-            "{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version, dir.replace('/', '_'), no_postfix),
-            headers = self.ua)
+        r = requests.get("{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version,
+            dir.replace('/', '_'), no_postfix.replace('#', '__')), headers = self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall('./UnpackerCN/ab/')
         print(f'download: {path}')
 
@@ -74,9 +73,8 @@ class UnpackerCN:
         for ab_info in filter(lambda x: x['name'].startswith('gamedata'), hot_update_list['abInfos']):
             dir = os.path.dirname(ab_info['name'])
             no_postfix = os.path.splitext(os.path.split(ab_info['name'])[-1])[0]
-            r = requests.get(
-                "{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version, dir.replace('/', '_'), no_postfix),
-                headers = self.ua)
+            r = requests.get("{0}assets/{1}/{2}_{3}.dat".format(self.config['url'], res_version,
+                dir.replace('/', '_'), no_postfix.replace('#', '__')), headers = self.ua)
             zipfile.ZipFile(io.BytesIO(r.content)).extractall('./UnpackerCN/ab/')
             print(f"download: {ab_info['name']}")
 
@@ -104,7 +102,7 @@ class UnpackerCN:
             for data, data_path_id in dataArr:
                 ori_path = path_dict[data_path_id]
                 full_path = os.path.join('./UnpackerCN', ori_path[ori_path.find('gamedata'):])
-                dir_path = os.path.split(full_path)[0]
+                dir_path = os.path.dirname(full_path)
                 if dir_path not in dir_set:
                     os.makedirs(dir_path, exist_ok = True)
                     dir_set.add(dir_path)
