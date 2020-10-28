@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2402727143,
+        "totalSize": 2403645846,
         "abSize": 0
     },
-    "versionId": "20-10-20-10-31-50-0353fa",
+    "versionId": "20-10-23-12-09-22-22451f",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "20-10-20-10-31-50-0353fa",
-            "md5": "354e1e0ca70840876db707e06f3fe3f8",
-            "totalSize": 97182,
-            "abSize": 113782
+            "hash": "20-10-23-12-09-22-22451f",
+            "md5": "d5318436606d9c68855b82b6e863b6d7",
+            "totalSize": 97208,
+            "abSize": 113808
         },
         {
             "name": "torappu_index.ab",
-            "hash": "20-10-20-10-31-50-0353fa",
-            "md5": "f5cc2a7bf79c611520f8a8a46539149d",
-            "totalSize": 284784,
-            "abSize": 414617
+            "hash": "20-10-23-12-09-22-22451f",
+            "md5": "fc721b6ec41008834b0cb6225e8d656a",
+            "totalSize": 284861,
+            "abSize": 414694
         },
         {
             "name": "[uc]shaders.ab",
@@ -3419,10 +3419,10 @@
         },
         {
             "name": "arts/ui/homebanners/gacha/banner_hub.ab",
-            "hash": "fe5458169205bbf79900745dd5ee50f1",
-            "md5": "4ea5fd3529d5adeea8db6eff91f55730",
-            "totalSize": 2007,
-            "abSize": 2258
+            "hash": "8775ea033d1243a0c412d690c3a2f492",
+            "md5": "dbf511dce5fa67977958525e91eefecc",
+            "totalSize": 2011,
+            "abSize": 2268
         },
         {
             "name": "arts/ui/homebanners/shop/banner_hub.ab",
@@ -17181,9 +17181,9 @@
         },
         {
             "name": "gamedata/excel/audio_data.ab",
-            "hash": "7fa9cf2a65db4ebe1a170cb4dd829997",
-            "md5": "551d9d60032e4736d682e63ab331844e",
-            "totalSize": 890432,
+            "hash": "157b23707e7731bc4f7ebd845e14703e",
+            "md5": "986e9cfa7d346340fcbfb28c56d6d3b5",
+            "totalSize": 890436,
             "abSize": 890484
         },
         {
@@ -17230,9 +17230,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "ca1cd07481e07b8aa37c0640b1ce51ae",
-            "md5": "cdad05fbf58f218413688c979c06c257",
-            "totalSize": 1205,
+            "hash": "4a8baecc74c5f7d9433202741e66cbcb",
+            "md5": "b26a834602b0239356f0e4a381546cee",
+            "totalSize": 1206,
             "abSize": 1223
         },
         {
@@ -17251,10 +17251,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "2ea8e9c9a7afd8e4dfcf2dc766620523",
-            "md5": "a9e53fa447d0464368e9fe807f23f6fe",
-            "totalSize": 77598,
-            "abSize": 77728
+            "hash": "e30b04fa281c6e8ee8551984c504fcd5",
+            "md5": "95d66331f1e7d3e82f4324d734a552ab",
+            "totalSize": 78207,
+            "abSize": 78338
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -17356,10 +17356,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "81624d262c1886b9c129d7010809707a",
-            "md5": "fa3a1cc83f70b6a1d1038a52b911aaef",
-            "totalSize": 2537598,
-            "abSize": 2537174
+            "hash": "de9b5abf469f70b415f6476c1a285c15",
+            "md5": "920add7d1c919a0dac0a693a1eb6766b",
+            "totalSize": 2537581,
+            "abSize": 2537158
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -21808,10 +21808,10 @@
         },
         {
             "name": "spritepack/ui_home_act_banner_gacha_h2_0.ab",
-            "hash": "73c4f89f5508c1b7e373c50774150dae",
-            "md5": "7f53225003966315a8d0e3a207bc95af",
-            "totalSize": 255261,
-            "abSize": 278180
+            "hash": "b10046a65d8bcc608aa66c869b3d8fd4",
+            "md5": "4c542e2d6e9a2d133be83f0b4e360368",
+            "totalSize": 300098,
+            "abSize": 322852
         },
         {
             "name": "spritepack/ui_home_act_banner_shop_h2_0.ab",
@@ -22176,6 +22176,13 @@
             "md5": "6beadf0d970166fc61746d7e5f73d24c",
             "totalSize": 1096362,
             "abSize": 1231766
+        },
+        {
+            "name": "ui/gacha/norm_13_0_6.ab",
+            "hash": "e6ec7414f88e1b45a0b44e90ce00c705",
+            "md5": "32d060f19cf01a79e0155fb624625bed",
+            "totalSize": 873184,
+            "abSize": 996554
         },
         {
             "name": "ui/kvimg/pic_hub.ab",
