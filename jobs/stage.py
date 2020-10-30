@@ -270,10 +270,17 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
             enemy_data += '|敌人{}备注=需人工复查！\n'.format(count)
         else:
             if enemy['id'] in enemy_table:
-                enemy_data += '|敌人{count}={name}\n'.format(
-                    count = count,
-                    name = enemy_table[enemy['id']]['name']
-                )
+                enemy_name = enemy_table[enemy['id']]['name']
+                if enemy_name in ['W', '泥岩']:
+                    enemy_data += '|敌人{count}={name}(敌方)\n|敌人{count}显示名={name}\n'.format(
+                        count = count,
+                        name = enemy_name
+                    )
+                else:
+                    enemy_data += '|敌人{count}={name}\n'.format(
+                        count = count,
+                        name = enemy_name
+                    )
             else:
                 enemy_name = ''
                 for enemy_content in enemy_database['enemies']:
