@@ -63,17 +63,16 @@ if __name__ == '__main__':
     if 'special' in sys.argv:
         Furni(wiki, gameData)._run_update()
         Charword(wiki, gameData)._run_update()
+        # Route(wiki, gameData).run()
+        # Formula(wiki, gameData).run()
+        # Range(wiki, gameData).run()
+        # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
 
     if 'jp' in sys.argv:
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
         Weedy(wiki, gameData).run()
-
-    # Route(wiki, gameData).run()
-    # Formula(wiki, gameData).run()
-    # Range(wiki, gameData).run()
-    # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
 
     if '--check-git' in sys.argv:
         os.system('git status')
