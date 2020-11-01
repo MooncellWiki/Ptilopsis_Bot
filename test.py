@@ -41,8 +41,9 @@ if __name__ == '__main__':
     # Temp(wiki, gameData)._test()
     # Basic(wiki, gameData)._run_update(old_num = 161)
 
-    # up = UnpackerCN(config['unpacker'])
+    up = UnpackerCN(config['unpacker'])
     # up.get_all_gamedata()
     # up.unpack_all_gamedata()
-
+    # up.get_ab("battle/prefabs/[uc]skills.ab")
+    up.unpack_data("battle/prefabs/[uc]skills.ab")
 

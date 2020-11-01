@@ -38,8 +38,8 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
                     '<br/>')
                 override_desc = replace_key(replace_upper(override_desc))
                 override_desc = override_desc.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
-                override_desc = rts.compile(override_desc)
                 override_desc = override_desc.format(**desc_dic)
+                override_desc = rts.compile(override_desc)
 
                 override_desc_list[desc['unlockCondition']['phase']] = override_desc
 
@@ -816,11 +816,11 @@ class Basic(Job):
                 continue
             if char_detail['name'] in id_table:
                 if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['空']:
+                # if char_detail['name'] not in ['絮雨']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
-                continue
+                # continue
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
