@@ -818,7 +818,7 @@ class Basic(Job):
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
-                # continue
+                continue
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
