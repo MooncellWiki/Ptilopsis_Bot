@@ -532,13 +532,14 @@ class Stage(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         stage_list = self.wiki.category('分类:普通难度关卡')
+        # stage_list = self.wiki.category('分类:剿灭关卡')
         new_stage_list = []
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY'] or stage_detail[
                 'difficulty'] == 'FOUR_STAR':
-                # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
+            # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
             stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
             if stage_page_name in stage_list:

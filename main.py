@@ -9,6 +9,7 @@ from jobs.char_attr import CharAttr
 from jobs.charword import Charword
 from jobs.demand import Demand
 from jobs.furni import Furni
+from jobs.formula import Formula
 from jobs.item import Item
 from jobs.medal import Medal
 from jobs.mission import Mission
@@ -54,7 +55,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['W', '伊桑', '杜宾', '德克萨斯'])
+        Skin(wiki, gameData)._run_update(skin_list = [])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
