@@ -446,7 +446,7 @@ class Skin(Job):
         character_table = self.getgd('excel/character_table.json')
         skin_table = self.getgd('excel/skin_table.json')
 
-        update_randomFig(self.wiki, character_table, skin_table)
+        # update_randomFig(self.wiki, character_table, skin_table)
         # update_skin_handbook(self.wiki, character_table, skin_table)
         update_outfit_gallery(self.wiki, skin_table, character_table)
         update_outfit_brand(self.wiki, skin_table, character_table)

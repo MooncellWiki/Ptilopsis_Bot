@@ -260,12 +260,12 @@ class Route(Job):
         enemy_db = self.getgd('levels/enemydata/enemy_database.json')
 
         # levelId = 'Obt/Campaign/level_camp_03'  # 市区
-        levelId = 'obt/rune/level_rune_04-01'
+        levelId = 'Obt/Campaign/level_camp_r_01'
 
-        # level_table = self.getgd('levels/' + levelId + '.json')
-        # routes = get_routes(level_table['routes'])
-        # get_waves(level_table['waves'])
-        # wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+        level_table = self.getgd('levels/' + levelId + '.json')
+        routes = get_routes(level_table['routes'])
+        get_waves(level_table['waves'])
+        wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
         # for stage in stage_table['stages']:
         #     levelId = stage_table['stages'][stage]['levelId']
@@ -276,18 +276,18 @@ class Route(Job):
         #         routes = get_routes(level_table['routes'])
         #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
-        roguelike_table = self.getgd('excel/roguelike_table.json')
-        for stage in roguelike_table['stages']:
-            levelId = roguelike_table['stages'][stage]['levelId']
-            if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-                print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
-                level_table = self.getgd('levels/' + levelId + '.json')
-                count_enemy(level_table['waves'])
+        # roguelike_table = self.getgd('excel/roguelike_table.json')
+        # for stage in roguelike_table['stages']:
+        #     levelId = roguelike_table['stages'][stage]['levelId']
+        #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
+        #         print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
+        #         level_table = self.getgd('levels/' + levelId + '.json')
+        #         count_enemy(level_table['waves'])
 
-        # self.wiki.edit(
-        #     title = '用户:Seniorious/route',
-        #     text = wave_table,
-        #     summary = 'update'
-        # )
-        # # print(wave_table)
-        # print('Updated: {}.'.format('用户:Seniorious/route'))
+        self.wiki.edit(
+            title = '用户:Seniorious/route',
+            text = wave_table,
+            summary = 'update'
+        )
+        # print(wave_table)
+        print('Updated: {}.'.format('用户:Seniorious/route'))

@@ -594,6 +594,8 @@ def get_stories_list(char_detail, stories_table, char_key):
             storyCondition = replace_story_condition(
                 char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockString'],
                 char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'])
+        elif storyCondition_id == 6:
+            storyCondition = '升变解锁'
         stories_list += '|档案' + str(stories_id + 1) + '=' + storyTitle + '\n|档案' + str(
             stories_id + 1) + '条件=' + storyCondition + '\n|档案' + str(stories_id + 1) + '文本=' + storyText + '\n'
     stories_list += '}}'

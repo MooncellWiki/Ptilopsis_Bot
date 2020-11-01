@@ -13,6 +13,7 @@ from jobs.formula import Formula
 from jobs.item import Item
 from jobs.medal import Medal
 from jobs.mission import Mission
+from jobs.route import Route
 from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
@@ -80,3 +81,4 @@ if __name__ == '__main__':
         os.system('git add .')
         os.system('git commit -m "auto update"')
         os.system('git push')
+
