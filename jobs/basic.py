@@ -466,7 +466,7 @@ def get_phase_list(char_detail, gamedata_const, item_table):
             for material_id in range(len(char_detail['phases'][phase_id]['evolveCost'])):
                 material_list += ' {{材料消耗|' + \
                                  item_table['items'][char_detail['phases'][phase_id]['evolveCost'][material_id]['id']][
-                                     'name'] + '|' + str(
+                                     'name'].rstrip() + '|' + str(
                     char_detail['phases'][phase_id]['evolveCost'][material_id]['count']) + '}}'
             phase_list += '|精' + str(phase_id) + '=' + material_list + '\n'
         phase_list += '}}'
@@ -488,12 +488,12 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
                 if common_material_list == '':
                     common_material_list = '{{材料消耗|' + item_table['items'][
                         char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['id']][
-                        'name'] + '|' + str(
+                        'name'].rstrip() + '|' + str(
                         char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['count']) + '}}'
                 else:
                     common_material_list += ' {{材料消耗|' + item_table['items'][
                         char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['id']][
-                        'name'] + '|' + str(
+                        'name'].rstrip() + '|' + str(
                         char_detail['allSkillLvlup'][allSkillLvlup_id]['lvlUpCost'][common_material_id]['count']) + '}}'
             skill_levelUp_list += common_material_list + '\n'
 
@@ -506,11 +506,11 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
                     for material_id in range(len(skill_levelup_material)):
                         if material_list == '':
                             material_list = '{{材料消耗|' + item_table['items'][skill_levelup_material[material_id]['id']][
-                                'name'] + '|' + str(skill_levelup_material[material_id]['count']) + '}}'
+                                'name'].rstrip() + '|' + str(skill_levelup_material[material_id]['count']) + '}}'
                         else:
                             material_list += ' {{材料消耗|' + \
                                              item_table['items'][skill_levelup_material[material_id]['id']][
-                                                 'name'] + '|' + str(
+                                                 'name'].rstrip() + '|' + str(
                                 skill_levelup_material[material_id]['count']) + '}}'
                     skill_levelUp_list += '|' + trans_id(skill_id + 1) + str(i) + '=' + material_list + '\n'
         skill_levelUp_list += '}}'

@@ -31,7 +31,7 @@ def parse_reward(reward, item_table, building_data, character_table, skin_table)
         )
     else:
         return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
-            name = item_table['items'][reward['id']]['name'] if reward['id'] in item_table['items'] else reward['id'],
+            name = item_table['items'][reward['id']]['name'].rstrip() if reward['id'] in item_table['items'] else reward['id'],
             count = reward['count']
         )
 
@@ -59,7 +59,7 @@ def parse_collection(collection, item_table, building_data, character_table, ski
         )
     else:
         return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
-            name = item_table['items'][collection['itemId']]['name'],
+            name = item_table['items'][collection['itemId']]['name'].rstrip(),
             count = collection['itemCnt']
         )
 
@@ -106,7 +106,7 @@ def update_activity(activity_table, item_table, building_data, character_table, 
     activity_text = '==活动=='
     for act_info in activity_table['basicInfo']:
         activity_text += '\n==={name}===\n'.format(
-            name = activity_table['basicInfo'][act_info]['name']
+            name = activity_table['basicInfo'][act_info]['name'].rstrip()
         )
         if act_info in activity_text_dict:
             activity_text += activity_text_dict[act_info]
@@ -130,7 +130,7 @@ def update_activity(activity_table, item_table, building_data, character_table, 
                     item_list += '\n|-'
                 item_list += '\n|{point}\n|{item}'.format(
                     point = '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
-                        name = item_table['items'][collection['pointId']]['name'],
+                        name = item_table['items'][collection['pointId']]['name'].rstrip(),
                         count = collection['pointCnt']
                     ),
                     item = parse_collection(collection, item_table, building_data, character_table, skin_table)
@@ -153,7 +153,7 @@ def update_activity(activity_table, item_table, building_data, character_table, 
             activity_text += item_list
         elif activity_table['basicInfo'][act_info]['type'] == 'TYPE_ACT4D0':
             milestone_name = \
-                item_table['items'][activity_table['activity']['TYPE_ACT4D0'][act_info]['tokenItem']['id']]['name']
+                item_table['items'][activity_table['activity']['TYPE_ACT4D0'][act_info]['tokenItem']['id']]['name'].rstrip()
             item_list = '\n{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:500px;"'
             item_list += '\n!道具点数!!奖励'
             milestone_list = {}

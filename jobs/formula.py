@@ -23,8 +23,8 @@ def get_workshop_formulas(building_data, item_table, stage_table):
             require_stage = '－'
         formula_content = text.format(
             require_level,
-            '{{{{材料消耗|{}|{}}}}}'.format(item_table['items'][formula['itemId']]['name'], formula['count']),
-            ' '.join(['{{{{材料消耗|{}|{}}}}}'.format(item_table['items'][cost['id']]['name'], cost['count']) for cost in
+            '{{{{材料消耗|{}|{}}}}}'.format(item_table['items'][formula['itemId']]['name'].rstrip(), formula['count']),
+            ' '.join(['{{{{材料消耗|{}|{}}}}}'.format(item_table['items'][cost['id']]['name'].rstrip(), cost['count']) for cost in
                 formula['costs']]),
             formula['goldCost'],
             int(formula['apCost'] / 360000),

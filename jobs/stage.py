@@ -128,10 +128,10 @@ def parse_drop_item(drop_item, character_table, building_data, item_table):
             return building_data['customData']['furnitures'][drop_item['id']]['name']
         elif drop_item['type'] in ['MATERIAL', 'CARD_EXP', 'TKT_RECRUIT', 'GOLD', 'ACTIVITY_COIN', 'ACTIVITY_ITEM',
             'ET_STAGE', 'DIAMOND']:
-            return item_table['items'][drop_item['id']]['name']
+            return item_table['items'][drop_item['id']]['name'].rstrip()
         else:
             print('Unknown drop item {}'.format(drop_item['id']))
-            return item_table['items'][drop_item['id']]['name']
+            return item_table['items'][drop_item['id']]['name'].rstrip()
     except:
         return '物品{}'.format(drop_item['id'])
 

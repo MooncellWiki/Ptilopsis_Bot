@@ -8,7 +8,7 @@ def parse_item(item, character_table, building_data, item_table):
         return building_data['customData']['furnitures'][item['id']]['name']
     elif item['id'] in item_table['items']:
         return '{{{{材料消耗|{}|{}}}}}'.format(
-            item_table['items'][item['id']]['name'],
+            item_table['items'][item['id']]['name'].rstrip(),
             item['count']
         )
     else:

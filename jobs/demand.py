@@ -52,7 +52,7 @@ def update_mat_demand(wiki, character_table, item_table):
                                     skill_levelup_material[material_id]['count'])
 
     for material in mat_dic:
-        origin_text = wiki.read(item_table['items'][material]['name'])
+        origin_text = wiki.read(item_table['items'][material]['name'].rstrip())
         count1 = count2 = count3 = 0
         mat_desc = ''
         mat_text = ['', '', '', '', '', '']
@@ -102,13 +102,13 @@ def update_mat_demand(wiki, character_table, item_table):
         if origin_text != new_text:
             # print(new_text)
             wiki.edit(
-                title = item_table['items'][material]['name'],
+                title = item_table['items'][material]['name'].rstrip(),
                 text = new_text,
                 summary = 'update',
             )
-            print('Update: {}.'.format(item_table['items'][material]['name']))
+            print('Update: {}.'.format(item_table['items'][material]['name'].rstrip()))
         else:
-            print('Same: {}.'.format(item_table['items'][material]['name']))
+            print('Same: {}.'.format(item_table['items'][material]['name'].rstrip()))
 
 
 class Demand(Job):

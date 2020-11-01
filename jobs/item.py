@@ -11,7 +11,7 @@ def find(j, name, p):
 
 def get_id_by_name(item_table, name):
     for item in item_table['items']:
-        if item_table['items'][item]['name'] == name:
+        if item_table['items'][item]['name'].rstrip() == name:
             return item_table['items'][item]['itemId']
 
 
@@ -40,9 +40,9 @@ class Item(Job):
         u_items = self.wiki.category('分类:未实装道具')
         for item in item_table['items']:
             citem = item_table['items'][item]
-            if citem['name'] in u_items:
+            if citem['name'].rstrip() in u_items:
                 continue
-            if citem['name'] in items:
+            if citem['name'].rstrip() in items:
                 continue
             if citem['name'].find('的信物') != -1:
                 sort = '信物'
@@ -66,7 +66,7 @@ class Item(Job):
                     sort = '其他道具'
             if item_table['items'][item]['obtainApproach']:
                 tbasic_info = basic_info4.format(
-                    name=citem['name'],
+                    name=citem['name'].rstrip(),
                     description=citem['description'],
                     usage=citem['usage'],
                     obtainApproach=citem['obtainApproach'],
@@ -75,7 +75,7 @@ class Item(Job):
                     sort=sort)
             else:
                 tbasic_info = basic_info3.format(
-                    name=citem['name'],
+                    name=citem['name'].rstrip(),
                     description=citem['description'],
                     usage=citem['usage'],
                     rarity=citem['rarity'],
@@ -90,7 +90,7 @@ class Item(Job):
                     if cRoomType == 'MANUFACTURE':
                         cf = building_data['manufactFormulas'][cFormulaId]
                         tmf += basic_mf.format(
-                            name=item_table['items'][cf['itemId']]['name'],
+                            name=item_table['items'][cf['itemId']]['name'].rstrip(),
                             count=cf['count'],
                             weight=cf['weight'],
                             costPoint=build_time(cf['costPoint']),
@@ -99,14 +99,14 @@ class Item(Job):
                         tstr = ''
                         for i in range(0, cf['costs'].__len__()):
                             tstr = tstr + '|原料' + str(i) + '=' + item_table['items'][cf['costs'][i]['id']][
-                                'name'] + '\n|原料' \
+                                'name'].rstrip() + '\n|原料' \
                                    + str(i) + '数量=' + str(cf['costs'][i]['count']) + '\n'
                         tmf = tmf + tstr
                         tmf = tmf + '}}'
                     elif cRoomType == 'WORKSHOP':
                         cf = building_data['workshopFormulas'][cFormulaId]
                         twf += basic_wf.format(
-                            name=item_table['items'][cf['itemId']]['name'],
+                            name=item_table['items'][cf['itemId']]['name'].rstrip(),
                             count=cf['count'],
                             goldCost=cf['goldCost'],
                             apCost=cf['apCost'] / 360000,
@@ -115,14 +115,14 @@ class Item(Job):
                         tstr = ''
                         for i in range(0, cf['costs'].__len__()):
                             tstr = tstr + '|原料' + str(i + 1) + '=' + item_table['items'][cf['costs'][i]['id']][
-                                'name'] + '\n|原料' \
+                                'name'].rstrip() + '\n|原料' \
                                    + str(i + 1) + '数量=' + str(cf['costs'][i]['count']) + '\n'
                         totalWeight = 0
                         for oc in cf['extraOutcomeGroup']:
                             totalWeight += oc['weight']
                         for i in range(0, cf['extraOutcomeGroup'].__len__()):
                             tstr = tstr + '|副产物' + str(i + 1) + '=' + \
-                                   item_table['items'][cf['extraOutcomeGroup'][i]['itemId']]['name'] + \
+                                   item_table['items'][cf['extraOutcomeGroup'][i]['itemId']]['name'].rstrip() + \
                                    '\n|副产物' + str(i + 1) + '掉率=' + str(
                                 round((cf['extraOutcomeGroup'][i]['weight'] / totalWeight * 100), 1)) + '\n'
                         if cf['requireStages']:
@@ -140,4 +140,4 @@ class Item(Job):
                     tbasic_info = tbasic_info + '==材料掉落=='
             fin = '{{Navigator|道具一览}}\n' + tbasic_info + '\n{{道具导航}}'
             # print(fin)
-            self.wiki.edit(title=citem['name'], text=fin, summary='item init', createonly=True)
+            self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)

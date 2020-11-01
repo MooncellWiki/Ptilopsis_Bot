@@ -51,7 +51,7 @@ def update_mission(mission_table, item_table, rts):
                     if mission_table['periodicalRewards'][reward_id]['rewards']:
                         for reward in mission_table['periodicalRewards'][reward_id]['rewards']:
                             reward_content += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                                name = item_table['items'][reward['id']]['name'],
+                                name = item_table['items'][reward['id']]['name'].rstrip(),
                                 num = reward['count']
                             )
                     reward_list += '\n|-\n|reward set {sort_id}\n|{pointCost}\n|{reward_content}'.format(
@@ -120,7 +120,7 @@ def update_mission(mission_table, item_table, rts):
         if reward_desc['rewards']:
             for reward in reward_desc['rewards']:
                 reward_content += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                    name = item_table['items'][reward['id']]['name'],
+                    name = item_table['items'][reward['id']]['name'].rstrip(),
                     num = reward['count']
                 )
         reward_dict[reward_desc['groupId']][
@@ -146,7 +146,7 @@ def update_mission(mission_table, item_table, rts):
             if mission_table['missions'][mission]['rewards']:
                 for reward in mission_table['missions'][mission]['rewards']:
                     mission_reward += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                        name = item_table['items'][reward['id']]['name'],
+                        name = item_table['items'][reward['id']]['name'].rstrip(),
                         num = reward['count']
                     )
             if mission_table['missions'][mission]['periodicalPoint'] != 0:

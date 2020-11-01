@@ -13,7 +13,7 @@ def update_furni(wiki, building_data, item_table):
         
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
-                name = item_table['items'][furni_data['processedProductId']]['name'],
+                name = item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
                 number = furni_data['processedProductCount']
             )
         else:
@@ -66,7 +66,7 @@ def create_furni(wiki, building_data, item_table):
             continue
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
-                name = item_table['items'][furni_data['processedProductId']]['name'],
+                name = item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
                 number = furni_data['processedProductCount']
             )
         else:
