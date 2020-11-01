@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2241225171,
+        "totalSize": 2241227771,
         "abSize": 0
     },
-    "versionId": "20-10-30-07-01-49-c0b8d2",
+    "versionId": "20-11-01-12-18-32-cebe0a",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "20-10-30-07-01-49-c0b8d2",
-            "md5": "abcdd1d326c3a9db76df8f4bd198eddc",
+            "hash": "20-11-01-12-18-32-cebe0a",
+            "md5": "7f387d801de945c9f35804fda1179f8e",
             "totalSize": 102064,
-            "abSize": 119738
+            "abSize": 119734
         },
         {
             "name": "torappu_index.ab",
-            "hash": "20-10-30-07-01-49-c0b8d2",
-            "md5": "cd9a80bcb39a467c4b0e41d5985e6b93",
-            "totalSize": 300657,
-            "abSize": 436716
+            "hash": "20-11-01-12-18-32-cebe0a",
+            "md5": "ac24e161babce0c4e8f88523504972b1",
+            "totalSize": 300690,
+            "abSize": 436733
         },
         {
             "name": "[uc]shaders.ab",
@@ -18458,10 +18458,10 @@
         },
         {
             "name": "gamedata/[uc]lua.ab",
-            "hash": "1a9cc416c8a8395bc597c947000193b2",
-            "md5": "0d042c402047a50ab2e2a58a755b32e8",
-            "totalSize": 126939,
-            "abSize": 126969
+            "hash": "0b0330ba2c3c404baf4055c8d55d7e7a",
+            "md5": "f7419f3f37dadc7c5d6c804dd9cda54f",
+            "totalSize": 127761,
+            "abSize": 127789
         },
         {
             "name": "gamedata/excel/activity_table.ab",
@@ -18535,9 +18535,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "f91afa5a2c046e38518f22ae71a85d7f",
-            "md5": "2c3c9d8fee192981f74fa16a994a875e",
-            "totalSize": 1206,
+            "hash": "32671b8b89c533144f55c6e40538617d",
+            "md5": "a097c9ab661c784251a29f928141ef95",
+            "totalSize": 1208,
             "abSize": 1223
         },
         {
@@ -18661,10 +18661,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "c2a76863e185b8ab980992b056bb4c94",
-            "md5": "f8ff71e80108c58a4d86d418bcf43d40",
-            "totalSize": 2892252,
-            "abSize": 2891718
+            "hash": "c33f18c64f6ee4c80b27265b20b5f8d0",
+            "md5": "bfa2e34593650cbf8e4b657b380806d9",
+            "totalSize": 2893995,
+            "abSize": 2893462
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -23911,7 +23911,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "20-10-30-07-01-49-c0b8d2",
+            "hash": "20-11-01-12-18-32-cebe0a",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,

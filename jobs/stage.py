@@ -1,8 +1,7 @@
+import json
+
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
-
-import json
-import requests
 
 
 def parse_stage_type(stage_type):
@@ -230,7 +229,8 @@ def analyze_level_info(level_table):
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
             min_time += fragment['preDelay']
-            min_time += max([action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+            min_time += max(
+                [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
             for unit in fragment['actions']:
                 if unit['actionType'] == 0 and unit['key'] != '':
                     enemy_count += unit['count']
@@ -240,7 +240,7 @@ def analyze_level_info(level_table):
         level_info += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
     else:
         level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
-    return  level_info
+    return level_info
 
 
 def get_enemy_data(level_table, enemy_table, enemy_database):
@@ -343,9 +343,12 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
         )
     if stage_detail['levelId']:
         stage_data += analyze_level_info(level_table)
-    stage_data += '|关卡描述={desc}\n'.format(
-        desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
-    )
+    if stage_detail['description']:
+        stage_data += '|关卡描述={desc}\n'.format(
+            desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+        )
+    else:
+        stage_data += '|关卡描述=\n'
     stage_data += '|作战消耗={}\n'.format(stage_detail['apCost'])
     if stage_detail['canPractice'] == True:
         stage_data += '|演习消耗={}\n'.format(stage_detail['practiceTicketCost'])
@@ -537,7 +540,7 @@ class Stage(Job):
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
-            if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY'] or stage_detail[
+            if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY'] or stage_detail[
                 'difficulty'] == 'FOUR_STAR':
             # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
@@ -595,7 +598,6 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-
     def _run_crisis(self):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
@@ -605,13 +607,13 @@ class Stage(Job):
         for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
             stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
 
-        # 从 weedy 读
-        # session = requests.Session()
-        # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
-        # stage_list = [stage_list[0]]
-        # for stage_key in stage_list:
-        #     stage_detail = stage_key
-        #     stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
+            # 从 weedy 读
+            # session = requests.Session()
+            # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
+            # stage_list = [stage_list[0]]
+            # for stage_key in stage_list:
+            #     stage_detail = stage_key
+            #     stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
 
             stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
 
@@ -646,7 +648,6 @@ class Stage(Job):
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
 
-
     def _run_rogue_like(self):
         roguelike_table = self.getgd('excel/roguelike_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
@@ -668,7 +669,8 @@ class Stage(Job):
                 level_table = {}
 
             stage_normal_data = get_roguelike_data(stage_detail, level_table, rts)
-            linkedStage = [k for k in roguelike_table['stages'] if roguelike_table['stages'][k]['linkedStageId'] == stage_key]
+            linkedStage = [k for k in roguelike_table['stages'] if
+                roguelike_table['stages'][k]['linkedStageId'] == stage_key]
             if len(linkedStage) >= 1:
                 stage_4star_data = get_roguelike_4star_data(roguelike_table['stages'][linkedStage[0]], level_table, rts)
             else:
@@ -693,7 +695,6 @@ class Stage(Job):
             )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
-
 
     def _run_enemy_data(self, level_table):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')
