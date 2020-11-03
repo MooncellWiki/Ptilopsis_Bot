@@ -3,167 +3,170 @@ import re
 from utils.job import Job
 
 
-def get_charword_data(char_id, char_name, charword_table):
-    char_word = '''<noinclude>
-==语音记录==
-</noinclude>{{#invoke:VoiceTable|table|表格标题=语音记录
-<noinclude>|可播放=1</noinclude>'''
-    for charword_id in charword_table:
-        if char_id in charword_id:
-            char_word += '\n'
-            if charword_table[charword_id]['unlockType'] == 'DIRECT':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n|日文{id}=\n|中文{id}={text_cn}\n|语音{id}={voice}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav'
-                )
-            elif charword_table[charword_id]['unlockType'] == 'AWAKE':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n|日文{id}=\n|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = charword_table[charword_id]['lockDescription'].replace('以查看更多信息', '以查看')
-                )
-            elif charword_table[charword_id]['unlockType'] == 'FAVOR':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n|日文{id}=\n|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'],
-                        charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
-                )
-    char_word += '}}'
-    return char_word
+def norm_text(t):
+    result = t.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
+    result = result.replace('{@nickname}', '{{DrName}}')
+    result = result.replace('~~~', '<nowiki>~~~</nowiki>')
+    return result.rstrip()
 
 
-def update_charword_data(char_id, char_name, origin_text, charword_table):
-    char_word = '''<noinclude>
-==语音记录==
-</noinclude>{{#invoke:VoiceTable|table|表格标题=语音记录
-<noinclude>|可播放=1</noinclude>'''
-    for charword_id in charword_table:
-        if char_id in charword_id:
-            char_word += '\n'
-            text_id = charword_table[charword_id]['voiceIndex']
-            text_jp = '|日文{id}=\n'.format(id = text_id)
-            num1 = origin_text.find('|日文{id}='.format(id = text_id))
-            if num1 != -1:
-                num2 = origin_text.find('|中文{id}='.format(id = text_id))
-                text_jp = origin_text[num1:num2]
-
-            if charword_table[charword_id]['unlockType'] == 'DIRECT':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n{text_jp}|中文{id}={text_cn}\n|语音{id}={voice}\n'.format(
-                    id = text_id,
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp,
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav'
-                )
-            elif charword_table[charword_id]['unlockType'] == 'AWAKE':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n{text_jp}|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = text_id,
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp,
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = charword_table[charword_id]['lockDescription'].replace('以查看更多信息', '以查看')
-                )
-            elif charword_table[charword_id]['unlockType'] == 'FAVOR':
-                text = charword_table[charword_id]['voiceText']
-                text = text.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-                text = text.replace('{@nickname}', '{{DrName}}')
-                char_word += '|标题{id}={title}\n{text_jp}|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = text_id,
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp,
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'],
-                        charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
-                )
-    char_word += '}}'
-    return char_word
-
-
-def replace_story_condition(text, num):
-    p1 = r"(.*)信赖(.*)"
-    pattern1 = re.compile(p1)
-    result = re.search(pattern1, text)
-    if result:
-        text = result.group(1) + '信赖至' + str(num) + '%' + result.group(2)
+def concat_id(voice_data, char_name, text_jp=''):
+    text = '|标题{id}={title}\n|日文{id}={text_jp}\n|中文{id}={text_cn}\n|语音{id}={voice}\n'.format(
+        id = voice_data['voiceIndex'],
+        title = voice_data['voiceTitle'].rstrip(),
+        text_jp = norm_text(text_jp),
+        text_cn = norm_text(voice_data['voiceText']),
+        voice = char_name + ' ' + voice_data['voiceTitle'].rstrip() + '.wav'
+    )
+    if voice_data['unlockType'] == 'DIRECT':
+        pass
+    elif voice_data['unlockType'] == 'FAVOR':
+        if voice_data['lockDescription'] != '提升信赖以查看更多信息':
+            unlock_cond = voice_data['lockDescription'].rstrip()
+            print('new voice favor unlock description for', voice_data['charWordId'])
+        else:
+            unlock_cond = '提升信赖至{}%以查看'.format(voice_data['unlockParam'][0]['valueInt'])
+        text += '|条件{id}={unlock_cond}\n'.format(
+            id = voice_data['voiceIndex'],
+            unlock_cond = unlock_cond
+        )
+    elif voice_data['unlockType'] == 'AWAKE':
+        text += '|条件{id}={unlock_cond}\n'.format(
+            id = voice_data['voiceIndex'],
+            unlock_cond = voice_data['lockDescription'].replace('以查看更多信息', '以查看').rstrip()
+        )
+    else:
+        text += '|条件{id}={unlock_cond}\n'.format(
+            id = voice_data['voiceIndex'],
+            unlock_cond = voice_data['lockDescription'].rstrip()
+        )
+        print('new voice unlock type for', voice_data['charWordId'])
     return text
 
 
-def create_charword(wiki, character_table, charword_table):
-    charword_list = wiki.category('分类:干员语音')
+def get_charword_data(word_key, file_name, charword_table, text_jp_dict='', title='语音记录'):
+    char_word = '<noinclude>\n=={}==\n<!--{}-->\n'.format(title, word_key) + \
+                '</noinclude>{{#invoke:VoiceTable|table|表格标题=' + title + \
+                '\n<noinclude>|可播放=1</noinclude>'
+    for data in sorted(filter(lambda x: x['wordKey'] == word_key, charword_table.values()),
+            key = lambda x: x['voiceIndex']):
+        if text_jp_dict is not None and str(data['voiceIndex']) in text_jp_dict:
+            char_word += '\n' + concat_id(data, file_name, text_jp = text_jp_dict[str(data['voiceIndex'])])
+        else:
+            char_word += '\n' + concat_id(data, file_name)
+    char_word += '}}'
+    return char_word
 
-    for char_id in character_table:
-        char_detail = character_table[char_id]
-        if (char_detail['name'] + '/语音记录') in charword_list or char_detail['profession'] == 'TRAP' or char_detail[
-            'profession'] == 'TOKEN':
-        # if char_detail['name'] != '预备干员-近战' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+
+def word_key_list(char_id, charword_table):
+    key_list = []
+    for key in filter(lambda x: x['charId'] == char_id, charword_table.values()):
+        if key['wordKey'] not in key_list:
+            key_list.append(key['wordKey'])
+    return key_list
+
+
+def create_charword(wiki, char_list, charword_table):
+    for char_id, char_name in char_list:
+        key_list = word_key_list(char_id, charword_table)
+        if key_list == []:
             continue
-        #
-        if len([k for k in charword_table if char_id in k]) == 0:
-            continue
-        charword_data = get_charword_data(char_id, char_detail['name'], charword_table)
+
+        content = ''
+        for k in key_list:
+            file_name = char_name
+            if k != char_id:
+                file_name = k.replace(char_id, char_name).replace('#', '-')
+            content += get_charword_data(k, file_name, charword_table) + '\n'
+        content = content.rstrip()
 
         wiki.edit(
-            title = char_detail['name'] + '/语音记录',
-            text = charword_data,
+            title = char_name + '/语音记录',
+            text = content,
             summary = 'init',
             bot = None,
             minor = True
         )
-        # print(charword_data)
-        print('Created: {}.'.format(char_detail['name'] + '/语音记录'))
+        # print(content)
+        print('Created: {}.'.format(char_name + '/语音记录'))
 
 
-def update_charword(wiki, character_table, charword_table):
-    for char in character_table:
-        char_detail = character_table[char]
-        if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
-            # if char_detail['name'] != '安洁莉娜' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+def update_charword(wiki, char_list, charword_table):
+    for char_id, char_name in char_list:
+        key_list = word_key_list(char_id, charword_table)
+        # 处理阿米娅升变
+        if char_id == 'char_1001_amiya2':
+            key_list.append('char_1001_amiya2')
+        if char_id == 'char_002_amiya':
+            key_list.remove('char_1001_amiya2')
+        if key_list == []:
             continue
 
-        if len([k for k in charword_table if char in k]) == 0:
-            continue
+        origin_text = wiki.read(char_name + '/语音记录')
+        origin_text += '=='
+        new_text = ''
+        for k in key_list:
+            file_name = char_name
+            if k != char_id:
+                file_name = k.replace(char_id, char_name).replace('#', '-')
+            result = re.search(r'<!--{}-->([\s\S]*?)=='.format(k), origin_text)
+            if result:
+                title = re.search(r'\|表格标题=(.*)', result.group(1)).group(1).rstrip()
+                result_jp = re.findall(r'\|日文([0-9]+?)=(.+?)\n', result.group(1))
+                d = {k: v for k, v in result_jp}
+                new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = d, title = title)
+            else:
+                new_text += get_charword_data(k, file_name, charword_table)
+            new_text += '\n'
 
-        origin_text = wiki.read(char_detail['name'] + '/语音记录')
-
-        new_text = update_charword_data(char, char_detail['name'], origin_text, charword_table)
-        num1 = origin_text.find('\n<noinclude>[[分类')
-        if num1 != -1:
-            new_text += origin_text[num1:]
+        origin_text = origin_text[:-2]
+        flag = origin_text.find('<noinclude>[[分类')
+        if flag != -1:
+            new_text += origin_text[flag:]
+        new_text = new_text.rstrip()
 
         if origin_text != new_text:
             wiki.edit(
-                title = char_detail['name'] + '/语音记录',
+                title = char_name + '/语音记录',
                 text = new_text,
                 summary = 'update'
             )
             # print(new_text)
-            print('Update: {}.'.format(char_detail['name'] + '/语音记录'))
+            print('Update: {}.'.format(char_name + '/语音记录'))
         else:
-            print('Same: {}.'.format(char_detail['name'] + '/语音记录'))
+            print('Same: {}.'.format(char_name + '/语音记录'))
+
+
+def update_charword_jp(wiki, char_list, charword_table, charword_table_jp):
+    for char_id, char_name in char_list:
+        key_list = word_key_list(char_id, charword_table)
+        if key_list == []:
+            continue
+
+        origin_text = wiki.read(char_name + '/语音记录')
+        text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
+            filter(lambda x: x['charId'] == char_id, charword_table_jp.values())}
+        new_text = get_charword_data(char_id, char_name, charword_table, text_jp_dict = text_jp_dict)
+        new_text += '\n<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
+
+        if origin_text != new_text:
+            wiki.edit(
+                title = char_name + '/语音记录',
+                text = new_text,
+                summary = 'update',
+            )
+            # print(new_text)
+            print('Update: {}.'.format(char_name + '/语音记录'))
+        else:
+            print('Same: {}.'.format(char_name + '/语音记录'))
+
+
+def char_filter(char_tuple):
+    if char_tuple[1]['profession'] == 'TRAP' or char_tuple[1]['profession'] == 'TOKEN':
+        return False
+    # if char_tuple[1]['name'] not in ['泥岩', '阿米娅', '阿米娅(近卫)']:
+    #     return False
+    return True
 
 
 class Charword(Job):
@@ -171,10 +174,47 @@ class Charword(Job):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
 
-        create_charword(self.wiki, character_table, charword_table)
+        charword_page_list = self.wiki.category('分类:干员语音')
+        char_list = []
+        for char_id in character_table:
+            if character_table[char_id]['profession'] == 'TRAP' or character_table[char_id]['profession'] == 'TOKEN':
+                continue
+            if character_table[char_id]['name'] + '/语音记录' in charword_page_list:
+                continue
+            char_list.append((char_id, character_table[char_id]['name']))
+
+        create_charword(self.wiki, char_list, charword_table)
 
     def _run_update(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
 
+        char_list = [(k, v['name']) for k, v in filter(char_filter, character_table.items())]
+        char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
         update_charword(self.wiki, character_table, charword_table)
+
+    def _run_update_jp(self):
+        character_table = self.getgd('excel/character_table.json')
+        charword_table = self.getgd('excel/charword_table.json')
+
+        character_table_jp = self.getgd('excel/character_table.json', 'jp')
+        charword_table_jp = self.getgd('excel/charword_table.json', 'jp')
+
+        if 'wordKey' in charword_table_jp['char_002_amiya_CN_001']:
+            print('Need update!')
+            self.wiki.edit(
+                title = '用户:Seniorious',
+                appendtext = '\n日服语音更新',
+                summary = '',
+            )
+            exit()
+
+        char_list = []
+        for char_id in character_table_jp:
+            if char_id not in character_table:
+                print('Character {} not find.'.format(char_id))
+                continue
+            if character_table[char_id]['profession'] == 'TRAP' or character_table[char_id]['profession'] == 'TOKEN':
+                continue
+            char_list.append((char_id, character_table[char_id]['name']))
+        update_charword_jp(self.wiki, char_list, charword_table, charword_table_jp)

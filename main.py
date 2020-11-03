@@ -71,6 +71,7 @@ if __name__ == '__main__':
         # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
 
     if 'jp' in sys.argv:
+        Charword(wiki, gameData)._run_update_jp()
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
