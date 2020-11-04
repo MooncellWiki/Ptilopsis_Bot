@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2241227771,
+        "totalSize": 2241235469,
         "abSize": 0
     },
-    "versionId": "20-11-01-12-18-32-cebe0a",
+    "versionId": "20-11-03-07-52-10-eb3c1c",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "20-11-01-12-18-32-cebe0a",
-            "md5": "7f387d801de945c9f35804fda1179f8e",
+            "hash": "20-11-03-07-52-10-eb3c1c",
+            "md5": "e02c6b2fb61ab3e684831bea752c9c9e",
             "totalSize": 102064,
-            "abSize": 119734
+            "abSize": 119733
         },
         {
             "name": "torappu_index.ab",
-            "hash": "20-11-01-12-18-32-cebe0a",
-            "md5": "ac24e161babce0c4e8f88523504972b1",
-            "totalSize": 300690,
-            "abSize": 436733
+            "hash": "20-11-03-07-52-10-eb3c1c",
+            "md5": "97e46407f9c2839acfa68d1dac6937e0",
+            "totalSize": 300733,
+            "abSize": 436816
         },
         {
             "name": "[uc]shaders.ab",
@@ -13936,10 +13936,10 @@
         },
         {
             "name": "battle/prefabs/[uc]skills.ab",
-            "hash": "d81c6b7f497f9cd464a219b71c8a0366",
-            "md5": "25440f94219fd7c1b1803dfd6057d914",
-            "totalSize": 137345,
-            "abSize": 161892
+            "hash": "c696a7976c3dfc3c4a7d3196717e7e47",
+            "md5": "2a9816e43719731970d943e37dd7afdb",
+            "totalSize": 137375,
+            "abSize": 161907
         },
         {
             "name": "battle/prefabs/[uc]tiles.ab",
@@ -13950,10 +13950,10 @@
         },
         {
             "name": "battle/prefabs/[uc]tokens.ab",
-            "hash": "cd7cd75d37693c73feefe2d8192e4b32",
-            "md5": "3532e770e4f30ab00054a580ac4f6bb0",
-            "totalSize": 813406,
-            "abSize": 921579
+            "hash": "05a1788e7b4c45df6c408e1d806f9018",
+            "md5": "d3e196c736e20117ba2cf22d3af4d950",
+            "totalSize": 813404,
+            "abSize": 921578
         },
         {
             "name": "battle/prefabs/effects/absin.ab",
@@ -15686,10 +15686,10 @@
         },
         {
             "name": "battle/prefabs/enemies/enemy_15.ab",
-            "hash": "1112ac90903d3e7ede5d1cb861a06c46",
-            "md5": "65e87aef42b32f04b6486dfa5c9a14f0",
-            "totalSize": 1886154,
-            "abSize": 2268566
+            "hash": "8a15effeaceb82ceaf7b4d87664abf16",
+            "md5": "e155026f807d566264fdc0e4eedac762",
+            "totalSize": 1886164,
+            "abSize": 2268575
         },
         {
             "name": "battle/prefabs/enemies/enemy_20.ab",
@@ -18325,10 +18325,10 @@
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "12deab96b095840e6d3e0a7516fbb155",
-            "md5": "eef2d9ddbce3a639c1b9e1a047d1131a",
-            "totalSize": 20732,
-            "abSize": 23555
+            "hash": "1c9f649c7146fd302ead0c6e889f57a8",
+            "md5": "619d522bf3939383a92912532374e880",
+            "totalSize": 20782,
+            "abSize": 23580
         },
         {
             "name": "config/config.ab",
@@ -18458,10 +18458,10 @@
         },
         {
             "name": "gamedata/[uc]lua.ab",
-            "hash": "0b0330ba2c3c404baf4055c8d55d7e7a",
-            "md5": "f7419f3f37dadc7c5d6c804dd9cda54f",
-            "totalSize": 127761,
-            "abSize": 127789
+            "hash": "bbfc1000a43ac5c70ac6114de16437f4",
+            "md5": "72efdbcf079d3c47737e9d1b278743e4",
+            "totalSize": 132229,
+            "abSize": 132253
         },
         {
             "name": "gamedata/excel/activity_table.ab",
@@ -18535,9 +18535,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "32671b8b89c533144f55c6e40538617d",
-            "md5": "a097c9ab661c784251a29f928141ef95",
-            "totalSize": 1208,
+            "hash": "aafc4eb4fc0410544ac46d37ab4d41c8",
+            "md5": "d9767b4ef4392a1161f14b1245a5459f",
+            "totalSize": 1209,
             "abSize": 1223
         },
         {
@@ -18661,10 +18661,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "c33f18c64f6ee4c80b27265b20b5f8d0",
-            "md5": "bfa2e34593650cbf8e4b657b380806d9",
-            "totalSize": 2893995,
-            "abSize": 2893462
+            "hash": "fbce448bee0cd262756496cd75dcefce",
+            "md5": "82ddaeefb4ec5e8b6e6b4381b639d005",
+            "totalSize": 2897451,
+            "abSize": 2896918
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -23057,10 +23057,10 @@
         },
         {
             "name": "spritepack/ui_item_icons_h1_acticon_0.ab",
-            "hash": "a0d92184d28952570dfd8a42c7ff199b",
-            "md5": "4713bb5fa3fd6684d2e9287ba4993362",
-            "totalSize": 256066,
-            "abSize": 282817
+            "hash": "0b4192a84699f66bb25c479ee9465f7d",
+            "md5": "95c13f8759fea000c47ba287b4845e3f",
+            "totalSize": 255708,
+            "abSize": 282437
         },
         {
             "name": "spritepack/ui_item_icons_h1_potential_0.ab",
@@ -23911,7 +23911,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "20-11-01-12-18-32-cebe0a",
+            "hash": "20-11-03-07-52-10-eb3c1c",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
