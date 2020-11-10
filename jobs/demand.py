@@ -1,3 +1,4 @@
+import copy
 from utils.job import Job
 
 mat_dic = {}
@@ -100,12 +101,12 @@ def update_mat_demand(wiki, character_table, item_table):
 
         # edit wiki
         if origin_text != new_text:
-            # print(new_text)
             wiki.edit(
                 title = item_table['items'][material]['name'].rstrip(),
                 text = new_text,
                 summary = 'update',
             )
+            # print(new_text)
             print('Update: {}.'.format(item_table['items'][material]['name'].rstrip()))
         else:
             print('Same: {}.'.format(item_table['items'][material]['name'].rstrip()))
@@ -115,5 +116,13 @@ class Demand(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
         item_table = self.getgd('excel/item_table.json')
+        char_patch_table = self.getgd('excel/char_patch_table.json')
+        
+        character_table_new = copy.deepcopy(character_table)
+        for k in char_patch_table['patchChars']:
+            character_table_new[k] = char_patch_table['patchChars'][k]
+        character_table_new['char_1001_amiya2']['name'] = '阿米娅(近卫)'
+        character_table_new['char_1001_amiya2']['phases'] = character_table['char_508_aguard']['phases']
+        character_table_new['char_1001_amiya2']['allSkillLvlup'] = character_table['char_508_aguard']['allSkillLvlup']
 
-        update_mat_demand(self.wiki, character_table, item_table)
+        update_mat_demand(self.wiki, character_table_new, item_table)

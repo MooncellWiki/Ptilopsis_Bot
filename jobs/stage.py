@@ -267,6 +267,10 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
                 count = count,
                 enemy_num = enemy_num_dict[enemy['id']]
             )
+            enemy_data += '|敌人{count}级别={level}\n'.format(
+                count = count,
+                level = enemy['level']
+            )
             enemy_data += '|敌人{}备注=需人工复查！\n'.format(count)
         else:
             if enemy['id'] in enemy_table:
