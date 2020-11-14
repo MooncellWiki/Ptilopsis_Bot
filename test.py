@@ -15,8 +15,8 @@ from utils.unpacker_cn import UnpackerCN
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
 # from jobs._temp import Temp
-# from jobs.basic import Basic
-from jobs.charword import Charword
+from jobs.basic import Basic
+# from jobs.charword import Charword
 
 
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Route(wiki, gameData).run()
     # Weedy(wiki, gameData).run()
-    # Basic(wiki, gameData)._run_update(147)
+    # Basic(wiki, gameData)._run_update(170)
     # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # Stage(wiki, gameData)._run_rogue_like()
     # Temp(wiki, gameData)._test()
     # Basic(wiki, gameData)._run_update(old_num = 161)
-    Charword(wiki, gameData)._run_update_jp()
+    # Charword(wiki, gameData)._run_update_jp()
 
     # up = UnpackerCN(config['unpacker'])
     # up.get_all_gamedata()
