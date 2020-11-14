@@ -22,8 +22,6 @@ jobs:
         python-version: 3.7
     - name: weedy_high
       run: |
-        pip install pytz
-        pip install requests
-        pip install retrying
+        pip install -r requirements.txt
         python main.py weedy
 
