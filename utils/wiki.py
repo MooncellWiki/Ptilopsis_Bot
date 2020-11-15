@@ -75,7 +75,7 @@ class Wiki:
             'token': token.json()['query']['tokens']['csrftoken'],
         }
         for key in args:
-            if not args[key] is None:
+            if args[key] is not None:
                 if key in boolargs and args[key]:
                     post_data[key] = '1'
                 else:
