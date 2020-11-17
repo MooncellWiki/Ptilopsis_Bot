@@ -453,13 +453,14 @@ def get_crisis_data(stage_detail, level_table, rts):
     stage_data += '|所属区域={}\n'.format(stage_detail['code'])
     if stage_detail['levelId']:
         stage_data += analyze_level_info(level_table)
+    if 'description' in stage_detail:
+        stage_desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))  # crisis_info
+    elif 'desc' in stage_detail:
+        stage_desc = rts.compile(stage_detail['desc'].replace('\\n', '<br/>'))  # weedy
+    else:
+        stage_desc = ''
     stage_data += '|关卡描述={desc}\n'.format(
-        if 'description' in stage_detail:
-            desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))  # crisis_info
-        elif 'desc' in stage_detail:
-            desc = rts.compile(stage_detail['desc'].replace('\\n', '<br/>'))  # weedy
-        else:
-            desc = ''
+        desc = stage_desc
     )
     stage_data += '|作战消耗={}\n'.format(0)
     stage_data += '|演习消耗=-1\n'
