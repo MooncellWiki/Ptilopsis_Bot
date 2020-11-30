@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2265938524,
+        "totalSize": 2256613903,
         "abSize": 0
     },
-    "versionId": "20-11-13-08-15-09-d6f91c",
+    "versionId": "20-11-22-14-46-59-5ad221",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "20-11-13-08-15-09-d6f91c",
-            "md5": "b78fcef14cd427cea581317ae5ce937d",
-            "totalSize": 102682,
-            "abSize": 120504
+            "hash": "20-11-22-14-46-59-5ad221",
+            "md5": "b312121086569dddf73b1690ccce89ad",
+            "totalSize": 102604,
+            "abSize": 120397
         },
         {
             "name": "torappu_index.ab",
-            "hash": "20-11-13-08-15-09-d6f91c",
-            "md5": "01d183d86b26629c98de4bc8a9f9a5b4",
-            "totalSize": 302554,
-            "abSize": 439422
+            "hash": "20-11-22-14-46-59-5ad221",
+            "md5": "3b5c65e0601e0caef70f8d7182857a22",
+            "totalSize": 302336,
+            "abSize": 439188
         },
         {
             "name": "[uc]shaders.ab",
@@ -3601,10 +3601,10 @@
         },
         {
             "name": "arts/ui/homebanners/gacha/banner_hub.ab",
-            "hash": "98a0270052ee890edf83a63165c152d6",
-            "md5": "1fffb4ffa833ef81e063911ff1cc81bc",
-            "totalSize": 2034,
-            "abSize": 2291
+            "hash": "fe01adfa93637f71b442822da5335981",
+            "md5": "f4ef710d078743058dbe13144a15a019",
+            "totalSize": 2039,
+            "abSize": 2301
         },
         {
             "name": "arts/ui/homebanners/shop/banner_hub.ab",
@@ -6510,34 +6510,6 @@
             "md5": "2c6b1615983855780625d8827d6f03ff",
             "totalSize": 3628132,
             "abSize": 3627308
-        },
-        {
-            "name": "audio/sound_beta_2/music/act14d5d0/m_bat_ccs3b1_intro.ab",
-            "hash": "8bf348920cf2fbbc1edce5e7db06208c",
-            "md5": "8285200039d84415cd8f7476a510e4e4",
-            "totalSize": 154071,
-            "abSize": 154137
-        },
-        {
-            "name": "audio/sound_beta_2/music/act14d5d0/m_bat_ccs3b1_loop.ab",
-            "hash": "95ad3c744642c2c35417021f5025b0a0",
-            "md5": "14fd37dcce20d5c043916d849b7aea90",
-            "totalSize": 4826914,
-            "abSize": 4835514
-        },
-        {
-            "name": "audio/sound_beta_2/music/act14d5d0/m_bat_ccs3b2_intro.ab",
-            "hash": "219117e8ddefbcc6b0e12c926a92204c",
-            "md5": "5fa6f84544c6c67bf0416ada51625bac",
-            "totalSize": 557176,
-            "abSize": 557320
-        },
-        {
-            "name": "audio/sound_beta_2/music/act14d5d0/m_bat_ccs3b2_loop.ab",
-            "hash": "38eb52547e60744eb9612b2cc4a2f7fa",
-            "md5": "2384973c9cd7cd7b25f3f2de81bbe441",
-            "totalSize": 4696662,
-            "abSize": 4705614
         },
         {
             "name": "audio/sound_beta_2/music/act14d5d0/m_sys_ccs3_intro.ab",
@@ -18563,10 +18535,10 @@
         },
         {
             "name": "gamedata/excel/audio_data.ab",
-            "hash": "72eb3d99032835c575c9aae70b970a75",
-            "md5": "bd50c27147e4311d2e9be582e405e05b",
-            "totalSize": 965083,
-            "abSize": 965143
+            "hash": "6956161b31b79ed9197c47f720cfb57d",
+            "md5": "aa1cf5e05d43803e5a1dc20f52446783",
+            "totalSize": 965069,
+            "abSize": 965158
         },
         {
             "name": "gamedata/excel/building_data.ab",
@@ -18626,9 +18598,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "a6bf5390f0cb8fa3d898bb58c4ebe34c",
-            "md5": "f02426725c8d1b0a304e76c7f23ff5a5",
-            "totalSize": 1205,
+            "hash": "bdefe7f0a9d93455da72d1e4ca56cb27",
+            "md5": "c0dabf8c114b42724b24297af0510b2b",
+            "totalSize": 1209,
             "abSize": 1223
         },
         {
@@ -18647,10 +18619,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "14b68ca3b11e390c10dcf1a4319bb7e6",
-            "md5": "011979cd88ef6e2fc2776be03cc4eabf",
-            "totalSize": 80320,
-            "abSize": 80458
+            "hash": "557a8862874f69d79cf7c814f8f0325d",
+            "md5": "2b514733151d045f5f7b1b14a5e4ea98",
+            "totalSize": 80923,
+            "abSize": 81069
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -23057,10 +23029,10 @@
         },
         {
             "name": "spritepack/ui_crisis_rune_icon_h1_0.ab",
-            "hash": "a783aa1ef93999417c523e403c581966",
-            "md5": "20f049b28f0860e65b70ccb1ea6357ee",
-            "totalSize": 545642,
-            "abSize": 621039
+            "hash": "bc2af35c85bdd54650971aa47f3f0201",
+            "md5": "27194412efad8e43308f2bb97fafa5a5",
+            "totalSize": 546978,
+            "abSize": 621180
         },
         {
             "name": "spritepack/ui_crisis_rune_unlock_rule.ab",
@@ -23127,10 +23099,10 @@
         },
         {
             "name": "spritepack/ui_home_act_banner_gacha_h2_0.ab",
-            "hash": "959ca12e2b7f5b7fc3b21a8bab8e8cb4",
-            "md5": "25638c0d44c3d865cd763f64652e2164",
-            "totalSize": 301390,
-            "abSize": 321246
+            "hash": "a8199fa2cb057148ed528a90be767fd9",
+            "md5": "f509354bb95c157d6cf39ab1785acd73",
+            "totalSize": 342347,
+            "abSize": 365563
         },
         {
             "name": "spritepack/ui_home_act_banner_shop_h2_0.ab",
@@ -23623,6 +23595,13 @@
             "abSize": 1006105
         },
         {
+            "name": "ui/gacha/norm_14_0_4.ab",
+            "hash": "7fa6ae5a4875f1713b148d97164c9f89",
+            "md5": "ca178c0b228422f869d4a00caa7861b7",
+            "totalSize": 867541,
+            "abSize": 992961
+        },
+        {
             "name": "ui/kvimg/pic_hub.ab",
             "hash": "8e78f15fd07be73a3bb9e4931fb30040",
             "md5": "8dee4e4e20495df32e4cb97f3d583da3",
@@ -24065,7 +24044,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "20-11-13-08-15-09-d6f91c",
+            "hash": "20-11-22-14-46-59-5ad221",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
