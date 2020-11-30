@@ -142,4 +142,4 @@ class Item(Job):
                     tbasic_info = tbasic_info + '==材料掉落=='
             fin = '{{Navigator|道具一览}}\n' + tbasic_info + '\n{{道具导航}}'
             # print(fin)
-            # self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)
+            self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)
