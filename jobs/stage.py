@@ -391,6 +391,7 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
             )
         unlock_cond_list.append(unlock_cond)
     stage_4star_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
+    stage_4star_data += '|推荐等级={}\n'.format(stage_detail['dangerLevel'])
     if zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst']:
         stage_4star_data += '|所属区域={name_1} {name_2}\n'.format(
             name_1 = zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst'],
