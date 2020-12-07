@@ -314,6 +314,7 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     stage_data = '\n==普通==\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
     stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
     if stage_detail['hilightMark'] == True:
         stage_data += '|子类型=难关\n'
@@ -474,6 +475,7 @@ def get_roguelike_data(stage_detail, level_table, rts):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
     stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['id'])
     stage_data += '|关卡类型={}\n'.format('活动')
     stage_data += '|关卡难度={}\n'.format('NORMAL')
     stage_data += '|解锁条件={}\n'.format('—')
@@ -575,8 +577,12 @@ class Stage(Job):
             stage_4star_data = get_4star_data(stage_table['stages'][stage_detail['hardStagedId']], stage_table,
                 zone_table, character_table, building_data, item_table, level_table, rts) if stage_detail[
                 'hardStagedId'] else ''
+            if len(list(filter(lambda x:x['dropType'] in [2,3,4], stage_detail['stageDropInfo']['displayDetailRewards']))) > 0:
+                stage_drop = '\n==材料掉落==\n{{关卡材料掉落}}'
+            else:
+                stage_drop = ''
 
-            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(

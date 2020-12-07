@@ -43,13 +43,67 @@ class Temp(Job):
                 # print('Updated: {}.'.format(enemy_datum['name']))
 
     def _test(self):
-        self.wiki.edit(
-            title = '能天使' + '/spine',
-            text = '{}',
-            summary = 'init',
-            bot = None,
-            minor = True,
-            createonly = True,
-            contentmodel = 'json'
-        )
+        stage_table = self.getgd('excel/stage_table.json')
+        roguelike_table = self.getgd('excel/roguelike_table.json')
+
+        stage_list = self.wiki.category('分类:普通难度关卡')
+
+        for stage_name in stage_list:
+            content = self.wiki.read(stage_name)
+            result = re.search('\|关卡id=(.+?)\n', content)
+            if result:
+                stage_id = result.group(1)
+                stage_detail = stage_table['stages'][stage_id]
+                if len(list(filter(lambda x:x['dropType'] in [2,3,4], stage_detail['stageDropInfo']['displayDetailRewards']))) > 0:
+                    if content.find('==材料掉落==\n{{关卡材料掉落}}') == -1:
+                        if content.find('==注释与链接==') == -1:
+                            content = content.replace('{{关卡导航}}', '==注释与链接==\n<references/>\n{{关卡导航}}')
+                        content = content.replace('==注释与链接==', '==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==')
+                        self.wiki.edit(
+                            title = stage_name,
+                            text = content,
+                            summary = '添加模板:关卡材料掉落'
+                        )
+                        # print(content)
+                        print('添加: {}.'.format(stage_name))
+                    else:
+                        print('已有:', stage_name)
+                else:
+                    if content.find('==材料掉落==\n{{关卡材料掉落}}') == -1:
+                        print('无需添加:', stage_name)
+                    else:
+                        content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==', '==注释与链接==')
+                        content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n\n==注释与链接==', '==注释与链接==')
+                        self.wiki.edit(
+                            title = stage_name,
+                            text = content,
+                            summary = '删去模板:关卡材料掉落'
+                        )
+                        # print(content)
+                        print('删去多余:', stage_name)
+            else:
+                print('No stage id found:', stage_name)
+                for sid in roguelike_table['stages']:
+                    if roguelike_table['stages'][sid]['code'] + ' ' + roguelike_table['stages'][sid]['name'] == stage_name:
+                        content = content.replace('|关卡类型', '|关卡id={}\n|关卡类型'.format(sid))
+                        self.wiki.edit(
+                            title = stage_name,
+                            text = content,
+                            summary = '添加肉鸽关卡stageId'
+                        )
+                        # print(content)
+                        print('添加肉鸽关卡stageId:', stage_name)
+                        break
+                if content.find('==材料掉落==\n{{关卡材料掉落}}') == -1:
+                    print('无需添加:', stage_name)
+                else:
+                    content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==', '==注释与链接==')
+                    content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n\n==注释与链接==', '==注释与链接==')
+                    self.wiki.edit(
+                        title = stage_name,
+                        text = content,
+                        summary = '删去模板:关卡材料掉落'
+                    )
+                    # print(content)
+                    print('删去多余:', stage_name)
 

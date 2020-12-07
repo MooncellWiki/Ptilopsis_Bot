@@ -14,8 +14,8 @@ from utils.unpacker_cn import UnpackerCN
 # from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
-# from jobs._temp import Temp
-from jobs.basic import Basic
+from jobs._temp import Temp
+# from jobs.basic import Basic
 # from jobs.charword import Charword
 
 
