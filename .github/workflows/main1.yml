@@ -10,7 +10,7 @@ on:
 #  push:
 #    branches: [ master ]
   schedule:
-    - cron: '0-30/10 2,8 * * *'
+    - cron: '0-30/10 8 * * *'
 
 jobs:
   push:

@@ -14,6 +14,7 @@ from jobs.item import Item
 from jobs.medal import Medal
 from jobs.mission import Mission
 from jobs.route import Route
+from jobs.range import Range
 from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
@@ -38,7 +39,7 @@ if __name__ == '__main__':
                 exit()
 
     if 'new' in sys.argv:
-        old_num = 170
+        old_num = 174
         Basic(wiki, gameData)._run_update(old_num)
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData)._run_update(old_num)
@@ -56,7 +57,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['塞雷娅','温蒂','极境','守林人','格雷伊'])
+        Skin(wiki, gameData)._run_update(skin_list = ['格雷伊'])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
