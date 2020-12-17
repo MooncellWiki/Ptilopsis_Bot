@@ -20,7 +20,8 @@ def update_story_review(gamedata, story_review_table, character_table, building_
     content_dict = {
         'ACTIVITY_STORY': [],
         'MINI_STORY': [],
-        'MAIN_STORY': []
+        'MAIN_STORY': [],
+        'NONE': [],
     }
     activity_table_title = '''{{{{锚点|{name}}}}}
 {{| class="wikitable" style="position:relative; text-align:center; width:100%; max-width:1000px; display:table; font-size:14px;"
@@ -46,6 +47,14 @@ def update_story_review(gamedata, story_review_table, character_table, building_
 |<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
 {{|
 '''
+    memory_title = '''{{{{锚点|{name2}}}}}
+{{| class="wikitable" style="position:relative; text-align:center; width:100%; max-width:1000px; display:table; font-size:14px;"
+! colspan="2" style="text-align:center;"|<big><big>{name1}</big></big>
+|-
+! class="nomobile"|[[文件:章节名称 {name2}.png|160px|link=关卡一览#主线关卡一览]]
+|<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
+{{|
+'''
     for event in story_review_table:
         event_table = ''
         if story_review_table[event]['actType'] == 'ACTIVITY_STORY':
@@ -58,6 +67,9 @@ def update_story_review(gamedata, story_review_table, character_table, building_
                         zone_table['zones'][story_review_table[event]['id']]['zoneNameSecond'],
                 name2 = zone_table['zones'][story_review_table[event]['id']]['zoneNameFirst']
             )
+        else:
+            print('Unknown actType {} for {}'.format(story_review_table[event]['actType'], story_review_table[event]['name']))
+            continue
 
         story_list = []
         for story in story_review_table[event]['infoUnlockDatas']:

@@ -21,19 +21,20 @@ def concat_id(voice_data, char_name, text_jp=''):
     if voice_data['unlockType'] == 'DIRECT':
         pass
     elif voice_data['unlockType'] == 'FAVOR':
-        if voice_data['lockDescription'] != '提升信赖以查看更多信息':
-            unlock_cond = voice_data['lockDescription'].rstrip()
-            print('new voice favor unlock description for', voice_data['charWordId'])
-        else:
-            unlock_cond = '提升信赖至{}%以查看'.format(voice_data['unlockParam'][0]['valueInt'])
+        # if voice_data['lockDescription'] != '提升信赖以查看更多信息':
+        #     unlock_cond = voice_data['lockDescription'].rstrip()
+        #     print('new voice favor unlock description for', voice_data['charWordId'])
+        # else:
+        unlock_cond = '提升信赖至{}%以查看'.format(voice_data['unlockParam'][0]['valueInt'])
         text += '|条件{id}={unlock_cond}\n'.format(
             id = voice_data['voiceIndex'],
             unlock_cond = unlock_cond
         )
     elif voice_data['unlockType'] == 'AWAKE':
+        unlock_cond = '提升至精英阶段{}以查看'.format(voice_data['unlockParam'][0]['valueInt'])
         text += '|条件{id}={unlock_cond}\n'.format(
             id = voice_data['voiceIndex'],
-            unlock_cond = voice_data['lockDescription'].replace('以查看更多信息', '以查看').rstrip()
+            unlock_cond = unlock_cond
         )
     else:
         text += '|条件{id}={unlock_cond}\n'.format(

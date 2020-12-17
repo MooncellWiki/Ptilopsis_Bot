@@ -407,7 +407,7 @@ def get_token_info(wiki, char_detail, update_token_page, character_table):
             baseAttackTime = token_detail['phases'][0]['attributesKeyFrames'][1]['data']['baseAttackTime'],
             tauntLevel = token_detail['phases'][0]['attributesKeyFrames'][1]['data']['tauntLevel']
         )
-        token_page += '\n==召唤物模型==\n{{TokenDoll}}'
+        token_page += '\n==召唤物模型==\n{{spine}}'
 
         if update_token_page == True:
             wiki.edit(
@@ -589,17 +589,56 @@ def get_stories_list(char_detail, stories_table, char_key):
         if storyCondition_id == 0:
             storyCondition = '初始开放'
         elif storyCondition_id == 1:
-            storyCondition = char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockString']
+            phase_param = char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'].split(';')
+            storyCondition = '提升至精英阶段2以查看'.format(phase_param[0])
         elif storyCondition_id == 2:
-            storyCondition = replace_story_condition(
-                char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockString'],
-                char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'])
+            storyCondition = '提升信赖至{}%以查看'.format(char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'])
         elif storyCondition_id == 6:
             storyCondition = '升变解锁'
+        else:
+            storyCondition = ''
         stories_list += '|档案' + str(stories_id + 1) + '=' + storyTitle + '\n|档案' + str(
             stories_id + 1) + '条件=' + storyCondition + '\n|档案' + str(stories_id + 1) + '文本=' + storyText + '\n'
     stories_list += '}}'
     return stories_list_set, stories_list
+
+
+def get_handbook_avg(char_detail, stories_table, char_key, item_table):
+    pass
+
+
+def get_handbook_stage(char_detail, char_key, stories_table, item_table):
+    if char_key not in stories_table['handbookStageData']:
+        return ''
+    template = '''{{{{悖论模拟
+|name={stage_name}
+|description={stage_desc}
+|精英化={unlock_phase}
+|等级={unlock_lv}
+|奖励内容={reward_name}
+|奖励数量={reward_count}
+}}}}'''
+    stage_info = stories_table['handbookStageData'][char_key]
+    stage_name = stage_info['name']
+    stage_desc = stage_info['description']
+    if len(stage_info['unlockParam']) != 1 or stage_info['unlockParam'][0]['unLockType'] != 1:
+        print('Unknown handbook_stage unLock condition for {}.'.format(char_detail['name']))
+        unlock_phase, unlock_lv = '', ''
+    else:
+        unlock_phase = stage_info['unlockParam'][0]['unlockParam1']
+        unlock_lv = stage_info['unlockParam'][0]['unlockParam2']
+    reward_name = item_table['items'][stage_info['rewardItem'][0]['id']]['name'].rstrip()
+    reward_count = stage_info['rewardItem'][0]['count']
+    if len(stage_info['rewardItem']) > 1:
+        print('Too many handbook_stage rewardItem for {}.'.format(char_detail['name']))
+    return template.format(
+        stage_name = stage_name,
+        stage_desc = stage_desc,
+        unlock_phase = unlock_phase,
+        unlock_lv = unlock_lv,
+        reward_name = reward_name,
+        reward_count = reward_count
+    )
 
 
 def trans_id(id):
@@ -705,14 +744,14 @@ def replace_key(text):
 #     return text
 
 
-def replace_story_condition(text, num):
-    p1 = r"(.*)信赖(.*)"
-    pattern1 = re.compile(p1)
-    result = re.search(pattern1, text)
-    if result:
-        text = result.group(1) + '信赖至' + str(num) + '%' + result.group(2)
-        # print(result.groups())
-    return text
+# def replace_story_condition(text, num):
+#     p1 = r"(.*)信赖(.*)"
+#     pattern1 = re.compile(p1)
+#     result = re.search(pattern1, text)
+#     if result:
+#         text = result.group(1) + '信赖至' + str(num) + '%' + result.group(2)
+#         # print(result.groups())
+#     return text
 
 
 def replace_basic_doc(text, cond):
@@ -867,15 +906,15 @@ class Basic(Job):
                 protections = 'edit=autoconfirmed|move=sysop',
                 reason = 'protect'
             )
-            self.wiki.edit(
-                title = char_detail['name'] + '/spine',
-                text = '{}',
-                summary = 'init',
-                bot = None,
-                minor = True,
-                createonly = True,
-                contentmodel = 'json'
-            )
+            # self.wiki.edit(
+            #     title = char_detail['name'] + '/spine',
+            #     text = '{}',
+            #     summary = 'init',
+            #     bot = None,
+            #     minor = True,
+            #     createonly = True,
+            #     contentmodel = 'json'
+            # )
             if char_detail['name'] != char_detail['appellation']:
                 redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
                 self.wiki.edit(
