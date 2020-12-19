@@ -12,9 +12,11 @@ def parse_stage_type(stage_type):
             'DAILY': '日常',
             'GUIDE': '教程',
             'ACTIVITY': '活动',
-            'CAMPAIGN': '剿灭'
+            'CAMPAIGN': '剿灭',
+            'SPECIAL_STORY': '特殊剧情'
         }[stage_type]
     except:
+        print('Unknown stage_type', stage_type)
         return '未知类型'
 
 
@@ -126,7 +128,7 @@ def parse_drop_item(drop_item, character_table, building_data, item_table):
         elif drop_item['type'] == 'FURN':
             return building_data['customData']['furnitures'][drop_item['id']]['name']
         elif drop_item['type'] in ['MATERIAL', 'CARD_EXP', 'TKT_RECRUIT', 'GOLD', 'ACTIVITY_COIN', 'ACTIVITY_ITEM',
-            'ET_STAGE', 'DIAMOND']:
+            'ET_STAGE', 'DIAMOND', 'DIAMOND_SHD']:
             return item_table['items'][drop_item['id']]['name'].rstrip()
         else:
             print('Unknown drop item {}'.format(drop_item['id']))
@@ -242,6 +244,46 @@ def analyze_level_info(level_table):
         level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
     return level_info
 
+
+def analyze_char_card_info(level_table, stage_page_name, character_table, skill_table):
+    char_pre = ''
+    favor_point = []
+    try:
+        for char_card in level_table['predefines']['characterCards']:
+            char_card_name = character_table[char_card['inst']['characterKey']]['name']
+            if char_card['skillIndex'] != -1:
+                skill_name = skill_table[
+                    character_table[char_card['inst']['characterKey']]['skills'][char_card['skillIndex']][
+                        'skillId']]['levels'][0]['name']
+            else:
+                skill_name = ''
+            char_pre += '{{{{编队单位|{}|{}|{}|{}|{}'.format(
+                char_card_name,
+                char_card['inst']['phase'],
+                char_card['inst']['level'],
+                skill_name,
+                char_card['mainSkillLvl'],
+            )
+            if char_card['inst']['potentialRank'] != 0:
+                char_pre += '||{}'.format(char_card['inst']['potentialRank'] + 1)
+            char_pre += '}}'
+            favor_point.append('{}信赖为{}'.format(char_card_name, char_card['inst']['favorPoint'] * 2))
+        if char_pre != '':
+            char_pre = '''
+==固定编队==
+{{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
+!style="background-color:#0098DC;color:#FFFFFF"|固定编队
+|-
+|{}
+|-
+!备注
+|-
+|{}
+|}}'''.format(char_pre, '，'.join(favor_point))
+    except:
+        print(stage_page_name, 'characterCards error.')
+
+    return char_pre
 
 def get_enemy_data(level_table, enemy_table, enemy_database):
     enemy_data = '\n==敌方情报==\n{{敌方情报\n'
@@ -537,11 +579,47 @@ def get_roguelike_4star_data(stage_detail, level_table, rts):
     return stage_4star_data
 
 
+def get_memory_data(stage_detail, level_table, rts, character_table, building_data, item_table):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format('悖论模拟')
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    stage_data += '|关卡类型={}\n'.format('悖论模拟')
+    stage_data += '|关卡难度={}\n'.format('NORMAL')
+    unlock_cond = ''
+    for p in stage_detail['unlockParam']:
+        if unlock_cond != '':
+            unlock_cond += '，'
+        if p['unlockType'] == 1:
+            unlock_cond += '提升至精英阶段{}等级{}'.format(p['unlockParam1'], p['unlockParam2'])
+        elif p['unlockType'] == 2:
+            unlock_cond += '提升信赖至{}'.format(p['unlockParam1'])
+        else:
+            print('Unknown unlockType', p['unlockType'])
+    unlock_cond = '干员\'\'\'[[{}]]\'\'\''.format(character_table[stage_detail['charId']]['name']) + unlock_cond
+    stage_data += '|解锁条件={}\n'.format(unlock_cond)
+    stage_data += '|推荐等级={}\n'.format('—')
+    stage_data += '|所属区域={}\n'.format(stage_detail['zoneId'])
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc = rts.compile(stage_detail['description'].replace('\n', '<br/>'))
+    )
+    stage_data += '|作战消耗={}\n'.format(0)
+    stage_data += '|演习消耗=-1\n'
+    reward_item = ['{}:三星获得'.format(parse_drop_item(r, character_table, building_data, item_table)) for r in stage_detail['rewardItem']]
+    stage_data += '|首次掉落=' + ','.join(reward_item) + '\n'
+    stage_data += '}}'
+
+    return stage_data
+
+
 class Stage(Job):
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
         character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
         stage_table = self.getgd('excel/stage_table.json')
         zone_table = self.getgd('excel/zone_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
@@ -581,8 +659,9 @@ class Stage(Job):
                 stage_drop = '\n==材料掉落==\n{{关卡材料掉落}}'
             else:
                 stage_drop = ''
+            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
 
-            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + char_pre + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
@@ -709,6 +788,45 @@ class Stage(Job):
                 bot = None,
                 minor = True,
                 createonly = '1'
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_page_name))
+
+    def _run_memory(self):
+        building_data = self.getgd('excel/building_data.json')
+        item_table = self.getgd('excel/item_table.json')
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        handbook_info_table = self.getgd('excel/handbook_info_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        stage_list = self.wiki.category('分类:悖论模拟关卡')
+        for stage_detail in handbook_info_table['handbookStageData'].values():
+            stage_page_name = '悖论模拟 {}'.format(stage_detail['name'])
+            if stage_page_name in stage_list:
+                continue
+
+            if stage_detail['levelId']:
+                try:
+                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                except:
+                    print('Cannot find level data of {}.'.format(stage_page_name))
+                    continue
+            else:
+                level_table = {}
+
+            stage_normal_data = get_memory_data(stage_detail, level_table, rts, character_table, building_data, item_table)
+            stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
+            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+
+            stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+
+            self.wiki.edit(
+                title = stage_page_name,
+                text = stage_content,
+                summary = 'init',
+                bot = None,
+                minor = True
             )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))

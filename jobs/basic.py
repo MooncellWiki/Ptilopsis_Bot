@@ -603,41 +603,85 @@ def get_stories_list(char_detail, stories_table, char_key):
     return stories_list_set, stories_list
 
 
-def get_handbook_avg(char_detail, stories_table, char_key, item_table):
-    pass
+def get_handbook_avg(char_detail, stories_table, char_key):
+    if char_key not in stories_table['handbookDict'] or stories_table['handbookDict'][char_key]['handbookAvgList'] == []:
+        return ''
+    avg_content = '\n==干员密录==\n{{干员密录|'
+    template = '''\n{{{{干员密录/list
+|精英化={phase}
+|等级={lv}
+|信赖={favor}
+|storySetName={name}{stories}
+}}}}'''
+    for avg in stories_table['handbookDict'][char_key]['handbookAvgList']:
+        phase, lv, favor = -1, -1, -1
+        for p in avg['unlockParam']:
+            if p['unlockType'] == 1:
+                phase = p['unlockParam1']
+                lv = p['unlockParam2']
+            elif p['unlockType'] == 2:
+                favor = p['unlockParam1']
+            else:
+                print('Unknown handbook_avg unLock condition for {}.'.format(char_detail['name']))
+        stories = ''
+        for idx, story in enumerate(avg['avgList'], start = 1):
+            stories += '\n|storyIntro{idx}={intro}\n|storyTxt{idx}={txt}'.format(
+                idx = idx,
+                intro = story['storyIntro'],
+                txt = os.path.split(story['storyTxt'])[1]
+            )
+        avg_content += template.format(
+            phase = phase,
+            lv = lv,
+            favor = favor,
+            name = avg['storySetName'],
+            stories = stories
+        )
+    avg_content += '\n}}'
+    return avg_content
 
 
 def get_handbook_stage(char_detail, char_key, stories_table, item_table):
     if char_key not in stories_table['handbookStageData']:
         return ''
-    template = '''{{{{悖论模拟
+    template = '''
+==悖论模拟==
+{{{{悖论模拟
 |name={stage_name}
 |description={stage_desc}
 |精英化={unlock_phase}
 |等级={unlock_lv}
-|奖励内容={reward_name}
-|奖励数量={reward_count}
+|zoneName={zoneNameForShow}
+|stageName={stageNameForShow}
+|picId={picId}{reward}
 }}}}'''
     stage_info = stories_table['handbookStageData'][char_key]
-    stage_name = stage_info['name']
-    stage_desc = stage_info['description']
-    if len(stage_info['unlockParam']) != 1 or stage_info['unlockParam'][0]['unLockType'] != 1:
+    if len(stage_info['unlockParam']) != 1 or stage_info['unlockParam'][0]['unlockType'] != 1:
         print('Unknown handbook_stage unLock condition for {}.'.format(char_detail['name']))
         unlock_phase, unlock_lv = '', ''
     else:
         unlock_phase = stage_info['unlockParam'][0]['unlockParam1']
         unlock_lv = stage_info['unlockParam'][0]['unlockParam2']
-    reward_name = item_table['items'][stage_info['rewardItem'][0]['id']]['name'].rstrip()
-    reward_count = stage_info['rewardItem'][0]['count']
+    reward = ''
+    for idx, r in enumerate(stage_info['rewardItem'], start = 1):
+        reward_name = item_table['items'][r['id']]['name'].rstrip()
+        reward_count = r['count']
+        reward += '\n|报酬内容{idx}={reward_name}\n|报酬数量{idx}={reward_count}'.format(
+            idx = idx,
+            reward_name = reward_name,
+            reward_count = reward_count
+        )
     if len(stage_info['rewardItem']) > 1:
         print('Too many handbook_stage rewardItem for {}.'.format(char_detail['name']))
     return template.format(
-        stage_name = stage_name,
-        stage_desc = stage_desc,
+        stage_name = stage_info['name'],
+        stage_desc = stage_info['description'],
+        zoneNameForShow = stage_info['zoneNameForShow'],
+        stageNameForShow = stage_info['stageNameForShow'],
+        picId = stage_info['picId'],
         unlock_phase = unlock_phase,
         unlock_lv = unlock_lv,
-        reward_name = reward_name,
-        reward_count = reward_count
+        reward = reward
     )
 
 
@@ -821,7 +865,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 {stories}
 ==语音记录==
 {{{{参阅三|{{{{FULLPAGENAME}}}}|yy}}}}
-{{{{:{{{{FULLPAGENAME}}}}/语音记录}}}}
+{{{{:{{{{FULLPAGENAME}}}}/语音记录}}}}{handbook_avg}{handbook_stage}
 ==干员模型==
 {{{{spine}}}}
 ==注释与链接==
@@ -875,6 +919,8 @@ class Basic(Job):
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
+            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key)
+            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table)
 
             char_info = content.format(
                 name = char_detail['name'],
@@ -890,7 +936,9 @@ class Basic(Job):
                 phase = phase_list,
                 skill_levelup = skill_levelUp_list,
                 related_item = related_item,
-                stories = stories_list
+                stories = stories_list,
+                handbook_avg = handbook_avg,
+                handbook_stage = handbook_stage
             )
             fin = char_info
 
@@ -997,3 +1045,38 @@ class Basic(Job):
 #     ) + fin2[num2:]
 #     write_wiki_minor(se, url, char_detail['name'], fin, '')
 #     print(char_detail['name'] + ' done.')
+
+    def _run_handbook_update(self):
+        character_table = self.getgd('excel/character_table.json')
+        item_table = self.getgd('excel/item_table.json')
+        stories_table = self.getgd('excel/handbook_info_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        for char_key in character_table:
+            char_detail = character_table[char_key]
+            if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+                continue
+
+            origin_text = self.wiki.read(char_detail['name'])
+
+            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key)
+            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table)
+
+            if handbook_avg != '' or handbook_stage != '':
+                origin_text = self.wiki.read(char_detail['name'])
+
+                num1 = origin_text.find('/语音记录}}')
+                num2 = origin_text.find('\n==干员模型==')
+                new_text = origin_text[:num1] + '/语音记录}}' + handbook_avg + handbook_stage + origin_text[num2:]
+
+                if new_text != origin_text:
+                    self.wiki.edit(
+                        title = char_detail['name'],
+                        text = new_text,
+                        summary = '更新干员密录&悖论模拟'
+                    )
+                    # print(new_text)
+                    print('Updated: {}.'.format(char_detail['name']))
+                else:
+                    print('Same: {}.'.format(char_detail['name']))
+

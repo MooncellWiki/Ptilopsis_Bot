@@ -47,6 +47,7 @@ if __name__ == '__main__':
     if 'daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
+        Stage(wiki, gameData)._run_memory()
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
 
@@ -66,6 +67,7 @@ if __name__ == '__main__':
     if 'special' in sys.argv:
         Furni(wiki, gameData)._run_update()
         Charword(wiki, gameData)._run_update()
+        Basic(wiki, gameData)._run_handbook_update()
         # Route(wiki, gameData).run()
         # Formula(wiki, gameData).run()
         # Range(wiki, gameData).run()

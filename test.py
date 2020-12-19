@@ -14,8 +14,8 @@ from utils.unpacker_cn import UnpackerCN
 # from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
-from jobs._temp import Temp
-# from jobs.basic import Basic
+# from jobs._temp import Temp
+from jobs.basic import Basic
 # from jobs.charword import Charword
 
 
@@ -23,22 +23,22 @@ from jobs._temp import Temp
 if __name__ == '__main__':
     wiki = Wiki(config['api_url'], config['username'], config['password'],
                 ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config = config, source = 'ArknightsGameData')
+    # gameData = GameData(config = config, source = 'ArknightsGameData')
     # gameData = GameData(config = config, source = 'UnpackerData')
-    # gameData = GameData(config = config, source = 'UnpackerCN')
+    gameData = GameData(config = config, source = 'UnpackerCN')
 
     # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding = 'utf-8') as f:
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
 
     # Route(wiki, gameData).run()
     # Weedy(wiki, gameData).run()
-    # Basic(wiki, gameData)._run_update(170)
+    # Basic(wiki, gameData)._run_handbook_update()
     # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
     # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
-    # Stage(wiki, gameData)._run_rogue_like()
+    # Stage(wiki, gameData)._run_memory()
     # Temp(wiki, gameData)._test()
     # Basic(wiki, gameData)._run_update(old_num = 161)
     # Charword(wiki, gameData)._run_update_jp()
