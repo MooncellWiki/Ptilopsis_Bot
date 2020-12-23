@@ -625,10 +625,13 @@ def get_handbook_avg(char_detail, stories_table, char_key):
                 print('Unknown handbook_avg unLock condition for {}.'.format(char_detail['name']))
         stories = ''
         for idx, story in enumerate(avg['avgList'], start = 1):
+            story_txt = '{}/干员密录/{}'.format('{{FULLPAGENAME}}', avg['sortId'])
+            if len(avg['avgList']) > 1:
+                story_txt += '-{}'.format(story['storySort'])
             stories += '\n|storyIntro{idx}={intro}\n|storyTxt{idx}={txt}'.format(
                 idx = idx,
                 intro = story['storyIntro'],
-                txt = os.path.split(story['storyTxt'])[1]
+                txt = story_txt
             )
         avg_content += template.format(
             phase = phase,

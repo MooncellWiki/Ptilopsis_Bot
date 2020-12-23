@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     # Route(wiki, gameData).run()
     # Weedy(wiki, gameData).run()
-    # Basic(wiki, gameData)._run_handbook_update()
+    Basic(wiki, gameData)._run_handbook_update()
     # Sidebar(wiki, gameData)._run_update(150)
     # Crisis(wiki, gameData).run()
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])

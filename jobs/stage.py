@@ -820,7 +820,14 @@ class Stage(Job):
             char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
 
             stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+            stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
+            self.wiki.edit(
+                title = stage_detail['name'],
+                text = stage_redirect,
+                summary = 'init',
+                createonly = '1'
+            )
             self.wiki.edit(
                 title = stage_page_name,
                 text = stage_content,
