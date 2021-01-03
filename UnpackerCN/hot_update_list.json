@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2366621957,
+        "totalSize": 2367489168,
         "abSize": 0
     },
-    "versionId": "20-12-21-13-06-28-384437",
+    "versionId": "20-12-30-09-20-08-499e90",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "20-12-21-13-06-28-384437",
-            "md5": "ad9eefca473b884994be3def9eb8bc06",
-            "totalSize": 109198,
-            "abSize": 128283
+            "hash": "20-12-30-09-20-08-499e90",
+            "md5": "818bfa6ba1096cbca9719a101b56e5f5",
+            "totalSize": 109364,
+            "abSize": 128504
         },
         {
             "name": "torappu_index.ab",
-            "hash": "20-12-21-13-06-28-384437",
-            "md5": "9fb48e98cb04015d68770e65eefdf3b8",
-            "totalSize": 320394,
-            "abSize": 463591
+            "hash": "20-12-30-09-20-08-499e90",
+            "md5": "f48ff64428a6c6d0bb0384348fd29584",
+            "totalSize": 320674,
+            "abSize": 464121
         },
         {
             "name": "[uc]shaders.ab",
@@ -1288,6 +1288,13 @@
             "md5": "a80386dfb06676abbf5e1457119e356c",
             "totalSize": 7817112,
             "abSize": 8771635
+        },
+        {
+            "name": "arts/maps/map_chernobog_ice/mesh/level_camp_r_02.ab",
+            "hash": "211904b4301b541efb767c1a43de61fd",
+            "md5": "0036c2e211a2cad52e02adf1f6f71cd3",
+            "totalSize": 436425,
+            "abSize": 533583
         },
         {
             "name": "arts/maps/map_chernobog_ice/mesh/level_main_04-10_new.ab",
@@ -3433,10 +3440,10 @@
         },
         {
             "name": "arts/ui/campaign/campaignstagebtn/pic_hub.ab",
-            "hash": "88469b6e2a58cf25aabd8f31ff692e5e",
-            "md5": "5c183a050de7ccb09180878403892d24",
-            "totalSize": 2027,
-            "abSize": 2250
+            "hash": "92d42f04245b4736a8ab84b16a90ba7d",
+            "md5": "f6bfcbdecd4c521b198e9d8f39e6f64f",
+            "totalSize": 2037,
+            "abSize": 2264
         },
         {
             "name": "arts/ui/campaign/worldmappiece/pic_hub.ab",
@@ -3825,10 +3832,10 @@
         },
         {
             "name": "arts/ui/medalicon/pic_hub.ab",
-            "hash": "102e69267efb96f1a1a3b1236330e0f1",
-            "md5": "27491c84427f18fa86a1c4562a5dc297",
-            "totalSize": 3002,
-            "abSize": 4174
+            "hash": "83a86966ab6c43a2b87a6d74c9f12f87",
+            "md5": "588296523d21bb853f1baa9d333e4140",
+            "totalSize": 3009,
+            "abSize": 4183
         },
         {
             "name": "arts/ui/medaltitle/pic_hub.ab",
@@ -4067,6 +4074,13 @@
             "md5": "8731ed8acf573bb9e54a508ba44c386a",
             "totalSize": 117933,
             "abSize": 125562
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/camp_r_02.ab",
+            "hash": "28e22f6b6ad12245caf8a519b4682c1b",
+            "md5": "12d81ef880fe3df27235fdff92852421",
+            "totalSize": 110328,
+            "abSize": 118270
         },
         {
             "name": "arts/ui/stage/mappreviews/hard_05-01.ab",
@@ -6261,7 +6275,7 @@
         },
         {
             "name": "arts/ui/storyreview/hubs/minichar/pic_hub.ab",
-            "hash": "e5374370ffc3e37fe301c2bae20d194e",
+            "hash": "730773254ab78ba64c11a4e9618d0d78",
             "md5": "960bc7e0bd4871f8c8cf4027a47b1b05",
             "totalSize": 2182,
             "abSize": 2580
@@ -14283,17 +14297,17 @@
         },
         {
             "name": "avg/images/avg_ac15_9.ab",
-            "hash": "4fb7b3b0b45b0599437f895c88075056",
-            "md5": "db22d28562dde2bac2e2d5b90e55f0c9",
-            "totalSize": 1722198,
-            "abSize": 2077148
+            "hash": "8c4bdcbe0b609585ec0f90d3eab7df9b",
+            "md5": "8b2d518604f8c49206d34d10143a9775",
+            "totalSize": 726529,
+            "abSize": 843502
         },
         {
             "name": "avg/images/avg_ac15_9_2.ab",
-            "hash": "66aed07612c2b26430424310dba70f39",
-            "md5": "91b7002ececffc1fb797629969d04073",
-            "totalSize": 1859216,
-            "abSize": 2232644
+            "hash": "399219f36f6448ad1a9d7fe833634e01",
+            "md5": "72d1709b6ce85830263755624a4c6ebf",
+            "totalSize": 773640,
+            "abSize": 895139
         },
         {
             "name": "avg/images/avg_ac4_1.ab",
@@ -16614,10 +16628,10 @@
         },
         {
             "name": "battle/prefabs/enemies/enemy_11.ab",
-            "hash": "e5c46fbb8b0974e0a355e500cb35fde7",
-            "md5": "4d1df65de1159481462a2890c87db800",
-            "totalSize": 2563279,
-            "abSize": 3038001
+            "hash": "63b804b1e0de5c34a9a04e197fd22d28",
+            "md5": "5e51cae7d6fecf6ba2bdb67e64e91deb",
+            "totalSize": 2563301,
+            "abSize": 3038011
         },
         {
             "name": "battle/prefabs/enemies/enemy_15.ab",
@@ -19316,10 +19330,10 @@
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "9ee4538b38ba381806c75ef90a2ebd30",
-            "md5": "8c5369768a92638edff7e2ab90b7bdc9",
-            "totalSize": 21794,
-            "abSize": 24733
+            "hash": "f455fb78bdabd937cca45a7fbb9a5724",
+            "md5": "3946af0f5819e448bf16b780025e7117",
+            "totalSize": 21802,
+            "abSize": 24739
         },
         {
             "name": "config/config.ab",
@@ -19484,10 +19498,10 @@
         },
         {
             "name": "gamedata/excel/campaign_table.ab",
-            "hash": "94d0302e1bf95c28d61f63c6424ad1b5",
-            "md5": "0868e096cb12f11acc4e148785fc92cf",
-            "totalSize": 46816,
-            "abSize": 46838
+            "hash": "6112f49ca9a88375d6b87db5481235cc",
+            "md5": "c770bec24326d657ea2b56b5a8962f47",
+            "totalSize": 57914,
+            "abSize": 57969
         },
         {
             "name": "gamedata/excel/character_table.ab",
@@ -19533,8 +19547,8 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "8bb1a49fdf29ed1a7d02e305e6e1116d",
-            "md5": "e1b7b6185c74ed6155947b0a77554768",
+            "hash": "df4650c981e69490e06e3d851afe7629",
+            "md5": "3ccc02ad22296209ae54aef428540e85",
             "totalSize": 1206,
             "abSize": 1223
         },
@@ -19554,9 +19568,9 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "a1ba66ed6f033ca067bf302372666450",
-            "md5": "1d2b3a5f7aaa38ea6627cef45f1e102a",
-            "totalSize": 83329,
+            "hash": "db249e58411d3e25ba5fb6f62af57b45",
+            "md5": "459312c85e411c34518443b7984d77b5",
+            "totalSize": 83325,
             "abSize": 83478
         },
         {
@@ -19589,17 +19603,17 @@
         },
         {
             "name": "gamedata/excel/item_table.ab",
-            "hash": "c84cd7a5a77c3703831df017eaada95f",
-            "md5": "b8b9ffdd9f3fbf6d85e609bc88bd264a",
-            "totalSize": 326212,
-            "abSize": 326463
+            "hash": "0296286943890d21cea77b7c6ef108a9",
+            "md5": "5792f7030cadcaf8e954dfbe79f3ff3c",
+            "totalSize": 326254,
+            "abSize": 326544
         },
         {
             "name": "gamedata/excel/medal_table.ab",
-            "hash": "542193a8a1ad627d7a05e75a975ab7a8",
-            "md5": "0c0b6f8faf96369cd71076e423d49943",
-            "totalSize": 113438,
-            "abSize": 113625
+            "hash": "e4e898a15e2d03ea979f7c6d158d6c40",
+            "md5": "ae7e59ab47e2813bd6d128db66ea2738",
+            "totalSize": 114023,
+            "abSize": 114284
         },
         {
             "name": "gamedata/excel/mission_table.ab",
@@ -19659,10 +19673,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "8201e4316dab428473021a93fb4e0d02",
-            "md5": "f2260881e2c1d34dab27829879eb7068",
-            "totalSize": 2988525,
-            "abSize": 2987926
+            "hash": "820e0c6fae7ddda4a3ef56f6c77983e0",
+            "md5": "39bc20e48e16c29dcdd41d94ab8b773d",
+            "totalSize": 2990301,
+            "abSize": 2989702
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -19715,10 +19729,10 @@
         },
         {
             "name": "gamedata/levels/obt/campaign.ab",
-            "hash": "9ae19652bd499f4455332265312b0f3c",
-            "md5": "fbb7fbba409713541e2fb28f89bb1c55",
-            "totalSize": 1615345,
-            "abSize": 1615487
+            "hash": "4e3642f0ce24713bbbbd0486075d1480",
+            "md5": "8f8f1dd02dcf2ada6ba8406991c9acdc",
+            "totalSize": 2185666,
+            "abSize": 2185721
         },
         {
             "name": "gamedata/levels/obt/guide.ab",
@@ -19778,10 +19792,10 @@
         },
         {
             "name": "gamedata/story/activities.ab",
-            "hash": "c1dbf8e1786eb650bf0a7d8a42286276",
-            "md5": "ab66640b083e73a694f130bb76abc076",
-            "totalSize": 1009143,
-            "abSize": 1096255
+            "hash": "4702a4a78a9d43027ee781c1807d1215",
+            "md5": "266d92c92f00757e872e51b3f23d284c",
+            "totalSize": 1009173,
+            "abSize": 1096235
         },
         {
             "name": "gamedata/story/obt.ab",
@@ -19792,10 +19806,10 @@
         },
         {
             "name": "gamedata/story/story_variables.ab",
-            "hash": "30cd67b7402f77ca70583c70119bf378",
-            "md5": "b5da4423d4ca2fc2bec1c4cc0d6da6ca",
-            "totalSize": 5658,
-            "abSize": 6810
+            "hash": "16e225cb8a5b71db49b479255cf5e0e6",
+            "md5": "dd8abd0a8564de58b7fbc5b6f9cedbeb",
+            "totalSize": 5787,
+            "abSize": 6966
         },
         {
             "name": "gamedata/story/[uc]info.ab",
@@ -20174,6 +20188,20 @@
             "md5": "72215183ace2bac6fc94b0560ab0ff3c",
             "totalSize": 371957,
             "abSize": 417864
+        },
+        {
+            "name": "scenes/obt/campaign/level_camp_r_02/level_camp_r_02.ab",
+            "hash": "9da795cbaee939be926309cdfd5e04b1",
+            "md5": "a5666090a7adef76c607a20b5ce96366",
+            "totalSize": 333137,
+            "abSize": 445606
+        },
+        {
+            "name": "scenes/obt/campaign/level_camp_r_02/level_camp_r_02/lightingdata.ab",
+            "hash": "b289d9388f96c05d815910d4608d8a69",
+            "md5": "8faffa16f54c65594aec02c92c1dd874",
+            "totalSize": 1326498,
+            "abSize": 1499210
         },
         {
             "name": "scenes/obt/guide/level_guide_01/level_guide_01.ab",
@@ -24300,10 +24328,10 @@
         },
         {
             "name": "spritepack/ui_campaign_stage_icon_img_h1_0.ab",
-            "hash": "62bf039f8228d20703f51155c61adca9",
-            "md5": "a34bf05cf5a66cea5c7867fc5787cac9",
-            "totalSize": 43111,
-            "abSize": 51877
+            "hash": "08bd2d47fec23a04aac1d591c4ddd8d5",
+            "md5": "781b73d521478a5ee7e2ec3a160bbaf5",
+            "totalSize": 48855,
+            "abSize": 59005
         },
         {
             "name": "spritepack/ui_campaign_world_map_piece_h1_0.ab",
@@ -24685,10 +24713,10 @@
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_campaign_0.ab",
-            "hash": "0d5262a32919ceec687ff64613a613a0",
-            "md5": "8c6fcdd0e1765e2fd5b42ef6826b4053",
-            "totalSize": 126461,
-            "abSize": 134938
+            "hash": "73fa443caecba75ee6d544e9a80d02f6",
+            "md5": "4567e831b84e76cdb215235a299ad1d0",
+            "totalSize": 147469,
+            "abSize": 156528
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_story_0.ab",
@@ -24857,6 +24885,13 @@
             "md5": "30d06049c3d2629fad918cd717430ca4",
             "totalSize": 26387,
             "abSize": 30329
+        },
+        {
+            "name": "ui/campaign/stagebutton/btn_camp_r_02.ab",
+            "hash": "938d55700d45f5c24db409da32fed6d1",
+            "md5": "34ab2396ae739494649d257cbf803c31",
+            "totalSize": 130781,
+            "abSize": 153033
         },
         {
             "name": "ui/campaign/zone/zonemap/camp_zone_1.ab",
@@ -25126,10 +25161,10 @@
         },
         {
             "name": "ui/pages/campaign_page.ab",
-            "hash": "76bef6c7a1a4a3ec279ad87a9b534840",
-            "md5": "b28ba93d71183cc76d366a582ae0e277",
-            "totalSize": 361586,
-            "abSize": 457096
+            "hash": "afbaf8aa0bbcb6687ea5e6235fdf7dbd",
+            "md5": "6cfe76065c014dd2caf023fb732e5afa",
+            "totalSize": 361761,
+            "abSize": 457376
         },
         {
             "name": "ui/pages/campaign_zone_page.ab",
@@ -25553,7 +25588,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "20-12-21-13-06-28-384437",
+            "hash": "20-12-30-09-20-08-499e90",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
