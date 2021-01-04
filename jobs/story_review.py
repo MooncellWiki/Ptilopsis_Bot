@@ -67,6 +67,8 @@ def update_story_review(gamedata, story_review_table, character_table, building_
                         zone_table['zones'][story_review_table[event]['id']]['zoneNameSecond'],
                 name2 = zone_table['zones'][story_review_table[event]['id']]['zoneNameFirst']
             )
+        elif story_review_table[event]['actType'] == 'NONE':
+            continue
         else:
             print('Unknown actType {} for {}'.format(story_review_table[event]['actType'], story_review_table[event]['name']))
             continue

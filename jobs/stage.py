@@ -39,7 +39,7 @@ def parse_occ_type(occ_percent, drop_type, if_furni):
         ex = ':2='
     else:
         ex = ':'
-    if drop_type in [4, 7]:
+    if drop_type in [4, 6, 7]:
         return ''
     elif drop_type == 8:
         return ex + '三星获得'
@@ -128,7 +128,7 @@ def parse_drop_item(drop_item, character_table, building_data, item_table):
         elif drop_item['type'] == 'FURN':
             return building_data['customData']['furnitures'][drop_item['id']]['name']
         elif drop_item['type'] in ['MATERIAL', 'CARD_EXP', 'TKT_RECRUIT', 'GOLD', 'ACTIVITY_COIN', 'ACTIVITY_ITEM',
-            'ET_STAGE', 'DIAMOND', 'DIAMOND_SHD']:
+            'ET_STAGE', 'DIAMOND', 'DIAMOND_SHD', 'LGG_SHD', 'HGG_SHD']:
             return item_table['items'][drop_item['id']]['name'].rstrip()
         else:
             print('Unknown drop item {}'.format(drop_item['id']))
@@ -486,6 +486,62 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
     return stage_4star_data
 
 
+def get_campaign_data(stage_detail, stage_table, campaign_table, character_table, building_data, item_table, level_table, rts):
+    stage_data = '\n==关卡==\n{{剿灭关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    if '_r_' in stage_detail['stageId']:
+        stage_data += '|剿灭委托=true\n'
+    stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
+    stage_data += '|关卡难度={}\n'.format(stage_detail['difficulty'])
+    unlock_cond_list = []
+    for unlock_id in stage_detail['unlockCondition']:
+        unlock_cond = '{num}星通关[[{code} {name}]]'.format(
+            num = unlock_id['completeState'],
+            code = stage_table['stages'][unlock_id['stageId']]['code'],
+            name = stage_table['stages'][unlock_id['stageId']]['name']
+        )
+        unlock_cond_list.append(unlock_cond)
+    stage_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
+    if stage_detail['zoneId'] in campaign_table['campaignZones']:
+        stage_data += '|所属区域={name}\n'.format(
+                name = campaign_table['campaignZones'][stage_detail['zoneId']]['name']
+            )
+    else:
+        stage_data += '|所属区域=NONE\n'
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    if stage_detail['description']:
+        stage_data += '|关卡描述={desc}\n'.format(
+            desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
+        )
+    else:
+        stage_data += '|关卡描述=\n'
+    stage_data += '|作战消耗={}\n'.format(stage_detail['apCost'])
+    campaign_detail = campaign_table['campaigns'][stage_detail['stageId']]
+    if campaign_detail['dropGains']['PERMANENT']['gainLadders'] != []:
+        gain_flag = 'PERMANENT'
+    else:
+        gain_flag = 'ROTATE'
+    if campaign_detail['dropGains'][gain_flag]['displayDetailRewards']:
+        stage_data += analyze_rewards(campaign_detail['dropGains'][gain_flag]['displayDetailRewards'], character_table,
+            building_data, item_table)
+    for idx, ladder in enumerate(campaign_detail['dropGains'][gain_flag]['gainLadders'], start = 1):
+        stage_data += '|理智返还{}=+{}\n'.format(idx, ladder['apFailReturn'])
+    for idx, ladder in enumerate(campaign_detail['dropGains'][gain_flag]['gainLadders'], start = 1):
+        if ladder['displayDiamondShdNum'] == 0:
+            stage_data += '|合成玉获得{}=+{}\n'.format(idx, ladder['displayDiamondShdNum'])
+        else:
+            stage_data += '|合成玉获得{}=+约{}\n'.format(idx, ladder['displayDiamondShdNum'])
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
+    stage_data += '}}'
+
+    return stage_data
+
+
 def get_crisis_data(stage_detail, level_table, rts):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
@@ -666,6 +722,89 @@ class Stage(Job):
 
             self.wiki.edit(
                 title = stage_detail['code'],
+                text = stage_redirect,
+                summary = 'init',
+                createonly = '1'
+            )
+            self.wiki.edit(
+                title = stage_page_name,
+                text = stage_content,
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_page_name))
+
+            new_stage_list.append('* [[{}]]'.format(stage_page_name))
+
+        if new_stage_list != []:
+            self.wiki.edit(
+                title = '首页/新增关卡',
+                text = '\n'.join(new_stage_list),
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print('\n'.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
+
+    def _run_campaign(self):
+        building_data = self.getgd('excel/building_data.json')
+        item_table = self.getgd('excel/item_table.json')
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        stage_table = self.getgd('excel/stage_table.json')
+        campaign_table = self.getgd('excel/campaign_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        stage_list = self.wiki.category('分类:剿灭关卡')
+        new_stage_list = []
+
+        for stage_id in stage_table['stages']:
+            stage_detail = stage_table['stages'][stage_id]
+            if stage_detail['stageType'] != 'CAMPAIGN':
+                continue
+            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+            if stage_page_name in stage_list:
+                continue
+
+            if stage_detail['levelId']:
+                try:
+                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                except:
+                    print('Cannot find level data of {}.'.format(stage_page_name))
+                    continue
+            else:
+                level_table = {}
+
+            stage_normal_data = get_campaign_data(stage_detail, stage_table, campaign_table, character_table, building_data, item_table, level_table, rts)
+            stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
+            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+            rewards = '''\n==作战进度奖励==
+{| class="wikitable mw-collapsible mw-collapsed" style="text-align:center;width:600px;"
+!style="width:200px;color:white;font-weight:bold;background-color:#575757;"|击溃人数
+!style="width:400px;color:white;font-weight:bold;background-color:#575757;"|奖励'''
+            for r in campaign_table['campaigns'][stage_detail['stageId']]['breakLadders']:
+                items = ' '.join([
+                    '{{{{材料消耗|{}|{}}}}}'.format(
+                        parse_drop_item(rw, character_table, building_data, item_table),
+                        rw['count']
+                    ) for rw in r['rewards']
+                ])
+                rewards += '\n|-\n|{}||{}'.format(
+                    r['killCnt'],
+                    items
+                )
+                if r['breakFeeAdd'] != 0:
+                    rewards += ' {{材料消耗|合成玉|i+}}(+' + str(r['breakFeeAdd']) + ')'
+            rewards += '\n|}'
+
+            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + char_pre + rewards + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+            stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+
+            self.wiki.edit(
+                title = stage_detail['name'],
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'
