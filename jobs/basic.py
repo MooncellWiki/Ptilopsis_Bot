@@ -950,7 +950,8 @@ class Basic(Job):
                 text = fin,
                 summary = 'init',
                 bot = None,
-                minor = True
+                minor = True,
+                createonly = '1'
             )
             self.wiki.protect(
                 title = char_detail['name'],
