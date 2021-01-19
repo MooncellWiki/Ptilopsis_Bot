@@ -877,7 +877,8 @@ class Stage(Job):
                 text = stage_content,
                 summary = 'init',
                 bot = None,
-                minor = True
+                minor = True,
+                createonly = '1'
             )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
