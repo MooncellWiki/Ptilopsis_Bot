@@ -4,8 +4,8 @@
 name: main
 
 on:
-  push:
-    branches: [ master ]
+  # push:
+  #   branches: [ master ]
   schedule:
     - cron: '1,10 20 * * *'
   pull_request:
