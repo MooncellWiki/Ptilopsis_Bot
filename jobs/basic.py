@@ -7,16 +7,17 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts):
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|团队={team}\n|情报编号={displayNumber}\n|默认logo={displayLogo}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
+    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_id = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1,
-        displayLogo = '', # trans_display_logo(char_detail['displayLogo']),
         description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
         rarity = char_detail['rarity'],
         profession = trans_profession(char_detail['profession']),
-        team = '', # team_table[str(char_detail['team'])]['teamName'],
         displayNumber = char_detail['displayNumber'],
+        nation = trans_team(char_detail['nationId'], team_table),
+        group = trans_team(char_detail['groupId'], team_table),
+        team = trans_team(char_detail['teamId'], team_table),
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
         drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
@@ -737,6 +738,15 @@ def trans_profession(profession):
 #         return '未知logo'
 
 
+def trans_team(team_id, team_table):
+    if team_id == None:
+        return ''
+    elif team_id in team_table:
+        return team_table[team_id]['powerName']
+    else:
+        return '?'
+
+
 def trans_skill_type(skill_type):
     return {
         0: '',
@@ -951,7 +961,7 @@ class Basic(Job):
                 summary = 'init',
                 bot = None,
                 minor = True,
-                # createonly = '1'
+                createonly = '1'
             )
             self.wiki.protect(
                 title = char_detail['name'],
@@ -1000,9 +1010,15 @@ class Basic(Job):
             # num2 = origin_text.find('==攻击范围==')
             # new_text = origin_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
             
-            # num1 = origin_text.find('==干员档案==')
-            # num2 = origin_text.find('==语音记录==')
-            # new_text = origin_text[:num1] + origin_text[num1:num2].rstrip() + '\n' + origin_text[num2:]
+            # num1 = origin_text.find('|团队=')
+            # num2 = origin_text.find('|位置=')
+            # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
+            #     displayNumber = char_detail['displayNumber'],
+            #     nation = trans_team(char_detail['nationId'], team_table),
+            #     group = trans_team(char_detail['groupId'], team_table),
+            #     team = trans_team(char_detail['teamId'], team_table)
+            # )
+            # new_text = origin_text[:num1] + tt + origin_text[num2:]
             
             # if new_text != origin_text:
             #     self.wiki.edit(

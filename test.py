@@ -15,7 +15,7 @@ from utils.unpacker_cn import UnpackerCN
 # from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
 from jobs._temp import Temp
-# from jobs.basic import Basic
+from jobs.basic import Basic
 # from jobs.charword import Charword
 
 
@@ -39,8 +39,8 @@ if __name__ == '__main__':
     # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
     # Stage(wiki, gameData)._run_memory()
-    Temp(wiki, gameData).test_power()
-    # Basic(wiki, gameData)._run_update(old_num = 161)
+    # Temp(wiki, gameData).test_power()
+    Basic(wiki, gameData)._run_update(old_num = 178)
     # Charword(wiki, gameData)._run_update_jp()
 
     # up = UnpackerCN(config['unpacker'])
