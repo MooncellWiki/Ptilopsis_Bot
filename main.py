@@ -39,7 +39,7 @@ if __name__ == '__main__':
                 exit()
 
     if 'new' in sys.argv:
-        old_num = 177
+        old_num = 178
         Basic(wiki, gameData)._run_update(old_num)
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData)._run_update(old_num)

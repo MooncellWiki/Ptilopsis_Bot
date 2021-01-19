@@ -192,7 +192,7 @@ class Charword(Job):
 
         char_list = [(k, v['name']) for k, v in filter(char_filter, character_table.items())]
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
-        update_charword(self.wiki, character_table, charword_table)
+        update_charword(self.wiki, char_list, charword_table)
 
     def _run_update_jp(self):
         character_table = self.getgd('excel/character_table.json')

@@ -11,11 +11,11 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_id = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1,
-        displayLogo = trans_display_logo(char_detail['displayLogo']),
+        displayLogo = '', # trans_display_logo(char_detail['displayLogo']),
         description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
         rarity = char_detail['rarity'],
         profession = trans_profession(char_detail['profession']),
-        team = team_table[str(char_detail['team'])]['teamName'],
+        team = '', # team_table[str(char_detail['team'])]['teamName'],
         displayNumber = char_detail['displayNumber'],
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
@@ -709,32 +709,32 @@ def trans_profession(profession):
     }[profession]
 
 
-def trans_display_logo(display_logo):
-    if display_logo == None:
-        return '未知logo'
-    try:
-        return {
-            'logo_abyssal': '深海猎人',
-            'logo_blacksteel': '黑钢',
-            'logo_kazimierz': '卡西米尔',
-            'logo_kjerag': '谢拉格',
-            'logo_Laterano': '拉特兰',
-            'logo_Leithanien': '莱塔尼亚',
-            'logo_lungmen': '龙门',
-            'logo_penguin': '企鹅物流',
-            'logo_rhine': '莱茵生命',
-            'logo_rhodes': '罗德岛',
-            'logo_rim': '雷姆必拓',
-            'logo_ursus': '乌萨斯',
-            'logo_victoria': '维多利亚',
-            'logo_siesta': '汐斯塔',
-            'logo_yan': '炎国',
-            'logo_babel': '巴别塔',
-            'logo_sargon': '萨尔贡',
-        }[display_logo]
-    except:
-        print('出现未知logo: {}.'.format(display_logo))
-        return '未知logo'
+# def trans_display_logo(display_logo):
+#     if display_logo == None:
+#         return '未知logo'
+#     try:
+#         return {
+#             'logo_abyssal': '深海猎人',
+#             'logo_blacksteel': '黑钢',
+#             'logo_kazimierz': '卡西米尔',
+#             'logo_kjerag': '谢拉格',
+#             'logo_Laterano': '拉特兰',
+#             'logo_Leithanien': '莱塔尼亚',
+#             'logo_lungmen': '龙门',
+#             'logo_penguin': '企鹅物流',
+#             'logo_rhine': '莱茵生命',
+#             'logo_rhodes': '罗德岛',
+#             'logo_rim': '雷姆必拓',
+#             'logo_ursus': '乌萨斯',
+#             'logo_victoria': '维多利亚',
+#             'logo_siesta': '汐斯塔',
+#             'logo_yan': '炎国',
+#             'logo_babel': '巴别塔',
+#             'logo_sargon': '萨尔贡',
+#         }[display_logo]
+#     except:
+#         print('出现未知logo: {}.'.format(display_logo))
+#         return '未知logo'
 
 
 def trans_skill_type(skill_type):
@@ -951,7 +951,7 @@ class Basic(Job):
                 summary = 'init',
                 bot = None,
                 minor = True,
-                createonly = '1'
+                # createonly = '1'
             )
             self.wiki.protect(
                 title = char_detail['name'],

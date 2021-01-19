@@ -2,6 +2,7 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 import re
+import json
 
 class Temp(Job):
     def _run(self):
@@ -106,4 +107,23 @@ class Temp(Job):
                     )
                     # print(content)
                     print('删去多余:', stage_name)
+
+    def test_power(self):
+        character_table = self.getgd('excel/character_table.json')
+        handbook_team_table = self.getgd('excel/handbook_team_table.json')
+
+        def get_power(k):
+            if k == None:
+                return '-'
+            if k in handbook_team_table:
+                return handbook_team_table[k]['powerName']
+            else:
+                return '?'
+
+        for char_key in character_table:
+            char_info = character_table[char_key]
+            if char_info['profession'] == 'TRAP' or char_info['profession'] == 'TOKEN':
+                continue
+            print('%s: %s/%s/%s' % (char_info['name'], get_power(char_info['nationId']), get_power(char_info['groupId']), get_power(char_info['teamId'])))
+
 
