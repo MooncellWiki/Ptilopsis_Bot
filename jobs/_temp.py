@@ -126,4 +126,19 @@ class Temp(Job):
                 continue
             print('%s: %s/%s/%s' % (char_info['name'], get_power(char_info['nationId']), get_power(char_info['groupId']), get_power(char_info['teamId'])))
 
+    def test_p_name(self):
+        handbook_team_table = self.getgd('excel/handbook_team_table.json')
 
+        content = ''
+
+        for p in handbook_team_table.values():
+            if p['powerName'] == '无团队':
+                continue
+            p_name = f"分类:属于{p['powerName']}的干员"
+            self.wiki.edit(
+                title = p_name,
+                text = content,
+                summary = 'init'
+            )
+            # print(content)
+            print('Created: {}.'.format(p_name))
