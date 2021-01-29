@@ -13,15 +13,23 @@ class Temp(Job):
         for enemy_key in enemy_handbook_table:
             enemy_datum = enemy_handbook_table[enemy_key]
 
-            if enemy_datum['name'] not in enemys:
+            if enemy_datum['name'] in enemys:
+                old_text = self.wiki.read(enemy_datum['name'])
+                replace_text = '{{{{敌人信息/common\n|id={id}\n|名称={name}\n|index={index}\n'.format(
+                    id = enemy_datum['sortId'],
+                    name = enemy_datum['name'],
+                    index = enemy_datum['enemyIndex']
+                )
+            elif enemy_datum['name']+'(敌方)' in enemys:
+                old_text = self.wiki.read(enemy_datum['name']+'(敌方)')
+                replace_text = '{{{{敌人信息/common\n|id={id}\n|名称={name}(敌方)\n|显示名={name}\n|index={index}\n'.format(
+                    id = enemy_datum['sortId'],
+                    name = enemy_datum['name'],
+                    index = enemy_datum['enemyIndex']
+                )
+            else:
                 print(enemy_datum['name'], '页面未建立.')
                 continue
-            old_text = self.wiki.read(enemy_datum['name'])
-            replace_text = '{{{{敌人信息/common\n|id={id}\n|名称={name}\n|index={index}\n'.format(
-                id = enemy_datum['sortId'],
-                name = enemy_datum['name'],
-                index = enemy_datum['enemyIndex']
-            )
 
             n1 = old_text.find('{{敌人信息/common')
             n2 = old_text.find('|地位级别')
@@ -33,6 +41,9 @@ class Temp(Job):
             new_text = old_text[:n1] + replace_text + old_text[n2:]
             if new_text != old_text:
                 print(enemy_datum['name'], 'Different.')
+                old_id = re.search(r'\|id=([0-9]*)\n', old_text).group(1)
+                new_id = re.search(r'\|id=([0-9]*)\n', new_text).group(1)
+                print(f'old: {old_id}  new: {new_id}')
                 # print(new_text)
 
                 # self.wiki.edit(
