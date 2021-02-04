@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2390551000,
+        "totalSize": 2390552404,
         "abSize": 0
     },
-    "versionId": "21-01-28-16-10-28-7a4717",
+    "versionId": "21-02-03-10-14-07-b35c16",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "21-01-28-16-10-28-7a4717",
-            "md5": "04ca1795778065d1a769fd55eba94005",
+            "hash": "21-02-03-10-14-07-b35c16",
+            "md5": "00f4b1203443291f22585b46a71dd4ca",
             "totalSize": 109939,
-            "abSize": 128887
+            "abSize": 128888
         },
         {
             "name": "torappu_index.ab",
-            "hash": "21-01-28-16-10-28-7a4717",
-            "md5": "1ecc880763eb5d1048a19e8a6103d1b2",
-            "totalSize": 325632,
-            "abSize": 470391
+            "hash": "21-02-03-10-14-07-b35c16",
+            "md5": "40ea7ccdb6d3e8ba688b7060b7caaa81",
+            "totalSize": 325601,
+            "abSize": 470376
         },
         {
             "name": "[uc]shaders.ab",
@@ -3342,10 +3342,10 @@
         },
         {
             "name": "arts/skills/skill_icons_hub.ab",
-            "hash": "8a250f4c13fe4a8161c123eb8ef267e7",
-            "md5": "924105c37bf72e345ab0bcd5127c7167",
-            "totalSize": 1833949,
-            "abSize": 2006675
+            "hash": "7007f2a3efc46e458d8c2f5af7ccb031",
+            "md5": "ce71066df75755e25c9d535b421b99cd",
+            "totalSize": 1834492,
+            "abSize": 2007391
         },
         {
             "name": "arts/teamicon/team_icon_hub.ab",
@@ -14882,10 +14882,10 @@
         },
         {
             "name": "battle/prefabs/[uc]skills.ab",
-            "hash": "13342b1fab3f9c4b6ecd9fd46c0cd44a",
-            "md5": "481032d74aca76162e8e1013e375814e",
-            "totalSize": 152407,
-            "abSize": 179068
+            "hash": "0f7957a13fc53e5e7b86e79ab0029057",
+            "md5": "67d743f3dd855bb2674b40ace94ee840",
+            "totalSize": 153216,
+            "abSize": 179815
         },
         {
             "name": "battle/prefabs/[uc]tokens.ab",
@@ -19432,10 +19432,10 @@
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "d395a010f1de755b4e09fac2f2f5e458",
-            "md5": "f812db8e2a8677cf96c2a50fa073020b",
-            "totalSize": 23390,
-            "abSize": 26514
+            "hash": "8abc17b83b124b285ec51fa07dd58503",
+            "md5": "fcab90248d86c877d31a9a0c6a6d929f",
+            "totalSize": 23473,
+            "abSize": 26607
         },
         {
             "name": "config/config.ab",
@@ -19663,8 +19663,8 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "0f086d9e48b67491687f7b91ecb8adeb",
-            "md5": "1b2153539b40af3983c6824d40693b61",
+            "hash": "f79636ab31a3743e2bf4f54ca3699bd9",
+            "md5": "088b864f8ad706804f44c376f87d4f83",
             "totalSize": 1207,
             "abSize": 1223
         },
@@ -25669,7 +25669,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "21-01-28-16-10-28-7a4717",
+            "hash": "21-02-03-10-14-07-b35c16",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
