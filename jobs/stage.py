@@ -249,6 +249,8 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
     char_pre = ''
     favor_point = []
     try:
+        if level_table['predefines'] == None or 'characterCards' not in level_table['predefines']:
+            return ''
         for char_card in level_table['predefines']['characterCards']:
             char_card_name = character_table[char_card['inst']['characterKey']]['name']
             if char_card['skillIndex'] != -1:
@@ -354,8 +356,8 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
 def get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table,
         rts):
     stage_data = '\n==普通==\n{{普通关卡信息\n'
-    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
     if stage_detail['hilightMark'] == True:
@@ -414,8 +416,8 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
 
 def get_4star_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table, rts):
     stage_4star_data = '\n==突袭==\n{{突袭关卡信息\n'
-    stage_4star_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_4star_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_4star_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_4star_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_4star_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
     stage_4star_data += '|关卡难度={}\n'.format(stage_detail['difficulty'])
     unlock_cond_list = []
@@ -488,8 +490,8 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
 
 def get_campaign_data(stage_detail, stage_table, campaign_table, character_table, building_data, item_table, level_table, rts):
     stage_data = '\n==关卡==\n{{剿灭关卡信息\n'
-    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     if '_r_' in stage_detail['stageId']:
         stage_data += '|剿灭委托=true\n'
@@ -544,13 +546,13 @@ def get_campaign_data(stage_detail, stage_table, campaign_table, character_table
 
 def get_crisis_data(stage_detail, level_table, rts):
     stage_data = '\n{{普通关卡信息\n'
-    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡类型={}\n'.format('活动')
     stage_data += '|关卡难度={}\n'.format('NORMAL')
     stage_data += '|解锁条件={}\n'.format('—')
     stage_data += '|推荐等级={}\n'.format('—')
-    stage_data += '|所属区域={}\n'.format(stage_detail['code'])
+    stage_data += '|所属区域={}\n'.format(stage_detail['code'].strip())
     if stage_detail['levelId']:
         stage_data += analyze_level_info(level_table)
     if 'description' in stage_detail:
@@ -571,8 +573,8 @@ def get_crisis_data(stage_detail, level_table, rts):
 
 def get_roguelike_data(stage_detail, level_table, rts):
     stage_data = '\n{{普通关卡信息\n'
-    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['id'])
     stage_data += '|关卡类型={}\n'.format('活动')
     stage_data += '|关卡难度={}\n'.format('NORMAL')
@@ -593,8 +595,8 @@ def get_roguelike_data(stage_detail, level_table, rts):
 
 def get_roguelike_4star_data(stage_detail, level_table, rts):
     stage_4star_data = '\n==紧急作战==\n{{突袭关卡信息\n'
-    stage_4star_data += '|关卡代号={}\n'.format(stage_detail['code'])
-    stage_4star_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_4star_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
+    stage_4star_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_4star_data += '|关卡类型={}\n'.format('活动')
     stage_4star_data += '|子类型={}\n'.format('紧急作战')
     stage_4star_data += '|关卡难度={}\n'.format('FOUR_STAR')
@@ -638,7 +640,7 @@ def get_roguelike_4star_data(stage_detail, level_table, rts):
 def get_memory_data(stage_detail, level_table, rts, character_table, building_data, item_table):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format('悖论模拟')
-    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format('悖论模拟')
     stage_data += '|关卡难度={}\n'.format('NORMAL')
@@ -681,7 +683,6 @@ class Stage(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         stage_list = self.wiki.category('分类:普通难度关卡')
-        # stage_list = self.wiki.category('分类:剿灭关卡')
         new_stage_list = []
 
         for stage_id in stage_table['stages']:
@@ -690,10 +691,10 @@ class Stage(Job):
                 'difficulty'] == 'FOUR_STAR':
             # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
-            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
             if stage_page_name in stage_list:
                 continue
-            # if stage_detail['code'] not in ['GT-HX-3']:
+            # if 'WR-' not in stage_detail['code']:
             #     continue
 
             if stage_detail['levelId']:
@@ -715,13 +716,16 @@ class Stage(Job):
                 stage_drop = '\n==材料掉落==\n{{关卡材料掉落}}'
             else:
                 stage_drop = ''
-            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+            if stage_detail['levelId']:
+                char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+            else:
+                char_pre = ''
 
             stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + char_pre + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
-                title = stage_detail['code'],
+                title = stage_detail['code'].strip(),
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'
@@ -765,7 +769,7 @@ class Stage(Job):
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] != 'CAMPAIGN':
                 continue
-            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
             if stage_page_name in stage_list:
                 continue
 
@@ -804,7 +808,7 @@ class Stage(Job):
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
-                title = stage_detail['name'],
+                title = stage_detail['name'].strip(),
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'
@@ -849,7 +853,7 @@ class Stage(Job):
             #     stage_detail = stage_key
             #     stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
 
-            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
 
             if stage_detail['levelId']:
                 try:
@@ -867,7 +871,7 @@ class Stage(Job):
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
-                title = stage_detail['name'],
+                title = stage_detail['name'].strip(),
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'
@@ -892,7 +896,7 @@ class Stage(Job):
             if stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
 
-            stage_page_name = stage_detail['code'] + ' ' + stage_detail['name'].rstrip()
+            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
 
             if stage_detail['levelId']:
                 try:
@@ -916,7 +920,7 @@ class Stage(Job):
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
-                title = stage_detail['name'],
+                title = stage_detail['name'].strip(),
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'
@@ -944,7 +948,7 @@ class Stage(Job):
         new_stage_list = []
 
         for stage_detail in handbook_info_table['handbookStageData'].values():
-            stage_page_name = '悖论模拟 {}'.format(stage_detail['name'])
+            stage_page_name = '悖论模拟 {}'.format(stage_detail['name'].strip())
             if stage_page_name in stage_list:
                 continue
 
@@ -965,7 +969,7 @@ class Stage(Job):
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
-                title = stage_detail['name'],
+                title = stage_detail['name'].strip(),
                 text = stage_redirect,
                 summary = 'init',
                 createonly = '1'

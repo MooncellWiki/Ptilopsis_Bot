@@ -1,4 +1,5 @@
 from datetime import datetime
+import time
 
 import pytz
 
@@ -104,10 +105,12 @@ def update_activity(activity_table, item_table, building_data, character_table, 
             )
         activity_text_dict[mission['id']] += '\n|}'
     activity_text = '==活动=='
-    for act_info in activity_table['basicInfo']:
+    for idx, act_info in enumerate(activity_table['basicInfo']):
         activity_text += '\n==={name}===\n'.format(
             name = activity_table['basicInfo'][act_info]['name'].rstrip()
         )
+        if idx >= 10:
+            activity_text += '<!--\n'
         if act_info in activity_text_dict:
             activity_text += activity_text_dict[act_info]
         else:
@@ -176,6 +179,8 @@ def update_activity(activity_table, item_table, building_data, character_table, 
                 item_list += milestone_list[i]
             item_list += '\n|}'
             activity_text += item_list
+        if idx >= 10:
+            activity_text += '\n-->'
 
     return activity_text
 
