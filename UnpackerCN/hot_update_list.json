@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2390552404,
+        "totalSize": 2501839864,
         "abSize": 0
     },
-    "versionId": "21-02-03-10-14-07-b35c16",
+    "versionId": "21-02-03-14-15-22-0255a3",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "21-02-03-10-14-07-b35c16",
-            "md5": "00f4b1203443291f22585b46a71dd4ca",
-            "totalSize": 109939,
-            "abSize": 128888
+            "hash": "21-02-03-14-15-22-0255a3",
+            "md5": "4e4d1a3b189399bdc9eaadecf9adab15",
+            "totalSize": 114826,
+            "abSize": 134798
         },
         {
             "name": "torappu_index.ab",
-            "hash": "21-02-03-10-14-07-b35c16",
-            "md5": "40ea7ccdb6d3e8ba688b7060b7caaa81",
-            "totalSize": 325601,
-            "abSize": 470376
+            "hash": "21-02-03-14-15-22-0255a3",
+            "md5": "5c460f002009c27523bd739077d8ef9f",
+            "totalSize": 339701,
+            "abSize": 489919
         },
         {
             "name": "[uc]shaders.ab",
@@ -49,6 +49,34 @@
             "md5": "100f5a7bb67e2e77336197f0668fb52f",
             "totalSize": 1867325,
             "abSize": 2085456
+        },
+        {
+            "name": "activity/[uc]act16d5.ab",
+            "hash": "81abc8f36e515cb75ffc8f7563d1cbf0",
+            "md5": "fe84258a2d054eb5d345664a4a6171bf",
+            "totalSize": 2366526,
+            "abSize": 2727739
+        },
+        {
+            "name": "activity/[uc]act16d5d1.ab",
+            "hash": "9f202f6c96cf29b8826c543d56030676",
+            "md5": "8f6c24022214c36c890bbe8a07b30f48",
+            "totalSize": 6386,
+            "abSize": 7371
+        },
+        {
+            "name": "activity/[uc]act16d5d2.ab",
+            "hash": "3451843f569ebb4c9939594baefa125d",
+            "md5": "31c0fe6ce80ca381a83d0504a21aea5d",
+            "totalSize": 5007,
+            "abSize": 5829
+        },
+        {
+            "name": "activity/[uc]act16d6.ab",
+            "hash": "8475098c45e6cd85d9a31f1cfdaaad47",
+            "md5": "42bbbfd691afb3df3c6e2ec9ed335d7e",
+            "totalSize": 425374,
+            "abSize": 492802
         },
         {
             "name": "activity/commonassets/commont_item_obj.ab",
@@ -129,10 +157,10 @@
         },
         {
             "name": "arts/furniture_theme_hub.ab",
-            "hash": "2ae0fa88b9f8a451e5e6378093aa30be",
-            "md5": "8109d71e9995904ad943de41dac1b16d",
-            "totalSize": 511349,
-            "abSize": 558337
+            "hash": "83282dfe2363289b67a964a239d9af34",
+            "md5": "8d53c0f41fe0f0575bb72ead2aeff8af",
+            "totalSize": 527283,
+            "abSize": 575711
         },
         {
             "name": "arts/gacha_detail_hub.ab",
@@ -206,10 +234,10 @@
         },
         {
             "name": "arts/[uc]loadingillusts.ab",
-            "hash": "3e3b375a554305ec83b725df33debb4f",
-            "md5": "72cf606b676d3df5a7e347a1f2c7c563",
-            "totalSize": 5915411,
-            "abSize": 6975677
+            "hash": "0b910fae92b98a0c9495815697a34f25",
+            "md5": "e8acd3491c57807d9e3fc3d6b0df2913",
+            "totalSize": 6281275,
+            "abSize": 7406260
         },
         {
             "name": "arts/[uc]maptestassets.ab",
@@ -248,10 +276,10 @@
         },
         {
             "name": "arts/building/skills/icon_hub.ab",
-            "hash": "6e1297e9454d37019d1657fbf0beab59",
-            "md5": "1d5abe81894b1616f6469335503b732f",
-            "totalSize": 3950,
-            "abSize": 5002
+            "hash": "c0632798b45166bbd1f53384fd1e0b25",
+            "md5": "cc51ac3f5bbfabe2b6dffb638219afe5",
+            "totalSize": 3996,
+            "abSize": 5068
         },
         {
             "name": "arts/building/stationroombkgs/building_station_icon_bkg.ab",
@@ -276,17 +304,17 @@
         },
         {
             "name": "arts/characters/chr_portraits_hub.ab",
-            "hash": "147a6654f09cc55da82e190ecc25188b",
-            "md5": "71786bbff68749339be78fcb56dae9fa",
-            "totalSize": 12745457,
-            "abSize": 13620458
+            "hash": "752a688caec10b514f3ece3d7702c830",
+            "md5": "3c03383c1e07b3a841e7667659ddeff2",
+            "totalSize": 13100734,
+            "abSize": 13994442
         },
         {
             "name": "arts/charavatars/avatar_hub.ab",
-            "hash": "eda8641e16986fbe1a3084db05b76a32",
-            "md5": "53ac1e8750758ac4a3154d3d67d2906c",
-            "totalSize": 7783,
-            "abSize": 10212
+            "hash": "2db5976c11d66a4d3523ef0e87929717",
+            "md5": "168ebf978e7eb23d4da71560239596eb",
+            "totalSize": 7946,
+            "abSize": 10438
         },
         {
             "name": "arts/effects/[pack]map.ab",
@@ -304,10 +332,10 @@
         },
         {
             "name": "arts/enemies/enemy_icons_hub.ab",
-            "hash": "27a5cfaa01a4058a24864a0935c208ed",
-            "md5": "1d72ceb213955fae45313b7e0dfc21aa",
-            "totalSize": 2490454,
-            "abSize": 2633047
+            "hash": "72a288d3964bc1e2aa8ae91f95108510",
+            "md5": "5299fae360d116de6fdbb68f68e48e71",
+            "totalSize": 2638153,
+            "abSize": 2787054
         },
         {
             "name": "arts/guidebookpages/[pack]buildingbp.ab",
@@ -500,10 +528,10 @@
         },
         {
             "name": "arts/items/icons/icon_hub.ab",
-            "hash": "d78edbcd242d4b3b4f4ad5924f68234c",
-            "md5": "b7d98fba7466e594f77e25f2f1df017e",
-            "totalSize": 6227,
-            "abSize": 8165
+            "hash": "e9f6b3f0e4c145f79e18afcd2a0fbe7b",
+            "md5": "aacfb141f1b4fcb3b07b2e63d4d1e6a2",
+            "totalSize": 6313,
+            "abSize": 8256
         },
         {
             "name": "arts/items/voucheritemicons/pic_hub.ab",
@@ -1507,6 +1535,13 @@
             "abSize": 508128
         },
         {
+            "name": "arts/maps/map_jungle/mesh/level_memory_bldsk_1.ab",
+            "hash": "79773a325faa91ed7ab7b0822ba69963",
+            "md5": "4bbd67fe71422cf1edd7b39eda76c865",
+            "totalSize": 748754,
+            "abSize": 862355
+        },
+        {
             "name": "arts/maps/map_kxmr/res.ab",
             "hash": "db4e0f2c21f4072fa437bed75ef4397d",
             "md5": "66d50e8f7eaa2eb95d12533b1975babb",
@@ -1701,6 +1736,13 @@
             "md5": "5b36d48a004e48f31eb2d0d4236b6d5c",
             "totalSize": 380137,
             "abSize": 477856
+        },
+        {
+            "name": "arts/maps/map_lm_center/mesh/level_memory_aglina_1.ab",
+            "hash": "52d97bc6691d4d6b550f384fcdbc2117",
+            "md5": "54439efa066bd505c0d3e7a90bee7642",
+            "totalSize": 318047,
+            "abSize": 391259
         },
         {
             "name": "arts/maps/map_lm_center/mesh/level_memory_phatom_1.ab",
@@ -1960,6 +2002,13 @@
             "md5": "b38330b323d203e8957a377961496242",
             "totalSize": 310768,
             "abSize": 382614
+        },
+        {
+            "name": "arts/maps/map_lungmen/mesh/level_memory_fmout_1.ab",
+            "hash": "d7edfa4110e1879ba6299049ec66dafb",
+            "md5": "d1e5a1b36e01155445975338606dbd27",
+            "totalSize": 265869,
+            "abSize": 326513
         },
         {
             "name": "arts/maps/map_lungmen/mesh/level_promote_c_1.ab",
@@ -2366,6 +2415,13 @@
             "md5": "4aa52f6c34a87f315f22a2f35369c5dd",
             "totalSize": 853367,
             "abSize": 1024708
+        },
+        {
+            "name": "arts/maps/map_qcity_core/mesh/level_memory_lava_1.ab",
+            "hash": "ef4105c64930df14507fcd3e377f0755",
+            "md5": "b634d21bf853fabe7c03c9be2a05e725",
+            "totalSize": 912008,
+            "abSize": 1100882
         },
         {
             "name": "arts/maps/map_qcity_core/mesh/level_rogue_b-6.ab",
@@ -2956,6 +3012,153 @@
             "abSize": 566996
         },
         {
+            "name": "arts/maps/map_year/res.ab",
+            "hash": "c86f38e7ac79a0aceef0bdadef6acb80",
+            "md5": "f60da4470029edd0b1592b9a3d896396",
+            "totalSize": 1487092,
+            "abSize": 1726857
+        },
+        {
+            "name": "arts/maps/map_year/background_mesh/s_background_year.ab",
+            "hash": "d953532fbf17b3686d2759aff6a60287",
+            "md5": "ce65f0517b738108f97334e3fc636190",
+            "totalSize": 444268,
+            "abSize": 508163
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_01.ab",
+            "hash": "db05cbdd97b2eee8f9655f3d5a39ba68",
+            "md5": "5d92b97edf808847d37628753b0a7853",
+            "totalSize": 895080,
+            "abSize": 1120079
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_02.ab",
+            "hash": "90b652b5cf8cdd8d5b0e438f84fd83d7",
+            "md5": "5ddffa22b19bd70b287da440c3c99cf8",
+            "totalSize": 733936,
+            "abSize": 900357
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_03.ab",
+            "hash": "cecc2afc55e8a7f9593f4efe3f140bb3",
+            "md5": "c8ed76141dd31964a52a753d361b21ae",
+            "totalSize": 778858,
+            "abSize": 970606
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_04.ab",
+            "hash": "a2b27213302e018a929f8a9fa33f83fb",
+            "md5": "24f822e07776702ab9cd0d14e3811415",
+            "totalSize": 847034,
+            "abSize": 1059804
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_05.ab",
+            "hash": "f31f6ac706b31c31f09c3942305b92b5",
+            "md5": "b9cdf7bed1066470c253af12cdc55efb",
+            "totalSize": 659867,
+            "abSize": 843884
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_06.ab",
+            "hash": "5aba2e23d1b3666550f128fd7160cf39",
+            "md5": "40c1d7505756156c1145a2ca3b34e7dd",
+            "totalSize": 932905,
+            "abSize": 1186318
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_07.ab",
+            "hash": "71032f59e8b0805436792d03bd9017ba",
+            "md5": "247df26941560db5a05b4af6717cf5b5",
+            "totalSize": 810003,
+            "abSize": 1010754
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_08.ab",
+            "hash": "eb50fc1e22231edb553e47e1bf7b95e0",
+            "md5": "d3164f11e70a7e00aaa9d34a6ded3e54",
+            "totalSize": 815273,
+            "abSize": 1022221
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_09.ab",
+            "hash": "481469051de2cf6e0a8b62e0ac16cc08",
+            "md5": "d4e76125db5fcb9aa6c8dae8937fcf6a",
+            "totalSize": 746374,
+            "abSize": 939953
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_10.ab",
+            "hash": "0ecad1ac7aaedfd02246de51ce3e26e2",
+            "md5": "fe31f8647f700b1dbd157dc458f9084d",
+            "totalSize": 879523,
+            "abSize": 1123800
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex01.ab",
+            "hash": "16a12f300425dfd47dedbe7a7f1db733",
+            "md5": "b3e3d42a6ed67d3171d04a8caddfa111",
+            "totalSize": 839300,
+            "abSize": 1066439
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex02.ab",
+            "hash": "31728da576afb2c7f9b53852b351180b",
+            "md5": "34cf1bc90c4866ce182641b13da2ece2",
+            "totalSize": 718247,
+            "abSize": 911164
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex03.ab",
+            "hash": "5482daaf62695a5f099715af94c43c40",
+            "md5": "fed9e292ac53430ef70ecd45b200d195",
+            "totalSize": 882460,
+            "abSize": 1114342
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex04.ab",
+            "hash": "7202fb6a57fdae65ad3556732fc77cee",
+            "md5": "ab31cc8b31fb8c22114e2e8f3d314414",
+            "totalSize": 926240,
+            "abSize": 1175153
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex05.ab",
+            "hash": "292a9f3067bb984875328620610ee4ea",
+            "md5": "71c0b58f01cdcee615bbd57a3051280a",
+            "totalSize": 934399,
+            "abSize": 1166699
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex06.ab",
+            "hash": "3ac8d1815430f55cba6adef3956bec15",
+            "md5": "9bd19e366aa023dfb2fbcb914223b864",
+            "totalSize": 784569,
+            "abSize": 989907
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex07.ab",
+            "hash": "66c8dd44064ef2a1364c9f2355b56d19",
+            "md5": "e86ecb074707d3e106be6d295a68a3d2",
+            "totalSize": 830954,
+            "abSize": 1050070
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_ex08.ab",
+            "hash": "923325b84e5107efeef992ce1a11c222",
+            "md5": "1c0251f81c2766f29133d23b8092b59f",
+            "totalSize": 831089,
+            "abSize": 1051678
+        },
+        {
+            "name": "arts/maps/map_year/mesh/level_act16d5_tr01.ab",
+            "hash": "b1198096f6898d37bce23ac865f3f54e",
+            "md5": "fd73fd52ad002b58d3beef52c0e99055",
+            "totalSize": 754882,
+            "abSize": 930283
+        },
+        {
             "name": "arts/maps/sceneeffectprofile/ae_13d5_01_seprofiles.ab",
             "hash": "c785f28008fda35bc026417e86b4ee95",
             "md5": "1033ff82f49f337e9aa88215a5c85e98",
@@ -3006,10 +3209,10 @@
         },
         {
             "name": "arts/maps/sceneeffectprofile/ae_year.ab",
-            "hash": "6b87b393595cb30e0179ddedd360df6a",
-            "md5": "756a695393cf588dc046d96d1a5fae12",
-            "totalSize": 11839,
-            "abSize": 13293
+            "hash": "ed01654c905ea9d6ba331d9744e3e07a",
+            "md5": "343cbc3ef274afa4cf246e1fa9dc3b58",
+            "totalSize": 1980,
+            "abSize": 2215
         },
         {
             "name": "arts/maps/sceneeffectprofile/effect_camp_r_02_seprofiles.ab",
@@ -3054,6 +3257,13 @@
             "abSize": 2180
         },
         {
+            "name": "arts/maps/sceneeffectprofile/scene_lut/hg_lut_year.ab",
+            "hash": "bdc9a7fadc2d3f9196c624a3580fa6da",
+            "md5": "89f2d2454ee0aadb29986f2dfaf63ce1",
+            "totalSize": 11010,
+            "abSize": 12269
+        },
+        {
             "name": "arts/misc/profession_icons_hub.ab",
             "hash": "14537ab37268ef3ed1c02d86f3810e76",
             "md5": "bad322a611e0632a9143d3535b5db014",
@@ -3069,10 +3279,10 @@
         },
         {
             "name": "arts/shop/[uc]lmtgsshop.ab",
-            "hash": "0d44e206a4ad2d15295f0672dd9f750a",
-            "md5": "bbe4f335e924069f97066c3081f287d9",
-            "totalSize": 458070,
-            "abSize": 529044
+            "hash": "cbb8ceba087fff5b3f6d106dbaf3f3c5",
+            "md5": "8d9fec827537ed7525a14c79da215a14",
+            "totalSize": 477162,
+            "abSize": 550357
         },
         {
             "name": "arts/shop/[uc]templateshop.ab",
@@ -3164,6 +3374,13 @@
             "md5": "a2a8a08190d354fc3c2eb53add645a5d",
             "totalSize": 302754,
             "abSize": 333444
+        },
+        {
+            "name": "arts/shop/furngroup/inkart_2021.ab",
+            "hash": "8f1044696fc9325a729cbf9493c4ac77",
+            "md5": "499d1c9440bb3b3e8e7d134a0b9a1a69",
+            "totalSize": 288938,
+            "abSize": 323792
         },
         {
             "name": "arts/shop/furngroup/lightfood_2020.ab",
@@ -3265,10 +3482,10 @@
         },
         {
             "name": "arts/shop/gpimages/gp_hub.ab",
-            "hash": "ad273e3434ed7d7bde96f2dbb88e13f6",
-            "md5": "bac9d2eb68f10756fb67f74da56a086e",
-            "totalSize": 2484,
-            "abSize": 3060
+            "hash": "8510a947244dbf9028656d3734b55a66",
+            "md5": "cd8a380281ef5edd8e107c85ee0f1488",
+            "totalSize": 2495,
+            "abSize": 3077
         },
         {
             "name": "arts/shop/recommendshopgroup/tag_1.ab",
@@ -3341,11 +3558,32 @@
             "abSize": 163297
         },
         {
+            "name": "arts/shop/recommendshopgroup/tag_85.ab",
+            "hash": "a663d78a5593af1577d2cd324d72ae1e",
+            "md5": "de73c1496ce391b2c0706a2e068c705d",
+            "totalSize": 148117,
+            "abSize": 162230
+        },
+        {
+            "name": "arts/shop/recommendshopgroup/tag_86.ab",
+            "hash": "9701120ddc089d95e5bea6e4c9c578c7",
+            "md5": "0fe6e7c05a70f6f24ff8ead0e27060ef",
+            "totalSize": 170707,
+            "abSize": 184257
+        },
+        {
+            "name": "arts/shop/recommendshopgroup/tag_87.ab",
+            "hash": "19eb8add4d3d8c1049c3bdc7c90fd7b2",
+            "md5": "5ea2b208fd3690b03b966aa59b0ea4a4",
+            "totalSize": 174087,
+            "abSize": 190938
+        },
+        {
             "name": "arts/skills/skill_icons_hub.ab",
-            "hash": "7007f2a3efc46e458d8c2f5af7ccb031",
-            "md5": "ce71066df75755e25c9d535b421b99cd",
-            "totalSize": 1834492,
-            "abSize": 2007391
+            "hash": "9283af173295ed5a43758f168491b770",
+            "md5": "78b0217108ff8fea32e95a0dcb126614",
+            "totalSize": 1885157,
+            "abSize": 2062250
         },
         {
             "name": "arts/teamicon/team_icon_hub.ab",
@@ -3531,10 +3769,10 @@
         },
         {
             "name": "arts/ui/furnitureicons/drop.ab",
-            "hash": "8eb9694d10a4acc1f22f93d3a456da40",
-            "md5": "5cd79a9fabd900e820c1156b7c5fe684",
-            "totalSize": 781801,
-            "abSize": 902049
+            "hash": "1e44bced9f1e7d6addeaf314c794d944",
+            "md5": "e93c578612e4a525b270fd1cbd4d6752",
+            "totalSize": 809954,
+            "abSize": 930918
         },
         {
             "name": "arts/ui/furnitureicons/elite.ab",
@@ -3559,10 +3797,10 @@
         },
         {
             "name": "arts/ui/furnitureicons/furngroup.ab",
-            "hash": "24d5e0053a1cf212460d64a5fbe0abb1",
-            "md5": "41f45c9b620c5975571ab9e67dbf994e",
-            "totalSize": 454485,
-            "abSize": 492467
+            "hash": "33bf94ccfd46dfdf04076953a4f67146",
+            "md5": "cec6601a588e59a04fceb48f787905b4",
+            "totalSize": 471155,
+            "abSize": 510292
         },
         {
             "name": "arts/ui/furnitureicons/guitar.ab",
@@ -3577,6 +3815,13 @@
             "md5": "e968910b1f1844a86c298231a7fabeff",
             "totalSize": 12531,
             "abSize": 15538
+        },
+        {
+            "name": "arts/ui/furnitureicons/inkart.ab",
+            "hash": "f293c11219f624d5732652ee91caaab9",
+            "md5": "b4f5348d23606e4e097cad7f14538fde",
+            "totalSize": 106895,
+            "abSize": 129583
         },
         {
             "name": "arts/ui/furnitureicons/kfc.ab",
@@ -3741,17 +3986,17 @@
         },
         {
             "name": "arts/ui/homebanners/gacha/banner_hub.ab",
-            "hash": "4d5537f4d1a381b6a749c457875062e3",
-            "md5": "4d1cb83cf23b425faa2490f1a75497fb",
-            "totalSize": 2053,
-            "abSize": 2297
+            "hash": "dd7925a167a275d963c1187f406bce4d",
+            "md5": "8fcd7636c9bd4061e4fe268c060f6045",
+            "totalSize": 2066,
+            "abSize": 2318
         },
         {
             "name": "arts/ui/homebanners/shop/banner_hub.ab",
-            "hash": "ad1d2e4cc99a271402645e13b6ef5728",
-            "md5": "eceb38e6395cb0d8469725fe01bd5791",
-            "totalSize": 2200,
-            "abSize": 2483
+            "hash": "3cee8345b7dc4015f1f3442bc21557fd",
+            "md5": "6e2b4a1c4187581fe2e7861782794413",
+            "totalSize": 2266,
+            "abSize": 2563
         },
         {
             "name": "arts/ui/homebanners/zone/banner_hub.ab",
@@ -3769,24 +4014,24 @@
         },
         {
             "name": "arts/ui/medal/suitbkg/suit_hub.ab",
-            "hash": "555da71509397b36f02dc4ca8243e8b2",
-            "md5": "2761bec3c2d1333dc2f3ff18c506c86a",
-            "totalSize": 2059,
-            "abSize": 2323
+            "hash": "68346e8b1d71837ef18cbb4d293384d4",
+            "md5": "8e63ca6768edbf5eb39e20fdee6f1daa",
+            "totalSize": 2072,
+            "abSize": 2335
         },
         {
             "name": "arts/ui/medalicon/pic_hub.ab",
-            "hash": "92ddbafc71c54922c0cb9d93ee9589e7",
-            "md5": "cbab2a122d977f9afec13ff3b9e013a5",
-            "totalSize": 3168,
-            "abSize": 4487
+            "hash": "2b652e274a4e9a545b297c36c9178bf6",
+            "md5": "784814fefc921cba25beb71f18e2c2cf",
+            "totalSize": 3274,
+            "abSize": 4684
         },
         {
             "name": "arts/ui/medaltitle/pic_hub.ab",
-            "hash": "925a81c41dfbda393b79b541305ec262",
-            "md5": "b3b0e40f77d252612f56f39930a7a3c4",
-            "totalSize": 2020,
-            "abSize": 2299
+            "hash": "881e3afc8a5e3b6da87eece07bd44777",
+            "md5": "612a3f5cf1ba6d942c7cb1c42f621207",
+            "totalSize": 2028,
+            "abSize": 2308
         },
         {
             "name": "arts/ui/roguelike/choicepic/pic_hub.ab",
@@ -3871,6 +4116,139 @@
             "md5": "db930c81db7a486766d06b247f6ae208",
             "totalSize": 388723,
             "abSize": 428918
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_01.ab",
+            "hash": "cd51d194ca1adafd0f2668d7ae778036",
+            "md5": "50272faed3365d712e62aaa84f253edf",
+            "totalSize": 110396,
+            "abSize": 120601
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_02.ab",
+            "hash": "47266aa75c817c8a867180279f0d89f4",
+            "md5": "c9d1e2aae6d862c2d4edd440f91b0294",
+            "totalSize": 112166,
+            "abSize": 121432
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_03.ab",
+            "hash": "cc994d7c53772f958d13b994808c116d",
+            "md5": "fcbd77074903e466e7f407f3ee12f8b1",
+            "totalSize": 113797,
+            "abSize": 123052
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_04.ab",
+            "hash": "3b7d8ddb7e82d09deec6148e94c29671",
+            "md5": "d65b15d324d2e3f12b4ba44a2057741d",
+            "totalSize": 110025,
+            "abSize": 118972
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_05.ab",
+            "hash": "1dc2dbec4051800eddeac1d285d4ac0b",
+            "md5": "0de024dbee4a2243acef4f8a7da62ab0",
+            "totalSize": 109162,
+            "abSize": 118796
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_06.ab",
+            "hash": "d1927f3e2b27d1dfb5616763f13873d2",
+            "md5": "87fb8cc0aca77dbd9cf2d3c2cb071a47",
+            "totalSize": 111188,
+            "abSize": 120083
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_07.ab",
+            "hash": "d7453651723ed9c161fa368b1fe77478",
+            "md5": "75ebcd6683d82ec33b2b8ec5ad14a1fa",
+            "totalSize": 113699,
+            "abSize": 123369
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_08.ab",
+            "hash": "d14663d85f14868d580f735985005636",
+            "md5": "4ba4bf5c5e3153a9189113e2045ffb27",
+            "totalSize": 111472,
+            "abSize": 120913
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_09.ab",
+            "hash": "c0fc4fdf4cd90678dead2a25757894cc",
+            "md5": "11d04f7e457e5170d3ef73133b3a9573",
+            "totalSize": 111734,
+            "abSize": 120951
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_10.ab",
+            "hash": "8822f32569fba020ec7244b2a2f59c45",
+            "md5": "aef21a53e594d61f18df2e1f9e2b3932",
+            "totalSize": 112709,
+            "abSize": 122050
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex01.ab",
+            "hash": "12951d0023281c816ce1c303e0eeaee6",
+            "md5": "63904b38ffbc3fae4bdbe8474b3b4095",
+            "totalSize": 113686,
+            "abSize": 122604
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex02.ab",
+            "hash": "8ab52e03522c4967c46ad4da4388a4a8",
+            "md5": "398ebd04264979e9f811e680dfc3418c",
+            "totalSize": 109554,
+            "abSize": 119115
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex03.ab",
+            "hash": "d0d6b3123acffb6fede3d2388dc1c6e6",
+            "md5": "228970f368719e98b93308eb8b6d504c",
+            "totalSize": 116516,
+            "abSize": 124862
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex04.ab",
+            "hash": "b44d45426bf965dc20be7f4ffbfdaae4",
+            "md5": "bcf699577fa406976d1b28e513f49c06",
+            "totalSize": 111574,
+            "abSize": 120858
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex05.ab",
+            "hash": "9af57aefc263135e426124a44afff9c2",
+            "md5": "ea87c4819d6faacc15a93f5a3a2b6a0f",
+            "totalSize": 114752,
+            "abSize": 123706
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex06.ab",
+            "hash": "b2f9c93b0146466d3c50a93979391b99",
+            "md5": "ae3a8236f2963cc5e82c9e9439773be5",
+            "totalSize": 110634,
+            "abSize": 119199
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex07.ab",
+            "hash": "e669dd36e87241f24e17dc76489c40e5",
+            "md5": "9de7148dad6dafba6eddd9ac2e9f6130",
+            "totalSize": 111645,
+            "abSize": 119993
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_ex08.ab",
+            "hash": "67c3bcfa8217378e406999952b83da2a",
+            "md5": "8ad7bec6ee280f90d6861a48c886ebb3",
+            "totalSize": 112204,
+            "abSize": 121294
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act16d5_tr01.ab",
+            "hash": "cb9a0a73f9eaaecb0b42a0811bad6391",
+            "md5": "3331aee1a39b958aac0ae681c7e02186",
+            "totalSize": 110213,
+            "abSize": 119982
         },
         {
             "name": "arts/ui/stage/mappreviews/camp_01.ab",
@@ -4895,11 +5273,25 @@
             "abSize": 92916
         },
         {
+            "name": "arts/ui/stage/mappreviews/mem_aglina_1.ab",
+            "hash": "77df4d9d4e1264e224e12d75fc69fcf8",
+            "md5": "d96f51e3fc124525c616f3fb9a191946",
+            "totalSize": 99248,
+            "abSize": 108384
+        },
+        {
             "name": "arts/ui/stage/mappreviews/mem_amgoat_1.ab",
             "hash": "cf06ad8280ebab8c5766f53e58e0b78c",
             "md5": "de5f1b8be592240db262e67277f5b6de",
             "totalSize": 90818,
             "abSize": 101678
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/mem_bldsk_1.ab",
+            "hash": "9ac6540ecc2d14fd92657989ca1dc8f6",
+            "md5": "77b282db4da2a9fd14a4849b7c623683",
+            "totalSize": 114226,
+            "abSize": 122477
         },
         {
             "name": "arts/ui/stage/mappreviews/mem_broca_1.ab",
@@ -4916,11 +5308,25 @@
             "abSize": 98280
         },
         {
+            "name": "arts/ui/stage/mappreviews/mem_fmout_1.ab",
+            "hash": "c30b1381d30c2bcaed1adc9f6e72dc8a",
+            "md5": "ef5c9e330c82894a3016dc0703c55564",
+            "totalSize": 86912,
+            "abSize": 96028
+        },
+        {
             "name": "arts/ui/stage/mappreviews/mem_kroos_1.ab",
             "hash": "b5414d88b8d01fbb2bcacf72d56d4e51",
             "md5": "ef260db1103ca191a4cf80ef483d24ba",
             "totalSize": 87064,
             "abSize": 96166
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/mem_lava_1.ab",
+            "hash": "5173a53ae267f98f71b8f159430a566e",
+            "md5": "5a140c4d946048db2283b484e870afa6",
+            "totalSize": 78854,
+            "abSize": 89179
         },
         {
             "name": "arts/ui/stage/mappreviews/mem_melan_1.ab",
@@ -6135,10 +6541,10 @@
         },
         {
             "name": "arts/ui/storyreview/hubs/activity/pic_hub.ab",
-            "hash": "6ef7a6835adbfdf0170e0d4e3cec14a3",
-            "md5": "1f9c997ad3c81500de6a7153c78d9cfd",
-            "totalSize": 2066,
-            "abSize": 2315
+            "hash": "a0191dc9f6e0a2a7698d1866e9c4139c",
+            "md5": "d0c2c7249c065f07424f0a1ed49d913e",
+            "totalSize": 2073,
+            "abSize": 2325
         },
         {
             "name": "arts/ui/storyreview/hubs/mini/pic_hub.ab",
@@ -6198,10 +6604,10 @@
         },
         {
             "name": "audio/sound_beta_2/enemy.ab",
-            "hash": "6a6aa2cf3f1f7b2209014c000d0abffe",
-            "md5": "cf9b22d7b1a684f3c42db035ef97568b",
-            "totalSize": 24042657,
-            "abSize": 24154470
+            "hash": "402b0eeed125e953328841d89069dd73",
+            "md5": "4bd030b6d6268fd3fb332c401029ded4",
+            "totalSize": 24634774,
+            "abSize": 24747369
         },
         {
             "name": "audio/sound_beta_2/general.ab",
@@ -6965,6 +7371,69 @@
             "md5": "12a376f4e3d1fe6ac45f58161e74db92",
             "totalSize": 3751493,
             "abSize": 3757614
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_awakening_intro.ab",
+            "hash": "a28aca2174f554ab0b55f66ce2f3e063",
+            "md5": "5b8c088a0fefd81749ad43e3753c79ae",
+            "totalSize": 745875,
+            "abSize": 748074
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_awakening_loop.ab",
+            "hash": "38a467723a2042f301be2405566453f2",
+            "md5": "838af2be014a71daefc50a71b8ad1085",
+            "totalSize": 1321412,
+            "abSize": 1326517
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_chuxi_intro.ab",
+            "hash": "fe1326dd51170c0f98a4c9d2f987e639",
+            "md5": "efb6341fe449a4d421546d7ff9f4509d",
+            "totalSize": 749586,
+            "abSize": 752912
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_chuxi_loop.ab",
+            "hash": "3c1de52d2b41e55afea48f6c2094bda1",
+            "md5": "a311bd829d0cf92cb1326b575d5c6088",
+            "totalSize": 843122,
+            "abSize": 847646
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_duskdragon_intro.ab",
+            "hash": "35231c8155806595c885d1d79286178a",
+            "md5": "01678bf4057359c38c8aa2ee5da35435",
+            "totalSize": 661431,
+            "abSize": 668327
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_duskdragon_loop.ab",
+            "hash": "c97fa3a99177b0345a0b09bdacd7f2e2",
+            "md5": "97756d390f0c9db69840ffd926883402",
+            "totalSize": 1041861,
+            "abSize": 1048525
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_taoyuan_intro.ab",
+            "hash": "5a28bef8424c6bf2a4540efb754a7fb6",
+            "md5": "e4aaa739bd8e3ef4da27eb640310f204",
+            "totalSize": 510236,
+            "abSize": 511168
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_bat_taoyuan_loop.ab",
+            "hash": "a9fdaa0f0724de356bbddf9e986fe65a",
+            "md5": "331b6d947bd1edc7bb3d3e558a80e3da",
+            "totalSize": 1215741,
+            "abSize": 1218469
+        },
+        {
+            "name": "audio/sound_beta_2/music/act16d5d0/m_sys_act16_loop.ab",
+            "hash": "0c46d6ff98f3c94cc059c068c9e4256b",
+            "md5": "201b379f9a6e9a9d3b3e946fcd1598be",
+            "totalSize": 2455953,
+            "abSize": 2476360
         },
         {
             "name": "audio/sound_beta_2/music/act5d0/m_avg_longmenbar_intro.ab",
@@ -8172,24 +8641,24 @@
         },
         {
             "name": "audio/sound_beta_2/player/p_atk.ab",
-            "hash": "044e028e2f0576cd3397d482a88485f5",
-            "md5": "a8ce04821c21229d95437aa92f9fa434",
-            "totalSize": 11384194,
-            "abSize": 11445316
+            "hash": "b02d2fe87f4bf6306ac082e3df436a6d",
+            "md5": "305f52a51457139d8063b6183d296d92",
+            "totalSize": 11767297,
+            "abSize": 11829943
         },
         {
             "name": "audio/sound_beta_2/player/p_imp.ab",
-            "hash": "e59948c933e0c8250cc61dba560b1703",
-            "md5": "29b882c373ebf1bdefb7b79e1c18f7f1",
-            "totalSize": 13585057,
-            "abSize": 13637584
+            "hash": "a3dcfb3141467900d92c5f1bcaf99cb1",
+            "md5": "7df4d7a93fdd6ab34aec3fa41bd183a3",
+            "totalSize": 14606497,
+            "abSize": 14658094
         },
         {
             "name": "audio/sound_beta_2/player/p_skill.ab",
-            "hash": "76980a27255c44340b05b947af9e7bc5",
-            "md5": "398462cd7a487a458358edecec9123e8",
-            "totalSize": 26215066,
-            "abSize": 26259447
+            "hash": "4307ca073de3d094475ce6d092a8b8b6",
+            "md5": "0718436296fc6996d586317623b7162f",
+            "totalSize": 27769372,
+            "abSize": 27814285
         },
         {
             "name": "audio/sound_beta_2/voice/char_002_amiya.ab",
@@ -8229,6 +8698,14 @@
             "md5": "d5a1b34d608603d3ca8eb359c6ed09c2",
             "totalSize": 3224722,
             "abSize": 3229565,
+            "type": "voice"
+        },
+        {
+            "name": "audio/sound_beta_2/voice/char_1011_lava2.ab",
+            "hash": "853e082bdd6b9e62c63af1aed34f8b63",
+            "md5": "2ffcba7438a6440780a95bbaba59710c",
+            "totalSize": 3117488,
+            "abSize": 3126692,
             "type": "voice"
         },
         {
@@ -8749,6 +9226,14 @@
             "md5": "90552bf7b5b89c829ccb4ec9598b2abb",
             "totalSize": 3423182,
             "abSize": 3436088,
+            "type": "voice"
+        },
+        {
+            "name": "audio/sound_beta_2/voice/char_2015_dusk.ab",
+            "hash": "2f35b1a048e3cb4cdf38a2b32657537d",
+            "md5": "6ded83e38b0c055f980dee6047d6769d",
+            "totalSize": 3782408,
+            "abSize": 3793522,
             "type": "voice"
         },
         {
@@ -9400,6 +9885,14 @@
             "type": "voice"
         },
         {
+            "name": "audio/sound_beta_2/voice/char_362_saga.ab",
+            "hash": "d5f67de8693fcefb2d72e8f32e328f93",
+            "md5": "a4865289c240ba6c19774c7be072cb6e",
+            "totalSize": 2944495,
+            "abSize": 2954230,
+            "type": "voice"
+        },
+        {
             "name": "audio/sound_beta_2/voice/char_365_aprl.ab",
             "hash": "28a7ce1bae64a6aa12e3ca9a3b4d1e34",
             "md5": "b6e7054361b3ba5cbdd8e325d8c26c14",
@@ -9589,6 +10082,14 @@
             "md5": "87ffffc431bf52bc829c478797ccbab7",
             "totalSize": 2495680,
             "abSize": 2506684,
+            "type": "voice"
+        },
+        {
+            "name": "audio/sound_beta_2/voice/char_455_nothin.ab",
+            "hash": "ba35c61600707874803a2def79acfbdb",
+            "md5": "326f58b608aa693a9301dbbd13f626d3",
+            "totalSize": 3664435,
+            "abSize": 3678725,
             "type": "voice"
         },
         {
@@ -9988,6 +10489,20 @@
             "abSize": 813150
         },
         {
+            "name": "avg/backgrounds/bg_cottage.ab",
+            "hash": "53db4a7d4e06140a0978f5498144e824",
+            "md5": "9ca5a0b7e6a4c6fa93fe4f92a98aa534",
+            "totalSize": 2086704,
+            "abSize": 2215434
+        },
+        {
+            "name": "avg/backgrounds/bg_cottage_2.ab",
+            "hash": "a315bb44c6219da0e36c8043ed0775b7",
+            "md5": "7af37ab2884f7e934975273e4a96863d",
+            "totalSize": 2022117,
+            "abSize": 2155234
+        },
+        {
             "name": "avg/backgrounds/bg_county_1.ab",
             "hash": "98f45618d9bcac28122c850402a612a1",
             "md5": "940b530e645cbf3e50380074a84a0134",
@@ -10114,6 +10629,55 @@
             "abSize": 1402578
         },
         {
+            "name": "avg/backgrounds/bg_indoor.ab",
+            "hash": "9dffee21dea1ab16f1c97d5a06873d87",
+            "md5": "7ac6ccd584c04e8a3207d8d121aa4ccd",
+            "totalSize": 1473998,
+            "abSize": 1627805
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_1.ab",
+            "hash": "65b86686ed8507e65dbeef0db01905c0",
+            "md5": "bf598e16916a2b5e4d91621ec5ff1a1a",
+            "totalSize": 889214,
+            "abSize": 989565
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_2.ab",
+            "hash": "d51253178ab841949f261456d704623e",
+            "md5": "bd9fa0a4c47b9fa88dcfa8f1e92d4fb7",
+            "totalSize": 879460,
+            "abSize": 958827
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_3.ab",
+            "hash": "811a82aa0e64b4fb8d02c8f1cb70afd5",
+            "md5": "7a195abcc584bb34d4d49686df6fc4a2",
+            "totalSize": 359621,
+            "abSize": 419604
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_f.ab",
+            "hash": "d6e3ef5191f3d90b8e70e944a9963f3a",
+            "md5": "5d364a9ce3d32f3bc0695e62e7063f5f",
+            "totalSize": 1414091,
+            "abSize": 1608887
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_n.ab",
+            "hash": "30419f95d3d014366d7daec2c5933a82",
+            "md5": "1c40230fe25e694e52a943632c1549e4",
+            "totalSize": 1334808,
+            "abSize": 1507286
+        },
+        {
+            "name": "avg/backgrounds/bg_indoor_u.ab",
+            "hash": "e7801f8f8e979131df1802f23e4c3e11",
+            "md5": "8e95b08746fbbec1c29dea9e4eb80ff5",
+            "totalSize": 1140423,
+            "abSize": 1284434
+        },
+        {
             "name": "avg/backgrounds/bg_infirmary.ab",
             "hash": "fd532ec84e7bc2bda3163b52cf9b42cd",
             "md5": "ce9546756233d93a16d987e6ccea1b80",
@@ -10147,6 +10711,13 @@
             "md5": "311d8f16b7bd20886c5c96feb6c45c24",
             "totalSize": 1107487,
             "abSize": 1241601
+        },
+        {
+            "name": "avg/backgrounds/bg_landscape.ab",
+            "hash": "47b04743c47f8d81d6f9e5ad5c673071",
+            "md5": "a99f6ffacf1db5c4725e69ea1596a20c",
+            "totalSize": 307268,
+            "abSize": 332670
         },
         {
             "name": "avg/backgrounds/bg_light.ab",
@@ -10345,6 +10916,13 @@
             "abSize": 1291874
         },
         {
+            "name": "avg/backgrounds/bg_pawnshop.ab",
+            "hash": "a69d73108e1b739e2aad6cf92eba18cb",
+            "md5": "3f5a4aa453433232750e062163121319",
+            "totalSize": 1563721,
+            "abSize": 1741453
+        },
+        {
             "name": "avg/backgrounds/bg_perimeter.ab",
             "hash": "b38da42a2680e012e53db1cbb2ec5552",
             "md5": "92b3eafd317d0f02f7a362450b1a3138",
@@ -10357,6 +10935,13 @@
             "md5": "65002cb15a31c1c0c0f59bcc9317866c",
             "totalSize": 1147751,
             "abSize": 1323566
+        },
+        {
+            "name": "avg/backgrounds/bg_plankroad.ab",
+            "hash": "08fba65a98ef6ae1c120d18ede73f1b3",
+            "md5": "61fb44dbd47248a58c3175c18678db6a",
+            "totalSize": 1775664,
+            "abSize": 1979048
         },
         {
             "name": "avg/backgrounds/bg_prison_commandroom.ab",
@@ -10576,6 +11161,13 @@
             "abSize": 811290
         },
         {
+            "name": "avg/backgrounds/bg_town.ab",
+            "hash": "997c3277127cf3ab29a2e3af0548d304",
+            "md5": "73ac30c4d5a4e6579e15ff8588d8e116",
+            "totalSize": 2487660,
+            "abSize": 2687693
+        },
+        {
             "name": "avg/backgrounds/bg_trainingcom.ab",
             "hash": "9a50f4767a39049ba4bba4f60bca9100",
             "md5": "131178bacc82a41ae93ebeeb499e1fae",
@@ -10665,6 +11257,13 @@
             "md5": "9cf338fdc5e9c22021966824eaea1a1c",
             "totalSize": 871206,
             "abSize": 987030
+        },
+        {
+            "name": "avg/backgrounds/bg_white.ab",
+            "hash": "e7a448dac0e570dc9e40a661dc1e8789",
+            "md5": "7306f08f86b3fdef51efcd8c0e83b3ca",
+            "totalSize": 2891,
+            "abSize": 10336
         },
         {
             "name": "avg/backgrounds/bg_wild_a.ab",
@@ -11507,6 +12106,55 @@
             "abSize": 1029025
         },
         {
+            "name": "avg/characters/avg_npc_138.ab",
+            "hash": "cd81f99c5f5da3a892c7910d4cedaa82",
+            "md5": "db339d129afdb2ce40ef3c0daf925a5b",
+            "totalSize": 301223,
+            "abSize": 375024
+        },
+        {
+            "name": "avg/characters/avg_npc_139.ab",
+            "hash": "a543ca218ffb0b4e451290e0989e316f",
+            "md5": "b3d82d0e54e688529205e097435d0c3e",
+            "totalSize": 111012,
+            "abSize": 126542
+        },
+        {
+            "name": "avg/characters/avg_npc_140.ab",
+            "hash": "c2d275e2cf560c59f6c12d59a9722043",
+            "md5": "38f633ac86da77069177881b58a96261",
+            "totalSize": 71719,
+            "abSize": 83530
+        },
+        {
+            "name": "avg/characters/avg_npc_141.ab",
+            "hash": "ed53dc053fcfaeeb556b6d9dc23075ed",
+            "md5": "a462e02d392b174b4795bbc9752dd7c8",
+            "totalSize": 73749,
+            "abSize": 86861
+        },
+        {
+            "name": "avg/characters/avg_npc_142.ab",
+            "hash": "484a49d2c6961c1e1894114d71e21c55",
+            "md5": "b2d8d61da7ed04973323ec23f1372043",
+            "totalSize": 89138,
+            "abSize": 103092
+        },
+        {
+            "name": "avg/characters/avg_npc_143.ab",
+            "hash": "57233debeb47ca95f0b76b7e7f348c05",
+            "md5": "f88dd30e658611ce018d51e1a6a1f151",
+            "totalSize": 257340,
+            "abSize": 293767
+        },
+        {
+            "name": "avg/characters/avg_npc_144.ab",
+            "hash": "56dded5fa29bd601700e56aa46521f3f",
+            "md5": "77488367c77544eb913ee8f6c9fb004c",
+            "totalSize": 133203,
+            "abSize": 154413
+        },
+        {
             "name": "avg/characters/avg_npc_145.ab",
             "hash": "30fc2d6f01a0ccc0efe895656319515f",
             "md5": "6d9593f2ecf4213d4ccfdc7ac23596e7",
@@ -11645,6 +12293,13 @@
             "md5": "733b7aa8561e3388aa2721e6d5d02253",
             "totalSize": 97953,
             "abSize": 114640
+        },
+        {
+            "name": "avg/characters/char_1011_purgatory_1.ab",
+            "hash": "7c2cea2c5fa3d3179b0c43bbdc894e93",
+            "md5": "3943429f60539ec194b1c054ef47eb9b",
+            "totalSize": 517698,
+            "abSize": 649352
         },
         {
             "name": "avg/characters/char_1011_wizard_1.ab",
@@ -11934,6 +12589,13 @@
             "abSize": 238536
         },
         {
+            "name": "avg/characters/char_150_snakekiller_1.ab",
+            "hash": "556c31b44dbb3151222d55354ac21c8d",
+            "md5": "ba1cfbcee799e310dead536833d0e4b1",
+            "totalSize": 140757,
+            "abSize": 156151
+        },
+        {
             "name": "avg/characters/char_158_milu.ab",
             "hash": "38034e87cb789268a4c57f7aaad98a53",
             "md5": "220384cf9dc3416c3038728e302a887d",
@@ -12114,6 +12776,13 @@
             "md5": "b94932a0ee86ccc9d99f0712450e93ba",
             "totalSize": 592492,
             "abSize": 688505
+        },
+        {
+            "name": "avg/characters/char_2015_dusk_1.ab",
+            "hash": "ae0cf37299abf2b55eb70baa4d735116",
+            "md5": "ff1619847f8ae7be7597776099f48748",
+            "totalSize": 1181118,
+            "abSize": 1297838
         },
         {
             "name": "avg/characters/char_201_moeshd.ab",
@@ -12613,6 +13282,13 @@
             "abSize": 1068555
         },
         {
+            "name": "avg/characters/char_362_saga.ab",
+            "hash": "b1785f49e87c9573da85afff8b1f9c70",
+            "md5": "2835fb54fafb0b5ef2958f2402512b91",
+            "totalSize": 484433,
+            "abSize": 560945
+        },
+        {
             "name": "avg/characters/char_365_aprl.ab",
             "hash": "b5a2ca3d37f4e5f1431420494961629c",
             "md5": "0650747a334ea2bf2998de8a6cd8dddf",
@@ -12751,6 +13427,13 @@
             "md5": "cbc6da1fe2bad3949da682fca6d989dd",
             "totalSize": 713135,
             "abSize": 781163
+        },
+        {
+            "name": "avg/characters/char_455_nothing_1.ab",
+            "hash": "30b440ebbc0f7c0659d6e76b95dfd48b",
+            "md5": "c80ceb8069cbcb8f83315a6eb0eb83f4",
+            "totalSize": 856917,
+            "abSize": 1023362
         },
         {
             "name": "avg/characters/char_503_rang.ab",
@@ -14335,6 +15018,48 @@
             "abSize": 895139
         },
         {
+            "name": "avg/images/avg_ac16_1.ab",
+            "hash": "3e369390eb2dccaa00cf01422bff67cb",
+            "md5": "d8a9c95a31c72e8df328fbbf0cd945a2",
+            "totalSize": 422447,
+            "abSize": 459639
+        },
+        {
+            "name": "avg/images/avg_ac16_2.ab",
+            "hash": "7387dcd30a16e3f1acb7cdd12fd4592b",
+            "md5": "5fb592f39cc6af6461eb66d2c113f3d6",
+            "totalSize": 269211,
+            "abSize": 307515
+        },
+        {
+            "name": "avg/images/avg_ac16_3.ab",
+            "hash": "548a5337d7079fdcdeb2e2e658f877e4",
+            "md5": "3441ab1abe5b6908b86719f1a472f099",
+            "totalSize": 412976,
+            "abSize": 447580
+        },
+        {
+            "name": "avg/images/avg_ac16_4.ab",
+            "hash": "06025af97e266f5d0a7f867e6ad70ca2",
+            "md5": "5817582035a4b98c286c54877963a9f8",
+            "totalSize": 315698,
+            "abSize": 352784
+        },
+        {
+            "name": "avg/images/avg_ac16_5.ab",
+            "hash": "6c4d525febbdf1747a2f8f8b5527b345",
+            "md5": "b7262362f048eb7a9206e96ae022ff9e",
+            "totalSize": 321224,
+            "abSize": 352298
+        },
+        {
+            "name": "avg/images/avg_ac16_6.ab",
+            "hash": "b57e5fc71c7e01f6432775d995383095",
+            "md5": "bcdbfde28baba288410fc3df5bf52099",
+            "totalSize": 206459,
+            "abSize": 226188
+        },
+        {
             "name": "avg/images/avg_ac4_1.ab",
             "hash": "100e6e57fd8c77a2f4edeb738ba7e9d6",
             "md5": "ad48c2428efa4995a7d5fce229203d27",
@@ -14741,6 +15466,13 @@
             "abSize": 619299
         },
         {
+            "name": "avg/items/item_act16_1.ab",
+            "hash": "ff7c09c09e9502de994cc8e1b3b578e4",
+            "md5": "6e3a797912d57744958074d9f7a1b4f2",
+            "totalSize": 315986,
+            "abSize": 345178
+        },
+        {
             "name": "avg/items/item_act1_1.ab",
             "hash": "9315696fb59a456fe37e90b89123de8c",
             "md5": "d68291a807d0322045d6d265c2bcfded",
@@ -14875,24 +15607,24 @@
         },
         {
             "name": "battle/prefabs/[uc]projectiles.ab",
-            "hash": "a204ca515d896d81dd14c81fc67e87a7",
-            "md5": "39f08c816c21c1630ec3a37d9890cc94",
-            "totalSize": 577988,
-            "abSize": 672901
+            "hash": "e9f0bf0b8b5231c47109429129eed20c",
+            "md5": "1e7b28a01e930740b1da1a7d0b7ecb62",
+            "totalSize": 580777,
+            "abSize": 675781
         },
         {
             "name": "battle/prefabs/[uc]skills.ab",
-            "hash": "0f7957a13fc53e5e7b86e79ab0029057",
-            "md5": "67d743f3dd855bb2674b40ace94ee840",
-            "totalSize": 153216,
-            "abSize": 179815
+            "hash": "357719d2c0524d2f3f5444e8eeff8830",
+            "md5": "baf6675c41197558d0c71a11f084eb6d",
+            "totalSize": 158386,
+            "abSize": 185019
         },
         {
             "name": "battle/prefabs/[uc]tokens.ab",
-            "hash": "d1a6779752bf16a9229abf2b5a007b13",
-            "md5": "08b58a66388d6eb75300c15a08716aec",
-            "totalSize": 866973,
-            "abSize": 981941
+            "hash": "037ee806ecdb35242b57b41601f6642f",
+            "md5": "03f4bae0bd01605fe0b21ceb48061eec",
+            "totalSize": 911559,
+            "abSize": 1031669
         },
         {
             "name": "battle/prefabs/effects/absin.ab",
@@ -15399,6 +16131,13 @@
             "abSize": 241678
         },
         {
+            "name": "battle/prefabs/effects/dusk.ab",
+            "hash": "1f00c997948e2e40fe7a9f63680ff822",
+            "md5": "cfb1b35447104f4eca00e0f46c822781",
+            "totalSize": 587367,
+            "abSize": 684589
+        },
+        {
             "name": "battle/prefabs/effects/elysm.ab",
             "hash": "19d88774614b785978d226d7dfc86b41",
             "md5": "98db2fc1e79a2315dc1a214564daf0f1",
@@ -15407,10 +16146,10 @@
         },
         {
             "name": "battle/prefabs/effects/enemy.ab",
-            "hash": "183214668f89c4d74cc0be8362d8daa4",
-            "md5": "ca9e801232e15cb0117c6e15dc582efe",
-            "totalSize": 4350966,
-            "abSize": 5024399
+            "hash": "bfa7e5c26ae8d73ab759f2b9e191472b",
+            "md5": "47eb9c382db5a2de84e3440aa2e3d395",
+            "totalSize": 5022015,
+            "abSize": 5765380
         },
         {
             "name": "battle/prefabs/effects/estell.ab",
@@ -15638,10 +16377,10 @@
         },
         {
             "name": "battle/prefabs/effects/haak.ab",
-            "hash": "8f5fa67616137d7585234e6d1a390108",
-            "md5": "c0ec9b8f7e7f7b4d245b2eecbb16ca82",
-            "totalSize": 263747,
-            "abSize": 319592
+            "hash": "022b09d65759b7d9801adc466b53925f",
+            "md5": "61763db7f6a8361d6a9c332e21bcbde2",
+            "totalSize": 452429,
+            "abSize": 535391
         },
         {
             "name": "battle/prefabs/effects/hammer.ab",
@@ -15749,6 +16488,13 @@
             "abSize": 371442
         },
         {
+            "name": "battle/prefabs/effects/inverter.ab",
+            "hash": "88ff043e5dc821c6d25bb85b57473955",
+            "md5": "b7cff9331f15d39c03d2aeafcb8f1252",
+            "totalSize": 245840,
+            "abSize": 289838
+        },
+        {
             "name": "battle/prefabs/effects/iris.ab",
             "hash": "3121411ddade07f044f5c1ca8e5c64e8",
             "md5": "6905073468b97d45b4db591805bc6bdd",
@@ -15796,6 +16542,13 @@
             "md5": "cc5d0446cbaa85616bcdf195f4402bb3",
             "totalSize": 87040,
             "abSize": 106839
+        },
+        {
+            "name": "battle/prefabs/effects/lava2.ab",
+            "hash": "34149fa56d270369cdbad603cbd59a2e",
+            "md5": "04b51a0d06fed8c78e29017030a64250",
+            "totalSize": 259715,
+            "abSize": 309438
         },
         {
             "name": "battle/prefabs/effects/laxe.ab",
@@ -16009,10 +16762,10 @@
         },
         {
             "name": "battle/prefabs/effects/nian.ab",
-            "hash": "e992ce28fc32be1da57e4420f0f2060b",
-            "md5": "5aa56651bd4f274b24feca23f2fd86ba",
-            "totalSize": 720721,
-            "abSize": 847680
+            "hash": "2ed0534f67b739bb63923d6a5e9b2d01",
+            "md5": "c5aa1a8863fe065b9c1e800dd0dab804",
+            "totalSize": 996477,
+            "abSize": 1165166
         },
         {
             "name": "battle/prefabs/effects/nightm.ab",
@@ -16027,6 +16780,13 @@
             "md5": "202b2c68bd7b03d8899b9912d1e53a62",
             "totalSize": 120964,
             "abSize": 148667
+        },
+        {
+            "name": "battle/prefabs/effects/nothin.ab",
+            "hash": "34a1e4b282dc98a25bba1bbee6282a62",
+            "md5": "ef13f1bf4b0c10c710b377401ee92aa1",
+            "totalSize": 225707,
+            "abSize": 269686
         },
         {
             "name": "battle/prefabs/effects/obsv.ab",
@@ -16209,6 +16969,13 @@
             "md5": "07cbf1fc561cc0871f0f57de9152d0b9",
             "totalSize": 45691,
             "abSize": 62492
+        },
+        {
+            "name": "battle/prefabs/effects/saga.ab",
+            "hash": "408c7ce6cf3afad6c8aec8de7ae55dde",
+            "md5": "1e174d127fb52169feaeea1146e35245",
+            "totalSize": 664994,
+            "abSize": 765327
         },
         {
             "name": "battle/prefabs/effects/sagent.ab",
@@ -16548,10 +17315,10 @@
         },
         {
             "name": "battle/prefabs/effects/token.ab",
-            "hash": "0ede46cdb1e12c00a7646ea0ca1028b3",
-            "md5": "d86c3e9c30cf88c5839e21c7e903e5a7",
-            "totalSize": 2194362,
-            "abSize": 2504349
+            "hash": "6208e687f62c67ca25672741e03be355",
+            "md5": "485299a9525710b0bb1f917e0e3b6770",
+            "totalSize": 2323937,
+            "abSize": 2648935
         },
         {
             "name": "battle/prefabs/effects/tomimi.ab",
@@ -16674,17 +17441,17 @@
         },
         {
             "name": "battle/prefabs/enemies/enemy_11.ab",
-            "hash": "0e1ee39cdfe69628fb9c17a9f1919ad7",
-            "md5": "3c37f224b0c4a4545e64162133757c0a",
-            "totalSize": 2562626,
-            "abSize": 3036563
+            "hash": "6873440bd39080a1c313e54ed55deb23",
+            "md5": "24177ed6781ebe1f840b97328af1a3c9",
+            "totalSize": 3316112,
+            "abSize": 3913953
         },
         {
             "name": "battle/prefabs/enemies/enemy_15.ab",
-            "hash": "e6040482e885dbf91afd98c7c0bed469",
-            "md5": "c8399b02a40cc980607968344a28053e",
-            "totalSize": 2051201,
-            "abSize": 2459866
+            "hash": "11e007756578c1c08254fef9f2afad03",
+            "md5": "18afe52804af762b7427f5bff450e74c",
+            "totalSize": 2305237,
+            "abSize": 2752852
         },
         {
             "name": "battle/prefabs/enemies/enemy_20.ab",
@@ -17282,6 +18049,20 @@
             "abSize": 149081
         },
         {
+            "name": "building/diy/materials/furni_inkart_floor_01.ab",
+            "hash": "31eed33c8436f8ac9e5a2dfc1a171000",
+            "md5": "1d0ed6b1f0183b8ad5c931b01874e7b6",
+            "totalSize": 131004,
+            "abSize": 152593
+        },
+        {
+            "name": "building/diy/materials/furni_inkart_wallpaper_01.ab",
+            "hash": "eaeaa1d54a4ed749b1d504c0a8ee26bf",
+            "md5": "59b8db1f50e4d2b9ee42ff74ce14a57b",
+            "totalSize": 168422,
+            "abSize": 206687
+        },
+        {
             "name": "building/diy/materials/furni_kfc_floor_01.ab",
             "hash": "a57c9502e6dfb1d581736484ed3eaeb1",
             "md5": "d6a57c06e37eed55e8b920bb276fea54",
@@ -17646,6 +18427,13 @@
             "abSize": 313064
         },
         {
+            "name": "building/diy/prefabs/furnitures/furni_act16d0.ab",
+            "hash": "33744729f58662cafd739510445a508b",
+            "md5": "b82e701af52d4d710be6fcfd2e9d61cf",
+            "totalSize": 238118,
+            "abSize": 268438
+        },
+        {
             "name": "building/diy/prefabs/furnitures/furni_act7d5.ab",
             "hash": "ff79f6daee031979d18511dd7420b286",
             "md5": "eeb1806f4a72c6049cc9a8e4523a1451",
@@ -17815,10 +18603,10 @@
         },
         {
             "name": "building/diy/prefabs/furnitures/furni_drops009.ab",
-            "hash": "882c27791f19b21e6099a407fe84eb25",
-            "md5": "f25ed43130c3fd2f15f9e549eed34291",
-            "totalSize": 104150,
-            "abSize": 119042
+            "hash": "e35afeebf8a833108a9550bdd9eda505",
+            "md5": "0dce4805660769d4f843efb41a8bfa13",
+            "totalSize": 105104,
+            "abSize": 120180
         },
         {
             "name": "building/diy/prefabs/furnitures/furni_duanwu.ab",
@@ -17854,6 +18642,13 @@
             "md5": "433d33169c0fcd9c54fb0362bc86d70b",
             "totalSize": 573425,
             "abSize": 653886
+        },
+        {
+            "name": "building/diy/prefabs/furnitures/furni_inkart.ab",
+            "hash": "e62dfcc0e2d1032f6bd8769d0e255ae2",
+            "md5": "44ecae7acd8f03b25852d6be38dbb5e2",
+            "totalSize": 748517,
+            "abSize": 841826
         },
         {
             "name": "building/diy/prefabs/furnitures/furni_kfc.ab",
@@ -18141,6 +18936,13 @@
             "md5": "102d91b67f37bf8de12802890a12e31f",
             "totalSize": 1513205,
             "abSize": 1649930
+        },
+        {
+            "name": "charpack/char_1011_lava2.ab",
+            "hash": "6ed68bdc9963b21128df9c9500e55d05",
+            "md5": "c6d7ce052e6d845eec8644e2883ff6ae",
+            "totalSize": 1307482,
+            "abSize": 1460672
         },
         {
             "name": "charpack/char_101_sora.ab",
@@ -18596,6 +19398,13 @@
             "md5": "b3a5b8d0e61e44d2e00cdcb05accfdc2",
             "totalSize": 2445077,
             "abSize": 2701974
+        },
+        {
+            "name": "charpack/char_2015_dusk.ab",
+            "hash": "584da308a1a8b5376f11cf48920a189b",
+            "md5": "a72588a993b794be6e9ceb7923959fd3",
+            "totalSize": 2366641,
+            "abSize": 2646727
         },
         {
             "name": "charpack/char_201_moeshd.ab",
@@ -19165,6 +19974,13 @@
             "abSize": 2252254
         },
         {
+            "name": "charpack/char_362_saga.ab",
+            "hash": "eb94396f6de5f0f246153ce72e3e30de",
+            "md5": "c99d8ef438f68f43548bf692eea574a8",
+            "totalSize": 1646353,
+            "abSize": 1830094
+        },
+        {
             "name": "charpack/char_365_aprl.ab",
             "hash": "f0819ecefdabd0689ac7a0e9967d2a0b",
             "md5": "90edbc93c92e13edc3d038117a2167d2",
@@ -19333,6 +20149,13 @@
             "abSize": 1825858
         },
         {
+            "name": "charpack/char_455_nothin.ab",
+            "hash": "ed267e38432e89e8ad58b430fbfab44d",
+            "md5": "3d9bafc9c4b4d966d05ff9dbe3efc57e",
+            "totalSize": 2110038,
+            "abSize": 2336193
+        },
+        {
             "name": "charpack/char_500_noirc.ab",
             "hash": "a57132bb73b97deb877a34aad207f134",
             "md5": "7fc64f518559ef0c71ddba768aaa35d7",
@@ -19425,17 +20248,17 @@
         },
         {
             "name": "config/act_asset_map.ab",
-            "hash": "63454641d06f65c2e38e62a267ee614e",
-            "md5": "6549879010ef400aa42d63f8bbe009d2",
-            "totalSize": 1536,
-            "abSize": 1620
+            "hash": "125f99b4650b0a844718b00537e05972",
+            "md5": "4ba4239b4b76a7a623c78ce72f4f9ba4",
+            "totalSize": 1596,
+            "abSize": 1696
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "8abc17b83b124b285ec51fa07dd58503",
-            "md5": "fcab90248d86c877d31a9a0c6a6d929f",
-            "totalSize": 23473,
-            "abSize": 26607
+            "hash": "303f6d9065c95076c4b76b4b25bcecd8",
+            "md5": "307a0c035d18f233aee1e43d99e5a2c4",
+            "totalSize": 25769,
+            "abSize": 29841
         },
         {
             "name": "config/config.ab",
@@ -19558,10 +20381,10 @@
         },
         {
             "name": "gamedata/art.ab",
-            "hash": "5415b8032e3413f4c1a898e35a33fe57",
-            "md5": "1f6aa74cb2b8d6c18114ef8592170c38",
-            "totalSize": 22172,
-            "abSize": 26801
+            "hash": "f771f1c3722081f4961765f9496031d6",
+            "md5": "1b901894c5b6802022338218c9fed352",
+            "totalSize": 22397,
+            "abSize": 27135
         },
         {
             "name": "gamedata/buff_table.ab",
@@ -19586,24 +20409,24 @@
         },
         {
             "name": "gamedata/excel/activity_table.ab",
-            "hash": "b3a34cda9229506804ce5105f4374eb0",
-            "md5": "26ac101d173142e8d6c7090cde216099",
-            "totalSize": 820473,
-            "abSize": 820566
+            "hash": "adac7771ab789db924daadb26f61b2aa",
+            "md5": "8338cd2b99130ef3e4eb3c2eb9d5e845",
+            "totalSize": 851503,
+            "abSize": 851590
         },
         {
             "name": "gamedata/excel/audio_data.ab",
-            "hash": "51453d5594b424d885523c3b57268fa6",
-            "md5": "499c8c1c0a392c6fb7ea6dd54d8a66f5",
-            "totalSize": 1035802,
-            "abSize": 1035814
+            "hash": "4d4fa6eb457fdb96c063879325efda1b",
+            "md5": "f6942bf454cec42ee142b4f9b79f4b78",
+            "totalSize": 1076362,
+            "abSize": 1076406
         },
         {
             "name": "gamedata/excel/building_data.ab",
-            "hash": "2631cb26e9ef1d4ee661958b47c9615d",
-            "md5": "01b3ae8eaa74d2bea35fc0b4a179536e",
-            "totalSize": 1107690,
-            "abSize": 1107727
+            "hash": "971d10b106d7cc6e5fbd65ae9c4aa986",
+            "md5": "6222adc9e5e565864560cf252fc795da",
+            "totalSize": 1138024,
+            "abSize": 1138015
         },
         {
             "name": "gamedata/excel/campaign_table.ab",
@@ -19614,24 +20437,24 @@
         },
         {
             "name": "gamedata/excel/character_table.ab",
-            "hash": "6e644037603fb71a36651c6b0a702cd0",
-            "md5": "7fa154552c3715e238f88d8c82560fa4",
-            "totalSize": 3534665,
-            "abSize": 3533896
+            "hash": "b33a77604dc22da9ba980d692a944587",
+            "md5": "74de9866038ee9947a09ccecfd104ff1",
+            "totalSize": 3630965,
+            "abSize": 3630168
         },
         {
             "name": "gamedata/excel/charword_table.ab",
-            "hash": "95270b363f9f28aac08ff60b2034c89d",
-            "md5": "b6ba6c24ae87a0df61fd83f44c4d9fcc",
-            "totalSize": 3205928,
-            "abSize": 3205254
+            "hash": "39047ebe706c9ff3b8ca40e4e214965e",
+            "md5": "9b3c9e3e24ee967f2b30238bd58fcb72",
+            "totalSize": 3282238,
+            "abSize": 3281541
         },
         {
             "name": "gamedata/excel/char_meta_table.ab",
-            "hash": "860a53bd8da90c056c0ee076957ae6d9",
-            "md5": "c9518889f2b3b7e965f215a1140babef",
-            "totalSize": 12650,
-            "abSize": 12549
+            "hash": "a9b218cd55321df8aa8c5b59fc7d9191",
+            "md5": "e3ea773eda71b0b862b8cec45c2b9dee",
+            "totalSize": 14489,
+            "abSize": 14396
         },
         {
             "name": "gamedata/excel/char_patch_table.ab",
@@ -19663,17 +20486,17 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "f79636ab31a3743e2bf4f54ca3699bd9",
-            "md5": "088b864f8ad706804f44c376f87d4f83",
+            "hash": "0e0ab601c06377a71752f91922f88bd5",
+            "md5": "ec09e9b27d078ce7bfe2345d68641e7d",
             "totalSize": 1207,
             "abSize": 1223
         },
         {
             "name": "gamedata/excel/enemy_handbook_table.ab",
-            "hash": "030b8ff858d47d91757196c64155b2f9",
-            "md5": "2d09f5a90c0527373885cfa5a7b9264d",
-            "totalSize": 182794,
-            "abSize": 183080
+            "hash": "225bf5ac791d67f3b3867c7abf997a5d",
+            "md5": "c94a9cec9e2df9b9ad82f474c6aa416f",
+            "totalSize": 194513,
+            "abSize": 194811
         },
         {
             "name": "gamedata/excel/favor_table.ab",
@@ -19684,10 +20507,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "6a417ac388da75abf44ed96b69bb5bbd",
-            "md5": "68f715cfaad6289b93028ab62293ed1a",
-            "totalSize": 86515,
-            "abSize": 86675
+            "hash": "5d64e040736d03b00047a22a2ec43b87",
+            "md5": "f65ffd47ac314a84917f715739190913",
+            "totalSize": 87974,
+            "abSize": 88103
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -19698,10 +20521,10 @@
         },
         {
             "name": "gamedata/excel/handbook_info_table.ab",
-            "hash": "edc9e1af7781260d9079363da81b71d4",
-            "md5": "866b6cc113d59a055b2521c77e944a15",
-            "totalSize": 1386749,
-            "abSize": 1386675
+            "hash": "5005a42d6c5d0dc10cc4385b904fc17a",
+            "md5": "34066ab378a3fbf275cc8c5be515b974",
+            "totalSize": 1436981,
+            "abSize": 1436931
         },
         {
             "name": "gamedata/excel/handbook_table.ab",
@@ -19719,17 +20542,17 @@
         },
         {
             "name": "gamedata/excel/item_table.ab",
-            "hash": "78ad6f98a809d3e65fccc928902c1a40",
-            "md5": "7f86494687625f016afc7b9335833b85",
-            "totalSize": 333321,
-            "abSize": 333632
+            "hash": "0418bc649eae864ae62be50ab70872f3",
+            "md5": "4b1a36dcbf3900c50ae22cb88ff15e72",
+            "totalSize": 340757,
+            "abSize": 340958
         },
         {
             "name": "gamedata/excel/medal_table.ab",
-            "hash": "6b7cf655f320feadbab7c471c1c45b43",
-            "md5": "41481807a46a289554e77663cdc6c5a8",
-            "totalSize": 136037,
-            "abSize": 136168
+            "hash": "cccf7c1261a48042e50439107c52fc9b",
+            "md5": "d33a45646f4d4ae1391e864f58d9d720",
+            "totalSize": 148775,
+            "abSize": 149033
         },
         {
             "name": "gamedata/excel/mission_table.ab",
@@ -19768,45 +20591,45 @@
         },
         {
             "name": "gamedata/excel/shop_client_table.ab",
-            "hash": "670fdcf0e08651adc43c7fc25e9883c2",
-            "md5": "7f8a75d9843efc0b81aacea136fa36e9",
-            "totalSize": 113868,
-            "abSize": 114042
+            "hash": "dbb2e81e294c9bf00fb88396f816ad99",
+            "md5": "5b5002cbe1de9e845a13faa01c5b6eef",
+            "totalSize": 117832,
+            "abSize": 118058
         },
         {
             "name": "gamedata/excel/skill_table.ab",
-            "hash": "ac0bb98b55c3d6cf110ef205d5eb5131",
-            "md5": "3231d8a87f3f1072eab550c386fa3f04",
-            "totalSize": 2691607,
-            "abSize": 2691122
+            "hash": "04810e5a5aca493d0bc2f0193628f770",
+            "md5": "22e059c442412fc8b16c4d09e34ebcc9",
+            "totalSize": 2781325,
+            "abSize": 2780834
         },
         {
             "name": "gamedata/excel/skin_table.ab",
-            "hash": "614abdebc5ac2c1dd379ccb9e292da8d",
-            "md5": "c55b1be1b3075850091fe814839a39af",
-            "totalSize": 681930,
-            "abSize": 682037
+            "hash": "dee21e27e3482319b1a477d7d3fbea46",
+            "md5": "44ee68d2884dc0f733187c3ef44e9ced",
+            "totalSize": 702784,
+            "abSize": 702885
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "17dc0c7a6fa538264cb2817d9e94a494",
-            "md5": "9f87e246df14759de905b94ede2f51ab",
-            "totalSize": 3148603,
-            "abSize": 3147958
+            "hash": "b6df57eed3b92dbc16fa7a97da4356f9",
+            "md5": "ac5e959af6d953a9ed0d1579ef8c42b6",
+            "totalSize": 3226213,
+            "abSize": 3225542
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
-            "hash": "53a1052dbd3fbeafd812c48745d354e9",
-            "md5": "2fbffd4663f363e61aaec3320280b652",
-            "totalSize": 336858,
-            "abSize": 337097
+            "hash": "db32a79f02d837b75512730cc664fe2b",
+            "md5": "1ec6e3453d57520dcc8ac1b4f60db98f",
+            "totalSize": 357536,
+            "abSize": 357766
         },
         {
             "name": "gamedata/excel/story_table.ab",
-            "hash": "80eded5f194810bd7e0b588099777d35",
-            "md5": "ffa609d1ed15c0102334409fce7c360d",
-            "totalSize": 331129,
-            "abSize": 331403
+            "hash": "5dbe486328b6b0ed4939d7003b7bac2d",
+            "md5": "ae39e21e60b49b3be0d23e45424c2d44",
+            "totalSize": 342269,
+            "abSize": 342555
         },
         {
             "name": "gamedata/excel/tip_table.ab",
@@ -19824,17 +20647,24 @@
         },
         {
             "name": "gamedata/excel/zone_table.ab",
-            "hash": "856350017423f18ae1f04ff7ef03580d",
-            "md5": "541d9fa9a5cd7da9ce83aebd60d49a6d",
-            "totalSize": 23930,
-            "abSize": 23872
+            "hash": "6d4bfa70498ccb505bec11e22b1da8c0",
+            "md5": "e41284649fe4359df5daac8809ba2a11",
+            "totalSize": 24820,
+            "abSize": 24772
         },
         {
             "name": "gamedata/levels/enemydata.ab",
-            "hash": "b47b6326e640a74f0310690b1b12ab9a",
-            "md5": "3407093b943e79300bee27dc9d081133",
-            "totalSize": 1096407,
-            "abSize": 1096353
+            "hash": "392f72acbc6a01ed53bfb6ba7ed0b5af",
+            "md5": "37caa3a3797cc2b0d160516dfeaae29e",
+            "totalSize": 1131314,
+            "abSize": 1131251
+        },
+        {
+            "name": "gamedata/levels/activities/act16d5.ab",
+            "hash": "473f4d9f21f48d181f54b5a1daa58fe0",
+            "md5": "3b41db48bd1289a2377d7c9f8a5956bd",
+            "totalSize": 1528268,
+            "abSize": 1528561
         },
         {
             "name": "gamedata/levels/obt/campaign.ab",
@@ -19866,10 +20696,10 @@
         },
         {
             "name": "gamedata/levels/obt/memory.ab",
-            "hash": "604e7ccc41fbf6f2a566dba01a5e9557",
-            "md5": "6d2684a97aea618310ed249df49a1a49",
-            "totalSize": 1013205,
-            "abSize": 1013600
+            "hash": "9e8d0949cc6641e8708b9b2ae28dc169",
+            "md5": "beb0d0019d0d3f39753544d66b532cdf",
+            "totalSize": 1261546,
+            "abSize": 1261930
         },
         {
             "name": "gamedata/levels/obt/promote.ab",
@@ -19901,17 +20731,17 @@
         },
         {
             "name": "gamedata/story/activities.ab",
-            "hash": "4444a19516db7e31f5fa7552117ba566",
-            "md5": "7868df99a6dc392361aec2627daa5eb5",
-            "totalSize": 1085116,
-            "abSize": 1178792
+            "hash": "65cffe8b83c1aaaaeef3fca9f0918723",
+            "md5": "5c03adac7630ab4a98d2a8ae73258a2c",
+            "totalSize": 1185822,
+            "abSize": 1287315
         },
         {
             "name": "gamedata/story/obt.ab",
-            "hash": "13a2c1b0b64cdb4c54ad184e3fdfe34c",
-            "md5": "d7a4bc2ec437971194d398b41043c9d9",
-            "totalSize": 868900,
-            "abSize": 945577
+            "hash": "a2f17c9a9d4569711d2d0d0526d17336",
+            "md5": "908a8c055b0e41d4787dd906d3d9e61b",
+            "totalSize": 913520,
+            "abSize": 994529
         },
         {
             "name": "gamedata/story/story_variables.ab",
@@ -19922,10 +20752,10 @@
         },
         {
             "name": "gamedata/story/[uc]info.ab",
-            "hash": "fd72f036e37dd26789a845cef082a88f",
-            "md5": "1eb97bfa800630c0890534c1afe414ee",
-            "totalSize": 47861,
-            "abSize": 53763
+            "hash": "c7cc27bd1ea05840396995ef26bfd7af",
+            "md5": "8ffb0dfdbe153160a9284c7c1d4cbedc",
+            "totalSize": 51614,
+            "abSize": 58256
         },
         {
             "name": "i18n/local_pref.ab",
@@ -20003,6 +20833,272 @@
             "md5": "dc8c53823f8f637dda4ae467384a2302",
             "totalSize": 347907,
             "abSize": 398667
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_01/level_act16d5_01.ab",
+            "hash": "e1f6774c1d9e6c874cbf7ead2efea804",
+            "md5": "477d78a7dd43b652a49248d15fa3ae62",
+            "totalSize": 659084,
+            "abSize": 888115
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_01/level_act16d5_01/lightingdata.ab",
+            "hash": "211ef4351b89fe1ef860b078d7ac3818",
+            "md5": "ce4102f71216bea5f5280f51f15cab75",
+            "totalSize": 260730,
+            "abSize": 299126
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_02/level_act16d5_02.ab",
+            "hash": "e978a62ef240ea134d028b85f6859cbc",
+            "md5": "05491a96d60af9f0d48f63eacd36077b",
+            "totalSize": 534375,
+            "abSize": 719186
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_02/level_act16d5_02/lightingdata.ab",
+            "hash": "1fb484b480496a3c5890a72630123002",
+            "md5": "c2962401d3e5beceae82ca1ea705e8af",
+            "totalSize": 237955,
+            "abSize": 272861
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_03/level_act16d5_03.ab",
+            "hash": "176eb381010d0948dd22d9bd1e8ba13a",
+            "md5": "06bdbb11471285e633468cff268192b7",
+            "totalSize": 568883,
+            "abSize": 771764
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_03/level_act16d5_03/lightingdata.ab",
+            "hash": "3e55f717e0a70e743d48f7e3ad587349",
+            "md5": "db4d048686bdfd9a318ec4c60711cdb3",
+            "totalSize": 243746,
+            "abSize": 280619
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_04/level_act16d5_04.ab",
+            "hash": "a26ffcb3dd1e8878d72d65c77814d72a",
+            "md5": "f1f83b3a4a6ff279bd73fdd1ffd0139a",
+            "totalSize": 624458,
+            "abSize": 847736
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_04/level_act16d5_04/lightingdata.ab",
+            "hash": "400c8aeeaaf432675cd65bb45e2aae10",
+            "md5": "35edeaf3ea6d76d10336a94a5d1072d8",
+            "totalSize": 244473,
+            "abSize": 281051
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_05/level_act16d5_05.ab",
+            "hash": "0c79eb42e28228bcc5c1ba70852ee2b7",
+            "md5": "c2d4c143a85f97f99b65ce7d1b4b7d85",
+            "totalSize": 498631,
+            "abSize": 693994
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_05/level_act16d5_05/lightingdata.ab",
+            "hash": "e215b83f64bb99078dc30c36a61b6351",
+            "md5": "dbb5dfd79dccd05ff57ad62a5771eedd",
+            "totalSize": 235993,
+            "abSize": 273362
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_06/level_act16d5_06.ab",
+            "hash": "493c85cb04f2c90570242c589451ba66",
+            "md5": "5d502dc9fe96e2124ff798583dfa5ba7",
+            "totalSize": 698751,
+            "abSize": 961236
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_06/level_act16d5_06/lightingdata.ab",
+            "hash": "8f7cc19d18bd18ade2d3757ae0d71e97",
+            "md5": "4d0bbd50de2e7f3f49fe3f79b1114857",
+            "totalSize": 252302,
+            "abSize": 288910
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_07/level_act16d5_07.ab",
+            "hash": "68f81dfea981c12a8d32d06dbe5607c9",
+            "md5": "cc7a42e5b3fc40fef83c24c7657e7d02",
+            "totalSize": 614076,
+            "abSize": 819805
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_07/level_act16d5_07/lightingdata.ab",
+            "hash": "18f7c32b67df3f1475545f9ab3a11f5c",
+            "md5": "b863710ce5848856f0c3fc45542d059e",
+            "totalSize": 237538,
+            "abSize": 273972
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_08/level_act16d5_08.ab",
+            "hash": "f70d0c4fed7abf3f4e87371839fad4a9",
+            "md5": "66bac1c3c06c26846ba481ae7ab25a07",
+            "totalSize": 611143,
+            "abSize": 823336
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_08/level_act16d5_08/lightingdata.ab",
+            "hash": "e2b7605dd0a89c0ed19f2aab3fb42ca0",
+            "md5": "c356890f21514b2bde1341d6a507c2e4",
+            "totalSize": 244517,
+            "abSize": 282310
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_09/level_act16d5_09.ab",
+            "hash": "8f7e0fb38d3c95e17fc7ee8b0212f7d8",
+            "md5": "f654c3df668654c764c445effabc5f10",
+            "totalSize": 561862,
+            "abSize": 776698
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_09/level_act16d5_09/lightingdata.ab",
+            "hash": "c78df46808d2ed580e71a45d45e35ce0",
+            "md5": "5829872c65d9f1c832c331146587a2a3",
+            "totalSize": 225577,
+            "abSize": 261461
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_10/level_act16d5_10.ab",
+            "hash": "1497ce00d50a4eb0b214c99023a33886",
+            "md5": "2ca88155badee726484835d47dd62c78",
+            "totalSize": 656736,
+            "abSize": 915423
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_10/level_act16d5_10/lightingdata.ab",
+            "hash": "2a55ade936146bc24e1b3be74cc01c08",
+            "md5": "a82aa8728eb41534111b71d665963fca",
+            "totalSize": 224335,
+            "abSize": 259230
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex01/level_act16d5_ex01.ab",
+            "hash": "42d06ae211a1e9c0ee385a160d23cb83",
+            "md5": "fb7464dcc9af361ce7b676526e208857",
+            "totalSize": 641445,
+            "abSize": 868999
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex01/level_act16d5_ex01/lightingdata.ab",
+            "hash": "e0776181bcef34afe5f20cda980c7d05",
+            "md5": "56e67afdc655d50b4f00cb2e3acfc292",
+            "totalSize": 242483,
+            "abSize": 279078
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex02/level_act16d5_ex02.ab",
+            "hash": "a8ae1a8daf911aef82646ecb441c06ad",
+            "md5": "a690687f83e7b94846c8b262fdcc7f33",
+            "totalSize": 545764,
+            "abSize": 733861
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex02/level_act16d5_ex02/lightingdata.ab",
+            "hash": "5a56a0f8a8eec82a3fea49e45ca0bbcc",
+            "md5": "779ce80c19e86f7569d149b9421cac1f",
+            "totalSize": 243657,
+            "abSize": 282210
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex03/level_act16d5_ex03.ab",
+            "hash": "290454a17c75fdb909f42e49b9691632",
+            "md5": "96cef1a7423fdd66f4b24599c944cb4f",
+            "totalSize": 652315,
+            "abSize": 888723
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex03/level_act16d5_ex03/lightingdata.ab",
+            "hash": "0c181975b6a586d83b863cab2f379267",
+            "md5": "3a9d814258ceb411f5cb1ca8c6bb5d9e",
+            "totalSize": 216587,
+            "abSize": 251785
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex04/level_act16d5_ex04.ab",
+            "hash": "64948f334d90a829ffae82ada550b865",
+            "md5": "5a025c2122c4c91e59fa3c75e18e74ba",
+            "totalSize": 685814,
+            "abSize": 942777
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex04/level_act16d5_ex04/lightingdata.ab",
+            "hash": "2a9806398bac91331b76e180c6c74b52",
+            "md5": "4b06d6a42401c3627ef6b6399e82e856",
+            "totalSize": 251867,
+            "abSize": 291367
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex05/level_act16d5_ex05.ab",
+            "hash": "61d308b544918a142a7d184b06ef8509",
+            "md5": "046696ab6e5c81e12a2f86633bc5416a",
+            "totalSize": 703927,
+            "abSize": 950097
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex05/level_act16d5_ex05/lightingdata.ab",
+            "hash": "4140bb858f1d9931ecf017726eae4108",
+            "md5": "dece98d1f56bd3d7823566ec1709ccb5",
+            "totalSize": 240295,
+            "abSize": 279126
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex06/level_act16d5_ex06.ab",
+            "hash": "5ba9f4223e9d45ca65eb3c1d0962155c",
+            "md5": "64285005fb1daa31e6c0a0defd50a7a6",
+            "totalSize": 583565,
+            "abSize": 793745
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex06/level_act16d5_ex06/lightingdata.ab",
+            "hash": "699f2a8ad24c37baf104ae3d0e895277",
+            "md5": "81ef23a79f7478ca201ab5825a3c80d2",
+            "totalSize": 994654,
+            "abSize": 1140500
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex07/level_act16d5_ex07.ab",
+            "hash": "a99b40be1bfe128fc0f8c9ebe57ad915",
+            "md5": "c79bead9a612273e36626ebecaa89165",
+            "totalSize": 620884,
+            "abSize": 846313
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex07/level_act16d5_ex07/lightingdata.ab",
+            "hash": "54e2f2c3bae0b4360f8cc7720c8acf41",
+            "md5": "5d60ba5f3540546eaaa974609c095a16",
+            "totalSize": 232052,
+            "abSize": 269268
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex08/level_act16d5_ex08.ab",
+            "hash": "32b9e6be3a38af1994354f41d73fc462",
+            "md5": "1541d60159eab51a40f1d88b29a7c23f",
+            "totalSize": 630954,
+            "abSize": 863423
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_ex08/level_act16d5_ex08/lightingdata.ab",
+            "hash": "404dea097915825118849e38a81e50ec",
+            "md5": "116fe32fc408c9e71ffcaa3196f8aef6",
+            "totalSize": 235625,
+            "abSize": 273054
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_tr01/level_act16d5_tr01.ab",
+            "hash": "ec459b6869cf0a347fb1088879d0f956",
+            "md5": "3dfa82f158554c654ad324c022396225",
+            "totalSize": 554486,
+            "abSize": 748992
+        },
+        {
+            "name": "scenes/activities/act16d5/level_act16d5_tr01/level_act16d5_tr01/lightingdata.ab",
+            "hash": "df170a6903312b6b1d9cd120a1e86f9f",
+            "md5": "b4c1d8aa4c445631428f928d6b273e5c",
+            "totalSize": 235961,
+            "abSize": 272565
         },
         {
             "name": "scenes/obt/campaign/level_camp_01/level_camp_01.ab",
@@ -22483,6 +23579,20 @@
             "abSize": 378420
         },
         {
+            "name": "scenes/obt/memory/level_memory_aglina_1/level_memory_aglina_1.ab",
+            "hash": "d83c3ecef32602c6662c1315eedcc05b",
+            "md5": "52af5ff0c5d3692b5c058ce3347214d7",
+            "totalSize": 269370,
+            "abSize": 363664
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_aglina_1/level_memory_aglina_1/lightingdata.ab",
+            "hash": "25df28d26804e27ecd391600f337d634",
+            "md5": "5c5b355e45659ed92f28c81725736e1f",
+            "totalSize": 329846,
+            "abSize": 375457
+        },
+        {
             "name": "scenes/obt/memory/level_memory_amgoat_1/level_memory_amgoat_1.ab",
             "hash": "cd7112c88285561eec299ecaa63d6bd0",
             "md5": "2ccdb22ce58bb9afece61c24146cb949",
@@ -22495,6 +23605,20 @@
             "md5": "13cd5636d163485c47effccafb610819",
             "totalSize": 329243,
             "abSize": 372610
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_bldsk_1/level_memory_bldsk_1.ab",
+            "hash": "1224ad9111a47c7f14276986e594b71b",
+            "md5": "94ffcbe2aba9e8cf8d8fdc284d9a2711",
+            "totalSize": 640894,
+            "abSize": 783898
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_bldsk_1/level_memory_bldsk_1/lightingdata.ab",
+            "hash": "16f348e626a262543ee40d2c8f1b721d",
+            "md5": "6569b14913baf6fc146f6f4a7cf5e530",
+            "totalSize": 414539,
+            "abSize": 460418
         },
         {
             "name": "scenes/obt/memory/level_memory_broca_1/level_memory_broca_1.ab",
@@ -22525,6 +23649,20 @@
             "abSize": 364882
         },
         {
+            "name": "scenes/obt/memory/level_memory_fmout_1/level_memory_fmout_1.ab",
+            "hash": "d67c9eeabbc6295e261764dde3a22f9b",
+            "md5": "a83fe9db01d89d7e444a712c9d29d0ea",
+            "totalSize": 227878,
+            "abSize": 293688
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_fmout_1/level_memory_fmout_1/lightingdata.ab",
+            "hash": "3d689690fc0b6e465f8aca197e90a1ee",
+            "md5": "734c449d25d7d5ed62381767010f21b7",
+            "totalSize": 232309,
+            "abSize": 267758
+        },
+        {
             "name": "scenes/obt/memory/level_memory_kroos_1/level_memory_kroos_1.ab",
             "hash": "d38daf9e346c896cfa39946d57992877",
             "md5": "bd34fa918c54efa2e531812a401e7f9d",
@@ -22537,6 +23675,20 @@
             "md5": "8417a79a36d663c7b79b11fdc3aaf021",
             "totalSize": 315477,
             "abSize": 353527
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_lava_1/level_memory_lava_1.ab",
+            "hash": "aa51f0b36b7af7cbb58e6b51a450c52d",
+            "md5": "9073c4cd5633691004783e624b3f99a4",
+            "totalSize": 711858,
+            "abSize": 900483
+        },
+        {
+            "name": "scenes/obt/memory/level_memory_lava_1/level_memory_lava_1/lightingdata.ab",
+            "hash": "41d11f8e6804586d4d92110cc10940dc",
+            "md5": "10f8672d258ffab1ba78c5c3e816bfb5",
+            "totalSize": 1662665,
+            "abSize": 1837000
         },
         {
             "name": "scenes/obt/memory/level_memory_melan_1/level_memory_melan_1.ab",
@@ -23869,6 +25021,13 @@
             "abSize": 1883640
         },
         {
+            "name": "skinpack/char_2014_nian.ab",
+            "hash": "41c0c47818f21302f7c742c859eb5eaf",
+            "md5": "f0fe76c0f4a0ea29ce80380e7ce22c0f",
+            "totalSize": 1650483,
+            "abSize": 1884500
+        },
+        {
             "name": "skinpack/char_201_moeshd.ab",
             "hash": "1944522ff62cfd30a88ff26aa2625c35",
             "md5": "1128098b110fc433c49447aa24fa232f",
@@ -23944,6 +25103,20 @@
             "md5": "17da12bc8f80588c935df2aa8906f988",
             "totalSize": 1788287,
             "abSize": 2044378
+        },
+        {
+            "name": "skinpack/char_225_haak.ab",
+            "hash": "ce9c521aca4c435e248dc8ea24ef7d1d",
+            "md5": "5145e76f825a6c9a939d41e411e05beb",
+            "totalSize": 1314918,
+            "abSize": 1478424
+        },
+        {
+            "name": "skinpack/char_226_hmau.ab",
+            "hash": "97b02396cfd6aeb7d8ed1af38124a496",
+            "md5": "4976e5371ca708c700ef13a88f3edd2d",
+            "totalSize": 1350351,
+            "abSize": 1484980
         },
         {
             "name": "skinpack/char_235_jesica.ab",
@@ -24149,6 +25322,13 @@
             "abSize": 1977859
         },
         {
+            "name": "skinpack/char_436_whispr.ab",
+            "hash": "e0253fe84df1d41c655887abad05ff0d",
+            "md5": "5953fcfd8f6cb0cf0c5eb1cbb472fcf1",
+            "totalSize": 1301672,
+            "abSize": 1466616
+        },
+        {
             "name": "skinpack/token_10000_silent_healrb.ab",
             "hash": "caccd19bb6c51512d663d3bca0c15225",
             "md5": "978a465cd70b487c5081c30a0b235608",
@@ -24220,10 +25400,10 @@
         },
         {
             "name": "spritepack/building_ui_buff_skills_h1_0.ab",
-            "hash": "2855e857877be67b2e3ddd15e678d94b",
-            "md5": "90d4f481be4d2b485cbfaba2a123a215",
-            "totalSize": 106067,
-            "abSize": 128412
+            "hash": "7d82fea0d8c33ccc2de6c508cb16789f",
+            "md5": "666dfefb67ca38adb6090c3dc8a61015",
+            "totalSize": 108913,
+            "abSize": 130890
         },
         {
             "name": "spritepack/item_voucher_back_img_h2_0.ab",
@@ -24234,10 +25414,10 @@
         },
         {
             "name": "spritepack/story_review_chapter_bg_h1_0.ab",
-            "hash": "5a7edb6e615a4e791b80c1c408dabfa1",
-            "md5": "61f87417540e123c1963e473257138f6",
-            "totalSize": 691844,
-            "abSize": 749656
+            "hash": "0ceac1151bcd4cefdf0cc66e7c4c6f58",
+            "md5": "5266078e40f6454c4e428a193a6245a4",
+            "totalSize": 764395,
+            "abSize": 831119
         },
         {
             "name": "spritepack/story_review_mini_activity_bg_h1_0.ab",
@@ -24332,24 +25512,24 @@
         },
         {
             "name": "spritepack/ui_char_avatar_h1_0.ab",
-            "hash": "4cc87ca99d50d26565094f885f6daaff",
-            "md5": "22e62c74f20ce548cc97c5a44ec68e64",
-            "totalSize": 3625448,
-            "abSize": 3906991
+            "hash": "a3c76ef2ccb488c2f5169e6210e14064",
+            "md5": "8dec2b242f181a78adfd9c013bf246f3",
+            "totalSize": 3706189,
+            "abSize": 3991657
         },
         {
             "name": "spritepack/ui_char_avatar_h1_elite_0.ab",
-            "hash": "08e3f61edbb8df314da1693d5495ddca",
-            "md5": "36b24003abda8065182dff41148912c8",
-            "totalSize": 2271212,
-            "abSize": 2424140
+            "hash": "7d1584152b7d3b806832ea25ddf3cff6",
+            "md5": "9b84aafca21091782bc8bcce32708e19",
+            "totalSize": 2339396,
+            "abSize": 2495442
         },
         {
             "name": "spritepack/ui_char_avatar_h1_skins_0.ab",
-            "hash": "3280ea4e14d901e495497111c22bf1a5",
-            "md5": "7f396d50713e9410d94c28297993d978",
-            "totalSize": 1557907,
-            "abSize": 1664496
+            "hash": "d76b48438c12593b177fd6a5e3dc5157",
+            "md5": "ca09134fe5e0b3adf82f4a17813c7e6d",
+            "totalSize": 1620417,
+            "abSize": 1733194
         },
         {
             "name": "spritepack/ui_crisis_appraise_0.ab",
@@ -24430,10 +25610,10 @@
         },
         {
             "name": "spritepack/ui_gp_shop_dyn_h1_activity_0.ab",
-            "hash": "b03e1f6b619d06ee79752e72e23b2740",
-            "md5": "919edfab21988bbaf310a0b19cf38c51",
-            "totalSize": 226719,
-            "abSize": 248515
+            "hash": "c4f8059c18d38ad6d44ec3d9b518eb19",
+            "md5": "6d213b0671204e13fa118b76895de467",
+            "totalSize": 330235,
+            "abSize": 359832
         },
         {
             "name": "spritepack/ui_gp_shop_dyn_h1_levelback_0.ab",
@@ -24465,17 +25645,17 @@
         },
         {
             "name": "spritepack/ui_home_act_banner_gacha_h2_0.ab",
-            "hash": "e9dfd8bebb812954faa8bedae82a6bf9",
-            "md5": "e4337b881bfd437ff0177f4aeceb8d6a",
-            "totalSize": 257151,
-            "abSize": 276289
+            "hash": "d301d762edaf9411aea755970f00148f",
+            "md5": "c3f5ed0d15a20df97436644bd8d61841",
+            "totalSize": 339275,
+            "abSize": 364682
         },
         {
             "name": "spritepack/ui_home_act_banner_shop_h2_0.ab",
-            "hash": "1405e12fe2b627f98147d29f44b60703",
-            "md5": "176a43c14dfee89724c94834e80f95a4",
-            "totalSize": 541853,
-            "abSize": 598700
+            "hash": "22455d6f0905dcfd38cfc38763f0e3c6",
+            "md5": "39c90e39727ded49242280b585ad8518",
+            "totalSize": 752413,
+            "abSize": 830739
         },
         {
             "name": "spritepack/ui_home_act_banner_zone_0.ab",
@@ -24514,10 +25694,10 @@
         },
         {
             "name": "spritepack/ui_item_icons_h1_0.ab",
-            "hash": "35bb55a6a637b6b662b7a09f6b9177cc",
-            "md5": "8c8efa3d99686805a06cc715d766eb3e",
-            "totalSize": 1836305,
-            "abSize": 2058240
+            "hash": "f03a424194db4d3a76729ab38fe4b19a",
+            "md5": "0bffa9154361c528ae75e852541cf3ff",
+            "totalSize": 1863535,
+            "abSize": 2082076
         },
         {
             "name": "spritepack/ui_item_icons_h1_acticon_0.ab",
@@ -24528,17 +25708,17 @@
         },
         {
             "name": "spritepack/ui_item_icons_h1_potential_0.ab",
-            "hash": "ff1cb9bfc963a409ccb652a4e0d0dba5",
-            "md5": "2b2f4aa0cc3a3cc7db31f1304852e0b7",
-            "totalSize": 2439872,
-            "abSize": 2689000
+            "hash": "57418fe1bcdab3d221c93127ed461648",
+            "md5": "a31327d5c3cc0a5cab9ccffd78f86255",
+            "totalSize": 2522468,
+            "abSize": 2791841
         },
         {
             "name": "spritepack/ui_kv_img_h1_0.ab",
-            "hash": "f34d9f464eaf7b2a3deea653b9ff3192",
-            "md5": "49627482508b50042a8b81b8f2a7dfe2",
-            "totalSize": 5160895,
-            "abSize": 5635314
+            "hash": "9ae8ae7fa93eb3a17fe115220d937d6e",
+            "md5": "3126693965da0baeb75cc0ffc9ca1bd2",
+            "totalSize": 5330969,
+            "abSize": 5817851
         },
         {
             "name": "spritepack/ui_mail_back_0.ab",
@@ -24619,17 +25799,17 @@
         },
         {
             "name": "spritepack/ui_medal_banner_list_h1_0.ab",
-            "hash": "5fcb930340f0b83ff226f088e49c293a",
-            "md5": "0e4674442bc8a1032dcc7d3d46a425f0",
-            "totalSize": 280502,
-            "abSize": 310780
+            "hash": "0ff600b2799829291d2df6d1cadbc148",
+            "md5": "d4f62296ff10365fd01b92455d6869cc",
+            "totalSize": 312881,
+            "abSize": 347360
         },
         {
             "name": "spritepack/ui_medal_diy_frame_bkg_h1_0.ab",
-            "hash": "109992fc3946fe0d7bc6952586a0d08c",
-            "md5": "d22f76614265f2d4f5aa89502504e1bb",
-            "totalSize": 678807,
-            "abSize": 764892
+            "hash": "de280c0370a7bd196a2d3b2d2688e87e",
+            "md5": "d077b02521e64d086c3a133b1b52376b",
+            "totalSize": 760191,
+            "abSize": 857217
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_0.ab",
@@ -24695,6 +25875,13 @@
             "abSize": 211166
         },
         {
+            "name": "spritepack/ui_medal_icon_list_h1_act16d5_0.ab",
+            "hash": "9f0be1ed13907dc9551ff7280f75f1de",
+            "md5": "4f986a78a902a1ab7c2feae68872009b",
+            "totalSize": 180523,
+            "abSize": 194338
+        },
+        {
             "name": "spritepack/ui_medal_icon_list_h1_campaign_0.ab",
             "hash": "73fa443caecba75ee6d544e9a80d02f6",
             "md5": "4567e831b84e76cdb215235a299ad1d0",
@@ -24703,10 +25890,10 @@
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_story_0.ab",
-            "hash": "527a1c2d59c7892228ce0d7c4b5ba260",
-            "md5": "54d4ed83196592b0f983cc79c0c59603",
-            "totalSize": 135302,
-            "abSize": 144134
+            "hash": "fcdba60dee30cf2586f53ed02c8343f4",
+            "md5": "e10508a7c741f78af147cb68b222671f",
+            "totalSize": 193825,
+            "abSize": 205479
         },
         {
             "name": "spritepack/ui_roguelike_choice_bg_h1_0.ab",
@@ -24784,6 +25971,20 @@
             "md5": "b935b41bf24e4bd597a6633407866f85",
             "totalSize": 4037619,
             "abSize": 4530878
+        },
+        {
+            "name": "ui/activity/act16d5d1/act_dlg.ab",
+            "hash": "a171ea32149fd42dc821d6517268afe8",
+            "md5": "1ce2518523b66fc96a9ca2206e4bf881",
+            "totalSize": 513170,
+            "abSize": 578560
+        },
+        {
+            "name": "ui/activity/act16d5d2/act_dlg.ab",
+            "hash": "8f361125ae8951d35357190e34c9669e",
+            "md5": "085a612f6ed2d2dd5202aaea480b23cb",
+            "totalSize": 261477,
+            "abSize": 305081
         },
         {
             "name": "ui/activity/collection/task_list_dlg.ab",
@@ -24989,6 +26190,13 @@
             "abSize": 1079007
         },
         {
+            "name": "ui/gacha/limited_16_0_4.ab",
+            "hash": "ab21a92207d3cceffd046c504dc8ad9c",
+            "md5": "5b920610d98d874be190f178508cc26b",
+            "totalSize": 974618,
+            "abSize": 1106638
+        },
+        {
             "name": "ui/gacha/limit_time_obj.ab",
             "hash": "d951bcb3a4ddf1c3ceafbf6aee27a88f",
             "md5": "f0d64c38381071e125962381af4c229c",
@@ -25057,6 +26265,13 @@
             "md5": "8f93fd4eb107093baea54acfd41828c0",
             "totalSize": 865198,
             "abSize": 991267
+        },
+        {
+            "name": "ui/gacha/norm_16_0_5.ab",
+            "hash": "6189f8f4e9edaee7ce790c2367e81f13",
+            "md5": "7935990123c16df56442d4fbc524b291",
+            "totalSize": 943532,
+            "abSize": 1081066
         },
         {
             "name": "ui/handbook/handbook_info_stage_detail_state.ab",
@@ -25179,10 +26394,10 @@
         },
         {
             "name": "ui/kvimg/pic_hub.ab",
-            "hash": "77d9dbd521b49322f22257967fd3f668",
-            "md5": "0005827938834027a10b826da32edb0f",
-            "totalSize": 2308,
-            "abSize": 2692
+            "hash": "101505343123a08e77daee3f97ce5d5a",
+            "md5": "b0184e92feff2e303513cf7bcd261b92",
+            "totalSize": 2315,
+            "abSize": 2706
         },
         {
             "name": "ui/luaui/wardrobe/wardrobe_holder.ab",
@@ -25214,10 +26429,10 @@
         },
         {
             "name": "ui/medal/[uc]groupframe.ab",
-            "hash": "1865ea161272c970baab6d7c5ca260e3",
-            "md5": "d68ed39079d848beb16a597d996689b9",
-            "totalSize": 4999,
-            "abSize": 5863
+            "hash": "3d9f4e4f23f6b35e4fe5bf9060d32f0c",
+            "md5": "aa4551fbc560bbedb9f6d4a493d88d14",
+            "totalSize": 5222,
+            "abSize": 6134
         },
         {
             "name": "ui/mission/missiontab/act_mission_img.ab",
@@ -25584,6 +26799,13 @@
             "abSize": 405071
         },
         {
+            "name": "ui/skin/2021#nian.ab",
+            "hash": "e6bbef3f7860a24c8c63c3d05d042f58",
+            "md5": "1cfe25aa717ae23e0a468bc5ba955861",
+            "totalSize": 342305,
+            "abSize": 407300
+        },
+        {
             "name": "ui/skin/2021#winter.ab",
             "hash": "5b93123c03d93f766e50f6f74465c77e",
             "md5": "c291cf885a153606bbc205eda1a22ae3",
@@ -25669,12 +26891,12 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "21-02-03-10-14-07-b35c16",
+            "hash": "21-02-03-14-15-22-0255a3",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
             "type": "video"
         }
     ],
-    "countOfTypedRes": 180
+    "countOfTypedRes": 184
 }
