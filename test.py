@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
     # Stage(wiki, gameData)._run_memory()
-    # Temp(wiki, gameData).run()
+    # Temp(wiki, gameData).test_yinyang()
     # Basic(wiki, gameData)._run_update(old_num = 178)
     # Charword(wiki, gameData)._run_update_jp()
 

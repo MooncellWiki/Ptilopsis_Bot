@@ -1087,6 +1087,9 @@ class Basic(Job):
 
                 num1 = origin_text.find('/语音记录}}')
                 num2 = origin_text.find('\n==干员模型==')
+                num3 = origin_text.find('\n==干员异格任务==')
+                if num3 > 0:
+                    num2 = min(num2, num3)
                 new_text = origin_text[:num1] + '/语音记录}}' + handbook_avg + handbook_stage + origin_text[num2:]
 
                 if new_text != origin_text:

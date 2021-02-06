@@ -64,15 +64,15 @@ if __name__ == '__main__':
         Demand(wiki, gameData).run()
 
     if 'special' in sys.argv:
-        Furni(wiki, gameData)._run_update()
-        Charword(wiki, gameData)._run_update()
+        # Furni(wiki, gameData)._run_update()
+        # Charword(wiki, gameData)._run_update()
         # Route(wiki, gameData).run()
         # Formula(wiki, gameData).run()
         # Range(wiki, gameData).run()
         # Stage(wiki, gameData)._run_campaign()
         # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
-        # Basic(wiki, gameData)._run_handbook_update()  # 干员密录
-        # Stage(wiki, gameData)._run_memory()  # 悖论模拟
+        Basic(wiki, gameData)._run_handbook_update()  # 干员密录
+        Stage(wiki, gameData)._run_memory()  # 悖论模拟
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData)._run_update_jp()

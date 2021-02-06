@@ -212,10 +212,13 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
     rewards_data = ''
     for drop_type in range(9):
         if reward_list[drop_type] != []:
+            reward_content = ','.join(reward_list[drop_type])
             rewards_data += '|{drop_type}={content}\n'.format(
                 drop_type = parse_drop_type(drop_type),
-                content = ','.join(reward_list[drop_type])
+                content = reward_content
             )
+            if drop_type == 2:
+                print('\t—— ' + reward_content)
     return rewards_data
 
 
