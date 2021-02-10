@@ -163,8 +163,8 @@ class Temp(Job):
                 'difficulty'] == 'FOUR_STAR':
                 continue
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
-            if 'WR-' not in stage_detail['code']:
-                continue
+            # if 'WR-' not in stage_detail['code']:
+            #     continue
 
             if stage_detail['levelId']:
                 try:
@@ -175,29 +175,33 @@ class Temp(Job):
             else:
                 continue
 
-            def tile_diff(t):
-                flag = 0
-                if t is None:
-                    return False
-                if t[0]['key'] == 'dynamic' and t[0]['valueStr'] == None:
-                    flag += 1
-                if t[1]['key'] == 'buff_yinyang[same].atk_scale' and t[1]['value'] == 0.6 and t[1]['valueStr'] == None:
-                    flag += 1
-                if t[2]['key'] == 'buff_yinyang[diff].atk_scale' and t[2]['value'] == 1.4 and t[2]['valueStr'] == None:
-                    flag += 1
-                if flag == 3:
-                    return True
-                else:
-                    return False
+            # def tile_diff(t):
+            #     flag = 0
+            #     if t is None:
+            #         return False
+            #     if t[0]['key'] == 'dynamic' and t[0]['valueStr'] == None:
+            #         flag += 1
+            #     if t[1]['key'] == 'buff_yinyang[same].atk_scale' and t[1]['value'] == 0.6 and t[1]['valueStr'] == None:
+            #         flag += 1
+            #     if t[2]['key'] == 'buff_yinyang[diff].atk_scale' and t[2]['value'] == 1.4 and t[2]['valueStr'] == None:
+            #         flag += 1
+            #     if flag == 3:
+            #         return True
+            #     else:
+            #         return False
+            #
+            # print(stage_page_name)
+            # flag = False
+            # for tile in level_table['mapData']['tiles']:
+            #     if 'yinyang' in tile['tileKey'] and tile['tileKey'] != 'tile_yinyang_switch':
+            #         flag = True
+            #         if not tile_diff(tile['blackboard']):
+            #             print('Warning:', stage_page_name, tile['blackboard'])
+            # if not flag:
+            #     print(stage_page_name, '无晦明')
 
-            print(stage_page_name)
-            flag = False
             for tile in level_table['mapData']['tiles']:
-                if 'yinyang' in tile['tileKey'] and tile['tileKey'] != 'tile_yinyang_switch':
-                    flag = True
-                    if not tile_diff(tile['blackboard']):
-                        print('Warning:', stage_page_name, tile['blackboard'])
-            if not flag:
-                print(stage_page_name, '无晦明')
+                if tile['effects'] is not None:
+                    print(stage_page_name, stage_detail['stageId'], tile['tileKey'], 'effects')
 
 

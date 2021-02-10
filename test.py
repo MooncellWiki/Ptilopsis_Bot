@@ -12,7 +12,7 @@ from utils.unpacker_cn import UnpackerCN
 # from jobs.weedy import Weedy
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
-# from jobs.stage import Stage
+from jobs.stage import Stage
 # from jobs.rogue_stage import RougeStage
 from jobs._temp import Temp
 from jobs.basic import Basic
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # Skin(wiki, gameData)._run_update(skin_list = ['宴', '能天使', '白金'])
     # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
-    # Stage(wiki, gameData)._run_memory()
+    # Stage(wiki, gameData).run()
     # Temp(wiki, gameData).test_yinyang()
     # Basic(wiki, gameData)._run_update(old_num = 178)
     # Charword(wiki, gameData)._run_update_jp()
