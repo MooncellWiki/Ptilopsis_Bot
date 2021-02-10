@@ -291,7 +291,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
     return char_pre
 
 
-def analyze_tile(level_table):
+def analyze_tile(level_table, stage_tile_info):
     try:
         tiles = level_table['mapData']['tiles']
         if tiles == [] or tiles == None:
@@ -308,14 +308,14 @@ def analyze_tile(level_table):
         return ''
     content = '|特殊地形效果=<!--'
     for tile in tile_blackboard_dict:
-        content += f"\n{tile}:"
+        content += '\n' + stage_tile_info[tile]['name'] + ':'
         for b in tile_blackboard_dict[tile]:
             content += '\n\t'
             for k in b:
                 content += f"{k['key']} {k['value']}"
                 if k['valueStr'] is not None:
                     content += f" {k['valueStr']}"
-                content += '; '
+                content += ', '
     content += '\n-->\n'
     return content
 
@@ -440,7 +440,7 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
         stage_data += analyze_rewards(stage_detail['stageDropInfo']['displayDetailRewards'], character_table,
             building_data, item_table)
     if stage_detail['levelId']:
-        stage_data += analyze_tile(level_table)
+        stage_data += analyze_tile(level_table, stage_table['tileInfo'])
         if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
             stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '}}'
