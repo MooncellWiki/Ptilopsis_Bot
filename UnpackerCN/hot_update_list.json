@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2501839864,
+        "totalSize": 2501875255,
         "abSize": 0
     },
-    "versionId": "21-02-03-14-15-22-0255a3",
+    "versionId": "21-02-08-10-04-10-6ca1a8",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "21-02-03-14-15-22-0255a3",
-            "md5": "4e4d1a3b189399bdc9eaadecf9adab15",
-            "totalSize": 114826,
-            "abSize": 134798
+            "hash": "21-02-08-10-04-10-6ca1a8",
+            "md5": "8858cb17a39a9675b9be0c1453804da5",
+            "totalSize": 114828,
+            "abSize": 134804
         },
         {
             "name": "torappu_index.ab",
-            "hash": "21-02-03-14-15-22-0255a3",
-            "md5": "5c460f002009c27523bd739077d8ef9f",
-            "totalSize": 339701,
-            "abSize": 489919
+            "hash": "21-02-08-10-04-10-6ca1a8",
+            "md5": "df339f3c491281d0c674336e895af00e",
+            "totalSize": 339696,
+            "abSize": 489922
         },
         {
             "name": "[uc]shaders.ab",
@@ -3013,10 +3013,10 @@
         },
         {
             "name": "arts/maps/map_year/res.ab",
-            "hash": "c86f38e7ac79a0aceef0bdadef6acb80",
-            "md5": "f60da4470029edd0b1592b9a3d896396",
-            "totalSize": 1487092,
-            "abSize": 1726857
+            "hash": "75e5c98e1a1b66bd820064fc60f980e2",
+            "md5": "a0c86524f626c9a25051336d6265ee2d",
+            "totalSize": 1481638,
+            "abSize": 1722366
         },
         {
             "name": "arts/maps/map_year/background_mesh/s_background_year.ab",
@@ -15614,17 +15614,17 @@
         },
         {
             "name": "battle/prefabs/[uc]skills.ab",
-            "hash": "357719d2c0524d2f3f5444e8eeff8830",
-            "md5": "baf6675c41197558d0c71a11f084eb6d",
-            "totalSize": 158386,
-            "abSize": 185019
+            "hash": "2906abba1eab6313d4e42867cc903df8",
+            "md5": "288b33ccfb9ef7862e51a7fc098786f1",
+            "totalSize": 158411,
+            "abSize": 185046
         },
         {
             "name": "battle/prefabs/[uc]tokens.ab",
-            "hash": "037ee806ecdb35242b57b41601f6642f",
-            "md5": "03f4bae0bd01605fe0b21ceb48061eec",
-            "totalSize": 911559,
-            "abSize": 1031669
+            "hash": "7920c2d6b9cd9c41e7650023af1d6adb",
+            "md5": "eb34fdd107a4ed8fd322ce4055640125",
+            "totalSize": 911539,
+            "abSize": 1031632
         },
         {
             "name": "battle/prefabs/effects/absin.ab",
@@ -20255,10 +20255,10 @@
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "303f6d9065c95076c4b76b4b25bcecd8",
-            "md5": "307a0c035d18f233aee1e43d99e5a2c4",
-            "totalSize": 25769,
-            "abSize": 29841
+            "hash": "84b3d476a72d1a283f0174caa7ea60c4",
+            "md5": "dfcdf32e601f5e10be6a34e83c8f1f12",
+            "totalSize": 25818,
+            "abSize": 29897
         },
         {
             "name": "config/config.ab",
@@ -20437,10 +20437,10 @@
         },
         {
             "name": "gamedata/excel/character_table.ab",
-            "hash": "b33a77604dc22da9ba980d692a944587",
-            "md5": "74de9866038ee9947a09ccecfd104ff1",
-            "totalSize": 3630965,
-            "abSize": 3630168
+            "hash": "fbf0f6c070fef30cefcb75964ad8326f",
+            "md5": "c279ff635833b29619e8146d42b50da4",
+            "totalSize": 3631579,
+            "abSize": 3630776
         },
         {
             "name": "gamedata/excel/charword_table.ab",
@@ -20486,9 +20486,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "0e0ab601c06377a71752f91922f88bd5",
-            "md5": "ec09e9b27d078ce7bfe2345d68641e7d",
-            "totalSize": 1207,
+            "hash": "c722f4228acbadb2cad18d286d46310d",
+            "md5": "1988eea0f39e893e5c8ec83b7173ee29",
+            "totalSize": 1205,
             "abSize": 1223
         },
         {
@@ -20507,10 +20507,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "5d64e040736d03b00047a22a2ec43b87",
-            "md5": "f65ffd47ac314a84917f715739190913",
-            "totalSize": 87974,
-            "abSize": 88103
+            "hash": "9e187b2ef61f31ff67d039b5c1888d3d",
+            "md5": "acb894a46345da75f0cfef728a105094",
+            "totalSize": 87973,
+            "abSize": 88104
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -20654,17 +20654,17 @@
         },
         {
             "name": "gamedata/levels/enemydata.ab",
-            "hash": "392f72acbc6a01ed53bfb6ba7ed0b5af",
-            "md5": "37caa3a3797cc2b0d160516dfeaae29e",
-            "totalSize": 1131314,
-            "abSize": 1131251
+            "hash": "7446f41ef3e04c0bc891ce93aef1c115",
+            "md5": "b80df3d868b03abfde4783573f0dae30",
+            "totalSize": 1171810,
+            "abSize": 1171730
         },
         {
             "name": "gamedata/levels/activities/act16d5.ab",
-            "hash": "473f4d9f21f48d181f54b5a1daa58fe0",
-            "md5": "3b41db48bd1289a2377d7c9f8a5956bd",
-            "totalSize": 1528268,
-            "abSize": 1528561
+            "hash": "7667d265b57e3a7a6b7623609db3044a",
+            "md5": "8d13a4cd53a46a8c4361fa929d7f1172",
+            "totalSize": 1527676,
+            "abSize": 1527936
         },
         {
             "name": "gamedata/levels/obt/campaign.ab",
@@ -26464,10 +26464,10 @@
         },
         {
             "name": "ui/pages/character_info_page.ab",
-            "hash": "45e2dfeee19aa541ca92c42610643e8f",
-            "md5": "c4172d02ecb71a0282018387f103c6e1",
-            "totalSize": 828994,
-            "abSize": 991961
+            "hash": "128f2a7494de2e56f826a0b855c6e1b8",
+            "md5": "43e9b3e0c43f1f89c55f80a143fcab43",
+            "totalSize": 829273,
+            "abSize": 992502
         },
         {
             "name": "ui/pages/character_repo_page.ab",
@@ -26891,7 +26891,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "21-02-03-14-15-22-0255a3",
+            "hash": "21-02-08-10-04-10-6ca1a8",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
