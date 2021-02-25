@@ -537,7 +537,7 @@ def get_related_item(char_detail, item_table):
 
 def get_stories_list(char_detail, stories_table, char_key):
     if char_key not in stories_table['handbookDict']:
-        return '', '该干员没有档案'
+        return '', '该干员无人员档案'
     stories_list_set = '{{人员档案set\n'
     stories1 = stories_table['handbookDict'][char_key]['storyTextAudio'][0]['stories'][0]['storyText']
     stories2 = stories_table['handbookDict'][char_key]['storyTextAudio'][1]['stories'][0]['storyText']

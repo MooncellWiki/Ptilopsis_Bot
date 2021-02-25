@@ -53,9 +53,7 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
                     medal_dict[medal_type][medal['advancedMedal']]['getMethod']
                 )
             if medal['getMethod'] == '' and medal['preMedalIdList'] != []:
-                medal_dict[medal_type][medal_key]['getMethod'] = '获得' + ' '.join(
-                    ['[[文件:蚀刻章 {}.png|40px|link=]]'.format(medal_dict[medal_type][k]['name']) for k in
-                        medal['preMedalIdList']])
+                medal_dict[medal_type][medal_key]['getMethod'] = '获得{}枚前置蚀刻章（即本套组除此蚀刻章外的所有蚀刻章）'.format(len(medal['preMedalIdList']))
     for medal_type in medal_table['medalTypeData']:
         for medal_group in medal_table['medalTypeData'][medal_type]['groupData']:
             for medal_key in medal_group['medalId']:
@@ -78,20 +76,9 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
                     reward = medal_dict[medal_type][medal_key]['reward'],
                 ) + '\n'
         for medal_group in reversed(medal_table['medalTypeData'][medal_type]['groupData']):
-            content += '''==={title_name}===
-{{{{蚀刻章/套组预览
-|名称={name}
-|标题名称={title_name}
-|标题背景=
-|介绍={desc}
-|内容=
-'''.format(
-                name = medal_group['groupName'].replace('蚀刻章套组', ''),
-                title_name = medal_group['groupName'],
-                desc = medal_group['groupDesc'].replace('\n', '<br/>')
-            )
+            group_content, advance_flag = '', ''
             for medal_key in medal_group['medalId']:
-                content += medal_template.format(
+                group_content += medal_template.format(
                     group = medal_dict[medal_type][medal_key]['group'],
                     name = medal_dict[medal_type][medal_key]['name'],
                     rarity = medal_dict[medal_type][medal_key]['rarity'],
@@ -100,7 +87,23 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
                     advanceMethod = medal_dict[medal_type][medal_key]['advancedMedal'],
                     reward = medal_dict[medal_type][medal_key]['reward'],
                 ) + '\n'
-            content += '}}\n'
+                if medal_dict[medal_type][medal_key]['advancedMedal'] != '':
+                    advance_flag = '\n|镀层=1'
+            content += '''==={title_name}===
+{{{{蚀刻章/套组预览
+|名称={name}{advance}
+|标题名称={title_name}
+|标题背景=
+|介绍={desc}
+|内容=
+{group_content}}}}}
+'''.format(
+                name = medal_group['groupName'].replace('蚀刻章套组', ''),
+                advance = advance_flag,
+                title_name = medal_group['groupName'],
+                desc = medal_group['groupDesc'].replace('\n', '<br/>'),
+                group_content = group_content
+            )
 
     return content
 
