@@ -7,9 +7,10 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts):
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
+    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
+        char_key = char_key,
         char_id = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1,
         description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
         rarity = char_detail['rarity'],
@@ -607,7 +608,7 @@ def get_stories_list(char_detail, stories_table, char_key):
 def get_handbook_avg(char_detail, stories_table, char_key):
     if char_key not in stories_table['handbookDict'] or stories_table['handbookDict'][char_key]['handbookAvgList'] == []:
         return ''
-    avg_content = '\n==干员密录==\n{{干员密录|'
+    avg_content = '\n==干员密录==\n{{干员密录|list='
     template = '''\n{{{{干员密录/list
 |精英化={phase}
 |等级={lv}

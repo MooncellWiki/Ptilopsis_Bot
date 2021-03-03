@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2501875255,
+        "totalSize": 2504464650,
         "abSize": 0
     },
-    "versionId": "21-02-08-10-04-10-6ca1a8",
+    "versionId": "21-02-24-14-49-28-e9903f",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "21-02-08-10-04-10-6ca1a8",
-            "md5": "8858cb17a39a9675b9be0c1453804da5",
-            "totalSize": 114828,
-            "abSize": 134804
+            "hash": "21-02-24-14-49-28-e9903f",
+            "md5": "765e14f1be80aa7770455e363a4b8ca2",
+            "totalSize": 114998,
+            "abSize": 135017
         },
         {
             "name": "torappu_index.ab",
-            "hash": "21-02-08-10-04-10-6ca1a8",
-            "md5": "df339f3c491281d0c674336e895af00e",
-            "totalSize": 339696,
-            "abSize": 489922
+            "hash": "21-02-24-14-49-28-e9903f",
+            "md5": "b3c30cde82f6c53f3c8c94713e43c5d6",
+            "totalSize": 340106,
+            "abSize": 490428
         },
         {
             "name": "[uc]shaders.ab",
@@ -241,10 +241,10 @@
         },
         {
             "name": "arts/[uc]maptestassets.ab",
-            "hash": "672321c7ff5bab1af6b3da796811a4f3",
-            "md5": "1ca0db37bb0941f1d0399da7be31880a",
-            "totalSize": 408030,
-            "abSize": 489035
+            "hash": "6f03ea3a52969ca0a5224148eea48518",
+            "md5": "630d4b8b20fb1b3aa742aee4d460f46f",
+            "totalSize": 407646,
+            "abSize": 489121
         },
         {
             "name": "arts/[uc]worldtips.ab",
@@ -674,6 +674,13 @@
             "abSize": 9514
         },
         {
+            "name": "arts/maps/commonresource/level_camp_r_03/cubemap.ab",
+            "hash": "5f1a67d566736f8d6fcc5102af94fb98",
+            "md5": "96c7af5f32c83c9d7efeb78e94d7b6fd",
+            "totalSize": 26177,
+            "abSize": 29722
+        },
+        {
             "name": "arts/maps/commonresource/level_hard_08-01/cubemap.ab",
             "hash": "84fb165db1fa6f420abc315fd2f72412",
             "md5": "9addab51387b2ebbd383787bacd775eb",
@@ -780,10 +787,10 @@
         },
         {
             "name": "arts/maps/map_bridge/res.ab",
-            "hash": "44dd06759e3d636a9020fcacea6eb82d",
-            "md5": "bbae6b822b6cf6afcaf716947a8082b3",
-            "totalSize": 1636245,
-            "abSize": 1877025
+            "hash": "17ccfd3a20c27db2c04bf78ca3976f9d",
+            "md5": "a7262238b43ce74908bbcc9783a9e160",
+            "totalSize": 1635987,
+            "abSize": 1877596
         },
         {
             "name": "arts/maps/map_bridge/mesh/level_hard_08-02.ab",
@@ -1361,10 +1368,10 @@
         },
         {
             "name": "arts/maps/map_chernobog_ice/res.ab",
-            "hash": "aedd74e41135d95b31e2ef9be439f5f9",
-            "md5": "3a61e37acca4f3953b1d503489baf912",
-            "totalSize": 7824632,
-            "abSize": 8778367
+            "hash": "6c8ae2df98a4c61a88445b32496fc3b3",
+            "md5": "034409fb7c6d4d013e7c568d0857e50d",
+            "totalSize": 7837789,
+            "abSize": 8793304
         },
         {
             "name": "arts/maps/map_chernobog_ice/mesh/level_camp_r_02.ab",
@@ -1403,10 +1410,10 @@
         },
         {
             "name": "arts/maps/map_icewild/res.ab",
-            "hash": "48f1520602635b2890630f899dc388f1",
-            "md5": "c7e837d90c92ff7edb6efbf2607f17d8",
-            "totalSize": 3646870,
-            "abSize": 4023708
+            "hash": "40c9e03240713f99c01129ea00ac3b49",
+            "md5": "277bfbb8404cc3d624b7d701f08daf36",
+            "totalSize": 3643765,
+            "abSize": 4019281
         },
         {
             "name": "arts/maps/map_icewild/background_mesh/s_background_icewild.ab",
@@ -1522,10 +1529,10 @@
         },
         {
             "name": "arts/maps/map_jungle/res.ab",
-            "hash": "c527719e9952ba3238353923edf31eed",
-            "md5": "f8e009e0d82e22ca1c0f7c22d7c9ff14",
-            "totalSize": 2572221,
-            "abSize": 2891702
+            "hash": "9d92b4ff90702d0673b89266e0568010",
+            "md5": "ef6555b4b92bb3db13ac90b50b81065a",
+            "totalSize": 2566017,
+            "abSize": 2885870
         },
         {
             "name": "arts/maps/map_jungle/background_mesh/bg_jungle.ab",
@@ -1543,10 +1550,10 @@
         },
         {
             "name": "arts/maps/map_kxmr/res.ab",
-            "hash": "db4e0f2c21f4072fa437bed75ef4397d",
-            "md5": "66d50e8f7eaa2eb95d12533b1975babb",
-            "totalSize": 3331772,
-            "abSize": 3781109
+            "hash": "27d53915fbf816315b9a146b4f2278e0",
+            "md5": "3aed8a79e028f55d877574f28ea7f81f",
+            "totalSize": 3330315,
+            "abSize": 3778698
         },
         {
             "name": "arts/maps/map_kxmr/background_mesh/bg_kxmr.ab",
@@ -1571,10 +1578,10 @@
         },
         {
             "name": "arts/maps/map_lm_center/res.ab",
-            "hash": "26a69bd6dd173fbf282c7dc8ba6e634d",
-            "md5": "d177d431dfafaff80454c74071c6f494",
-            "totalSize": 6149339,
-            "abSize": 6914760
+            "hash": "db974be69c15bf9e90a866169d98cf57",
+            "md5": "d8ea8bff453fd17d45c33fcebcb88f64",
+            "totalSize": 6161499,
+            "abSize": 6923777
         },
         {
             "name": "arts/maps/map_lm_center/background_mesh/bg_lmc.ab",
@@ -2250,10 +2257,10 @@
         },
         {
             "name": "arts/maps/map_mgcity/res.ab",
-            "hash": "3b7ea3c20ae789c65c5af3bbe8012a8a",
-            "md5": "5743a5fb38a3ed4a382f2f93f6a34212",
-            "totalSize": 5761421,
-            "abSize": 6504226
+            "hash": "cae2ddeb5890a012b65dadad5347422c",
+            "md5": "64fdd5109b0ab50ac5c728ebdc21008a",
+            "totalSize": 5764240,
+            "abSize": 6506066
         },
         {
             "name": "arts/maps/map_mgcity/background_mesh/bg_mgcity.ab",
@@ -2271,10 +2278,10 @@
         },
         {
             "name": "arts/maps/map_prison/res.ab",
-            "hash": "037e6832dbe5e4ab2063f43e278d1c1b",
-            "md5": "173a46790a5328a09de23b088d37fbfd",
-            "totalSize": 1114125,
-            "abSize": 1285473
+            "hash": "fd968428c0fbb849940c83639327c75e",
+            "md5": "f8519097c511ddb5ea068e6ea704dcb8",
+            "totalSize": 1111188,
+            "abSize": 1283250
         },
         {
             "name": "arts/maps/map_prison/mesh/level_rune_06-02.ab",
@@ -2775,10 +2782,10 @@
         },
         {
             "name": "arts/maps/map_wild/res.ab",
-            "hash": "78cb4585527299241a6bb5deba6795f8",
-            "md5": "e0db5d6c53c88e5678960540de9f1735",
-            "totalSize": 6609275,
-            "abSize": 7353948
+            "hash": "e4139eef03608bc6e2d45f69f660bbe4",
+            "md5": "9552abbd7bb217726bab8da20c8fb95c",
+            "totalSize": 6625925,
+            "abSize": 7373101
         },
         {
             "name": "arts/maps/map_wild/mesh/level_main_03-01.ab",
@@ -3013,10 +3020,10 @@
         },
         {
             "name": "arts/maps/map_year/res.ab",
-            "hash": "75e5c98e1a1b66bd820064fc60f980e2",
-            "md5": "a0c86524f626c9a25051336d6265ee2d",
-            "totalSize": 1481638,
-            "abSize": 1722366
+            "hash": "85886ec4929f4e0e870c06a7df8993b7",
+            "md5": "e3fd82613d5b6cca059219dd651fc8b2",
+            "totalSize": 1483241,
+            "abSize": 1724237
         },
         {
             "name": "arts/maps/map_year/background_mesh/s_background_year.ab",
@@ -3615,10 +3622,10 @@
         },
         {
             "name": "arts/ui/campaign/campaignstagebtn/pic_hub.ab",
-            "hash": "92d42f04245b4736a8ab84b16a90ba7d",
-            "md5": "f6bfcbdecd4c521b198e9d8f39e6f64f",
-            "totalSize": 2037,
-            "abSize": 2264
+            "hash": "f2314e56383b2c8eb0317502e45720af",
+            "md5": "d42861086d7da996cb68727a6ecf77e0",
+            "totalSize": 2040,
+            "abSize": 2274
         },
         {
             "name": "arts/ui/campaign/worldmappiece/pic_hub.ab",
@@ -3769,10 +3776,10 @@
         },
         {
             "name": "arts/ui/furnitureicons/drop.ab",
-            "hash": "1e44bced9f1e7d6addeaf314c794d944",
-            "md5": "e93c578612e4a525b270fd1cbd4d6752",
-            "totalSize": 809954,
-            "abSize": 930918
+            "hash": "27c2f00b9fbc7a7af6581f5b944fa33c",
+            "md5": "4d2c4484d076d213cd0fac09ea517a88",
+            "totalSize": 815805,
+            "abSize": 936883
         },
         {
             "name": "arts/ui/furnitureicons/elite.ab",
@@ -3986,10 +3993,10 @@
         },
         {
             "name": "arts/ui/homebanners/gacha/banner_hub.ab",
-            "hash": "dd7925a167a275d963c1187f406bce4d",
-            "md5": "8fcd7636c9bd4061e4fe268c060f6045",
-            "totalSize": 2066,
-            "abSize": 2318
+            "hash": "45d983dfb4c2ab2ebd6590ad8dd5f95d",
+            "md5": "d6052df090a2bf1d4ede409eba6e648a",
+            "totalSize": 2072,
+            "abSize": 2328
         },
         {
             "name": "arts/ui/homebanners/shop/banner_hub.ab",
@@ -4021,10 +4028,10 @@
         },
         {
             "name": "arts/ui/medalicon/pic_hub.ab",
-            "hash": "2b652e274a4e9a545b297c36c9178bf6",
-            "md5": "784814fefc921cba25beb71f18e2c2cf",
-            "totalSize": 3274,
-            "abSize": 4684
+            "hash": "ec047458e0424c603a8659601c2c0699",
+            "md5": "be1d06710bf7c04b8a4cfbe18cf5be85",
+            "totalSize": 3272,
+            "abSize": 4695
         },
         {
             "name": "arts/ui/medaltitle/pic_hub.ab",
@@ -4284,6 +4291,13 @@
             "md5": "12d81ef880fe3df27235fdff92852421",
             "totalSize": 110328,
             "abSize": 118270
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/camp_r_03.ab",
+            "hash": "8091076c5fbdf02a1add6544b0bf0f6c",
+            "md5": "c5b139c690a28cae4562fb2166aa67e8",
+            "totalSize": 112390,
+            "abSize": 119305
         },
         {
             "name": "arts/ui/stage/mappreviews/hard_05-01.ab",
@@ -17343,7 +17357,7 @@
         },
         {
             "name": "battle/prefabs/effects/tuye.ab",
-            "hash": "2d4b305287c69eccb82c931c694b12d6",
+            "hash": "7c0c4e4068c95bdea3808d3dd03c021f",
             "md5": "03a2f5b97ca31db5d00ebce9a2416a3f",
             "totalSize": 641238,
             "abSize": 738290
@@ -18453,6 +18467,13 @@
             "md5": "1ce6b3b4af3b0373d4edadf2c086735c",
             "totalSize": 609997,
             "abSize": 684228
+        },
+        {
+            "name": "building/diy/prefabs/furnitures/furni_annihilation.ab",
+            "hash": "161a45590e46b32fa79f966d366bfa54",
+            "md5": "50674ed49c145a7907a7c4b2e8ea2159",
+            "totalSize": 76208,
+            "abSize": 89063
         },
         {
             "name": "building/diy/prefabs/furnitures/furni_artdeco.ab",
@@ -20255,10 +20276,10 @@
         },
         {
             "name": "config/buff_template_holder.ab",
-            "hash": "84b3d476a72d1a283f0174caa7ea60c4",
-            "md5": "dfcdf32e601f5e10be6a34e83c8f1f12",
-            "totalSize": 25818,
-            "abSize": 29897
+            "hash": "47dcd8aae22af4a24520441e6544c5ed",
+            "md5": "f5d1805a3b64be33ad601b675c0eec7f",
+            "totalSize": 25816,
+            "abSize": 29895
         },
         {
             "name": "config/config.ab",
@@ -20423,17 +20444,17 @@
         },
         {
             "name": "gamedata/excel/building_data.ab",
-            "hash": "971d10b106d7cc6e5fbd65ae9c4aa986",
-            "md5": "6222adc9e5e565864560cf252fc795da",
-            "totalSize": 1138024,
-            "abSize": 1138015
+            "hash": "7202134809e21a1489dedcf630a59a82",
+            "md5": "555a3389920fbbbb8047b5782ed3488d",
+            "totalSize": 1138854,
+            "abSize": 1138880
         },
         {
             "name": "gamedata/excel/campaign_table.ab",
-            "hash": "6112f49ca9a88375d6b87db5481235cc",
-            "md5": "c770bec24326d657ea2b56b5a8962f47",
-            "totalSize": 57914,
-            "abSize": 57969
+            "hash": "590663e00ec75d7139265a2796720001",
+            "md5": "aff872661c1173acaeefe10ef3887d96",
+            "totalSize": 69010,
+            "abSize": 69102
         },
         {
             "name": "gamedata/excel/character_table.ab",
@@ -20486,9 +20507,9 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "c722f4228acbadb2cad18d286d46310d",
-            "md5": "1988eea0f39e893e5c8ec83b7173ee29",
-            "totalSize": 1205,
+            "hash": "2a2b89101e8b26e863f9aea598f4eca1",
+            "md5": "c0388f989411d76e588b189ebfaf3973",
+            "totalSize": 1207,
             "abSize": 1223
         },
         {
@@ -20507,10 +20528,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "9e187b2ef61f31ff67d039b5c1888d3d",
-            "md5": "acb894a46345da75f0cfef728a105094",
-            "totalSize": 87973,
-            "abSize": 88104
+            "hash": "234899e4b3587f2973bdae2575da547e",
+            "md5": "dd82efea04d1259d9685cc3ed2b7cd80",
+            "totalSize": 88580,
+            "abSize": 88714
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -20542,24 +20563,24 @@
         },
         {
             "name": "gamedata/excel/item_table.ab",
-            "hash": "0418bc649eae864ae62be50ab70872f3",
-            "md5": "4b1a36dcbf3900c50ae22cb88ff15e72",
-            "totalSize": 340757,
-            "abSize": 340958
+            "hash": "de55c42f3d58b8e56d43b8888d3b766d",
+            "md5": "cafc628e66821ded3c6e195d4591f863",
+            "totalSize": 340842,
+            "abSize": 341087
         },
         {
             "name": "gamedata/excel/medal_table.ab",
-            "hash": "cccf7c1261a48042e50439107c52fc9b",
-            "md5": "d33a45646f4d4ae1391e864f58d9d720",
-            "totalSize": 148775,
-            "abSize": 149033
+            "hash": "08eacbab7b2d0fe0bb775c789f2d72d3",
+            "md5": "847cf2f33f0301d840cf0a7fb13e9f4b",
+            "totalSize": 149526,
+            "abSize": 149705
         },
         {
             "name": "gamedata/excel/mission_table.ab",
-            "hash": "d1358bf0d4212fb89ec889d24bcccf30",
-            "md5": "aa3c76120ace9ff2d335fcdd10de53bf",
-            "totalSize": 456013,
-            "abSize": 456184
+            "hash": "b4ef3e8da9e274bf31dce5e6cd844961",
+            "md5": "e800f887453bdeead45f3b69e49ad219",
+            "totalSize": 497725,
+            "abSize": 497880
         },
         {
             "name": "gamedata/excel/open_server_table.ab",
@@ -20612,10 +20633,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "b6df57eed3b92dbc16fa7a97da4356f9",
-            "md5": "ac5e959af6d953a9ed0d1579ef8c42b6",
-            "totalSize": 3226213,
-            "abSize": 3225542
+            "hash": "8d855f0e10fa9cde4e1c6748429292fe",
+            "md5": "7b251a5338cddd125f850426de3a2ef4",
+            "totalSize": 3228036,
+            "abSize": 3227366
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -20668,10 +20689,10 @@
         },
         {
             "name": "gamedata/levels/obt/campaign.ab",
-            "hash": "4e3642f0ce24713bbbbd0486075d1480",
-            "md5": "8f8f1dd02dcf2ada6ba8406991c9acdc",
-            "totalSize": 2185666,
-            "abSize": 2185721
+            "hash": "b3d1ce7d45b60927932cd681f6105350",
+            "md5": "10ef9edc39ffbf71898f4725170e7757",
+            "totalSize": 2704499,
+            "abSize": 2704400
         },
         {
             "name": "gamedata/levels/obt/guide.ab",
@@ -21169,6 +21190,20 @@
             "md5": "8faffa16f54c65594aec02c92c1dd874",
             "totalSize": 1326498,
             "abSize": 1499210
+        },
+        {
+            "name": "scenes/obt/campaign/level_camp_r_03/level_camp_r_03.ab",
+            "hash": "6447f3d87031bf6a1d5ce806bda54349",
+            "md5": "f873cf078b1950e32b056c7c9a45f5ba",
+            "totalSize": 444475,
+            "abSize": 543546
+        },
+        {
+            "name": "scenes/obt/campaign/level_camp_r_03/level_camp_r_03/lightingdata.ab",
+            "hash": "0cfa0258bc15afe7511b70400b9c2ca4",
+            "md5": "f9ee71273015a69e3edb38d649246eaa",
+            "totalSize": 326662,
+            "abSize": 366563
         },
         {
             "name": "scenes/obt/guide/level_guide_01/level_guide_01.ab",
@@ -25484,10 +25519,10 @@
         },
         {
             "name": "spritepack/ui_campaign_stage_icon_img_h1_0.ab",
-            "hash": "08bd2d47fec23a04aac1d591c4ddd8d5",
-            "md5": "781b73d521478a5ee7e2ec3a160bbaf5",
-            "totalSize": 48855,
-            "abSize": 59005
+            "hash": "616c062cad3ae3b9d09fa1643b4e50ad",
+            "md5": "ae4aea882d31cca8498e022b65527b73",
+            "totalSize": 63769,
+            "abSize": 78703
         },
         {
             "name": "spritepack/ui_campaign_world_map_piece_h1_0.ab",
@@ -25645,10 +25680,10 @@
         },
         {
             "name": "spritepack/ui_home_act_banner_gacha_h2_0.ab",
-            "hash": "d301d762edaf9411aea755970f00148f",
-            "md5": "c3f5ed0d15a20df97436644bd8d61841",
-            "totalSize": 339275,
-            "abSize": 364682
+            "hash": "6a8e9aae824d4de19a9c0e352b468e45",
+            "md5": "de74227f960cfae8983bd685ac8d0d6f",
+            "totalSize": 385195,
+            "abSize": 412575
         },
         {
             "name": "spritepack/ui_home_act_banner_shop_h2_0.ab",
@@ -25883,10 +25918,10 @@
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_campaign_0.ab",
-            "hash": "73fa443caecba75ee6d544e9a80d02f6",
-            "md5": "4567e831b84e76cdb215235a299ad1d0",
-            "totalSize": 147469,
-            "abSize": 156528
+            "hash": "046b55a09d40b58a421e6ec722b57b9d",
+            "md5": "9257eb1578ac1c7b601838503f2f28b1",
+            "totalSize": 167588,
+            "abSize": 177400
         },
         {
             "name": "spritepack/ui_medal_icon_list_h1_story_0.ab",
@@ -26274,6 +26309,13 @@
             "abSize": 1081066
         },
         {
+            "name": "ui/gacha/norm_16_0_6.ab",
+            "hash": "64c027b2c50201110eb470398423a7fd",
+            "md5": "35e0c1a90037b7508733cd22baf3c58b",
+            "totalSize": 908318,
+            "abSize": 1038559
+        },
+        {
             "name": "ui/handbook/handbook_info_stage_detail_state.ab",
             "hash": "8a317e1ccaa09d4d311c30caaefd1d64",
             "md5": "6192504bb96468644cd4fbda5f3a2536",
@@ -26450,10 +26492,10 @@
         },
         {
             "name": "ui/pages/campaign_page.ab",
-            "hash": "afbaf8aa0bbcb6687ea5e6235fdf7dbd",
-            "md5": "6cfe76065c014dd2caf023fb732e5afa",
-            "totalSize": 361761,
-            "abSize": 457376
+            "hash": "da288403d5394677bd2d613a474ce552",
+            "md5": "41ea235f06f95c79ee87914b52951751",
+            "totalSize": 361886,
+            "abSize": 457455
         },
         {
             "name": "ui/pages/campaign_zone_page.ab",
@@ -26891,7 +26933,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "21-02-08-10-04-10-6ca1a8",
+            "hash": "21-02-24-14-49-28-e9903f",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
