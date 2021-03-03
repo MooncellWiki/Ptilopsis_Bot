@@ -780,7 +780,7 @@ class Stage(Job):
             self.wiki.edit(
                 title = '首页/新增关卡',
                 text = '\n'.join(new_stage_list),
-                summary = 'init',
+                summary = 'update',
                 bot = None,
                 minor = True
             )
@@ -863,7 +863,7 @@ class Stage(Job):
             self.wiki.edit(
                 title = '首页/新增关卡',
                 text = '\n'.join(new_stage_list),
-                summary = 'init',
+                summary = 'update',
                 bot = None,
                 minor = True
             )
@@ -1024,7 +1024,7 @@ class Stage(Job):
             self.wiki.edit(
                 title = '首页/新增关卡',
                 appendtext = ''.join(new_stage_list),
-                summary = 'init',
+                summary = 'update',
                 bot = None,
                 minor = True
             )
