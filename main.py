@@ -39,7 +39,7 @@ if __name__ == '__main__':
                 exit()
 
     if 'new' in sys.argv:
-        old_num = 182
+        old_num = 186
         Basic(wiki, gameData)._run_update(old_num)
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData)._run_update(old_num)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = ['黑','灰烬','雷蛇','战车'])
+        Skin(wiki, gameData)._run_update(skin_list = [])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:

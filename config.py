@@ -11,8 +11,8 @@ config = {
                 "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
                 "tableSign": True,
                 "luaSign": True,
-                "url": "https://ak-hu.hycdn.cn/assetbundle/official/Android/",
-                "baseUrl": "http://ak-hu.hycdn.cn/assetbundle/official/Android/",
+                "url": "https://ak-hu.hycdn.cn/assetbundle/bilibili/Android/",
+                "baseUrl": "http://ak-hu.hycdn.cn/assetbundle/bilibili/Android/",
                 "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             },
             "jp": {
