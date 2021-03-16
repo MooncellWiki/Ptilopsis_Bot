@@ -27,7 +27,8 @@ class GameData:
         else:
             with open(fullpath, 'r', encoding = 'utf-8') as file:
                 data = json.loads(file.read())
-                self.data[fullpath] = data
+                if 'excel' in fullpath:
+                    self.data[fullpath] = data
                 return data
 
     def get_txt(self, path, region):

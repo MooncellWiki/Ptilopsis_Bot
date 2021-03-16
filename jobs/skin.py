@@ -441,6 +441,24 @@ def update_outfit_brand(wiki, skin_table, character_table):
                 print('Update: {}.'.format('时装回廊/' + brand))
 
 
+def update_logo_link(wiki, skin_table):
+    logo_set = set(s['displaySkin']['skinGroupName'] for s in skin_table['charSkins'].values())
+    logo_set.discard('默认服装')
+    logo_set.discard(None)
+    for l in logo_set:
+        if '/' in l:
+            link_title = '文件:Skin logo {}.png'.format(l)
+            x = l.find('/')
+            content = '#redirect [[文件:Skin logo {}.png]]'.format(l[:x])
+            wiki.edit(
+                title = link_title,
+                text = content,
+                summary = 'redirect skin logo',
+                createonly = True
+            )
+            # print(link_title, content)
+
+
 class Skin(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
@@ -450,6 +468,7 @@ class Skin(Job):
         # update_skin_handbook(self.wiki, character_table, skin_table)
         update_outfit_gallery(self.wiki, skin_table, character_table)
         update_outfit_brand(self.wiki, skin_table, character_table)
+        update_logo_link(self.wiki, skin_table)
 
     def _run_update(self, skin_list = None):
         character_table = self.getgd('excel/character_table.json')

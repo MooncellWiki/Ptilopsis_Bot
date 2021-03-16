@@ -1,4 +1,5 @@
 import json
+import os
 
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
@@ -1019,6 +1020,77 @@ class Stage(Job):
             print('Created: {}.'.format(stage_page_name))
 
             new_stage_list.append('\n* [[{}]]'.format(stage_page_name))
+
+        if new_stage_list != []:
+            self.wiki.edit(
+                title = '首页/新增关卡',
+                appendtext = ''.join(new_stage_list),
+                summary = 'update',
+                bot = None,
+                minor = True
+            )
+            # print('\n'.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
+
+    def _run_id(self, path):
+        if self.gamedata._source() != 'UnpackerCN':
+            return
+
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        stage_table = self.getgd('excel/stage_table.json')
+        stage_id_list = []
+        for s in stage_table['stages'].values():
+            if s['levelId'] is not None:
+                stage_id_list.append('levels/' + s['levelId'].lower() + '.json')
+
+        filelist = []
+        base_dir = './UnpackerCN/gameData/'
+        def get_files(curr_path):
+            if os.path.isfile(os.path.join(base_dir, curr_path)):
+                filelist.append(curr_path)
+            else:
+                for f in os.listdir(os.path.join(base_dir, curr_path)):
+                    get_files(os.path.join(curr_path, f))
+        get_files(path)
+
+        new_stage_list = []
+        for file in filelist:
+            stage_id = os.path.splitext(os.path.split(file)[1])[0]
+            if file.lower() in stage_id_list:
+                print(stage_id, 'already in stage_table. Pass.')
+                continue
+            level_table = self.getgd(file)
+            
+            stage_data = '\n{{普通关卡信息\n'
+            stage_data += '|关卡代号={}\n'.format('—')
+            stage_data += '|关卡名={}\n'.format(stage_id)
+            stage_data += '|关卡id={}\n'.format(stage_id)
+            stage_data += '|关卡类型={}\n'.format('活动')
+            stage_data += '|关卡难度={}\n'.format('NORMAL')
+            stage_data += '|解锁条件={}\n'.format('—')
+            stage_data += '|推荐等级={}\n'.format('—')
+            stage_data += '|所属区域={}\n'.format('-')
+            stage_data += analyze_level_info(level_table)
+            stage_data += '|关卡描述=\n'.format('-')
+            stage_data += '|作战消耗={}\n'.format(0)
+            stage_data += '|演习消耗=-1\n'
+            stage_data += '}}'
+            
+            stage_enemy_data = self._run_enemy_data(level_table)
+            char_pre = analyze_char_card_info(level_table, stage_id, character_table, skill_table)
+            stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+            
+            self.wiki.edit(
+                title = stage_id,
+                text = stage_content,
+                summary = 'init',
+                bot = None,
+                minor = True
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_id))
+            new_stage_list.append('\n* [[{}]]'.format(stage_id))
 
         if new_stage_list != []:
             self.wiki.edit(
