@@ -3,24 +3,24 @@
         "name": "__FULLPACK__",
         "hash": "",
         "md5": "",
-        "totalSize": 2584999157,
+        "totalSize": 2601005607,
         "abSize": 0
     },
-    "versionId": "21-03-05-09-35-05-0ed8ea",
+    "versionId": "21-03-11-14-04-07-710103",
     "abInfos": [
         {
             "name": "torappu.ab",
-            "hash": "21-03-05-09-35-05-0ed8ea",
-            "md5": "a3133ce0905f4751a11a58cf5f7e3866",
-            "totalSize": 119596,
-            "abSize": 140493
+            "hash": "21-03-11-14-04-07-710103",
+            "md5": "dea7bffcd47341ae3dbbefaffbfe74ca",
+            "totalSize": 120532,
+            "abSize": 141663
         },
         {
             "name": "torappu_index.ab",
-            "hash": "21-03-05-09-35-05-0ed8ea",
-            "md5": "cef562b4feba12f76f928b5c7c948cd4",
-            "totalSize": 359039,
-            "abSize": 516085
+            "hash": "21-03-11-14-04-07-710103",
+            "md5": "56285d974afea60cc2dfa885de28ea6c",
+            "totalSize": 361197,
+            "abSize": 519258
         },
         {
             "name": "[uc]shaders.ab",
@@ -1519,6 +1519,62 @@
             "md5": "7fb8196e9aa813b82910c27e03624eb4",
             "totalSize": 813914,
             "abSize": 965907
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex01.ab",
+            "hash": "8a24601ea588327b64e17021ad023bcc",
+            "md5": "7eb0ad8100d04b1ac9856faa4874c56b",
+            "totalSize": 682286,
+            "abSize": 797170
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex02.ab",
+            "hash": "34f15183f261b666516d5e0d2b3fd83a",
+            "md5": "0408398a1afd4c3f1adee5960ce08d9f",
+            "totalSize": 863817,
+            "abSize": 1036812
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex03.ab",
+            "hash": "84a41a0a05f39d5f09796422e3c9c395",
+            "md5": "fe82435b80003f4ce826a1ff5def8e2b",
+            "totalSize": 681665,
+            "abSize": 800113
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex04.ab",
+            "hash": "882dd52136dbccce9fb3bb2c5faaef99",
+            "md5": "d27bf853a6ea72261d52d8e61e5303d8",
+            "totalSize": 532705,
+            "abSize": 613447
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex05.ab",
+            "hash": "9ba54bded94dfe76ea2b94a7aef418b7",
+            "md5": "5a021b61a48bd803563435a0829d2b54",
+            "totalSize": 247130,
+            "abSize": 287307
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex06.ab",
+            "hash": "3a1d72d024e0562bba104675761f2bc3",
+            "md5": "19508407924a5a998c6b7dd249c5cfa4",
+            "totalSize": 732865,
+            "abSize": 873317
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex07.ab",
+            "hash": "5711a5e882eac99e33c36dcd8b311494",
+            "md5": "8a95c0ca9c89c244f9278272908b6627",
+            "totalSize": 723077,
+            "abSize": 848442
+        },
+        {
+            "name": "arts/maps/map_desert_city/mesh/level_act17d0_ex08.ab",
+            "hash": "6d1250f3d709e7d994eb6f0717d80bb3",
+            "md5": "510797cbf4dc8f175351eb756c708368",
+            "totalSize": 914880,
+            "abSize": 1075767
         },
         {
             "name": "arts/maps/map_desert_city/mesh/level_act17d0_tr01.ab",
@@ -4182,10 +4238,10 @@
         },
         {
             "name": "arts/ui/homebanners/gacha/banner_hub.ab",
-            "hash": "9eff5b53ac283043972da4869abc3fbe",
-            "md5": "66cb69605b6df241c26ea873b90362b3",
-            "totalSize": 2032,
-            "abSize": 2272
+            "hash": "44da54310e6cb0f15168de7bd8f08584",
+            "md5": "2532f65546bb48aa73d3c271c47a201d",
+            "totalSize": 2044,
+            "abSize": 2286
         },
         {
             "name": "arts/ui/homebanners/shop/banner_hub.ab",
@@ -4375,6 +4431,62 @@
             "md5": "29aa3de198f8860d81eea440e8e1c2e8",
             "totalSize": 63872,
             "abSize": 71901
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex01.ab",
+            "hash": "3be394c2e3e6af92768f3a412b6a127c",
+            "md5": "32ee6c74f5a62490f60fbdeac492418c",
+            "totalSize": 102435,
+            "abSize": 112599
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex02.ab",
+            "hash": "acce892ec61a19eff9825748df5bc296",
+            "md5": "bb6a0e54790006ee49986b6fa4247bae",
+            "totalSize": 113805,
+            "abSize": 121899
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex03.ab",
+            "hash": "f20daee7a34bdeb5d45a2c50d9339c64",
+            "md5": "08d294fd061566501fcc11af9cb00134",
+            "totalSize": 115620,
+            "abSize": 123099
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex04.ab",
+            "hash": "85860e1b4c02b8a07dbdec581682c7ec",
+            "md5": "651d50d3b6d518ad8165825556956962",
+            "totalSize": 99433,
+            "abSize": 106699
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex05.ab",
+            "hash": "6e1c99432c1ef24426a80fde75f2cd7f",
+            "md5": "948f7613a09421c11bbff18613111a3f",
+            "totalSize": 107497,
+            "abSize": 115304
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex06.ab",
+            "hash": "66ffa5cc161ec08df6e8c116fd23e0fc",
+            "md5": "bf3d16a0188fc50b1efb14564bbfc6e8",
+            "totalSize": 115312,
+            "abSize": 122424
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex07.ab",
+            "hash": "6227ed9580055d5f9b00cc127ec49a74",
+            "md5": "b2c98bc99727802f469f4111935f130a",
+            "totalSize": 112428,
+            "abSize": 119957
+        },
+        {
+            "name": "arts/ui/stage/mappreviews/act17d0_ex08.ab",
+            "hash": "e32d82ba4da13cfcd129b6d3348da956",
+            "md5": "cda09495a41195024d00a72d7bc76fbf",
+            "totalSize": 111363,
+            "abSize": 119653
         },
         {
             "name": "arts/ui/stage/mappreviews/act17d0_tr01.ab",
@@ -21295,9 +21407,9 @@
         },
         {
             "name": "gamedata/excel/activity_table.ab",
-            "hash": "25faf6ddc0cad1be342dd6b06eaf8779",
-            "md5": "2430daf5b162525db4b3203161e03296",
-            "totalSize": 902404,
+            "hash": "fa575c397d53e4f1f5dad87ce6167bb5",
+            "md5": "097a064d7d611f461ee926fa6ff5821a",
+            "totalSize": 902438,
             "abSize": 902470
         },
         {
@@ -21372,16 +21484,16 @@
         },
         {
             "name": "gamedata/excel/data_version.ab",
-            "hash": "7b8be317517630bee0761f9cfbfd1fc3",
-            "md5": "347492762039236dc4a9c32c8e2e629c",
+            "hash": "8ec855fcb18b87b3aaab09e58e471e5d",
+            "md5": "b1fbd112f0e370a5f404ef0334b0ce99",
             "totalSize": 1206,
             "abSize": 1223
         },
         {
             "name": "gamedata/excel/enemy_handbook_table.ab",
-            "hash": "e8c7c1aa4a51b3d652d7d7a88aada41c",
-            "md5": "425c91fec61d1d84df645d7d9790bac3",
-            "totalSize": 210293,
+            "hash": "3b38733aa87f07f1ae11a5de012f69f1",
+            "md5": "cc22b671d96fc44f3731ea948d17b191",
+            "totalSize": 210288,
             "abSize": 210587
         },
         {
@@ -21393,10 +21505,10 @@
         },
         {
             "name": "gamedata/excel/gacha_table.ab",
-            "hash": "110fdfdc0024aa2ca043e80b52762451",
-            "md5": "2225ce6ead969703a67dab689ecbe463",
-            "totalSize": 88770,
-            "abSize": 88906
+            "hash": "824c1d983f8f10874fe94e25b6dfbb90",
+            "md5": "61712783d8f1f335a38b3cb4932f9e4d",
+            "totalSize": 89378,
+            "abSize": 89517
         },
         {
             "name": "gamedata/excel/gamedata_const.ab",
@@ -21505,10 +21617,10 @@
         },
         {
             "name": "gamedata/excel/stage_table.ab",
-            "hash": "401577f0dad7def6ab71ef89932ae42c",
-            "md5": "c6734db112c9d9d5e40e96acd0f8da5c",
-            "totalSize": 3265638,
-            "abSize": 3264950
+            "hash": "52056d63bf560777d7dfe12061707c51",
+            "md5": "6d9b55901a7fb85fde01266298249928",
+            "totalSize": 3303085,
+            "abSize": 3302390
         },
         {
             "name": "gamedata/excel/story_review_table.ab",
@@ -21554,10 +21666,10 @@
         },
         {
             "name": "gamedata/levels/activities/act17d0.ab",
-            "hash": "e0dc48d2410094eecdf6b3a9ae25bb5b",
-            "md5": "468d3bd7b7e88276bc839c6b669bfe63",
-            "totalSize": 650821,
-            "abSize": 651142
+            "hash": "a5f9b749756d57745e92fabc2c268e08",
+            "md5": "a7ee2476da41eb812f5086e6f445524a",
+            "totalSize": 1317446,
+            "abSize": 1317711
         },
         {
             "name": "gamedata/levels/activities/act17d1.ab",
@@ -21852,6 +21964,118 @@
             "md5": "e638c5f57c79be4f842a1aa9790dc4c0",
             "totalSize": 334539,
             "abSize": 378457
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex01/level_act17d0_ex01.ab",
+            "hash": "e205493bac7fd6cc28b4ff5c7e72a9a5",
+            "md5": "1f657e9e061a493375b381a3e688f5f8",
+            "totalSize": 516090,
+            "abSize": 642116
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex01/level_act17d0_ex01/lightingdata.ab",
+            "hash": "9f8ae099eabf41221968a000edc834ea",
+            "md5": "465cffd4f742b83234ce92e90e7e01ca",
+            "totalSize": 1234976,
+            "abSize": 1476121
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex02/level_act17d0_ex02.ab",
+            "hash": "c665283a70b3b8705035d15c74b512d2",
+            "md5": "d46007c9b96f5f9970a22e2fe6a8baef",
+            "totalSize": 651485,
+            "abSize": 828668
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex02/level_act17d0_ex02/lightingdata.ab",
+            "hash": "201310a0c5fc9c69564553192a3226bd",
+            "md5": "8b763ffdc357e5487cf16edbe31e4db9",
+            "totalSize": 429383,
+            "abSize": 473690
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex03/level_act17d0_ex03.ab",
+            "hash": "1233134e0bb732c34cf22778c5f902f3",
+            "md5": "706eb4adba39666a1b5be302aba8ec8e",
+            "totalSize": 519752,
+            "abSize": 651967
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex03/level_act17d0_ex03/lightingdata.ab",
+            "hash": "197b57e0b12c72f33f68a188a593ae24",
+            "md5": "48708d3ac4814e049d445dc8cc434947",
+            "totalSize": 415198,
+            "abSize": 455745
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex04/level_act17d0_ex04.ab",
+            "hash": "074417873858a945cec2384e0cd037cd",
+            "md5": "bb2c971806ee2ec9c6a61d409058125a",
+            "totalSize": 399280,
+            "abSize": 510022
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex04/level_act17d0_ex04/lightingdata.ab",
+            "hash": "0c74bd88aa85762f5822891b690a1995",
+            "md5": "8741f1557b134c7729ef966ad91798a0",
+            "totalSize": 363940,
+            "abSize": 403774
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex05/level_act17d0_ex05.ab",
+            "hash": "52a1f08ed3378f7bb9b1f84315de7230",
+            "md5": "39f52967e2a1203b73080232c4a7093d",
+            "totalSize": 214790,
+            "abSize": 271107
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex05/level_act17d0_ex05/lightingdata.ab",
+            "hash": "59a016a635e832de124a40c34b20539f",
+            "md5": "6d629ba3f9aad663bc1ead88e24cbe47",
+            "totalSize": 221063,
+            "abSize": 257287
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex06/level_act17d0_ex06.ab",
+            "hash": "4a53e437429d3f65ac638b4f458fbaaf",
+            "md5": "b1306a4040adb21452a4d5451ae60dc9",
+            "totalSize": 567659,
+            "abSize": 714000
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex06/level_act17d0_ex06/lightingdata.ab",
+            "hash": "aa0a5979aaaec6a117c393ebfd29d753",
+            "md5": "0f91321448a301239ff6cf8873465850",
+            "totalSize": 386934,
+            "abSize": 428774
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex07/level_act17d0_ex07.ab",
+            "hash": "d2cae0eeb2a8a82356cc3aa4db7980d0",
+            "md5": "e7ed4636389a4d261335481d43e29ee8",
+            "totalSize": 547419,
+            "abSize": 690446
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex07/level_act17d0_ex07/lightingdata.ab",
+            "hash": "024605835bc791365ab1f2c44e619a3f",
+            "md5": "2df5e700ee7a26721971b9eca0f2bb4e",
+            "totalSize": 395473,
+            "abSize": 437367
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex08/level_act17d0_ex08.ab",
+            "hash": "9f1a015136da63fc38021054503903e8",
+            "md5": "242fe285e0d038adb19d90ec5310016d",
+            "totalSize": 678578,
+            "abSize": 858124
+        },
+        {
+            "name": "scenes/activities/act17d0/level_act17d0_ex08/level_act17d0_ex08/lightingdata.ab",
+            "hash": "99fd0e6bd3801af1f1228148aaa86655",
+            "md5": "160e5c2526f8a580c8e39872ea5d0a9a",
+            "totalSize": 423959,
+            "abSize": 465798
         },
         {
             "name": "scenes/activities/act17d0/level_act17d0_tr01/level_act17d0_tr01.ab",
@@ -26664,10 +26888,10 @@
         },
         {
             "name": "spritepack/ui_home_act_banner_gacha_h2_0.ab",
-            "hash": "edfae655d380c617fcab6046893df579",
-            "md5": "9047cdbd18799220cf63e1de23008466",
-            "totalSize": 173139,
-            "abSize": 186191
+            "hash": "63bbf7beec3ccf123e9d4c80e9f16a3a",
+            "md5": "9756964371c33d7466e4f64c73895b2a",
+            "totalSize": 218937,
+            "abSize": 236437
         },
         {
             "name": "spritepack/ui_home_act_banner_shop_h2_0.ab",
@@ -27270,6 +27494,13 @@
             "md5": "126ba16a639773f8e2d8759e61b9f171",
             "totalSize": 908348,
             "abSize": 1038565
+        },
+        {
+            "name": "ui/gacha/norm_17_0_2.ab",
+            "hash": "ab15364dc1b6db37ed04866c3998fc12",
+            "md5": "435515b1946ee71c9ba97c40530706dc",
+            "totalSize": 1031266,
+            "abSize": 1160965
         },
         {
             "name": "ui/handbook/handbook_info_stage_detail_state.ab",
@@ -27931,7 +28162,7 @@
         },
         {
             "name": "raw/video/01.mp4",
-            "hash": "21-03-05-09-35-05-0ed8ea",
+            "hash": "21-03-11-14-04-07-710103",
             "md5": "41f2ba5f6d1439498281696815d19560",
             "totalSize": 18126429,
             "abSize": 18287639,
