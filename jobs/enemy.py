@@ -1,0 +1,184 @@
+from utils.job import Job
+from utils.richTextStyles import RichTextStyles
+
+import json
+
+class Enemy(Job):
+    def _run(self):
+        def get_value(idx, v, name, k):
+            if idx == 0 or v['m_defined'] == True:
+                if k == 's':
+                    s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
+                elif k == 'i' or k == 'f':
+                    if v["m_value"] is None:
+                        s = {'i': '0', 'f': '0.0'}.get(k, '')
+                    elif v["m_value"] == int(v["m_value"]):
+                        s = str(int(v["m_value"]))
+                    else:
+                        s = str(v["m_value"])
+                elif k == 'b':
+                    s = {True: '有', False: '无'}.get(v["m_value"], '无')
+                else:
+                    s = ''
+                return f'\n|{name}={s}'
+            else:
+                return ''
+
+        enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
+        enemy_database = self.getgd('levels/enemydata/enemy_database.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        enemy_list = self.wiki.category('分类:敌人')
+        enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
+        enemy_db_index = {v['Key']:idx for idx, v in enumerate(enemy_database['enemies'])}
+        for enemy in enemy_handbook_table.values():
+            if enemy['name'] in enemy_list:
+                continue
+            enemy_level_dict = {'NORMAL': '普通', 'ELITE': '精英', 'BOSS': '领袖'}
+            content = '{{Navigator|敌人一览}}\n{{敌人信息/common'
+            content += f'\n|id={enemy["sortId"]}'
+            content += f'\n|名称={enemy["name"]}'
+            content += f'\n|index={enemy["enemyIndex"]}'
+            content += f'\n|地位级别={enemy_level_dict.get(enemy["enemyLevel"], "其他")}'
+            content += f'\n|描述={enemy["description"]}'
+            content += f'\n|攻击方式={enemy["attackType"]}'
+            content += f'\n|耐久={enemy["endure"]}'
+            content += f'\n|攻击力={enemy["attack"]}'
+            content += f'\n|防御力={enemy["defence"]}'
+            content += f'\n|法术抗性={enemy["resistance"]}'
+            if enemy['enemyRace'] is not None:
+                content += f'\n|种类={enemy["enemyRace"]}'
+            if enemy['ability'] is not None:
+                content += f'\n|能力={enemy["ability"]}'
+            content += '\n}}'
+
+            if enemy['enemyId'] in enemy_db_index:
+                enemy_data = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]
+                for idx, d in enumerate(enemy_data['Value']):
+                    if d['level'] != idx:
+                        print(f'enemy {enemy["name"]} database order error.')
+                        continue
+                    lv_data = d['enemyData']
+                    content += f'\n==级别{idx}=='
+                    content += f'\n{{{{敌人信息/level\n|index={idx}'
+                    content += get_value(idx, lv_data['description'], '描述', 's')
+                    content += get_value(idx, lv_data['lifePointReduce'], '数量', 'i')
+                    content += get_value(idx, lv_data['rangeRadius'], '攻击范围半径', 'f')
+                    content += get_value(idx, lv_data['attributes']['maxHp'], '最大生命值', 'i')
+                    content += get_value(idx, lv_data['attributes']['atk'], '攻击力', 'i')
+                    content += get_value(idx, lv_data['attributes']['def'], '防御力', 'i')
+                    content += get_value(idx, lv_data['attributes']['magicResistance'], '法术抗性', 'i')
+                    content += get_value(idx, lv_data['attributes']['moveSpeed'], '移动速度', 'f')
+                    content += get_value(idx, lv_data['attributes']['attackSpeed'], '攻击速度', 'f')
+                    content += get_value(idx, lv_data['attributes']['baseAttackTime'], '攻击间隔', 'f')
+                    content += get_value(idx, lv_data['attributes']['hpRecoveryPerSec'], '生命恢复速度', 'i')
+                    content += get_value(idx, lv_data['attributes']['spRecoveryPerSec'], 'sp恢复速度', 'i')
+                    content += get_value(idx, lv_data['attributes']['massLevel'], '重量等级', 'i')
+                    content += get_value(idx, lv_data['attributes']['stunImmune'], '眩晕抗性', 'b')
+                    content += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
+                    content += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
+                    if lv_data['talentBlackboard']:
+                        content += '\n|天赋=<!--' + json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False) + '-->'
+                    content += '\n}}'
+            content += '\n==敌人模型==\n{{spine}}<references/>{{敌人导航}}'
+
+            spine_content = {'prefix': '', 'name': '', 'skin': {'默认': {'战斗': {'file': ''}}}}
+            spine_content['prefix'] = f'http://static.prts.wiki/spine/enemy/{enemy["enemyId"]}/'
+            spine_content['name'] = f'{enemy["name"]}'
+            spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
+
+            # self.wiki.edit(
+            #     title = enemy['name'],
+            #     text = content,
+            #     summary = 'init',
+            #     bot = None,
+            #     minor = True,
+            #     createonly = '1'
+            # )
+            print(content)
+            # self.wiki.protect(
+            #     title = enemy['name'],
+            #     protections = 'edit=autoconfirmed|move=sysop',
+            #     reason = 'protect'
+            # )
+            # self.wiki.edit(
+            #     title = enemy['name'] + '/spine',
+            #     text = json.dumps(spine_content, indent=4, ensure_ascii=False),
+            #     summary = 'init',
+            #     bot = None,
+            #     minor = True,
+            #     createonly = '1',
+            #     contentmodel = 'json'
+            # )
+            print(json.dumps(spine_content, indent=4, ensure_ascii=False))
+            # self.wiki.protect(
+            #     title = enemy['name'] + '/spine',
+            #     protections = 'edit=autoconfirmed|move=sysop',
+            #     reason = 'protect'
+            # )
+            print('Created: {}.'.format(enemy['name']))
+
+
+    def update_data(self):
+        enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+        new_enemy_table = []
+
+        for enemy_data in enemy_handbook_table.values():
+            attack_info = enemy_data['attackType']
+            new_data = {
+                # 'enemyId': enemy_data['enemyId'],
+                'enemyIndex': enemy_data['enemyIndex'],
+                # 'enemyTags': enemy_data['enemyTags'],
+                'sortId': enemy_data['sortId'],
+                'name': enemy_data['name'],
+                'enemyRace': enemy_data['enemyRace'],
+                'enemyLevel': enemy_data['enemyLevel'],
+                # 'description': enemy_data['description'],
+                'attackType': '其他',
+                'damageType': '其他',
+                'endure': enemy_data['endure'],
+                'attack': enemy_data['attack'],
+                'defence': enemy_data['defence'],
+                'resistance': enemy_data['resistance'],
+                'ability': enemy_data['ability'],
+                # 'isInvalidKilled': enemy_data['isInvalidKilled'],
+                # 'overrideKillCntInfos': enemy_data['overrideKillCntInfos'],
+            }
+            # 种族
+            if new_data['enemyRace'] is None:
+                new_data['enemyRace'] = '其他'
+            # 地位
+            new_data['enemyLevel'] = {
+                'NORMAL': '普通',
+                'ELITE': '精英',
+                'BOSS': '领袖'
+            }.get(new_data['enemyLevel'], '其他')
+            # 能力
+            if new_data['ability'] is None:
+                new_data['ability'] = ''
+            # 攻击方式
+            if '不攻击' in attack_info:
+                new_data['attackType'] = '不攻击'
+            elif '近战' in attack_info:
+                new_data['attackType'] = '近战'
+            elif '远程' in attack_info:
+                new_data['attackType'] = '远程'
+            # 伤害类型
+            if '治疗' in attack_info:
+                new_data['damageType'] = '治疗'
+            elif '法术' in attack_info:
+                new_data['damageType'] = '法术'
+            else:
+                new_data['damageType'] = '物理'
+
+            new_enemy_table.append(new_data)
+
+        self.wiki.edit(
+            title = '敌人一览/数据',
+            text = json.dumps(new_enemy_table, ensure_ascii = False),
+            summary = 'update'
+        )
+        # print(json.dumps(new_enemy_table, ensure_ascii = False))
+        print('Updated: {}.'.format('敌人一览/数据'))
+

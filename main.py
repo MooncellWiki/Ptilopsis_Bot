@@ -8,6 +8,7 @@ from jobs.building_buff import BuildingBuff
 from jobs.char_attr import CharAttr
 from jobs.charword import Charword
 from jobs.demand import Demand
+from jobs.enemy import Enemy
 from jobs.furni import Furni
 from jobs.formula import Formula
 from jobs.item import Item
@@ -49,6 +50,8 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run()
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
+        # Enemy(wiki, gameData).run()
+        Enemy(wiki, gameData).update_data()
 
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()

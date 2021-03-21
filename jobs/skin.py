@@ -3,23 +3,33 @@ import json
 import re
 
 
-def get_skin_info(char_key, skin_table):
+def get_skin_info(char_key, skin_table, origin_drawer):
     basic_info = ''
     for phase_id in skin_table['buildinEvolveMap'][char_key]:
-        basic_info += '\n|精英{phase_id}描述={des}'.format(
-            phase_id = phase_id,
+        try:
             des = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_id]]['displaySkin'][
                 'content'].replace('\n', '<br/>')
+        except:
+            des = ''
+        basic_info += '\n|精英{phase_id}描述={des}'.format(
+            phase_id = phase_id,
+            des = des
         )
     skin_desc = {}
     for skin_key in skin_table['charSkins']:
         if char_key in skin_key:
             if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
+                skin_drawer = skin_table['charSkins'][skin_key]['displaySkin']['drawerName']
+                if skin_drawer is not None and skin_drawer != origin_drawer:
+                    drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
+                else:
+                    drawer = ''
                 order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 12 + \
                         skin_table['charSkins'][skin_key]['displaySkin']['onPeriod']
                 skin_desc[
-                    order] = '\n|时装{{skin_id}}名称={name}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}描述={des}'.format(
+                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}描述={des}'.format(
                     name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
+                    drawer = drawer,
                     color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],
                     group = skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'],
                     des = skin_table['charSkins'][skin_key]['displaySkin']['content'].replace('<color name=#ffffff>',
@@ -34,7 +44,7 @@ def get_skin_info(char_key, skin_table):
     return basic_info, special_skin_id - 1
 
 
-def update_skin(wiki, character_table, skin_table, skin_list):
+def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_table):
     skin_data = []
     for char_id in character_table:
         char_detail = character_table[char_id]
@@ -47,7 +57,8 @@ def update_skin(wiki, character_table, skin_table, skin_list):
         origin_text = wiki.read(char_detail['name'])
         num1 = origin_text.find('\n|精英0描述')
         num2 = origin_text.find('==获得方式==')
-        skin_info, count = get_skin_info(char_id, skin_table)
+        origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'] if char_id in handbook_info_table['handbookDict'] else ''
+        skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
         new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
         skin_data.append('1={name}:skin={count}'.format(
             name = char_detail['name'],
@@ -473,5 +484,6 @@ class Skin(Job):
     def _run_update(self, skin_list = None):
         character_table = self.getgd('excel/character_table.json')
         skin_table = self.getgd('excel/skin_table.json')
+        handbook_info_table = self.getgd('excel/handbook_info_table.json')
 
-        update_skin(self.wiki, character_table, skin_table, skin_list)
+        update_skin(self.wiki, character_table, skin_table, skin_list, handbook_info_table)
