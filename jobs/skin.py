@@ -19,7 +19,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
     for skin_key in skin_table['charSkins']:
         if char_key in skin_key:
             if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                skin_drawer = skin_table['charSkins'][skin_key]['displaySkin']['drawerName']
+                skin_drawer = skin_table['charSkins'][skin_key]['displaySkin']['drawerName'].strip()
                 if skin_drawer is not None and skin_drawer != origin_drawer:
                     drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
                 else:
@@ -57,7 +57,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         origin_text = wiki.read(char_detail['name'])
         num1 = origin_text.find('\n|精英0描述')
         num2 = origin_text.find('==获得方式==')
-        origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'] if char_id in handbook_info_table['handbookDict'] else ''
+        origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'].strip() if char_id in handbook_info_table['handbookDict'] else ''
         skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
         new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
         skin_data.append('1={name}:skin={count}'.format(

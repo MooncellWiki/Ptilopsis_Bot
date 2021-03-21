@@ -95,7 +95,6 @@ class Enemy(Job):
             #     minor = True,
             #     createonly = '1'
             # )
-            print(content)
             # self.wiki.protect(
             #     title = enemy['name'],
             #     protections = 'edit=autoconfirmed|move=sysop',
@@ -110,12 +109,13 @@ class Enemy(Job):
             #     createonly = '1',
             #     contentmodel = 'json'
             # )
-            print(json.dumps(spine_content, indent=4, ensure_ascii=False))
             # self.wiki.protect(
             #     title = enemy['name'] + '/spine',
             #     protections = 'edit=autoconfirmed|move=sysop',
             #     reason = 'protect'
             # )
+            print(content)
+            print(json.dumps(spine_content, indent=4, ensure_ascii=False))
             print('Created: {}.'.format(enemy['name']))
 
 
