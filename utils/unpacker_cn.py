@@ -36,7 +36,8 @@ class UnpackerCN:
 
     @retry(stop_max_attempt_number = 3)
     def get_version(self):
-        url = self.config['baseUrl'] + 'version?sign={}'.format(int(time.time()))
+        # url = self.config['baseUrl'] + 'version?sign={}'.format(int(time.time()))
+        url = self.config['baseUrl'] + 'version'
         ret = requests.get(url, headers = self.ua).json()
         self.res_version = ret['resVersion']
 

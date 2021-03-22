@@ -30,8 +30,7 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
     for medal in medal_table['medalList']:
         reward_list = ' '.join(
             [' '.join([parse_item(item, character_table, building_data, item_table) for item in item_group['itemList']])
-                for item_group in medal['medalRewardGroup']]
-        )
+             for item_group in medal['medalRewardGroup']])
         if reward_list != '':
             reward_list = '\n|奖励=' + reward_list
         medal_dict[medal['medalType']][medal['medalId']] = {
@@ -53,7 +52,9 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
                     medal_dict[medal_type][medal['advancedMedal']]['getMethod']
                 )
             if medal['getMethod'] == '' and medal['preMedalIdList'] != []:
-                medal_dict[medal_type][medal_key]['getMethod'] = '获得{}枚前置蚀刻章（即本套组除此蚀刻章外的所有蚀刻章）'.format(len(medal['preMedalIdList']))
+                medal_dict[medal_type][medal_key]['getMethod'] = '获得{}枚前置蚀刻章（即本套组除此蚀刻章外的所有蚀刻章）'.format(
+                    len(medal['preMedalIdList'])
+                )
     for medal_type in medal_table['medalTypeData']:
         for medal_group in medal_table['medalTypeData'][medal_type]['groupData']:
             for medal_key in medal_group['medalId']:
@@ -67,25 +68,25 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
             if medal_dict[medal_type][medal_key]['group'] == '' and medal_dict[medal_type][medal_key][
                 'originMedal'] == '':
                 content += medal_template.format(
-                    group = medal_dict[medal_type][medal_key]['group'],
-                    name = medal_dict[medal_type][medal_key]['name'],
-                    rarity = medal_dict[medal_type][medal_key]['rarity'],
-                    desc = medal_dict[medal_type][medal_key]['desc'],
-                    getMethod = medal_dict[medal_type][medal_key]['getMethod'],
-                    advanceMethod = medal_dict[medal_type][medal_key]['advancedMedal'],
-                    reward = medal_dict[medal_type][medal_key]['reward'],
+                    group=medal_dict[medal_type][medal_key]['group'],
+                    name=medal_dict[medal_type][medal_key]['name'],
+                    rarity=medal_dict[medal_type][medal_key]['rarity'],
+                    desc=medal_dict[medal_type][medal_key]['desc'],
+                    getMethod=medal_dict[medal_type][medal_key]['getMethod'],
+                    advanceMethod=medal_dict[medal_type][medal_key]['advancedMedal'],
+                    reward=medal_dict[medal_type][medal_key]['reward'],
                 ) + '\n'
         for medal_group in reversed(medal_table['medalTypeData'][medal_type]['groupData']):
             group_content, advance_flag = '', ''
             for medal_key in medal_group['medalId']:
                 group_content += medal_template.format(
-                    group = medal_dict[medal_type][medal_key]['group'],
-                    name = medal_dict[medal_type][medal_key]['name'],
-                    rarity = medal_dict[medal_type][medal_key]['rarity'],
-                    desc = medal_dict[medal_type][medal_key]['desc'],
-                    getMethod = medal_dict[medal_type][medal_key]['getMethod'],
-                    advanceMethod = medal_dict[medal_type][medal_key]['advancedMedal'],
-                    reward = medal_dict[medal_type][medal_key]['reward'],
+                    group=medal_dict[medal_type][medal_key]['group'],
+                    name=medal_dict[medal_type][medal_key]['name'],
+                    rarity=medal_dict[medal_type][medal_key]['rarity'],
+                    desc=medal_dict[medal_type][medal_key]['desc'],
+                    getMethod=medal_dict[medal_type][medal_key]['getMethod'],
+                    advanceMethod=medal_dict[medal_type][medal_key]['advancedMedal'],
+                    reward=medal_dict[medal_type][medal_key]['reward'],
                 ) + '\n'
                 if medal_dict[medal_type][medal_key]['advancedMedal'] != '':
                     advance_flag = '\n|镀层=1'
@@ -98,11 +99,11 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
 |内容=
 {group_content}}}}}
 '''.format(
-                name = medal_group['groupName'].replace('蚀刻章套组', ''),
-                advance = advance_flag,
-                title_name = medal_group['groupName'],
-                desc = medal_group['groupDesc'].replace('\n', '<br/>'),
-                group_content = group_content
+                name=medal_group['groupName'].replace('蚀刻章套组', ''),
+                advance=advance_flag,
+                title_name=medal_group['groupName'],
+                desc=medal_group['groupDesc'].replace('\n', '<br/>'),
+                group_content=group_content
             )
 
     return content
@@ -119,9 +120,9 @@ class Medal(Job):
         content = update_medal(medal_table, character_table, building_data, item_table, rts)
 
         self.wiki.edit(
-            title = '用户:Seniorious/medal',
-            text = content,
-            summary = 'update'
+            title='用户:Seniorious/medal',
+            text=content,
+            summary='update'
         )
         # print(content)
         print('Updated: {}.'.format('用户:Seniorious/medal'))

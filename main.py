@@ -26,14 +26,13 @@ from utils.data_local import GameData
 from utils.wiki import Wiki
 
 if __name__ == '__main__':
-    wiki = Wiki(config['api_url'], config['username'], config['password'],
-        ('dev' if '-dev' in sys.argv else 'product'))
+    wiki = Wiki(config['api_url'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
     if '--git-repo' in sys.argv:
-        gameData = GameData(config = config, source = 'ArknightsGameData')
+        gameData = GameData(config=config, source='ArknightsGameData')
     else:
-        gameData = GameData(config = config, source = 'UnpackerCN')
-        # gameData = GameData(config = config, source = 'ArknightsGameData')
-        # gameData = GameData(config = config, source = 'UnpackerData')
+        gameData = GameData(config=config, source='UnpackerCN')
+        # gameData = GameData(config=config, source='ArknightsGameData')
+        # gameData = GameData(config=config, source='UnpackerData')
         if '--check' in sys.argv:
             if not gameData.unpacker.check_update():
                 print('No version update. Program exit.')
@@ -60,7 +59,7 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list = [])
+        Skin(wiki, gameData)._run_update(skin_list=[])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
@@ -84,5 +83,3 @@ if __name__ == '__main__':
 
     if 'weedy' in sys.argv:
         Weedy(wiki, gameData).run()
-
-

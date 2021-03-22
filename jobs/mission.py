@@ -18,10 +18,10 @@ def update_mission(mission_table, item_table, rts):
         end_time = datetime.fromtimestamp(daily_group['endTime'], pytz.timezone('Asia/Shanghai')).strftime(
             '%Y-%m-%d %H:%M:%S')
         daily_text += '\n' + '===任务列表 {num}===\n'.format(
-            num = count
+            num=count
         ) + table_title + '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}'.format(
-            s_t = start_time,
-            e_t = end_time
+            s_t=start_time,
+            e_t=end_time
         )
         count += 1
         daily_text += '\n|-\n!时间!!任务列表!!奖励列表'
@@ -38,9 +38,9 @@ def update_mission(mission_table, item_table, rts):
                         mission_table['missions'][mission_id]['periodicalPoint']
                     )
                 mission_list += '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
-                    mission_id = mission_table['missions'][mission_id]['id'],
-                    mission_text = rts.compile(mission_table['missions'][mission_id]['description']),
-                    mission_reward = mission_reward
+                    mission_id=mission_table['missions'][mission_id]['id'],
+                    mission_text=rts.compile(mission_table['missions'][mission_id]['description']),
+                    mission_reward=mission_reward
                 )
             mission_list += '\n|}'
             reward_list = '\n{|class = "wikitable mw-collapsed mw-collapsible" style = "text-align:center; display:table; white-space:normal; width:300px;"'
@@ -51,19 +51,19 @@ def update_mission(mission_table, item_table, rts):
                     if mission_table['periodicalRewards'][reward_id]['rewards']:
                         for reward in mission_table['periodicalRewards'][reward_id]['rewards']:
                             reward_content += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                                name = item_table['items'][reward['id']]['name'].rstrip(),
-                                num = reward['count']
+                                name=item_table['items'][reward['id']]['name'].rstrip(),
+                                num=reward['count']
                             )
                     reward_list += '\n|-\n|reward set {sort_id}\n|{pointCost}\n|{reward_content}'.format(
-                        sort_id = mission_table['periodicalRewards'][reward_id]['sortIndex'],
-                        pointCost = mission_table['periodicalRewards'][reward_id]['periodicalPointCost'],
-                        reward_content = reward_content
+                        sort_id=mission_table['periodicalRewards'][reward_id]['sortIndex'],
+                        pointCost=mission_table['periodicalRewards'][reward_id]['periodicalPointCost'],
+                        reward_content=reward_content
                     )
             reward_list += '\n|}'
             daily_text += '\n|-\n|{period}\n|{mission_list}\n|{reward_list}'.format(
-                period = str(period['period']),
-                mission_list = mission_list,
-                reward_list = reward_list
+                period=str(period['period']),
+                mission_list=mission_list,
+                reward_list=reward_list
             )
         daily_text += '\n|}'
     count = 1
@@ -71,14 +71,14 @@ def update_mission(mission_table, item_table, rts):
     for weekly in mission_table['missionGroups']:
         if 'weekly_g_' in weekly:
             start_time = datetime.fromtimestamp(mission_table['missionGroups'][weekly]['startTs'],
-                pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+                                                pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
             end_time = datetime.fromtimestamp(mission_table['missionGroups'][weekly]['endTs'],
-                pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+                                              pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
             weekly_text += '\n' + '===任务列表 {num}===\n'.format(
-                num = count
+                num=count
             ) + table_title + '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}'.format(
-                s_t = start_time,
-                e_t = end_time
+                s_t=start_time,
+                e_t=end_time
             )
             count += 1
             weekly_text += '\n|-\n!colspan="3"|任务列表'
@@ -91,9 +91,9 @@ def update_mission(mission_table, item_table, rts):
                         mission_table['missions'][mission_id]['periodicalPoint']
                     )
                 weekly_text += '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
-                    mission_id = mission_table['missions'][mission_id]['id'],
-                    mission_text = rts.compile(mission_table['missions'][mission_id]['description']),
-                    mission_reward = mission_reward
+                    mission_id=mission_table['missions'][mission_id]['id'],
+                    mission_text=rts.compile(mission_table['missions'][mission_id]['description']),
+                    mission_reward=mission_reward
                 )
             weekly_text += '\n|}'
     reward_dict = {}
@@ -109,8 +109,8 @@ def update_mission(mission_table, item_table, rts):
                 '%Y-%m-%d %H:%M:%S')
             reward_dict[mission_table['weeklyRewards'][reward_id]['groupId']][
                 'content'] = '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}'.format(
-                s_t = start_time,
-                e_t = end_time
+                s_t=start_time,
+                e_t=end_time
             ) + '\n|-\n!id||点数需求||奖励'
         else:
             if reward_dict[reward_desc['groupId']]['start_time'] != reward_desc['beginTime'] or \
@@ -120,19 +120,19 @@ def update_mission(mission_table, item_table, rts):
         if reward_desc['rewards']:
             for reward in reward_desc['rewards']:
                 reward_content += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                    name = item_table['items'][reward['id']]['name'].rstrip(),
-                    num = reward['count']
+                    name=item_table['items'][reward['id']]['name'].rstrip(),
+                    num=reward['count']
                 )
         reward_dict[reward_desc['groupId']][
             'content'] += '\n|-\n|reward set {sort_id}\n|{pointCost}\n|{reward_content}'.format(
-            sort_id = reward_desc['sortIndex'],
-            pointCost = reward_desc['periodicalPointCost'],
-            reward_content = reward_content
+            sort_id=reward_desc['sortIndex'],
+            pointCost=reward_desc['periodicalPointCost'],
+            reward_content=reward_content
         )
     count = 1
     for reward_group in reward_dict:
         weekly_text += '\n===奖励列表 {num}===\n'.format(
-            num = count
+            num=count
         )
         count += 1
         weekly_text += table_title + reward_dict[reward_group]['content'] + '\n|}'
@@ -146,17 +146,17 @@ def update_mission(mission_table, item_table, rts):
             if mission_table['missions'][mission]['rewards']:
                 for reward in mission_table['missions'][mission]['rewards']:
                     mission_reward += '{{{{材料消耗|{name}|{num}}}}}'.format(
-                        name = item_table['items'][reward['id']]['name'].rstrip(),
-                        num = reward['count']
+                        name=item_table['items'][reward['id']]['name'].rstrip(),
+                        num=reward['count']
                     )
             if mission_table['missions'][mission]['periodicalPoint'] != 0:
                 mission_reward += 'Point*{}'.format(
                     mission_table['missions'][mission]['periodicalPoint']
                 )
             text = '\n|-\n|{mission_id}\n|{mission_text}\n|{mission_reward}'.format(
-                mission_id = mission_table['missions'][mission]['id'],
-                mission_text = rts.compile(mission_table['missions'][mission]['description']),
-                mission_reward = mission_reward
+                mission_id=mission_table['missions'][mission]['id'],
+                mission_text=rts.compile(mission_table['missions'][mission]['description']),
+                mission_reward=mission_reward
             )
             if 'main_' in mission_table['missions'][mission]['id']:
                 main_text += text
@@ -190,9 +190,9 @@ class Mission(Job):
         content = update_mission(mission_table, item_table, rts)
 
         self.wiki.edit(
-            title = '用户:Seniorious/missions',
-            text = content,
-            summary = 'update'
+            title='用户:Seniorious/missions',
+            text=content,
+            summary='update'
         )
         # print(content)
         print('Updated: {}.'.format('用户:Seniorious/missions'))

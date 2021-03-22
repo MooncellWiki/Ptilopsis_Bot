@@ -3,6 +3,7 @@ from utils.richTextStyles import RichTextStyles
 
 import json
 
+
 class Enemy(Job):
     def _run(self):
         def get_value(idx, v, name, k):
@@ -30,7 +31,7 @@ class Enemy(Job):
 
         enemy_list = self.wiki.category('分类:敌人')
         enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
-        enemy_db_index = {v['Key']:idx for idx, v in enumerate(enemy_database['enemies'])}
+        enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
         for enemy in enemy_handbook_table.values():
             if enemy['name'] in enemy_list:
                 continue
@@ -78,7 +79,9 @@ class Enemy(Job):
                     content += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
                     content += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
                     if lv_data['talentBlackboard']:
-                        content += '\n|天赋=<!--' + json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False) + '-->'
+                        content += '\n|天赋=<!--{}-->'.format(
+                            json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False)
+                        )
                     content += '\n}}'
             content += '\n==敌人模型==\n{{spine}}<references/>{{敌人导航}}'
 
@@ -88,36 +91,35 @@ class Enemy(Job):
             spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
 
             # self.wiki.edit(
-            #     title = enemy['name'],
-            #     text = content,
-            #     summary = 'init',
-            #     bot = None,
-            #     minor = True,
-            #     createonly = '1'
+            #     title=enemy['name'],
+            #     text=content,
+            #     summary='init',
+            #     bot=None,
+            #     minor=True,
+            #     createonly='1'
             # )
             # self.wiki.protect(
-            #     title = enemy['name'],
-            #     protections = 'edit=autoconfirmed|move=sysop',
-            #     reason = 'protect'
+            #     title=enemy['name'],
+            #     protections='edit=autoconfirmed|move=sysop',
+            #     reason='protect'
             # )
             # self.wiki.edit(
-            #     title = enemy['name'] + '/spine',
-            #     text = json.dumps(spine_content, indent=4, ensure_ascii=False),
-            #     summary = 'init',
-            #     bot = None,
-            #     minor = True,
-            #     createonly = '1',
-            #     contentmodel = 'json'
+            #     title=enemy['name'] + '/spine',
+            #     text=json.dumps(spine_content, indent=4, ensure_ascii=False),
+            #     summary='init',
+            #     bot=None,
+            #     minor=True,
+            #     createonly='1',
+            #     contentmodel='json'
             # )
             # self.wiki.protect(
-            #     title = enemy['name'] + '/spine',
-            #     protections = 'edit=autoconfirmed|move=sysop',
-            #     reason = 'protect'
+            #     title=enemy['name'] + '/spine',
+            #     protections='edit=autoconfirmed|move=sysop',
+            #     reason='protect'
             # )
             print(content)
             print(json.dumps(spine_content, indent=4, ensure_ascii=False))
             print('Created: {}.'.format(enemy['name']))
-
 
     def update_data(self):
         enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
@@ -175,10 +177,9 @@ class Enemy(Job):
             new_enemy_table.append(new_data)
 
         self.wiki.edit(
-            title = '敌人一览/数据',
-            text = json.dumps(new_enemy_table, ensure_ascii = False),
-            summary = 'update'
+            title='敌人一览/数据',
+            text=json.dumps(new_enemy_table, ensure_ascii=False),
+            summary='update'
         )
         # print(json.dumps(new_enemy_table, ensure_ascii = False))
         print('Updated: {}.'.format('敌人一览/数据'))
-
