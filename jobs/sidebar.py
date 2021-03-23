@@ -81,7 +81,7 @@ class Sidebar(Job):
     def _run(self):
         pass
 
-    def _run_update(self, old_num):
+    def update(self, old_num):
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
         id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))

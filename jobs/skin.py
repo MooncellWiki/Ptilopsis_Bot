@@ -481,7 +481,7 @@ class Skin(Job):
         update_outfit_brand(self.wiki, skin_table, character_table)
         update_logo_link(self.wiki, skin_table)
 
-    def _run_update(self, skin_list = None):
+    def update(self, skin_list = None):
         character_table = self.getgd('excel/character_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         handbook_info_table = self.getgd('excel/handbook_info_table.json')

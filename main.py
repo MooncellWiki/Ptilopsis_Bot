@@ -40,9 +40,9 @@ if __name__ == '__main__':
 
     if 'new' in sys.argv:
         old_num = 186
-        Basic(wiki, gameData)._run_update(old_num)
+        Basic(wiki, gameData).update(old_num)
         Charword(wiki, gameData).run()
-        Sidebar(wiki, gameData)._run_update(old_num)
+        Sidebar(wiki, gameData).update(old_num)
 
     if 'daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
@@ -59,26 +59,26 @@ if __name__ == '__main__':
         StoryReview(wiki, gameData).run()
 
     if 'skin' in sys.argv:
-        Skin(wiki, gameData)._run_update(skin_list=[])
+        Skin(wiki, gameData).update(skin_list=[])
         Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
         Demand(wiki, gameData).run()
 
     if 'special' in sys.argv:
-        # Furni(wiki, gameData)._run_update()
-        # Charword(wiki, gameData)._run_update()
+        # Furni(wiki, gameData).update()
+        # Charword(wiki, gameData).update()
         # Route(wiki, gameData).run()
         # Formula(wiki, gameData).run()
         # Range(wiki, gameData).run()
-        Basic(wiki, gameData)._run_handbook_update()  # 干员密录
-        Stage(wiki, gameData)._run_memory()  # 悖论模拟
-        # Stage(wiki, gameData)._run_crisis()  # 需crisis_info
-        # Stage(wiki, gameData)._run_campaign()
-        # Stage(wiki, gameData)._run_id('levels/activities')
+        Basic(wiki, gameData).update_handbook()  # 干员密录
+        Stage(wiki, gameData).run_memory()  # 悖论模拟
+        # Stage(wiki, gameData).run_crisis()  # 需crisis_info
+        # Stage(wiki, gameData).run_campaign()
+        # Stage(wiki, gameData).run_id('levels/activities')
 
     if 'jp' in sys.argv:
-        Charword(wiki, gameData)._run_update_jp()
+        Charword(wiki, gameData).update_jp()
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:

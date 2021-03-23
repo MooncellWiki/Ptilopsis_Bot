@@ -4,8 +4,9 @@ from utils.richTextStyles import RichTextStyles
 import re
 import json
 
+
 class Temp(Job):
-    def _run(self):
+    def update_enemyId(self):
         enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
 
         enemys = self.wiki.category('分类:敌人')
@@ -16,16 +17,16 @@ class Temp(Job):
             if enemy_datum['name'] in enemys:
                 old_text = self.wiki.read(enemy_datum['name'])
                 replace_text = '{{{{敌人信息/common\n|id={id}\n|名称={name}\n|index={index}\n'.format(
-                    id = enemy_datum['sortId'],
-                    name = enemy_datum['name'],
-                    index = enemy_datum['enemyIndex']
+                    id=enemy_datum['sortId'],
+                    name=enemy_datum['name'],
+                    index=enemy_datum['enemyIndex']
                 )
-            elif enemy_datum['name']+'(敌方)' in enemys:
-                old_text = self.wiki.read(enemy_datum['name']+'(敌方)')
+            elif enemy_datum['name'] + '(敌方)' in enemys:
+                old_text = self.wiki.read(enemy_datum['name'] + '(敌方)')
                 replace_text = '{{{{敌人信息/common\n|id={id}\n|名称={name}(敌方)\n|显示名={name}\n|index={index}\n'.format(
-                    id = enemy_datum['sortId'],
-                    name = enemy_datum['name'],
-                    index = enemy_datum['enemyIndex']
+                    id=enemy_datum['sortId'],
+                    name=enemy_datum['name'],
+                    index=enemy_datum['enemyIndex']
                 )
             else:
                 print(enemy_datum['name'], '页面未建立.')
@@ -47,14 +48,14 @@ class Temp(Job):
                 # print(new_text)
 
                 # self.wiki.edit(
-                #     title = enemy_datum['name'],
-                #     text = new_text,
-                #     summary = '修正sortId'
+                #     title=enemy_datum['name'],
+                #     text=new_text,
+                #     summary='修正sortId'
                 # )
                 # # print(content)
                 # print('Updated: {}.'.format(enemy_datum['name']))
 
-    def _test(self):
+    def add_stage_drop(self):
         stage_table = self.getgd('excel/stage_table.json')
         roguelike_table = self.getgd('excel/roguelike_table.json')
 
@@ -66,15 +67,15 @@ class Temp(Job):
             if result:
                 stage_id = result.group(1)
                 stage_detail = stage_table['stages'][stage_id]
-                if len(list(filter(lambda x:x['dropType'] in [2,3,4], stage_detail['stageDropInfo']['displayDetailRewards']))) > 0:
+                if len(list(filter(lambda x: x['dropType'] in [2, 3, 4], stage_detail['stageDropInfo']['displayDetailRewards']))) > 0:
                     if content.find('==材料掉落==\n{{关卡材料掉落}}') == -1:
                         if content.find('==注释与链接==') == -1:
                             content = content.replace('{{关卡导航}}', '==注释与链接==\n<references/>\n{{关卡导航}}')
                         content = content.replace('==注释与链接==', '==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==')
                         self.wiki.edit(
-                            title = stage_name,
-                            text = content,
-                            summary = '添加模板:关卡材料掉落'
+                            title=stage_name,
+                            text=content,
+                            summary='添加模板:关卡材料掉落'
                         )
                         # print(content)
                         print('添加: {}.'.format(stage_name))
@@ -87,9 +88,9 @@ class Temp(Job):
                         content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==', '==注释与链接==')
                         content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n\n==注释与链接==', '==注释与链接==')
                         self.wiki.edit(
-                            title = stage_name,
-                            text = content,
-                            summary = '删去模板:关卡材料掉落'
+                            title=stage_name,
+                            text=content,
+                            summary='删去模板:关卡材料掉落'
                         )
                         # print(content)
                         print('删去多余:', stage_name)
@@ -99,9 +100,9 @@ class Temp(Job):
                     if roguelike_table['stages'][sid]['code'] + ' ' + roguelike_table['stages'][sid]['name'] == stage_name:
                         content = content.replace('|关卡类型', '|关卡id={}\n|关卡类型'.format(sid))
                         self.wiki.edit(
-                            title = stage_name,
-                            text = content,
-                            summary = '添加肉鸽关卡stageId'
+                            title=stage_name,
+                            text=content,
+                            summary='添加肉鸽关卡stageId'
                         )
                         # print(content)
                         print('添加肉鸽关卡stageId:', stage_name)
@@ -112,47 +113,12 @@ class Temp(Job):
                     content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==', '==注释与链接==')
                     content = content.replace('==材料掉落==\n{{关卡材料掉落}}\n\n==注释与链接==', '==注释与链接==')
                     self.wiki.edit(
-                        title = stage_name,
-                        text = content,
-                        summary = '删去模板:关卡材料掉落'
+                        title=stage_name,
+                        text=content,
+                        summary='删去模板:关卡材料掉落'
                     )
                     # print(content)
                     print('删去多余:', stage_name)
-
-    def test_power(self):
-        character_table = self.getgd('excel/character_table.json')
-        handbook_team_table = self.getgd('excel/handbook_team_table.json')
-
-        def get_power(k):
-            if k == None:
-                return '-'
-            if k in handbook_team_table:
-                return handbook_team_table[k]['powerName']
-            else:
-                return '?'
-
-        for char_key in character_table:
-            char_info = character_table[char_key]
-            if char_info['profession'] == 'TRAP' or char_info['profession'] == 'TOKEN':
-                continue
-            print('%s: %s/%s/%s' % (char_info['name'], get_power(char_info['nationId']), get_power(char_info['groupId']), get_power(char_info['teamId'])))
-
-    def test_p_name(self):
-        handbook_team_table = self.getgd('excel/handbook_team_table.json')
-
-        content = ''
-
-        for p in handbook_team_table.values():
-            if p['powerName'] == '无团队':
-                continue
-            p_name = f"分类:属于{p['powerName']}的干员"
-            self.wiki.edit(
-                title = p_name,
-                text = content,
-                summary = 'init'
-            )
-            # print(content)
-            print('Created: {}.'.format(p_name))
 
     def test_yinyang(self):
         stage_table = self.getgd('excel/stage_table.json')
@@ -203,5 +169,3 @@ class Temp(Job):
             for tile in level_table['mapData']['tiles']:
                 if tile['effects'] is not None:
                     print(stage_page_name, stage_detail['stageId'], tile['tileKey'], 'effects')
-
-

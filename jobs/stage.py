@@ -788,7 +788,7 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-    def _run_campaign(self):
+    def run_campaign(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
         character_table = self.getgd('excel/character_table.json')
@@ -871,7 +871,7 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-    def _run_crisis(self):
+    def run_crisis(self):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         # 从 crisis_info 读
@@ -922,7 +922,7 @@ class Stage(Job):
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
 
-    def _run_rogue_like(self):
+    def run_rogue_like(self):
         roguelike_table = self.getgd('excel/roguelike_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
@@ -971,7 +971,7 @@ class Stage(Job):
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
 
-    def _run_memory(self):
+    def run_memory(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
         character_table = self.getgd('excel/character_table.json')
@@ -1032,7 +1032,7 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-    def _run_id(self, path):
+    def run_id(self, path):
         if self.gamedata._source() != 'UnpackerCN':
             return
 

@@ -891,7 +891,7 @@ class Basic(Job):
     def _run(self):
         pass
 
-    def _run_update(self, old_num):
+    def update(self, old_num):
         character_table = self.getgd('excel/character_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
@@ -1067,7 +1067,7 @@ class Basic(Job):
 #     write_wiki_minor(se, url, char_detail['name'], fin, '')
 #     print(char_detail['name'] + ' done.')
 
-    def _run_handbook_update(self):
+    def update_handbook(self):
         character_table = self.getgd('excel/character_table.json')
         item_table = self.getgd('excel/item_table.json')
         stories_table = self.getgd('excel/handbook_info_table.json')

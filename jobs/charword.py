@@ -45,7 +45,7 @@ def concat_id(voice_data, char_name, text_jp=''):
     return text
 
 
-def get_charword_data(word_key, file_name, charword_table, text_jp_dict='', title='语音记录'):
+def get_charword_data(word_key, file_name, charword_table, text_jp_dict=None, title='语音记录'):
     char_word = '<noinclude>\n=={}==\n<!--{}-->\n'.format(title, word_key) + \
                 '</noinclude>{{#invoke:VoiceTable|table|表格标题=' + title + \
                 '\n<noinclude>|可播放=1</noinclude>'
@@ -186,7 +186,7 @@ class Charword(Job):
 
         create_charword(self.wiki, char_list, charword_table)
 
-    def _run_update(self):
+    def update(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
 
@@ -194,7 +194,7 @@ class Charword(Job):
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
         update_charword(self.wiki, char_list, charword_table)
 
-    def _run_update_jp(self):
+    def update_jp(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
 

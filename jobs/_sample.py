@@ -10,9 +10,9 @@ class Sample(Job):
         content = ''
 
         self.wiki.edit(
-            title = '',
-            text = content,
-            summary = 'update'
+            title='',
+            text=content,
+            summary='update'
         )
         # print(content)
         print('Updated: {}.'.format(''))

@@ -10,11 +10,11 @@ def update_furni(wiki, building_data, item_table):
         num1 = origin_text.find('|描述=')
         num2 = origin_text.find('|', num1 + 4)
         new_text = origin_text[:num1] + '|描述={}\n'.format(furni_data['description']) + origin_text[num2:]
-        
+
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
-                name = item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
-                number = furni_data['processedProductCount']
+                name=item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
+                number=furni_data['processedProductCount']
             )
         else:
             furni_destroy = '不可分解'
@@ -22,18 +22,18 @@ def update_furni(wiki, building_data, item_table):
         num1 = origin_text.find('|类型=')
         num2 = origin_text.find('|描述=')
         new_text = new_text[:num1] + '|类型={type}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n'.format(
-            type = building_data['customData']['types'][furni_data['type']]['name'],
-            rarity = furni_data['rarity'],
-            comfort = furni_data['comfort'],
-            destroyObtain = furni_destroy,
-            size = str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height'])
+            type=building_data['customData']['types'][furni_data['type']]['name'],
+            rarity=furni_data['rarity'],
+            comfort=furni_data['comfort'],
+            destroyObtain=furni_destroy,
+            size=str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height'])
         ) + new_text[num2:]
 
         if origin_text != new_text:
             wiki.edit(
-                title = furni_data['name'],
-                text = new_text,
-                summary = 'update'
+                title=furni_data['name'],
+                text=new_text,
+                summary='update'
             )
             # print(new_text)
             print('Update: {}.'.format(furni_data['name']))
@@ -66,8 +66,8 @@ def create_furni(wiki, building_data, item_table):
             continue
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
-                name = item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
-                number = furni_data['processedProductCount']
+                name=item_table['items'][furni_data['processedProductId']]['name'].rstrip(),
+                number=furni_data['processedProductCount']
             )
         else:
             furni_destroy = '不可分解'
@@ -85,35 +85,35 @@ def create_furni(wiki, building_data, item_table):
             individual_furni.append('{{{{家具|{}}}}}'.format(furni_data['name']))
 
         furni_info = furni_format.format(
-            name = furni_data['name'],
-            id = furni_data['id'],
-            type = building_data['customData']['types'][furni_data['type']]['name'],
-            rarity = furni_data['rarity'],
-            comfort = furni_data['comfort'],
-            destroyObtain = furni_destroy,
-            size = str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height']),
-            description = furni_data['description'],
-            usage = furni_data['usage'],
-            obtainApproach = furni_data['obtainApproach'],
-            themes = themes,
-            groups = groups
+            name=furni_data['name'],
+            id=furni_data['id'],
+            type=building_data['customData']['types'][furni_data['type']]['name'],
+            rarity=furni_data['rarity'],
+            comfort=furni_data['comfort'],
+            destroyObtain=furni_destroy,
+            size=str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height']),
+            description=furni_data['description'],
+            usage=furni_data['usage'],
+            obtainApproach=furni_data['obtainApproach'],
+            themes=themes,
+            groups=groups
         )
 
         wiki.edit(
-            title = furni_data['name'],
-            text = furni_info,
-            summary = 'init'
+            title=furni_data['name'],
+            text=furni_info,
+            summary='init'
         )
         # print(furni_info)
         print('Created: {}.'.format(furni_data['name']))
 
     if individual_furni != []:
         wiki.edit(
-            title = '首页/新增单件',
-            text = ''.join(individual_furni),
-            summary = 'update',
-            bot = None,
-            minor = True
+            title='首页/新增单件',
+            text=''.join(individual_furni),
+            summary='update',
+            bot=None,
+            minor=True
         )
         # print(''.join(individual_furni))
         print('Updated: {}.'.format('首页/新增单件'))
@@ -161,7 +161,7 @@ def create_themes(wiki, building_data):
         if themesData['name'] in themes_list:
             continue
         # if themesData['name'] != '快捷连锁披萨店':
-            # continue
+        # continue
 
         groupsContent = ''
         quickSetupFurni = ''
@@ -183,9 +183,9 @@ def create_themes(wiki, building_data):
             quickFurniComfort = quickFurniComfort * min(6, quickSetupDict[quickFurniId])
             furniComfort += quickFurniComfort
             quickSetupFurni += '\n|-\n|[[{name}]]\n|{count}\n|{comfort}'.format(
-                name = building_data['customData']['furnitures'][quickFurniId]['name'],
-                count = quickSetupDict[quickFurniId],
-                comfort = quickFurniComfort
+                name=building_data['customData']['furnitures'][quickFurniId]['name'],
+                count=quickSetupDict[quickFurniId],
+                comfort=quickFurniComfort
             )
             if quickSetupDict[quickFurniId] > 6:
                 quickSetupFurni += '<ref name=注"{}">相同家具只有前6件能够获得氛围</ref>'.format(refId)
@@ -198,55 +198,55 @@ def create_themes(wiki, building_data):
             if themes in groups:
                 groupsData = building_data['customData']['groups'][groups]
                 groupsContent += '\n\'\'\'{name}\'\'\'\n'.format(
-                    name = groupsData['name']
+                    name=groupsData['name']
                 )
                 groupsComfort += groupsData['comfort']
                 quickSetupGroups += '\n|-\n|{name}\n|{count}\n|{comfort}'.format(
-                    name = groupsData['name'],
-                    count = groupsData['count'],
-                    comfort = groupsData['comfort']
+                    name=groupsData['name'],
+                    count=groupsData['count'],
+                    comfort=groupsData['comfort']
                 )
                 for groupFurni in groupsData['furniture']:
                     groupsContent += '{{{{家具|{name}}}}}'.format(
-                        name = building_data['customData']['furnitures'][groupFurni]['name']
+                        name=building_data['customData']['furnitures'][groupFurni]['name']
                     )
 
         totalComfort = furniComfort + groupsComfort
 
         themesContent = themes_info.format(
-            themesName = building_data['customData']['themes'][themes]['name'].replace('/', ''),
-            description = building_data['customData']['themes'][themes]['desc'],
-            quickSetupFurni = quickSetupFurni,
-            furniComfort = furniComfort,
-            quickSetupGroups = quickSetupGroups,
-            groupsComfort = groupsComfort,
-            totalComfort = totalComfort,
-            groupsContent = groupsContent,
-            refContent = refContent
+            themesName=building_data['customData']['themes'][themes]['name'].replace('/', ''),
+            description=building_data['customData']['themes'][themes]['desc'],
+            quickSetupFurni=quickSetupFurni,
+            furniComfort=furniComfort,
+            quickSetupGroups=quickSetupGroups,
+            groupsComfort=groupsComfort,
+            totalComfort=totalComfort,
+            groupsContent=groupsContent,
+            refContent=refContent
         )
 
         new_theme.append('{{{{家具主题|{name}}}}}'.format(
-            name = themesData['name'].replace('/', '')
+            name=themesData['name'].replace('/', '')
         ))
 
         wiki.edit(
-            title = themesData['name'],
-            text = themesContent,
-            summary = 'init',
-            createonly = True,
-            bot = None,
-            minor = True
+            title=themesData['name'],
+            text=themesContent,
+            summary='init',
+            createonly=True,
+            bot=None,
+            minor=True
         )
         # print(themesContent)
         print('Created: {}.'.format(themesData['name']))
 
     if new_theme != []:
         wiki.edit(
-            title = '首页/新增主题',
-            text = ' '.join(new_theme),
-            summary = 'update',
-            bot = None,
-            minor = True
+            title='首页/新增主题',
+            text=' '.join(new_theme),
+            summary='update',
+            bot=None,
+            minor=True
         )
         # print(' '.join(new_theme))
         print('Updated: {}.'.format('首页/新增主题'))
@@ -260,7 +260,7 @@ class Furni(Job):
         create_themes(self.wiki, building_data)
         create_furni(self.wiki, building_data, item_table)
 
-    def _run_update(self):
+    def update(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
 
