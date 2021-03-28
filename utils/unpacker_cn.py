@@ -17,8 +17,7 @@ class UnpackerCN:
         self.config = config['serverList']['cn']
         with open('./version.json', 'r') as f:
             self.res_version = json.load(f)['cn']['resVersion']
-        with open('./UnpackerCN/hot_update_list.json', 'r') as f:
-            self.hot_update_list = json.load(f)
+        self.hot_update_list = {'abInfos':[]}
         print('Current local CN version:', self.res_version)
 
     def check_update(self):
@@ -54,8 +53,6 @@ class UnpackerCN:
         ret = requests.get("{}assets/{}/hot_update_list.json".format(self.config['url'], res_version),
             headers = self.ua).json()
         self.hot_update_list = ret
-        with open('./UnpackerCN/hot_update_list.json', 'w') as f:
-            json.dump(ret, f, indent = 4)
         return ret
 
     def get_ab(self, path):
