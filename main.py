@@ -37,6 +37,9 @@ if __name__ == '__main__':
             if not gameData.unpacker.check_update():
                 print('No version update. Program exit.')
                 exit()
+        if '--check-global' in sys.argv:
+            gameData.unpacker.check_version_global()
+            exit()
 
     if 'new' in sys.argv:
         old_num = 186

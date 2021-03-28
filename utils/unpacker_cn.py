@@ -15,6 +15,7 @@ class UnpackerCN:
     def __init__(self, config):
         self.ua = {'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 6.0.1; vivo X9L Build/MMB29M)'}
         self.config = config['serverList']['cn']
+        self.config_global = config['serverList']
         with open('./version.json', 'r') as f:
             self.res_version = json.load(f)['cn']['resVersion']
         self.hot_update_list = {'abInfos':[]}
@@ -41,11 +42,32 @@ class UnpackerCN:
         self.res_version = ret['resVersion']
 
         with open('./version.json', 'r') as f:
-            ori_ver = json.load(f)
-        ori_ver['cn'] = ret
+            version = json.load(f)
+        version['cn']['resVersion'] = ret['resVersion']
+        version['cn']['clientVersion'] = ret['clientVersion']
         with open('./version.json', 'w') as f:
-            json.dump(ori_ver, f, indent = 4)
+            json.dump(version, f, indent = 4)
         return ret['resVersion']
+
+    @retry(stop_max_attempt_number=3)
+    def check_version_global(self):
+        with open('./version.json', 'r') as f:
+            version = json.load(f)
+        for region in self.config_global:
+            url = self.config_global[region]['baseUrl'] + 'version'
+            ret = requests.get(url, headers = self.ua).json()
+            version[region]['resVersion'] = ret['resVersion']
+            version[region]['clientVersion'] = ret['clientVersion']
+            print(self.config_global[region]['updateMsg'].format(ret['clientVersion'], ret['resVersion']))
+
+            url = self.config_global[region]['baseUrl'].replace('Android/', 'network_config')
+            ret = requests.get(url, headers = self.ua).json()
+            network_config = json.loads(ret['content'])
+            if network_config['funcVer'] != version[region]['funcVer']:
+                print(f"{region.upper()} server network config update to {network_config['funcVer']}")
+                version[region]['funcVer'] = network_config['funcVer']
+        with open('./version.json', 'w') as f:
+            json.dump(version, f, indent = 4)
 
     @retry(stop_max_attempt_number = 3)
     def get_update_list(self):
