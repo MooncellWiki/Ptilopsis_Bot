@@ -4,8 +4,17 @@ from utils.job import Job
 def update_furni(wiki, building_data, item_table):
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
+        page_name = furni_data['name']
+        if page_name in ['轻薄地毯']:
+            themes = ''
+            for groupsId in building_data['customData']['groups']:
+                groupsData = building_data['customData']['groups'][groupsId]
+                if furni_data['id'] in groupsData['furniture']:
+                    themes = building_data['customData']['themes'][groupsData['themeId']]['name']
+                    break
+            page_name += f'({themes})'
 
-        origin_text = wiki.read(furni_data['name'])
+        origin_text = wiki.read(page_name)
 
         num1 = origin_text.find('|描述=')
         num2 = origin_text.find('|', num1 + 4)
@@ -31,14 +40,14 @@ def update_furni(wiki, building_data, item_table):
 
         if origin_text != new_text:
             wiki.edit(
-                title=furni_data['name'],
+                title=page_name,
                 text=new_text,
                 summary='update'
             )
             # print(new_text)
-            print('Update: {}.'.format(furni_data['name']))
+            print('Update: {}.'.format(page_name))
         else:
-            print('Same: {}.'.format(furni_data['name']))
+            print('Same: {}.'.format(page_name))
 
 
 def create_furni(wiki, building_data, item_table):
@@ -62,7 +71,7 @@ def create_furni(wiki, building_data, item_table):
 
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
-        if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯']:
+        if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯', '轻薄地毯']:
             continue
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
