@@ -162,7 +162,11 @@ class UnpackerCN:
         iv = key[16:]
         key = key[0:16]
         cipher = AES.new(iv=iv, key=key, mode=AES.MODE_CBC)
-        decrypted = bytearray(unpad(cipher.decrypt(data), 16, 'pkcs7')[16:])
+        # decrypted = bytearray(unpad(cipher.decrypt(data), 16, 'pkcs7')[16:])
+        # for i in range(16):
+        #     decrypted[i] ^= iv[i]
+        decrypted = bytearray(cipher.decrypt(data)[16:])
         for i in range(16):
             decrypted[i] ^= iv[i]
+        decrypted = unpad(decrypted, 16, 'pkcs7')
         return decrypted

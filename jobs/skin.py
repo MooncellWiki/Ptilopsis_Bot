@@ -56,16 +56,18 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
 
         origin_text = wiki.read(char_detail['name'])
         num1 = origin_text.find('\n|精英0描述')
-        num2 = origin_text.find('==获得方式==')
+        # num2 = origin_text.find('==获得方式==')
+        num2 = origin_text.find('\n}}\n')
         origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'].strip() if char_id in handbook_info_table['handbookDict'] else ''
         skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
-        new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
-        skin_data.append('1={name}:skin={count}'.format(
-            name = char_detail['name'],
-            count = count
-        ))
+        # new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
+        new_text = origin_text[:num1] + skin_info[:-2] + origin_text[num2+1:]
 
         if origin_text != new_text:
+            skin_data.append('1={name}:skin={count}'.format(
+                name = char_detail['name'],
+                count = count
+            ))
             wiki.edit(
                 title = char_detail['name'],
                 text = new_text,

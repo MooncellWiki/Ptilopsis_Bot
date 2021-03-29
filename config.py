@@ -22,7 +22,7 @@ config = {
                 "luaSign": True,
                 "url": "https://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
                 "baseUrl": "http://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ"
+                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             },
             "us": {
                 "folder": "en_US",
@@ -31,7 +31,7 @@ config = {
                 "luaSign": True,
                 "url": "https://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
                 "baseUrl": "http://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ"
+                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             },
             "kr": {
                 "folder": "ko_KR",
@@ -40,7 +40,7 @@ config = {
                 "luaSign": True,
                 "url": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
                 "baseUrl": "http://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ"
+                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             },
             "tw": {
                 "folder": "zh_TW",
@@ -49,9 +49,13 @@ config = {
                 "luaSign": True,
                 "url": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
                 "baseUrl": "http://akcdn.imtxwy.com/assetbundle/official/Android/",
-                "chatMask": "8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ"
+                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
             }
         }
     },
+    "chatMaskList": [
+        'UITpAi82pHAWwnzqHRMCwPonJLIB3WCl',
+        '8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ'
+    ],
     "repo": "https://github.com/Kengxxiao/ArknightsGameData.git"
 }

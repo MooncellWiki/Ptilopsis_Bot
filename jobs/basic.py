@@ -1073,12 +1073,13 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
+        memory_list = self.wiki.category('分类:拥有干员密录的干员')
         for char_key in character_table:
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-
-            origin_text = self.wiki.read(char_detail['name'])
+            if char_detail['name'] in memory_list:
+                continue
 
             handbook_avg = get_handbook_avg(char_detail, stories_table, char_key)
             handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table)
