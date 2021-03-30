@@ -39,7 +39,7 @@ if __name__ == '__main__':
             print('No version update. Program exit.')
             exit()
     elif '--check-jp' in sys.argv:
-        if gameData.unpacker.check_update('JP') or gameData.unpacker.check_update('US') == False:
+        if not gameData.unpacker.check_update('JP') and not gameData.unpacker.check_update('US'):
             print('No version update. Program exit.')
             exit()
     elif '--check-global' in sys.argv:
