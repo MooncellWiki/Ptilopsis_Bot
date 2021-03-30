@@ -198,8 +198,8 @@ class Charword(Job):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
 
-        character_table_jp = self.getgd('excel/character_table.json', 'jp')
-        charword_table_jp = self.getgd('excel/charword_table.json', 'jp')
+        character_table_jp = self.getgd('excel/character_table.json', 'JP')
+        charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
 
         if 'wordKey' in charword_table_jp['char_002_amiya_CN_001']:
             print('Need update!')

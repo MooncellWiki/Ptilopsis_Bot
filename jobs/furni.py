@@ -12,7 +12,7 @@ def update_furni(wiki, building_data, item_table):
                 if furni_data['id'] in groupsData['furniture']:
                     themes = building_data['customData']['themes'][groupsData['themeId']]['name']
                     break
-            page_name += f'({themes})'
+            page_name += f'（{themes}）'
 
         origin_text = wiki.read(page_name)
 

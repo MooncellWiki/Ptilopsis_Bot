@@ -18,11 +18,11 @@ def get_charword_data_jp(char_id, char_name, charword_table, charword_table_jp):
                 text_jp = charword_table_jp[charword_id]['voiceText']
                 text_jp = text_jp.replace('{@nickname}', '{{DrName}}')
                 char_word += '|标题{id}={title}\n|日文{id}={text_jp}\n|中文{id}={text_cn}\n|语音{id}={voice}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav'
+                    id=charword_table[charword_id]['voiceIndex'],
+                    title=charword_table[charword_id]['voiceTitle'],
+                    text_cn=text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    text_jp=text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    voice=char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav'
                 )
             elif charword_table[charword_id]['unlockType'] == 'AWAKE':
                 text = charword_table[charword_id]['voiceText']
@@ -31,12 +31,12 @@ def get_charword_data_jp(char_id, char_name, charword_table, charword_table_jp):
                 text_jp = charword_table_jp[charword_id]['voiceText']
                 text_jp = text_jp.replace('{@nickname}', '{{DrName}}')
                 char_word += '|标题{id}={title}\n|日文{id}={text_jp}\n|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = charword_table[charword_id]['lockDescription'].replace('以查看更多信息', '以查看')
+                    id=charword_table[charword_id]['voiceIndex'],
+                    title=charword_table[charword_id]['voiceTitle'],
+                    text_cn=text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    text_jp=text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    voice=char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
+                    unlock_condition=charword_table[charword_id]['lockDescription'].replace('以查看更多信息', '以查看')
                 )
             elif charword_table[charword_id]['unlockType'] == 'FAVOR':
                 text = charword_table[charword_id]['voiceText']
@@ -45,12 +45,12 @@ def get_charword_data_jp(char_id, char_name, charword_table, charword_table_jp):
                 text_jp = charword_table_jp[charword_id]['voiceText']
                 text_jp = text_jp.replace('{@nickname}', '{{DrName}}')
                 char_word += '|标题{id}={title}\n|日文{id}={text_jp}\n|中文{id}={text_cn}\n|语音{id}={voice}\n|条件{id}={unlock_condition}\n'.format(
-                    id = charword_table[charword_id]['voiceIndex'],
-                    title = charword_table[charword_id]['voiceTitle'],
-                    text_cn = text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    text_jp = text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
-                    voice = char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
-                    unlock_condition = replace_story_condition(charword_table[charword_id]['lockDescription'],
+                    id=charword_table[charword_id]['voiceIndex'],
+                    title=charword_table[charword_id]['voiceTitle'],
+                    text_cn=text.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    text_jp=text_jp.rstrip().replace('~~~', '<nowiki>~~~</nowiki>'),
+                    voice=char_name + ' ' + charword_table[charword_id]['voiceTitle'] + '.wav',
+                    unlock_condition=replace_story_condition(charword_table[charword_id]['lockDescription'],
                         charword_table[charword_id]['unlockParam'][0]['valueInt']).replace('以查看更多信息', '以查看')
                 )
     char_word += '}}'
@@ -66,6 +66,7 @@ def replace_story_condition(text, num):
     return text
 
 
+# out of date
 def update_charword_jp(wiki, character_table, charword_table, character_table_jp, charword_table_jp):
     for char in character_table_jp:
         char_detail = character_table[char]
@@ -81,9 +82,9 @@ def update_charword_jp(wiki, character_table, charword_table, character_table_jp
         if origin_text != new_text:
             # print(new_text)
             wiki.edit(
-                title = char_detail['name'] + '/语音记录',
-                text = new_text,
-                summary = 'update',
+                title=char_detail['name'] + '/语音记录',
+                text=new_text,
+                summary='update',
             )
             print('Update: {}.'.format(char_detail['name'] + '/语音记录'))
         else:
@@ -124,8 +125,7 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
 
         num1 = new_text.find('|干员名={}'.format(char_detail['name']))
         num2 = new_text.find('|干员外文名=')
-        new_text = new_text[:num1] + '|干员名={}\n'.format(char_detail['name']) + '|干员名jp={}\n'.format(name_jp) + new_text[
-        num2:]
+        new_text = new_text[:num1] + '|干员名={}\n'.format(char_detail['name']) + '|干员名jp={}\n'.format(name_jp) + new_text[num2:]
 
         num1 = new_text.find('{{pathnav2|干员一览}}')
         new_text = '{{{{干员页面名|{}|{}|{}}}}}'.format(char_detail['name'], name_en, name_jp) + new_text[num1:]
@@ -134,9 +134,9 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
         if origin_text != new_text:
             # print(new_text)
             wiki.edit(
-                title = char_detail['name'],
-                text = new_text,
-                summary = 'update',
+                title=char_detail['name'],
+                text=new_text,
+                summary='update',
             )
             print('Update: {}.'.format(char_detail['name']))
         else:
@@ -145,10 +145,10 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
         if char_detail['name'] != name_jp:
             redirect_text = '#redirect [[{}]]'.format(char_detail['name'])
             wiki.edit(
-                title = name_jp,
-                text = redirect_text,
-                summary = 'init',
-                createonly = '1'
+                title=name_jp,
+                text=redirect_text,
+                summary='init',
+                createonly='1'
             )
 
 
@@ -161,7 +161,16 @@ def update_furni_info(wiki, building_data, building_data_jp, building_data_en):
         furni_data_jp = building_data_jp['customData']['furnitures'][furni]
         furni_data_en = building_data_en['customData']['furnitures'][furni]
 
-        origin_text = wiki.read(furni_data_cn['name'])
+        page_name = furni_data_cn['name']
+        if page_name in ['轻薄地毯']:
+            themes = ''
+            for groupsId in building_data['customData']['groups']:
+                groupsData = building_data['customData']['groups'][groupsId]
+                if furni_data_cn['id'] in groupsData['furniture']:
+                    themes = building_data['customData']['themes'][groupsData['themeId']]['name']
+                    break
+            page_name += f'（{themes}）'
+        origin_text = wiki.read(page_name)
         new_text = origin_text
 
         # update info
@@ -180,13 +189,13 @@ def update_furni_info(wiki, building_data, building_data_jp, building_data_en):
         if origin_text != new_text:
             # print(new_text)
             wiki.edit(
-                title = furni_data_cn['name'],
-                text = new_text,
-                summary = 'update',
+                title=page_name,
+                text=new_text,
+                summary='update',
             )
-            print('Update: {}.'.format(furni_data_cn['name']))
+            print('Update: {}.'.format(page_name))
         else:
-            print('Same: {}.'.format(furni_data_cn['name']))
+            print('Same: {}.'.format(page_name))
 
 
 class UpdateJp(Job):
@@ -196,15 +205,15 @@ class UpdateJp(Job):
         charword_table = self.getgd('excel/charword_table.json')
         building_data = self.getgd('excel/building_data.json')
 
-        character_table_jp = self.getgd('excel/character_table.json', 'jp')
-        skill_table_jp = self.getgd('excel/skill_table.json', 'jp')
-        charword_table_jp = self.getgd('excel/charword_table.json', 'jp')
-        building_data_jp = self.getgd('excel/building_data.json', 'jp')
+        character_table_jp = self.getgd('excel/character_table.json', 'JP')
+        skill_table_jp = self.getgd('excel/skill_table.json', 'JP')
+        charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
+        building_data_jp = self.getgd('excel/building_data.json', 'JP')
 
-        character_table_en = self.getgd('excel/character_table.json', 'us')
-        skill_table_en = self.getgd('excel/skill_table.json', 'us')
-        charword_table_en = self.getgd('excel/charword_table.json', 'us')
-        building_data_en = self.getgd('excel/building_data.json', 'us')
+        character_table_en = self.getgd('excel/character_table.json', 'US')
+        skill_table_en = self.getgd('excel/skill_table.json', 'US')
+        charword_table_en = self.getgd('excel/charword_table.json', 'US')
+        building_data_en = self.getgd('excel/building_data.json', 'US')
 
         # update_charword_jp(self.wiki, character_table, charword_table, character_table_jp, charword_table_jp)
         update_skill_and_name(self.wiki, character_table, skill_table, character_table_jp, skill_table_jp,

@@ -77,7 +77,7 @@ def update_story_review(gamedata, story_review_table, character_table, building_
         for story in story_review_table[event]['infoUnlockDatas']:
             if story['storyInfo']:
                 try:
-                    story_info = gamedata.get_txt('story/[uc]' + story['storyInfo'] + '.txt', 'cn').rstrip().replace(
+                    story_info = gamedata.get_txt('story/[uc]' + story['storyInfo'] + '.txt', 'CN').rstrip().replace(
                         '\n', '<br/>')
                 except:
                     print('路径名错误：', 'story/[uc]' + story['storyInfo'] + '.txt')

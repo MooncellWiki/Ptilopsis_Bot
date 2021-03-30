@@ -1033,7 +1033,7 @@ class Stage(Job):
             print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_id(self, path):
-        if self.gamedata._source() != 'UnpackerCN':
+        if self.gamedata._source() != 'Unpacker':
             return
 
         character_table = self.getgd('excel/character_table.json')
@@ -1045,7 +1045,7 @@ class Stage(Job):
                 stage_id_list.append('levels/' + s['levelId'].lower() + '.json')
 
         filelist = []
-        base_dir = './UnpackerCN/gameData/'
+        base_dir = './Unpacker/gameData/'
         def get_files(curr_path):
             if os.path.isfile(os.path.join(base_dir, curr_path)):
                 filelist.append(curr_path)

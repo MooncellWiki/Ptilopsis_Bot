@@ -1,9 +1,9 @@
 import sys
 import json
 from config import config
-from utils.data_local import GameData
+from utils.data import GameData
 from utils.wiki import Wiki
-from utils.unpacker_cn import UnpackerCN
+from utils.unpacker import Unpacker
 
 # from jobs.route import Route
 # from jobs.gacha import Gacha
@@ -25,7 +25,7 @@ if __name__ == '__main__':
                 ('dev' if '-dev' in sys.argv else 'product'))
     # gameData = GameData(config = config, source = 'ArknightsGameData')
     # gameData = GameData(config = config, source = 'UnpackerData')
-    gameData = GameData(config = config, source = 'UnpackerCN')
+    gameData = GameData(config = config, source = 'Unpacker')
 
     # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding = 'utf-8') as f:
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))

@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 from config import config
 from jobs.activity import Activity
@@ -9,37 +9,32 @@ from jobs.char_attr import CharAttr
 from jobs.charword import Charword
 from jobs.demand import Demand
 from jobs.enemy import Enemy
-from jobs.furni import Furni
 from jobs.formula import Formula
+from jobs.furni import Furni
 from jobs.item import Item
 from jobs.medal import Medal
 from jobs.mission import Mission
-from jobs.route import Route
 from jobs.range import Range
+from jobs.route import Route
 from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
 from jobs.story_review import StoryReview
 from jobs.update_jp import UpdateJp
 from jobs.weedy import Weedy
-from utils.data_local import GameData
+from utils.data import GameData
 from utils.wiki import Wiki
 
 if __name__ == '__main__':
-    wiki = Wiki(config['api_url'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
-    if '--git-repo' in sys.argv:
-        gameData = GameData(config=config, source='ArknightsGameData')
-    else:
-        gameData = GameData(config=config, source='UnpackerCN')
-        # gameData = GameData(config=config, source='ArknightsGameData')
-        # gameData = GameData(config=config, source='UnpackerData')
-        if '--check' in sys.argv:
-            if not gameData.unpacker.check_update():
-                print('No version update. Program exit.')
-                exit()
-        if '--check-global' in sys.argv:
-            gameData.unpacker.check_version_global()
+    wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
+    gameData = GameData(config=config, source='Unpacker')
+    if '--check' in sys.argv:
+        if not gameData.unpacker.check_update():
+            print('No version update. Program exit.')
             exit()
+    if '--check-global' in sys.argv:
+        gameData.unpacker.check_all_update()
+        exit()
 
     if 'new' in sys.argv:
         old_num = 186
@@ -78,7 +73,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
-        # Stage(wiki, gameData).run_id('levels/activities')
+        Stage(wiki, gameData).run_id('levels/activities')
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()

@@ -1,61 +1,51 @@
 config = {
-    'api_url': 'http://prts.wiki/api.php',
+    'apiUrl': 'http://prts.wiki/api.php',
     'username': 'botPtilopsis',
     'password': 'netVyc-3zurba-vupcow',
-    # 'source': 'unpacker',
-    'source': 'repo',
-    'unpacker': {
-        "serverList": {
-            "cn": {
-                "folder": "zh_CN",
-                "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
-                "tableSign": True,
-                "luaSign": True,
-                "url": "https://ak-hu.hycdn.cn/assetbundle/official/Android/",
-                "baseUrl": "https://ak-conf.hypergryph.com/config/prod/official/Android/",
-                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-            },
-            "jp": {
-                "folder": "ja_JP",
-                "updateMsg": "[JP UPDATE] Client:{0} Data:{1}",
-                "tableSign": True,
-                "luaSign": True,
-                "url": "https://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
-                "baseUrl": "http://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-            },
-            "us": {
-                "folder": "en_US",
-                "updateMsg": "[EN UPDATE] Client:{0} Data:{1}",
-                "tableSign": True,
-                "luaSign": True,
-                "url": "https://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
-                "baseUrl": "http://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-            },
-            "kr": {
-                "folder": "ko_KR",
-                "updateMsg": "[KR UPDATE] Client:{0} Data:{1}",
-                "tableSign": True,
-                "luaSign": True,
-                "url": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
-                "baseUrl": "http://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
-                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-            },
-            "tw": {
-                "folder": "zh_TW",
-                "updateMsg": "[TC UPDATE] Client:{0} Data:{1}",
-                "tableSign": False,
-                "luaSign": True,
-                "url": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
-                "baseUrl": "http://akcdn.imtxwy.com/assetbundle/official/Android/",
-                "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-            }
+    "serverList": {
+        "CN": {
+            "folder": "zh_CN",
+            "files": "gamedata",
+            "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
+            "resUrl": "https://ak-hu.hycdn.cn/assetbundle/official/Android/",
+            "configUrl": "https://ak-conf.hypergryph.com/config/prod/official/",
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+        },
+        "JP": {
+            "folder": "ja_JP",
+            "files": "gamedata/excel",
+            "updateMsg": "[JP UPDATE] Client:{0} Data:{1}",
+            "resUrl": "https://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
+            "configUrl": "http://ark-jp-static-online.yo-star.com/assetbundle/official/",
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+        },
+        "US": {
+            "folder": "en_US",
+            "files": "gamedata/excel",
+            "updateMsg": "[US UPDATE] Client:{0} Data:{1}",
+            "resUrl": "https://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
+            "configUrl": "http://ark-us-static-online.yo-star.com/assetbundle/official/",
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+        },
+        "KR": {
+            "folder": "ko_KR",
+            "files": "gamedata/excel",
+            "updateMsg": "[KR UPDATE] Client:{0} Data:{1}",
+            "resUrl": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
+            "configUrl": "http://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/",
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+        },
+        "TW": {
+            "folder": "zh_TW",
+            "files": "gamedata/excel",
+            "updateMsg": "[TW UPDATE] Client:{0} Data:{1}",
+            "resUrl": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
+            "configUrl": "http://akcdn.imtxwy.com/assetbundle/official/",
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         }
     },
     "chatMaskList": [
         'UITpAi82pHAWwnzqHRMCwPonJLIB3WCl',
         '8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ'
-    ],
-    "repo": "https://github.com/Kengxxiao/ArknightsGameData.git"
+    ]
 }
