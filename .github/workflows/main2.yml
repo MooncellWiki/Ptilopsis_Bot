@@ -25,4 +25,3 @@ jobs:
         git config --global user.email "1054329447@aq.com"
         git config --global user.name "Seniorious0"
         python main.py --check-jp --remote jp
-

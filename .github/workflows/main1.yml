@@ -25,5 +25,6 @@ jobs:
     - name: update-cn
       run: |
         pip install -r requirements.txt
+        git config --global user.email "1054329447@aq.com"
+        git config --global user.name "Seniorious0"
         python main.py --check --remote
-

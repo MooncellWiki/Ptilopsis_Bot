@@ -30,7 +30,6 @@ if __name__ == '__main__':
     if '--remote' in sys.argv:
         conf_remote = config
         conf_remote['version'] = 'version_remote.json'
-        conf_remote['serverList']['CN']['configUrl'] = 'https://ak-hu.hycdn.cn/assetbundle/official/'
         gameData = GameData(config=conf_remote, source='Unpacker')
     else:
         gameData = GameData(config=config, source='Unpacker')
@@ -39,7 +38,9 @@ if __name__ == '__main__':
             print('No version update. Program exit.')
             exit()
     elif '--check-jp' in sys.argv:
-        if not gameData.unpacker.check_update('JP') and not gameData.unpacker.check_update('US'):
+        sign1 = gameData.unpacker.check_update('JP')
+        sign2 = gameData.unpacker.check_update('US')
+        if not sign1 and not sign2:
             print('No version update. Program exit.')
             exit()
     elif '--check-global' in sys.argv:
