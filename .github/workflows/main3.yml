@@ -1,15 +1,14 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: main
+name: weedy
 
 on:
   # push:
   #   branches: [ master ]
   # schedule:
   #   - cron: '1,10 20 * * *'
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   push:

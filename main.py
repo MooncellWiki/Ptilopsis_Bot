@@ -73,7 +73,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
-        Stage(wiki, gameData).run_id('levels/activities')
+        # Stage(wiki, gameData).run_id('levels/activities')
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()
