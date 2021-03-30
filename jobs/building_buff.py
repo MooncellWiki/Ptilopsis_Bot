@@ -66,14 +66,20 @@ class BuildingBuff(Job):
         building_data = self.getgd('excel/building_data.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        content = get_building_buff(building_data, rts)
+        origin_text = self.wiki.read('后勤技能一览')
+        flag = origin_text.find('==控制中枢==')
+        head = origin_text[:flag].rstrip()
+        content = head + '\n' + get_building_buff(building_data, rts).rstrip()
 
-        self.wiki.edit(
-            title = '后勤技能一览',
-            text = content,
-            summary = 'update',
-            bot = None,
-            minor = True
-        )
-        # print(content)
-        print('Updated: {}.'.format('后勤技能一览'))
+        if content != origin_text:
+            self.wiki.edit(
+                title = '后勤技能一览',
+                text = content,
+                summary = 'update',
+                bot = None,
+                minor = True
+            )
+            # print(content)
+            print('Update: {}.'.format('后勤技能一览'))
+        else:
+            print('Same: {}.'.format('后勤技能一览'))
