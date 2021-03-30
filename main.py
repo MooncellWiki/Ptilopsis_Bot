@@ -30,7 +30,7 @@ if __name__ == '__main__':
     if '--remote' in sys.argv:
         conf_remote = config
         conf_remote['version'] = 'version_remote.json'
-        conf_remote['serverList']['CN']['configUrl'] = 'https://ak-hu.hycdn.cn/assetbundle/official'
+        conf_remote['serverList']['CN']['configUrl'] = 'https://ak-hu.hycdn.cn/assetbundle/official/'
         gameData = GameData(config=conf_remote, source='Unpacker')
     else:
         gameData = GameData(config=config, source='Unpacker')
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         # Stage(wiki, gameData).run_id('levels/activities')
 
     if 'jp' in sys.argv:
-        # Charword(wiki, gameData).update_jp()
+        Charword(wiki, gameData).update_jp()
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
