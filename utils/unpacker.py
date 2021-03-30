@@ -1,7 +1,6 @@
 import io
 import json
 import os
-import time
 import zipfile
 import hashlib
 import requests
@@ -47,8 +46,6 @@ class Unpacker:
             version = json.load(f)
         # version
         url = self.config[region]['configUrl'] + 'Android/version'
-        # if region == 'CN' and self.version_dir == 'version_remote.json':
-        #     url = f"https://ak-hu.hycdn.cn/assetbundle/official/Android/version?sign={int(time.time())}"
         ret1 = requests.get(url, headers=self.ua).json()
         version[region]['resVersion'] = ret1['resVersion']
         version[region]['clientVersion'] = ret1['clientVersion']

@@ -9,8 +9,8 @@ name: main-cn
 on:
  # push:
  #   branches: [ master ]
-  # schedule:
-  #   - cron: '0-30/10 8 * * *'
+   schedule:
+     - cron: '0-30/10 8 * * *'
   workflow_dispatch:
 
 jobs:
@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
         git config --global user.email "1054329447@aq.com"
         git config --global user.name "Seniorious0"
-        python main.py --check --remote
+        python main.py --check --remote new daily
