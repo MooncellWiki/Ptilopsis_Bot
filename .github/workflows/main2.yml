@@ -22,5 +22,5 @@ jobs:
     - name: update-jp
       run: |
         pip install -r requirements.txt
-        python main.py jp
+        python main.py --remote jp
 
