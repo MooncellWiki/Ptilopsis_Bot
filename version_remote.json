@@ -1,0 +1,27 @@
+{
+    "CN": {
+        "resVersion": "21-03-11-14-04-07-710103",
+        "clientVersion": "1.4.01",
+        "funcVer": "V017"
+    },
+    "JP": {
+        "resVersion": "",
+        "clientVersion": "1.7.10",
+        "funcVer": "V013"
+    },
+    "US": {
+        "resVersion": "",
+        "clientVersion": "1.7.10",
+        "funcVer": "V013"
+    },
+    "KR": {
+        "resVersion": "",
+        "clientVersion": "1.7.10",
+        "funcVer": "V013"
+    },
+    "TW": {
+        "resVersion": "",
+        "clientVersion": "1.2.50",
+        "funcVer": "V011"
+    }
+}

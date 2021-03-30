@@ -2,6 +2,7 @@ config = {
     'apiUrl': 'http://prts.wiki/api.php',
     'username': 'botPtilopsis',
     'password': 'netVyc-3zurba-vupcow',
+    'version': 'version.json',
     "serverList": {
         "CN": {
             "folder": "zh_CN",

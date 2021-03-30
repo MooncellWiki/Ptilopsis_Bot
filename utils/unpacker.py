@@ -14,7 +14,8 @@ class Unpacker:
     def __init__(self, config, region='CN'):
         self.ua = {'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 6.0.1; vivo X9L Build/MMB29M)'}
         self.config = config['serverList']
-        with open('./version.json', 'r') as f:
+        self.version_dir = config['version']
+        with open(self.version_dir, 'r') as f:
             self.version = json.load(f)
         print(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
@@ -41,7 +42,7 @@ class Unpacker:
 
     @retry(stop_max_attempt_number=3)
     def get_version(self, region='CN'):
-        with open('./version.json', 'r') as f:
+        with open(self.version_dir, 'r') as f:
             version = json.load(f)
         # version
         url = self.config[region]['configUrl'] + 'Android/version'
@@ -57,7 +58,7 @@ class Unpacker:
         version[region]['funcVer'] = ret2['funcVer']
 
         self.version = version
-        with open('./version.json', 'w') as f:
+        with open(self.version_dir, 'w') as f:
             json.dump(version, f, indent=4)
         return ret1['resVersion']
 

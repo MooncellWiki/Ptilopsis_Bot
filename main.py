@@ -27,12 +27,18 @@ from utils.wiki import Wiki
 
 if __name__ == '__main__':
     wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config=config, source='Unpacker')
+    if '--remote' in sys.argv:
+        conf_remote = config
+        conf_remote['version'] = 'version_remote.json'
+        # conf_remote['serverList']['CN']['configUrl'] = 'https://ak-hu.hycdn.cn/assetbundle/official'
+        gameData = GameData(config=conf_remote, source='Unpacker')
+    else:
+        gameData = GameData(config=config, source='Unpacker')
     if '--check' in sys.argv:
         if not gameData.unpacker.check_update():
             print('No version update. Program exit.')
             exit()
-    if '--check-global' in sys.argv:
+    elif '--check-global' in sys.argv:
         gameData.unpacker.check_all_update()
         exit()
 
@@ -76,8 +82,13 @@ if __name__ == '__main__':
         # Stage(wiki, gameData).run_id('levels/activities')
 
     if 'jp' in sys.argv:
-        Charword(wiki, gameData).update_jp()
+        # Charword(wiki, gameData).update_jp()
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
         Weedy(wiki, gameData).run()
+
+    if '--remote' in sys.argv:
+        os.system('git add .')
+        os.system('git commit -m "remote update"')
+        os.system('git push')
