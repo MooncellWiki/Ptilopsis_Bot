@@ -76,7 +76,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
                 minor = True
             )
             # print(new_text)
-            print('Update: {}.'.format(char_detail['name']))
+            print('Updated: {}.'.format(char_detail['name']))
         else:
             print('Same: {}.'.format(char_detail['name']))
 
@@ -88,7 +88,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         minor = True
     )
     # print(','.join(skin_data))
-    print('Update: {}.'.format('首页/亮点干员/新增皮肤/数据'))
+    print('Updated: {}.'.format('首页/亮点干员/新增皮肤/数据'))
 
 
 def update_randomFig(wiki, character_table, skin_table):
@@ -123,7 +123,7 @@ def update_randomFig(wiki, character_table, skin_table):
         summary = 'update'
     )
     # print(fin)
-    print('Update: {}.'.format('模板:随机干员立绘'))
+    print('Updated: {}.'.format('模板:随机干员立绘'))
 
 
 def update_skin_handbook(wiki, character_table, skin_table):
@@ -208,7 +208,7 @@ def update_skin_handbook(wiki, character_table, skin_table):
         summary = 'update'
     )
     # print(handbook)
-    print('Update: {}.'.format('用户:Seniorious/skins'))
+    print('Updated: {}.'.format('用户:Seniorious/skins'))
 
 
 def update_outfit_gallery(wiki, skin_table, character_table):
@@ -292,8 +292,8 @@ def update_outfit_gallery(wiki, skin_table, character_table):
         summary = 'update'
     )
     # print(fin)
-    # print('Update: {}.'.format('用户:Seniorious/gallery'))
-    print('Update: {}.'.format('模板:时装回廊'))
+    # print('Updated: {}.'.format('用户:Seniorious/gallery'))
+    print('Updated: {}.'.format('模板:时装回廊'))
 
 
 def update_outfit_brand(wiki, skin_table, character_table):
@@ -449,9 +449,9 @@ def update_outfit_brand(wiki, skin_table, character_table):
             )
             # print(content)
             if flag_new:
-                print('Create: {}.'.format('时装回廊/' + brand))
+                print('Created: {}.'.format('时装回廊/' + brand))
             else:
-                print('Update: {}.'.format('时装回廊/' + brand))
+                print('Updated: {}.'.format('时装回廊/' + brand))
 
 
 def update_logo_link(wiki, skin_table):

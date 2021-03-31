@@ -80,6 +80,6 @@ class BuildingBuff(Job):
                 minor = True
             )
             # print(content)
-            print('Update: {}.'.format('后勤技能一览'))
+            print('Updated: {}.'.format('后勤技能一览'))
         else:
             print('Same: {}.'.format('后勤技能一览'))
