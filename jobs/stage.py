@@ -734,7 +734,7 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
@@ -810,7 +810,7 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
@@ -892,7 +892,7 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
@@ -935,7 +935,7 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
@@ -989,7 +989,7 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'] + '.json')
+                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
@@ -1045,7 +1045,7 @@ class Stage(Job):
                 stage_id_list.append('levels/' + s['levelId'].lower() + '.json')
 
         filelist = []
-        base_dir = './Unpacker/gameData/'
+        base_dir = './Unpacker/zh_CN/gameData/'
         def get_files(curr_path):
             if os.path.isfile(os.path.join(base_dir, curr_path)):
                 filelist.append(curr_path)
@@ -1060,7 +1060,7 @@ class Stage(Job):
             if file.lower() in stage_id_list:
                 print(stage_id, 'already in stage_table. Pass.')
                 continue
-            level_table = self.getgd(file)
+            level_table = self.getgd(file.lower())
             
             stage_data = '\n{{普通关卡信息\n'
             stage_data += '|关卡代号={}\n'.format('—')
