@@ -80,11 +80,11 @@ if __name__ == '__main__':
         # Route(wiki, gameData).run()
         # Formula(wiki, gameData).run()
         # Range(wiki, gameData).run()
-        Basic(wiki, gameData).update_handbook()  # 干员密录
-        Stage(wiki, gameData).run_memory()  # 悖论模拟
+        # Basic(wiki, gameData).update_handbook()  # 干员密录
+        # Stage(wiki, gameData).run_memory()  # 悖论模拟
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
-        # Stage(wiki, gameData).run_id('levels/activities')
+        Stage(wiki, gameData).run_id('levels/activities/act17d7')
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()

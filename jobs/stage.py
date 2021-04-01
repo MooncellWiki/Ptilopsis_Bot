@@ -309,7 +309,10 @@ def analyze_tile(level_table, stage_tile_info):
         return ''
     content = '|特殊地形效果=<!--'
     for tile in tile_blackboard_dict:
-        content += '\n' + stage_tile_info[tile]['name'] + ':'
+        if tile in stage_tile_info:
+            content += '\n' + stage_tile_info[tile]['name'] + ':'
+        else:
+            content += '\n' + tile + ':'
         for b in tile_blackboard_dict[tile]:
             content += '\n\t'
             for k in b:
