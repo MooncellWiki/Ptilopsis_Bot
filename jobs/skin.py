@@ -50,7 +50,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         char_detail = character_table[char_id]
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
-        if skin_list and char_detail['name'] not in skin_list:
+        if skin_list != None and char_detail['name'] not in skin_list:
             # if char_detail['name'] != '芙蓉':
             continue
 
@@ -80,15 +80,16 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         else:
             print('Same: {}.'.format(char_detail['name']))
 
-    wiki.edit(
-        title = '首页/亮点干员/新增皮肤/数据',
-        text = ','.join(skin_data),
-        summary = 'update',
-        bot = None,
-        minor = True
-    )
-    # print(','.join(skin_data))
-    print('Updated: {}.'.format('首页/亮点干员/新增皮肤/数据'))
+    if skin_data != [] and skin_list != None:
+        wiki.edit(
+            title = '首页/亮点干员/新增皮肤/数据',
+            text = ','.join(skin_data),
+            summary = 'update',
+            bot = None,
+            minor = True
+        )
+        # print(','.join(skin_data))
+        print('Updated: {}.'.format('首页/亮点干员/新增皮肤/数据'))
 
 
 def update_randomFig(wiki, character_table, skin_table):
@@ -483,7 +484,7 @@ class Skin(Job):
         update_outfit_brand(self.wiki, skin_table, character_table)
         update_logo_link(self.wiki, skin_table)
 
-    def update(self, skin_list = None):
+    def update(self, skin_list=None):
         character_table = self.getgd('excel/character_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         handbook_info_table = self.getgd('excel/handbook_info_table.json')
