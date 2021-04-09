@@ -90,35 +90,35 @@ class Enemy(Job):
             spine_content['name'] = f'{enemy["name"]}'
             spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
 
-            # self.wiki.edit(
-            #     title=enemy['name'],
-            #     text=content,
-            #     summary='init',
-            #     bot=None,
-            #     minor=True,
-            #     createonly='1'
-            # )
-            # self.wiki.protect(
-            #     title=enemy['name'],
-            #     protections='edit=autoconfirmed|move=sysop',
-            #     reason='protect'
-            # )
-            # self.wiki.edit(
-            #     title=enemy['name'] + '/spine',
-            #     text=json.dumps(spine_content, indent=4, ensure_ascii=False),
-            #     summary='init',
-            #     bot=None,
-            #     minor=True,
-            #     createonly='1',
-            #     contentmodel='json'
-            # )
-            # self.wiki.protect(
-            #     title=enemy['name'] + '/spine',
-            #     protections='edit=autoconfirmed|move=sysop',
-            #     reason='protect'
-            # )
-            print(content)
-            print(json.dumps(spine_content, indent=4, ensure_ascii=False))
+            self.wiki.edit(
+                title=enemy['name'],
+                text=content,
+                summary='init',
+                bot=None,
+                minor=True,
+                createonly='1'
+            )
+            self.wiki.protect(
+                title=enemy['name'],
+                protections='edit=autoconfirmed|move=sysop',
+                reason='protect'
+            )
+            self.wiki.edit(
+                title=enemy['name'] + '/spine',
+                text=json.dumps(spine_content, indent=4, ensure_ascii=False),
+                summary='init',
+                bot=None,
+                minor=True,
+                createonly='1',
+                contentmodel='json'
+            )
+            self.wiki.protect(
+                title=enemy['name'] + '/spine',
+                protections='edit=autoconfirmed|move=sysop',
+                reason='protect'
+            )
+            # print(content)
+            # print(json.dumps(spine_content, indent=4, ensure_ascii=False))
             print('Created: {}.'.format(enemy['name']))
 
     def update_data(self):
@@ -183,3 +183,8 @@ class Enemy(Job):
         )
         # print(json.dumps(new_enemy_table, ensure_ascii = False))
         print('Updated: {}.'.format('敌人一览/数据'))
+
+    def update_summary(self):
+        enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
+        enemy_database = self.getgd('levels/enemydata/enemy_database.json')
+        pass
