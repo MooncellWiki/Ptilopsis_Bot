@@ -126,6 +126,12 @@ class Enemy(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
         new_enemy_table = []
 
+        enemy_list = self.wiki.category('分类:敌人')
+        override_list = []
+        for e in enemy_list:
+            if '(敌方)' in e:
+                override_list.append(e.replace('(敌方)', ''))
+
         for enemy_data in enemy_handbook_table.values():
             attack_info = enemy_data['attackType']
             new_data = {
@@ -134,6 +140,7 @@ class Enemy(Job):
                 # 'enemyTags': enemy_data['enemyTags'],
                 'sortId': enemy_data['sortId'],
                 'name': enemy_data['name'],
+                'enemyLink': enemy_data['name'],
                 'enemyRace': enemy_data['enemyRace'],
                 'enemyLevel': enemy_data['enemyLevel'],
                 # 'description': enemy_data['description'],
@@ -147,6 +154,9 @@ class Enemy(Job):
                 # 'isInvalidKilled': enemy_data['isInvalidKilled'],
                 # 'overrideKillCntInfos': enemy_data['overrideKillCntInfos'],
             }
+            # 链接
+            if new_data['enemyLink'] in override_list:
+                new_data['enemyLink'] += '(敌方)'
             # 种族
             if new_data['enemyRace'] is None:
                 new_data['enemyRace'] = '其他'
