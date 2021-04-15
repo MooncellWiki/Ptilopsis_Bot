@@ -328,6 +328,8 @@ def get_skill_list(char_detail, skill_table, rts):
                 skill_description = replace_key(replace_upper(skill_description))
                 skill_description = skill_description.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(
                     ':0.0}', '}')
+                if skill_data['skillId'] == 'skchr_zebra_1':
+                    skill_dic['duration'] = skill_data['levels'][level_id]['duration']
                 skill_description = skill_description.format(**skill_dic)
                 skill_description = rts.compile(skill_description)
 
@@ -913,7 +915,7 @@ class Basic(Job):
                 continue
             if char_detail['name'] in id_table:
                 if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['絮雨']:
+                # if char_detail['name'] not in ['惊蛰','空','地灵','炎狱炎熔']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
@@ -1011,7 +1013,7 @@ class Basic(Job):
             # num2 = origin_text.find('==攻击范围==')
             # new_text = origin_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
             
-            # num1 = origin_text.find('|团队=')
+            # num1 = origin_text.find('|情报编号=')
             # num2 = origin_text.find('|位置=')
             # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
             #     displayNumber = char_detail['displayNumber'],
@@ -1025,7 +1027,7 @@ class Basic(Job):
             #     self.wiki.edit(
             #         title = char_detail['name'],
             #         text = new_text,
-            #         summary = 'update'
+            #         summary = '更新干员势力'
             #     )
             #     # print(new_text)
             #     print('Updated: {}.'.format(char_detail['name']))

@@ -47,6 +47,7 @@ def update_yellow(wiki):
             '%Y-%m-%d %H:%M')
     )
 
+    print(f"当期6星: {good_list[0]['displayName']}    当期5星: {good_list[1]['displayName']}")
     wiki.edit(
         title = '高级凭证区',
         text = content,
