@@ -3,6 +3,8 @@ from utils.richTextStyles import RichTextStyles
 
 import re
 import json
+import csv
+import io
 
 
 class Temp(Job):
@@ -169,3 +171,10 @@ class Temp(Job):
             for tile in level_table['mapData']['tiles']:
                 if tile['effects'] is not None:
                     print(stage_page_name, stage_detail['stageId'], tile['tileKey'], 'effects')
+
+    def test_id(self):
+        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        reader = csv.DictReader(io.StringIO(id_csv))
+        for row in reader:
+            id_table[row['name']] = { 'id': row['sortId'], 'approach': row['approach'], 'date': row['date']}
+        print(id_table)

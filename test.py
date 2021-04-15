@@ -2,7 +2,7 @@ import json
 import sys
 
 from config import config
-# from jobs._temp import Temp
+from jobs._temp import Temp
 # from jobs.basic import Basic
 # from jobs.charword import Charword
 # from jobs.route import Route
@@ -15,7 +15,7 @@ from utils.unpacker import Unpacker
 from utils.wiki import Wiki
 
 if __name__ == '__main__':
-    wiki = Wiki(config['api_url'], config['username'], config['password'],
+    wiki = Wiki(config['apiUrl'], config['username'], config['password'],
                 ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config=config, source='Unpacker')
 
@@ -34,6 +34,7 @@ if __name__ == '__main__':
     # Temp(wiki, gameData).test_yinyang()
     # Basic(wiki, gameData)._run_update(old_num=178)
     # Charword(wiki, gameData)._run_update_jp()
+    Temp(wiki, gameData).test_id()
 
     # up = Unpacker(config['unpacker'])
     # up.get_all_ab()

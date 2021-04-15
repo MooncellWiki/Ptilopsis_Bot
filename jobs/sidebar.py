@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import re
 
@@ -84,7 +86,11 @@ class Sidebar(Job):
     def update(self, old_num):
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
-        id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
+        # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
+        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        reader = csv.DictReader(io.StringIO(id_csv))
+        for row in reader:
+            id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
         character_table = self.getgd('excel/character_table.json')
         update_menusidebar(self.wiki, old_num, id_table, character_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)

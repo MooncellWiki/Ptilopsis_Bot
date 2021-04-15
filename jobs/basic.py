@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import re
 import os
@@ -904,7 +906,11 @@ class Basic(Job):
         gamedata_const = self.getgd('excel/gamedata_const.json')
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
-        id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
+        # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
+        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        reader = csv.DictReader(io.StringIO(id_csv))
+        for row in reader:
+            id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         update_token_page = False
@@ -1035,15 +1041,15 @@ class Basic(Job):
             #     print('Same: {}.'.format(char_detail['name']))
 
             # f_wiki = open('old.txt', 'w')
-            # num1 = origin_text.find('==干员档案==')
-            # num2 = origin_text.find('==语音记录==')
-            # # num1 = origin_text.find('==技能==')
-            # # num2 = origin_text.find('==后勤技能==')
+            # # num1 = origin_text.find('==干员档案==')
+            # # num2 = origin_text.find('==语音记录==')
+            # num1 = origin_text.find('==技能==')
+            # num2 = origin_text.find('==后勤技能==')
             # f_wiki.write(origin_text[num1:num2])
             # f_wiki.close()
             # f_new = open('new.txt', 'w')
-            # f_new.write('==干员档案==\n{}\n'.format(stories_list))
-            # # f_new.write('==技能=={}'.format(skill_list))
+            # # f_new.write('==干员档案==\n{}\n'.format(stories_list))
+            # f_new.write('==技能=={}\n'.format(skill_list))
             # f_new.close()
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')
