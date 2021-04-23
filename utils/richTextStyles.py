@@ -16,7 +16,7 @@ class RichTextStyles:
                 self.richTextStyles[s] = temp.replace('<color=', "{{color|").replace('>{0}</color>', '|')
         for k in self.termDescriptionDict_t:
             temp2 = self.termDescriptionDict_t[k]
-            self.termDescriptionDict[k] = f"{{{{术语释义|术语={temp2['termName']}|"
+            self.termDescriptionDict[k] = f"{{{{术语|术语={temp2['termName']}|"
 
     def tran1(self, matched):
         code = matched.group(1)[2:-1]

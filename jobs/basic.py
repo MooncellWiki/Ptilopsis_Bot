@@ -331,7 +331,7 @@ def get_skill_list(char_detail, skill_table, rts):
                 skill_description = skill_description.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(
                     ':0.0}', '}')
                 if skill_data['skillId'] == 'skchr_zebra_1':
-                    skill_dic['duration'] = skill_data['levels'][level_id]['duration']
+                    skill_dic['duration'] = int(skill_data['levels'][level_id]['duration'])
                 skill_description = skill_description.format(**skill_dic)
                 skill_description = rts.compile(skill_description)
 
@@ -921,7 +921,7 @@ class Basic(Job):
                 continue
             if char_detail['name'] in id_table:
                 if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['惊蛰','空','地灵','炎狱炎熔']:
+                # if char_detail['name'] not in ['异客']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
