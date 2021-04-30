@@ -117,6 +117,7 @@ def update_charword(wiki, char_list, charword_table):
                 d = {k: v for k, v in result_jp}
                 new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = d, title = title)
             else:
+                print(char_name, 'no wordkey found.')
                 new_text += get_charword_data(k, file_name, charword_table)
             new_text += '\n'
 
@@ -141,14 +142,34 @@ def update_charword(wiki, char_list, charword_table):
 def update_charword_jp(wiki, char_list, charword_table, charword_table_jp):
     for char_id, char_name in char_list:
         key_list = word_key_list(char_id, charword_table)
+        # 处理阿米娅升变
+        if char_id == 'char_1001_amiya2':
+            key_list.append('char_1001_amiya2')
+        if char_id == 'char_002_amiya':
+            key_list.remove('char_1001_amiya2')
         if key_list == []:
             continue
 
         origin_text = wiki.read(char_name + '/语音记录')
-        text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
-            filter(lambda x: x['charId'] == char_id, charword_table_jp.values())}
-        new_text = get_charword_data(char_id, char_name, charword_table, text_jp_dict = text_jp_dict)
-        new_text += '\n<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
+        origin_text += '=='
+        new_text = ''
+        for k in key_list:
+            file_name = char_name
+            if k != char_id:
+                file_name = k.replace(char_id, char_name).replace('#', '-')
+            result = re.search(r'<!--{}-->([\s\S]*?)=='.format(k), origin_text)
+            if result:
+                title = re.search(r'\|表格标题=(.*)', result.group(1)).group(1).rstrip()
+                text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
+                    filter(lambda x: x['wordKey'] == k, charword_table_jp.values())}
+                new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = text_jp_dict, title = title)
+            else:
+                text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
+                    filter(lambda x: x['wordKey'] == k, charword_table_jp.values())}
+                new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = text_jp_dict)
+            new_text += '\n'
+        origin_text = origin_text[:-2]
+        new_text += '<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
 
         if origin_text != new_text:
             wiki.edit(
@@ -200,15 +221,6 @@ class Charword(Job):
 
         character_table_jp = self.getgd('excel/character_table.json', 'JP')
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
-
-        if 'wordKey' in charword_table_jp['char_002_amiya_CN_001']:
-            print('Need update!')
-            self.wiki.edit(
-                title = '用户:Seniorious',
-                appendtext = '\n日服语音更新',
-                summary = '',
-            )
-            exit()
 
         char_list = []
         for char_id in character_table_jp:

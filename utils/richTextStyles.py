@@ -19,17 +19,17 @@ class RichTextStyles:
             self.termDescriptionDict[k] = f"{{{{术语|术语={temp2['termName']}|"
 
     def tran1(self, matched):
-        code = matched.group(1)[2:-1]
+        code = matched.group(1)
         return self.richTextStyles[code.lower()]
 
     def tran2(self, matched):
-        code = matched.group(1)[2:-1]
+        code = matched.group(1)
         return self.termDescriptionDict[code]
 
     def compile(self, s):
-        pattern = re.compile('(<@[^>]*>)')
+        pattern = re.compile('<@([^>]*)>')
         t = re.sub(pattern, self.tran1, s)
-        pattern = re.compile('(<\$[^>]*>)')
+        pattern = re.compile('<\$([^>]*)>')
         t = re.sub(pattern, self.tran2, t)
         t = t.replace('</>', '}}')
         return t

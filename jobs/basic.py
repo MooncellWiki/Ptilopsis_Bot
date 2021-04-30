@@ -102,6 +102,7 @@ def get_phases_data(char_detail):
     blockCnt_2 = -1
     cost_data = ''
     block_data = ''
+    cost = 0
     for phases_num in range(len(char_detail['phases'])):
         if phases_num == 0:
             blockCnt = char_detail['phases'][phases_num]['attributesKeyFrames'][0]['data']['blockCnt']
@@ -288,78 +289,83 @@ def get_potential_list(char_detail):
     return potential_list
 
 
+def get_skill_text(skill_table, skill_id, rts):
+    if skill_id not in skill_table:
+        print('skillId {} not found'.format(skill_id))
+        return ''
+    skill_data = skill_table[skill_id]
+    skill_text = '{{{{技能\n|技能名={skill_name}\n|技能类型1={type1}{type2}'.format(
+        skill_name=skill_data['levels'][0]['name'],
+        type1=trans_sp_type(skill_data['levels'][0]['spData']['spType']),
+        type2=trans_skill_type(skill_data['levels'][0]['skillType'])
+    )
+    if skill_data['levels'][0]['rangeId']:
+        skill_text += '\n|技能范围={skill_range}'.format(skill_range=skill_data['levels'][0]['rangeId'])
+        for i in skill_data['levels']:
+            if i['rangeId'] != skill_data['levels'][0]['rangeId']:
+                print('技能 {} 范围随等级变化'.format(skill_data['levels'][0]['name']))
+                break
+    for idx, level_data in enumerate(skill_data['levels']):
+        skill_dic = {}
+        for i in level_data['blackboard']:
+            k = i['key'].replace('.', '').replace(']', '').replace('[', '')
+            if i['value'] != int(i['value']):
+                skill_dic[k] = i['value']
+            else:
+                skill_dic[k] = int(i['value'])
+        skill_description = level_data['description'].replace('-{-', '{').replace('{-', '{').replace('\\n', '<br/>')
+        skill_description = replace_key(replace_upper(skill_description))
+        skill_description = skill_description.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(
+            ':0.0}', '}')
+        # 处理暴雨1技能缺失的duration
+        if skill_data['skillId'] == 'skchr_zebra_1':
+            skill_dic['duration'] = int(level_data['duration'])
+        skill_description = skill_description.format(**skill_dic)
+        skill_description = rts.compile(skill_description)
+
+        if level_data['duration'] == 0 or level_data['duration'] == -1:
+            skill_duration = ''
+        elif level_data['duration'] == int(level_data['duration']):
+            skill_duration = str(int(level_data['duration']))
+        else:
+            skill_duration = str(level_data['duration'])
+        if idx >= 7:
+            skill_num = '专精' + str(idx - 6)
+        else:
+            skill_num = str(idx + 1)
+        skill_text += '\n|技能{num}描述={desc}\n|技能{num}初始={initSp}\n|技能{num}消耗={spCost}\n|技能{num}持续={duration}'.format(
+            num=skill_num,
+            desc=skill_description,
+            initSp=level_data['spData']['initSp'],
+            spCost=level_data['spData']['spCost'],
+            duration=skill_duration
+        )
+    skill_text += '\n}}'
+    return skill_text
+
+
 def get_skill_list(char_detail, skill_table, rts):
-    # skill_list = '{{技能\n'
-
-    # if char_detail['skills']:
-    #     for skill_id in range(len(char_detail['skills'])):
-    #         skill_list += '|技能'+ str(skill_id+1) + '=' + skill_table[char_detail['skills'][skill_id]['skillId']]['levels'][0]['name'] +'\n'
-    #         skill_list += '|技能'+ str(skill_id+1) + '条件=' + get_tal_condition(0,char_detail['skills'][skill_id]['unlockCond']['phase'],char_detail['skills'][skill_id]['unlockCond']['level']) +'\n'
-    # skill_list += '}}'
-
     skill_list = ''
-
     if char_detail['skills']:
         for skill_id in range(len(char_detail['skills'])):
             if char_detail['skills'][skill_id]['skillId'] == None:
                 continue
-            skill_data = skill_table[char_detail['skills'][skill_id]['skillId']]
-            skill_list += '\n\'\'\'技能{num}（{skill_cond}开放）\'\'\'\n{{{{技能\n|技能名={skill_name}\n|技能类型1={type1}{type2}'.format(
+            skill_list += '\n\'\'\'技能{num}（{skill_cond}开放）\'\'\'\n'.format(
                 num = skill_id + 1,
                 skill_cond = get_tal_condition(0, char_detail['skills'][skill_id]['unlockCond']['phase'],
-                    char_detail['skills'][skill_id]['unlockCond']['level']),
-                skill_name = skill_data['levels'][0]['name'],
-                type1 = trans_sp_type(skill_data['levels'][0]['spData']['spType']),
-                type2 = trans_skill_type(skill_data['levels'][0]['skillType'])
+                    char_detail['skills'][skill_id]['unlockCond']['level'])
             )
-            if skill_data['levels'][0]['rangeId']:
-                skill_list += '\n|技能范围={skill_range}'.format(skill_range = skill_data['levels'][0]['rangeId'])
-                for i in skill_data['levels']:
-                    if i['rangeId'] != skill_data['levels'][0]['rangeId']:
-                        print('技能{}范围随等级变化'.format(skill_id + 1))
-                        break
-            for level_id in range(len(skill_table[char_detail['skills'][skill_id]['skillId']]['levels'])):
-                skill_dic = {}
-                for i in skill_data['levels'][level_id]['blackboard']:
-                    if i['value'] != int(i['value']):
-                        skill_dic[i['key'].replace('.', '').replace(']', '').replace('[', '')] = i['value']
-                    else:
-                        skill_dic[i['key'].replace('.', '').replace(']', '').replace('[', '')] = int(i['value'])
-                skill_description = skill_data['levels'][level_id]['description'].replace('-{-', '{').replace('{-',
-                    '{').replace('\\n', '<br/>')
-                skill_description = replace_key(replace_upper(skill_description))
-                skill_description = skill_description.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(
-                    ':0.0}', '}')
-                if skill_data['skillId'] == 'skchr_zebra_1':
-                    skill_dic['duration'] = int(skill_data['levels'][level_id]['duration'])
-                skill_description = skill_description.format(**skill_dic)
-                skill_description = rts.compile(skill_description)
-
-                if skill_data['levels'][level_id]['duration'] == 0 or skill_data['levels'][level_id]['duration'] == -1:
-                    skill_duration = ''
-                elif skill_data['levels'][level_id]['duration'] == int(skill_data['levels'][level_id]['duration']):
-                    skill_duration = str(int(skill_data['levels'][level_id]['duration']))
-                else:
-                    skill_duration = str(skill_data['levels'][level_id]['duration'])
-                if level_id >= 7:
-                    skill_num = '专精' + str(level_id - 6)
-                else:
-                    skill_num = str(level_id + 1)
-                skill_list += '\n|技能{num}描述={desc}\n|技能{num}初始={initSp}\n|技能{num}消耗={spCost}\n|技能{num}持续={duration}'.format(
-                    num = skill_num,
-                    desc = skill_description,
-                    initSp = skill_data['levels'][level_id]['spData']['initSp'],
-                    spCost = skill_data['levels'][level_id]['spData']['spCost'],
-                    duration = skill_duration
-                )
-            skill_list += '\n}}'
+            try:
+                skill_list += get_skill_text(skill_table, char_detail['skills'][skill_id]['skillId'], rts)
+            except:
+                skill_list += ''
+                print(f"{char_detail['name']}技能{skill_id + 1}解析出错")
     else:
         skill_list = '\n该干员没有技能'
-
     return skill_list
 
 
-def get_token_info(wiki, char_detail, update_token_page, character_table):
+def get_token_info(wiki, char_detail, update_token_page, character_table, skill_table, rts):
     if char_detail['tokenKey'] == None:
         return ''
     token_info = '\n==召唤物信息==\n{{{{参阅|{token_name}|该持有者的召唤物}}}}'.format(
@@ -413,6 +419,23 @@ def get_token_info(wiki, char_detail, update_token_page, character_table):
             baseAttackTime = token_detail['phases'][0]['attributesKeyFrames'][1]['data']['baseAttackTime'],
             tauntLevel = token_detail['phases'][0]['attributesKeyFrames'][1]['data']['tauntLevel']
         )
+        skill_list, id_count = '\n==召唤物技能==', 0
+        if token_detail['skills']:
+            for skill_data in token_detail['skills']:
+                if skill_data['skillId'] == None:
+                    continue
+                id_count += 1
+                skill_list += '\n\'\'\'技能{num}（{skill_cond}开放）\'\'\'\n'.format(
+                    num=id_count,
+                    skill_cond=get_tal_condition(0, skill_data['unlockCond']['phase'],
+                                                   skill_data['unlockCond']['level']))
+                try:
+                    skill_list += get_skill_text(skill_table, skill_data['skillId'], rts)
+                except:
+                    skill_list += ''
+                    print(f"召唤物{token_detail['name']}技能解析出错")
+        if id_count > 0:
+            token_page += skill_list
         token_page += '\n==召唤物模型==\n{{spine}}'
 
         if update_token_page == True:
@@ -921,7 +944,7 @@ class Basic(Job):
                 continue
             if char_detail['name'] in id_table:
                 if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['异客']:
+                # if char_detail['name'] not in ['稀音','霜华','夕']:
                     continue
             else:
                 print('Unknown Character: {}.'.format(char_detail['name']))
@@ -934,7 +957,7 @@ class Basic(Job):
             talent_list = get_talent_list(char_detail, rts)
             potential_list = get_potential_list(char_detail)
             skill_list = get_skill_list(char_detail, skill_table, rts)
-            token_info = get_token_info(self.wiki, char_detail, update_token_page, character_table)
+            token_info = get_token_info(self.wiki, char_detail, update_token_page, character_table, skill_table, rts)
             building_skill = get_building_skill(building_data, char_key)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
