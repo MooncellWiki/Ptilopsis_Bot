@@ -218,4 +218,4 @@ class UpdateJp(Job):
         # update_charword_jp(self.wiki, character_table, charword_table, character_table_jp, charword_table_jp)
         update_skill_and_name(self.wiki, character_table, skill_table, character_table_jp, skill_table_jp,
             character_table_en, skill_table_en)
-        update_furni_info(self.wiki, building_data, building_data_jp, building_data_en)
+        # update_furni_info(self.wiki, building_data, building_data_jp, building_data_en)

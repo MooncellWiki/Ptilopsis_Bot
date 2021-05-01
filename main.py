@@ -48,7 +48,7 @@ if __name__ == '__main__':
         exit()
 
     if 'new' in sys.argv:
-        old_num = 189
+        old_num = 193
         Basic(wiki, gameData).update(old_num)
         Charword(wiki, gameData).run()
         Sidebar(wiki, gameData).update(old_num)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run()
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
-        # Enemy(wiki, gameData).run()
+        Enemy(wiki, gameData).run()
         Enemy(wiki, gameData).update_data()
 
         Activity(wiki, gameData).run()
