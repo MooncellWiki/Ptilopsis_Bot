@@ -5,13 +5,15 @@ def update_furni(wiki, building_data, item_table):
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
         page_name = furni_data['name']
-        if page_name in ['轻薄地毯']:
+        if page_name in duplicate_list:
             themes = ''
             for groupsId in building_data['customData']['groups']:
                 groupsData = building_data['customData']['groups'][groupsId]
                 if furni_data['id'] in groupsData['furniture']:
                     themes = building_data['customData']['themes'][groupsData['themeId']]['name']
                     break
+            if themes == '':
+                themes = '散件'
             page_name += f'（{themes}）'
 
         origin_text = wiki.read(page_name)
@@ -71,7 +73,7 @@ def create_furni(wiki, building_data, item_table):
 
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
-        if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯', '轻薄地毯']:
+        if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯']:
             continue
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
@@ -108,13 +110,23 @@ def create_furni(wiki, building_data, item_table):
             groups=groups
         )
 
+        if furni_data['name'] in duplicate_list:
+            if themes == '':
+                themes = '散件'
+            page_name = furni_data['name'] + f"（{themes}）"
+            if page_name in furni_list:
+                continue
+            furni_info = furni_info[:-2] + '|重指定=1\n}}'
+        else:
+            page_name = furni_data['name']
+
         wiki.edit(
-            title=furni_data['name'],
+            title=page_name,
             text=furni_info,
             summary='init'
         )
         # print(furni_info)
-        print('Created: {}.'.format(furni_data['name']))
+        print('Created: {}.'.format(page_name))
 
     if individual_furni != []:
         wiki.edit(
@@ -261,6 +273,9 @@ def create_themes(wiki, building_data):
         print('Updated: {}.'.format('首页/新增主题'))
 
 
+duplicate_list = ['轻薄地毯', '松软沙发']
+
+
 class Furni(Job):
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
@@ -268,9 +283,23 @@ class Furni(Job):
 
         create_themes(self.wiki, building_data)
         create_furni(self.wiki, building_data, item_table)
+        self.check_duplicate()
 
     def update(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
 
         update_furni(self.wiki, building_data, item_table)
+
+    def check_duplicate(self):
+        building_data = self.getgd('excel/building_data.json')
+
+        furni_dict = {}
+        furnitures = building_data['customData']['furnitures']
+        for furni in furnitures.values():
+            if furni['name'] not in furni_dict:
+                furni_dict[furni['name']] = []
+            furni_dict[furni['name']].append(furni['id'])
+        for name, f_list in furni_dict.items():
+            if len(f_list) > 1 and name not in duplicate_list:
+                print('新重名家具：{name}.')

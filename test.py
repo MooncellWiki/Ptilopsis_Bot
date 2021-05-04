@@ -9,6 +9,7 @@ from jobs._temp import Temp
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
 # from jobs.stage import Stage
+from jobs.furni import Furni
 # from jobs.weedy import Weedy
 from utils.data import GameData
 from utils.unpacker import Unpacker
@@ -30,11 +31,11 @@ if __name__ == '__main__':
     # Skin(wiki, gameData)._run_update(skin_list=['宴', '能天使', '白金'])
     # Skin(wiki, gameData).run()
     # RougeStage(wiki, gameData).run()
-    # Stage(wiki, gameData).run()
+    Furni(wiki, gameData).check_duplicate()
     # Temp(wiki, gameData).test_yinyang()
     # Basic(wiki, gameData)._run_update(old_num=178)
     # Charword(wiki, gameData)._run_update_jp()
-    Temp(wiki, gameData).test_id()
+    # Temp(wiki, gameData).test_id()
 
     # up = Unpacker(config['unpacker'])
     # up.get_all_ab()

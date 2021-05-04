@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
@@ -713,6 +714,36 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
 
 
 class Stage(Job):
+    def check_duplicate(self):
+        stage_table = self.getgd('excel/stage_table.json')
+        activity_table = self.getgd('excel/activity_table.json')
+
+        stage_code_dict, duplicate_dict = {}, {}
+        for s in stage_table['stages'].values():
+            if s['difficulty'] == 'FOUR_STAR' or s['stageType'] == 'GUIDE':
+                continue
+            if s['code'] not in stage_code_dict:
+                stage_code_dict[s['code'].strip()] = []
+            stage_code_dict[s['code'].strip()].append(s['stageId'])
+        for code, s_list in stage_code_dict.items():
+            if len(s_list) > 1:
+                duplicate_dict[code] = '{{消歧义页}}\n<big><big>你要找的结果可能如下：</big></big>'
+                for sid in s_list:
+                    cat = ''
+                    if stage_table['stages'][sid]['stageType'] == 'ACTIVITY':
+                        result = re.search('^([^_]+)_', sid)
+                        act_id = result.group(1)
+                        if act_id in activity_table['basicInfo']:
+                            cat = f"（[[{activity_table['basicInfo'][act_id]['name']}]]关卡）"
+                    page_name = '\n*<big>\'\'\'[[{} {}]]\'\'\'{}</big>'.format(
+                        stage_table['stages'][sid]['code'].strip(),
+                        stage_table['stages'][sid]['name'].strip(),
+                        cat
+                    )
+                    duplicate_dict[code] += page_name
+        self.duplicate_dict = duplicate_dict
+        print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
+
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
@@ -724,12 +755,12 @@ class Stage(Job):
 
         stage_list = self.wiki.category('分类:普通难度关卡')
         new_stage_list = []
+        self.check_duplicate()
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY'] or stage_detail[
                 'difficulty'] == 'FOUR_STAR':
-                # if stage_detail['stageType'] not in ['CAMPAIGN'] or stage_detail['difficulty'] == 'FOUR_STAR':
                 continue
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
             if stage_page_name in stage_list:
@@ -751,8 +782,7 @@ class Stage(Job):
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
             stage_4star_data = get_4star_data(stage_table['stages'][stage_detail['hardStagedId']], stage_table,
                                               zone_table, character_table, building_data, item_table, level_table,
-                                              rts) if stage_detail[
-                'hardStagedId'] else ''
+                                              rts) if stage_detail['hardStagedId'] else ''
             if len(list(filter(lambda x: x['dropType'] in [2, 3, 4],
                                stage_detail['stageDropInfo']['displayDetailRewards']))) > 0:
                 stage_drop = '\n==材料掉落==\n{{关卡材料掉落}}'
@@ -766,12 +796,19 @@ class Stage(Job):
             stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + char_pre + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
-            self.wiki.edit(
-                title=stage_detail['code'].strip(),
-                text=stage_redirect,
-                summary='init',
-                createonly='1'
-            )
+            if stage_detail['code'].strip() in self.duplicate_dict:
+                self.wiki.edit(
+                    title=stage_detail['code'].strip(),
+                    text=self.duplicate_dict[stage_detail['code'].strip()],
+                    summary='消歧义'
+                )
+            else:
+                self.wiki.edit(
+                    title=stage_detail['code'].strip(),
+                    text=stage_redirect,
+                    summary='init',
+                    createonly='1'
+                )
             self.wiki.edit(
                 title=stage_detail['stageId'].strip(),
                 text=stage_redirect,
@@ -858,6 +895,12 @@ class Stage(Job):
 
             self.wiki.edit(
                 title=stage_detail['name'].strip(),
+                text=stage_redirect,
+                summary='init',
+                createonly='1'
+            )
+            self.wiki.edit(
+                title=stage_detail['stageId'].strip(),
                 text=stage_redirect,
                 summary='init',
                 createonly='1'

@@ -407,7 +407,13 @@ def update_outfit_brand(wiki, skin_table, character_table):
         try:
             old_content = wiki.read('时装回廊/' + brand)
 
-            for i in range(skin_dict[brand]['kvImgNum'] + 1):
+            # range不+1了, 有一张挪出来变default
+            result = re.search(r'\|default=([\s\S]+?)\n\|', old_content)
+            if result:
+                pic += '\n|default={}'.format(result.group(1).rstrip())
+            else:
+                pic += '\n|default='
+            for i in range(skin_dict[brand]['kvImgNum']):
                 result = re.search(r'\|图{}=([\s\S]+?)\n\|'.format(i+1), old_content)
                 if result:
                     pic += '\n|图{}={}'.format(i+1, result.group(1).rstrip())
@@ -430,7 +436,9 @@ def update_outfit_brand(wiki, skin_table, character_table):
                 detail += origin_detail
             flag_new = False
         except:
-            pic = ''.join(['\n|图{}='.format(i + 1) for i in range(skin_dict[brand]['kvImgNum'] + 1)])
+            # range不+1了, 有一张挪出来变default
+            pic = '\n|default='
+            pic += ''.join(['\n|图{}='.format(i+1) for i in range(skin_dict[brand]['kvImgNum'])])
             for s in skin_dict[brand]['detail_content']:
                 detail += skin_dict[brand]['detail_content'][s]
             flag_new = True

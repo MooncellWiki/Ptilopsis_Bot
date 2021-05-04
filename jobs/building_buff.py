@@ -4,13 +4,13 @@ from utils.richTextStyles import RichTextStyles
 
 def special_buff(buff_name, description):
     if buff_name == '坚毅随和':
-        description = description.replace('额外降低心情消耗}}', '额外降低心情消耗}}{{color|#F49800|（心情每小时消耗-0.15）}}')
+        description = description.replace('额外恢复心情}}', '额外恢复心情}}{{color|#F49800|（心情每小时恢复+0.15）}}')
     elif buff_name == '神经质':
         description += '{{color|#F49800|（心情每小时消耗+1.5）}}'
     elif buff_name == '至察':
         description += '{{color|#F49800|（心情每小时消耗+0.5）}}'
-    elif buff_name in ['裁缝·α', '裁缝·β']:
-        description = description.replace('影响概率）', '影响概率）{{color|#F49800|（同类效果取最高）}}')
+    # elif buff_name in ['裁缝·α', '裁缝·β']:
+    #     description = description.replace('影响概率）', '影响概率）{{color|#F49800|（同类效果取最高）}}')
 
     return description
 
