@@ -56,20 +56,17 @@ if __name__ == '__main__':
     if 'daily' in sys.argv:
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
-        Furni(wiki, gameData).run()
-        Item(wiki, gameData).run()
         Enemy(wiki, gameData).run()
         Enemy(wiki, gameData).update_data()
+        Skin(wiki, gameData).run()
+        Furni(wiki, gameData).run()
+        Item(wiki, gameData).run()
 
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()
         CharAttr(wiki, gameData).run()
         Medal(wiki, gameData).run()
         StoryReview(wiki, gameData).run()
-
-    if 'skin' in sys.argv:
-        Skin(wiki, gameData).update(skin_list=[])
-        Skin(wiki, gameData).run()
 
     if 'demand' in sys.argv:
         Demand(wiki, gameData).run()

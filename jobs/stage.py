@@ -742,7 +742,7 @@ class Stage(Job):
                     )
                     duplicate_dict[code] += page_name
         self.duplicate_dict = duplicate_dict
-        print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
+        # print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
 
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
