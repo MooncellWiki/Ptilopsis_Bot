@@ -82,15 +82,20 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
 class Sidebar(Job):
     def _run(self):
         pass
-
-    def update(self, old_num):
+        
+    def update(self):
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
         # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
-            id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
         character_table = self.getgd('excel/character_table.json')
+        old_num, char_list = -1, self.wiki.category('分类:干员')
+        for char_key in character_table:
+            name = character_table[char_key]['name']
+            if name in id_table and id_table[name]['id'] > old_num:
+                old_num = id_table[name]['id']
         update_menusidebar(self.wiki, old_num, id_table, character_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)

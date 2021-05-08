@@ -48,12 +48,11 @@ if __name__ == '__main__':
         exit()
 
     if 'new' in sys.argv:
-        old_num = 193
-        Basic(wiki, gameData).update(old_num)
+        Basic(wiki, gameData).run()
         Charword(wiki, gameData).run()
-        Sidebar(wiki, gameData).update(old_num)
+        Sidebar(wiki, gameData).update()
 
-    if 'daily' in sys.argv:
+    if 'regular' in sys.argv:
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
         Enemy(wiki, gameData).run()
@@ -68,9 +67,6 @@ if __name__ == '__main__':
         Medal(wiki, gameData).run()
         StoryReview(wiki, gameData).run()
 
-    if 'demand' in sys.argv:
-        Demand(wiki, gameData).run()
-
     if 'special' in sys.argv:
         # Furni(wiki, gameData).update()
         # Charword(wiki, gameData).update()
@@ -82,6 +78,9 @@ if __name__ == '__main__':
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
         # Stage(wiki, gameData).run_id('levels/activities/act17d7')
+
+    if 'demand' in sys.argv:
+        Demand(wiki, gameData).run()
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()

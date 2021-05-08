@@ -916,9 +916,6 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 
 class Basic(Job):
     def _run(self):
-        pass
-
-    def update(self, old_num):
         character_table = self.getgd('excel/character_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
@@ -927,27 +924,24 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
-        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
-        #     id_table = json.loads(file.read())
-        # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
         id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
-            id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
+        char_list = self.wiki.category('分类:干员')
         update_token_page = False
 
         for char_key in character_table:
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            if char_detail['name'] in id_table:
-                if old_num >= int(id_table[char_detail['name']]['id']) or id_table[char_detail['name']]['id'] == -1:
-                # if char_detail['name'] not in ['稀音','霜华','夕']:
-                    continue
-            else:
-                print('Unknown Character: {}.'.format(char_detail['name']))
+            if char_detail['name'] in char_list:
+            # if char_detail['name'] not in ['稀音','霜华','夕']:
+                continue
+            if char_detail['name'] not in id_table:
+                print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
                 # continue
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
@@ -1020,28 +1014,48 @@ class Basic(Job):
             print('Created: {}.'.format(char_detail['name']))
 
 
-            # origin_text = self.wiki.read(char_detail['name'])
+    def update(self):
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        building_data = self.getgd('excel/building_data.json')
+        item_table = self.getgd('excel/item_table.json')
+        team_table = self.getgd('excel/handbook_team_table.json')
+        stories_table = self.getgd('excel/handbook_info_table.json')
+        skin_table = self.getgd('excel/skin_table.json')
+        gamedata_const = self.getgd('excel/gamedata_const.json')
+        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        reader = csv.DictReader(io.StringIO(id_csv))
+        for row in reader:
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-            # if char_detail['name'] not in ['Lancet-2', 'Castle-3', 'THRM-EX']:
-            #     num1 = origin_text.find('==干员档案==')
-            #     num2 = origin_text.find('{{人员档案\n')
-            #     new_text = origin_text[:num1] + '==干员档案==\n' + stories_list_set + '\n' + origin_text[num2:]
-            # else:
-            #     new_text = origin_text
-            # if new_text != origin_text:
-            #     print(char_detail['name'])
-            # print(new_text)
+        char_list = self.wiki.category('分类:干员')
+        update_token_page = False
 
+        for char_key in character_table:
+            char_detail = character_table[char_key]
+            if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+                continue
+            # if char_detail['name'] not in ['浊心斯卡蒂']:
+            #     continue
+            origin_text = self.wiki.read(char_detail['name'])
+            new_text = origin_text
+
+            # 更新后勤技能
+            # building_skill = get_building_skill(building_data, char_key)
             # num1 = origin_text.find('==后勤技能==')
             # num2 = origin_text.find('==召唤物信息==')
             # if num2 == -1:
             #     num2 = origin_text.find('==精英化材料==')
             # new_text = origin_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + origin_text[num2:]
 
+            # 更新属性
+            # phases_data = get_phases_data(char_detail)
             # num1 = origin_text.find('==属性==')
             # num2 = origin_text.find('==攻击范围==')
             # new_text = origin_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
-            
+                
+            # 更新干员势力
             # num1 = origin_text.find('|情报编号=')
             # num2 = origin_text.find('|位置=')
             # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
@@ -1052,17 +1066,18 @@ class Basic(Job):
             # )
             # new_text = origin_text[:num1] + tt + origin_text[num2:]
             
-            # if new_text != origin_text:
-            #     self.wiki.edit(
-            #         title = char_detail['name'],
-            #         text = new_text,
-            #         summary = '更新干员势力'
-            #     )
-            #     # print(new_text)
-            #     print('Updated: {}.'.format(char_detail['name']))
-            # else:
-            #     print('Same: {}.'.format(char_detail['name']))
+            if new_text != origin_text:
+                self.wiki.edit(
+                    title = char_detail['name'],
+                    text = new_text,
+                    summary = 'update'
+                )
+                # print(new_text)
+                print('Updated: {}.'.format(char_detail['name']))
+            else:
+                print('Same: {}.'.format(char_detail['name']))
 
+            # 本地diff对比
             # f_wiki = open('old.txt', 'w')
             # # num1 = origin_text.find('==干员档案==')
             # # num2 = origin_text.find('==语音记录==')
@@ -1076,27 +1091,6 @@ class Basic(Job):
             # f_new.close()
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')
-
-# 刷新暴行潜能
-# if char_detail['name'] == '暴行':
-#     read_flag = True
-#     while read_flag:
-#         try:
-#             fin2 = read_wiki(se, url, char_detail['name'])
-#             read_flag = False
-#         except:
-#             print('Fail to read {}, try again.'.format(char_detail['name']))
-#             continue
-#     num1 = fin2.find('==天赋==')
-#     num2 = fin2.find('==技能==')
-#     talent_list = get_talent_list(char_detail)
-#     potential_list = get_potential_list(char_detail)
-#     fin = fin2[:num1] + '==天赋==\n{talents}\n==潜能提升==\n{potential}\n'.format(
-#         talents = talent_list,
-#         potential = potential_list
-#     ) + fin2[num2:]
-#     write_wiki_minor(se, url, char_detail['name'], fin, '')
-#     print(char_detail['name'] + ' done.')
 
     def update_handbook(self):
         character_table = self.getgd('excel/character_table.json')

@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements.txt
         git config --global user.email "1054329447@qq.com"
         git config --global user.name "Seniorious0"
-        python main.py --check --remote new daily
+        python main.py --check --remote new regular

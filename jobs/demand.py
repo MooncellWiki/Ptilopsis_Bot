@@ -108,8 +108,8 @@ def update_mat_demand(wiki, character_table, item_table):
             )
             # print(new_text)
             print('Update: {}.'.format(item_table['items'][material]['name'].rstrip()))
-        else:
-            print('Same: {}.'.format(item_table['items'][material]['name'].rstrip()))
+        # else:
+        #     print('Same: {}.'.format(item_table['items'][material]['name'].rstrip()))
 
 
 class Demand(Job):

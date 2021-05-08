@@ -89,16 +89,15 @@ def update_activity(activity_table, item_table, building_data, character_table, 
         end_time2 = datetime.fromtimestamp(activity_table['basicInfo'][mission['id']]['rewardEndTime'],
                                            pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
         activity_text_dict[
-            mission['id']] += table_title + '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
+            mission['id']] += table_title + '\n!colspan="2"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
             s_t=start_time,
             e_t=end_time,
             e_t2=end_time2
-        ) + '\n|-\n!id||内容||奖励'
+        ) + '\n|-\n!内容||奖励'
         for mission_id in mission['missionIds']:
             if activity_dict[mission_id]['missionGroup'] != mission['id']:
                 print(mission_id, 'group not match!')
-            activity_text_dict[mission['id']] += '\n|-\n|{id}\n|{desc}\n|{reward}'.format(
-                id=activity_dict[mission_id]['id'],
+            activity_text_dict[mission['id']] += '\n|-\n|{desc}\n|{reward}'.format(
                 desc=rts.compile(activity_dict[mission_id]['description']).replace('\n', '<br/>'),
                 reward=activity_dict[mission_id]['rewards']
             )
@@ -114,7 +113,7 @@ def update_activity(activity_table, item_table, building_data, character_table, 
             activity_text += activity_text_dict[act_info]
         else:
             activity_text += '{|class = "wikitable" style = "text-align:center; display:table; white-space:normal; width:800px;"'
-            activity_text += '\n!colspan="3"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
+            activity_text += '\n!colspan="2"|开始时间:{s_t}<br/>结束时间:{e_t}<br/>兑换结束时间:{e_t2}'.format(
                 s_t=datetime.fromtimestamp(activity_table['basicInfo'][act_info]['startTime'],
                                            pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S'),
                 e_t=datetime.fromtimestamp(activity_table['basicInfo'][act_info]['endTime'],
