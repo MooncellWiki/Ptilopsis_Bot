@@ -77,7 +77,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
-        # Stage(wiki, gameData).run_id('levels/activities/act17d7')
+        # Stage(wiki, gameData).run_id('levels/obt/rune/level_rune_07-01.json')
 
     if 'demand' in sys.argv:
         Demand(wiki, gameData).run()

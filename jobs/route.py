@@ -1,6 +1,8 @@
 from utils.job import Job
 
 import copy
+import os
+
 
 def format_time(time):
     return '{}分{:.1f}秒'.format(int(time / 60), time % 60)
@@ -259,35 +261,39 @@ class Route(Job):
         stage_table = self.getgd('excel/stage_table.json')
         enemy_db = self.getgd('levels/enemydata/enemy_database.json')
 
-        # levelId = 'Obt/Campaign/level_camp_03'  # 市区
-        levelId = 'Obt/Campaign/level_camp_r_03'
+        filelist = []
+        base_dir = './Unpacker/zh_CN/gameData/'
+        path = 'levels/obt/rune/level_rune_07-01.json'
+        # path = 'levels/obt'
 
-        level_table = self.getgd('levels/' + levelId + '.json')
-        routes = get_routes(level_table['routes'])
-        get_waves(level_table['waves'])
-        wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+        def get_files(curr_path):
+            if os.path.isfile(os.path.join(base_dir, curr_path)):
+                filelist.append(curr_path)
+            else:
+                for f in os.listdir(os.path.join(base_dir, curr_path)):
+                    get_files(os.path.join(curr_path, f))
 
-        # for stage in stage_table['stages']:
-        #     levelId = stage_table['stages'][stage]['levelId']
-        #     if levelId != None and stage_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-        #         print('==={} {}==='.format(stage_table['stages'][stage]['code'], stage_table['stages'][stage]['name']))
-        #         level_table = self.getgd('levels/' + levelId + '.json')
-        #         get_waves(level_table['waves'])
-        #         routes = get_routes(level_table['routes'])
-        #         wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+        get_files(path)
 
-        # roguelike_table = self.getgd('excel/roguelike_table.json')
-        # for stage in roguelike_table['stages']:
-        #     levelId = roguelike_table['stages'][stage]['levelId']
-        #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-        #         print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
-        #         level_table = self.getgd('levels/' + levelId + '.json')
-        #         count_enemy(level_table['waves'])
+        for file in filelist:
+            # stage_id = os.path.splitext(os.path.split(file)[1])[0]
+            level_table = self.getgd(file.lower())
+            routes = get_routes(level_table['routes'])
+            get_waves(level_table['waves'])
+            wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
 
-        self.wiki.edit(
-            title = '用户:Seniorious/route',
-            text = wave_table,
-            summary = 'update'
-        )
-        # print(wave_table)
-        print('Updated: {}.'.format('用户:Seniorious/route'))
+            # roguelike_table = self.getgd('excel/roguelike_table.json')
+            # for stage in roguelike_table['stages']:
+            #     levelId = roguelike_table['stages'][stage]['levelId']
+            #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
+            #         print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
+            #         level_table = self.getgd('levels/' + levelId + '.json')
+            #         count_enemy(level_table['waves'])
+
+            self.wiki.edit(
+                title = '用户:Seniorious/route',
+                text = wave_table,
+                summary = 'update'
+            )
+            # print(wave_table)
+            print('Updated: {}.'.format('用户:Seniorious/route'))

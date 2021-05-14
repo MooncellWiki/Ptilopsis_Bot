@@ -162,7 +162,7 @@ def update_furni_info(wiki, building_data, building_data_jp, building_data_en):
         furni_data_en = building_data_en['customData']['furnitures'][furni]
 
         page_name = furni_data_cn['name']
-        if page_name in ['轻薄地毯', '松软沙发']:
+        if page_name in ['松软沙发']:
             themes = ''
             for groupsId in building_data['customData']['groups']:
                 groupsData = building_data['customData']['groups'][groupsId]

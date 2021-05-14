@@ -273,7 +273,7 @@ def create_themes(wiki, building_data):
         print('Updated: {}.'.format('首页/新增主题'))
 
 
-duplicate_list = ['轻薄地毯', '松软沙发']
+duplicate_list = ['松软沙发']
 
 
 class Furni(Job):
