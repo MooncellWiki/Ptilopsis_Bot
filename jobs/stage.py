@@ -232,15 +232,20 @@ def analyze_level_info(level_table):
     level_info += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
     enemy_count = 0
     min_time = 0.0
+    normal_hidden_group = analyze_normal_hidden_group(level_table)
     for wave in level_table['waves']:
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
-            min_time += fragment['preDelay']
-            min_time += max(
-                [action['preDelay'] + (action['count'] - 1) * action['interval'] for action in fragment['actions']])
+            fragment_flag, time = False, 0.0
             for unit in fragment['actions']:
-                if unit['actionType'] == 0 and unit['key'] != '':
-                    enemy_count += unit['count']
+                if unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group:
+                    fragment_flag = True
+                    time = max(time, unit['preDelay'] + (unit['count'] - 1) * unit['interval'])
+                    if unit['actionType'] == 0 and unit['key'] != '':
+                        enemy_count += unit['count']
+            if fragment_flag:
+                min_time += fragment['preDelay']
+                min_time += time
     level_info += '|敌人数量={}\n'.format(enemy_count)
     level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
     if abs(min_time - int(min_time)) < 0.0001:
@@ -248,6 +253,20 @@ def analyze_level_info(level_table):
     else:
         level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
     return level_info
+
+
+def analyze_normal_hidden_group(level_table):
+    normal_hidden_group = []
+    if level_table['runes']:
+        try:
+            for rune in level_table['runes']:
+                if rune['difficultyMask'] == 1 and rune['key'] == 'level_hidden_group_enable':
+                    for d in rune['blackboard']:
+                        if d['key'] == 'key':
+                            normal_hidden_group.append(d['valueStr'])
+        except:
+            print('hiddenGroup解析出错.')
+    return normal_hidden_group
 
 
 def analyze_char_card_info(level_table, stage_page_name, character_table, skill_table):
@@ -329,14 +348,17 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
     enemy_data = '\n==敌方情报==\n{{敌方情报\n'
     count = 1
     enemy_num_dict = {}
+    normal_hidden_group = analyze_normal_hidden_group(level_table)
     for wave in level_table['waves']:
         for fragment in wave['fragments']:
             for unit in fragment['actions']:
                 if unit['actionType'] == 0:
                     if unit['key'] not in enemy_num_dict:
-                        enemy_num_dict[unit['key']] = unit['count']
-                    else:
+                        enemy_num_dict[unit['key']] = 0
+                    if unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group:
                         enemy_num_dict[unit['key']] += unit['count']
+                    else:
+                        enemy_num_dict[unit['key']] += 0
     for enemy in level_table['enemyDbRefs']:
         if enemy['id'] not in enemy_num_dict:
             continue
@@ -588,6 +610,7 @@ def get_crisis_data(stage_detail, level_table, rts):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format('活动')
     stage_data += '|关卡难度={}\n'.format('NORMAL')
     stage_data += '|解锁条件={}\n'.format('—')
@@ -765,7 +788,7 @@ class Stage(Job):
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
             if stage_page_name in stage_list:
                 continue
-            # if 'WR-' not in stage_detail['code']:
+            # if stage_detail['code'] not in ['WD-EX-3', 'MB-EX-8', 'FA-8']:
             #     continue
 
             if stage_detail['levelId']:
@@ -959,7 +982,7 @@ class Stage(Job):
             stage_normal_data = get_crisis_data(stage_detail, level_table, rts)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
 
-            stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==合约详情==\n{{合约详情}}\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:危机合约关卡]]'
+            stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + '\n==合约详情==\n{{合约详情}}\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:危机合约关卡]]'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             self.wiki.edit(
@@ -1106,6 +1129,8 @@ class Stage(Job):
         base_dir = './Unpacker/zh_CN/gameData/'
 
         def get_files(curr_path):
+            if '.DS_Store' in curr_path:
+                return
             if os.path.isfile(os.path.join(base_dir, curr_path)):
                 filelist.append(curr_path)
             else:

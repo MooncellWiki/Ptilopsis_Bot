@@ -264,9 +264,11 @@ class Route(Job):
         filelist = []
         base_dir = './Unpacker/zh_CN/gameData/'
         path = 'levels/obt/rune/level_rune_07-01.json'
-        # path = 'levels/obt'
+        # path = 'levels/activities'
 
         def get_files(curr_path):
+            if '.DS_Store' in curr_path:
+                return
             if os.path.isfile(os.path.join(base_dir, curr_path)):
                 filelist.append(curr_path)
             else:
