@@ -361,7 +361,8 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
                         enemy_num_dict[unit['key']] += 0
     for enemy in level_table['enemyDbRefs']:
         if enemy['id'] not in enemy_num_dict:
-            continue
+            # continue
+            enemy_num_dict[enemy['id']] = 0
         if enemy['useDb'] == False:
             enemy_data += '|敌人{count}={name}\n'.format(
                 count=count,
@@ -818,6 +819,13 @@ class Stage(Job):
 
             stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + char_pre + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+            
+            # old = self.wiki.read(stage_page_name)
+            # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
+            # if result:
+            #     stage_content = old.replace(result.group(1), stage_enemy_data)
+            # else:
+            #     continue
 
             if stage_detail['code'].strip() in self.duplicate_dict:
                 self.wiki.edit(
