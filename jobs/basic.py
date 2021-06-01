@@ -262,7 +262,7 @@ def get_talent_list(char_detail, rts):
     for talent_id in range(len(char_detail['talents'])):
         talent_table = char_detail['talents'][talent_id]['candidates']
         for talent_table_id in range(len(talent_table)):
-            talent_description = rts.compile(talent_table[talent_table_id]['description'])
+            talent_description = rts.compile(talent_table[talent_table_id]['description']).replace('\\n', '<br/>')
             talent_condition = get_tal_condition(talent_table[talent_table_id]['requiredPotentialRank'],
                 talent_table[talent_table_id]['unlockCondition']['phase'],
                 talent_table[talent_table_id]['unlockCondition']['level'])

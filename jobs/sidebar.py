@@ -97,5 +97,6 @@ class Sidebar(Job):
             name = character_table[char_key]['name']
             if name in id_table and id_table[name]['id'] > old_num:
                 old_num = id_table[name]['id']
+        old_num = 193
         update_menusidebar(self.wiki, old_num, id_table, character_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)

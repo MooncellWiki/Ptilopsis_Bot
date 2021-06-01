@@ -2,26 +2,16 @@ import os
 import sys
 
 from config import config
-from jobs.activity import Activity
+
 from jobs.basic import Basic
 from jobs.building_buff import BuildingBuff
-from jobs.char_attr import CharAttr
 from jobs.charword import Charword
-from jobs.demand import Demand
 from jobs.enemy import Enemy
-from jobs.formula import Formula
 from jobs.furni import Furni
 from jobs.item import Item
-from jobs.medal import Medal
-from jobs.mission import Mission
-from jobs.range import Range
-from jobs.route import Route
 from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
-from jobs.story_review import StoryReview
-from jobs.update_jp import UpdateJp
-from jobs.weedy import Weedy
 from utils.data import GameData
 from utils.wiki import Wiki
 
@@ -48,9 +38,9 @@ if __name__ == '__main__':
         exit()
 
     if 'new' in sys.argv:
+        Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
         Basic(wiki, gameData).run()
         Charword(wiki, gameData).run()
-        Sidebar(wiki, gameData).update()
 
     if 'regular' in sys.argv:
         BuildingBuff(wiki, gameData).run()
@@ -61,32 +51,46 @@ if __name__ == '__main__':
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
 
+        from jobs.activity import Activity
         Activity(wiki, gameData).run()
+        from jobs.mission import Mission
         Mission(wiki, gameData).run()
+        from jobs.char_attr import CharAttr
         CharAttr(wiki, gameData).run()
+        from jobs.medal import Medal
         Medal(wiki, gameData).run()
+        from jobs.story_review import StoryReview
         StoryReview(wiki, gameData).run()
+        from jobs.term import Term
+        Term(wiki, gameData).run()
 
     if 'special' in sys.argv:
         # Furni(wiki, gameData).update()
         # Charword(wiki, gameData).update()
-        # Route(wiki, gameData).run()
-        # Formula(wiki, gameData).run()
-        # Range(wiki, gameData).run()
         Basic(wiki, gameData).update_handbook()  # 干员密录
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
         # Stage(wiki, gameData).run_campaign()
         # Stage(wiki, gameData).run_id('levels/obt/rune/level_rune_07-01.json')
+        
+        # from jobs.route import Route
+        # Route(wiki, gameData).run()
+        # from jobs.formula import Formula
+        # Formula(wiki, gameData).run()
+        # from jobs.range import Range
+        # Range(wiki, gameData).run()
 
     if 'demand' in sys.argv:
+        from jobs.demand import Demand
         Demand(wiki, gameData).run()
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()
+        from jobs.update_jp import UpdateJp
         UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
+        from jobs.weedy import Weedy
         Weedy(wiki, gameData).run()
 
     if '--remote' in sys.argv:
