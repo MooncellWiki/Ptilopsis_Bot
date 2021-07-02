@@ -930,6 +930,7 @@ class Basic(Job):
             id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
+        flag_new_char = False
         char_list = self.wiki.category('分类:干员')
         update_token_page = False
 
@@ -981,6 +982,7 @@ class Basic(Job):
             )
             fin = char_info
 
+            flag_new_char = True
             self.wiki.edit(
                 title = char_detail['name'],
                 text = fin,
@@ -1012,6 +1014,8 @@ class Basic(Job):
                 )
             # print(fin)
             print('Created: {}.'.format(char_detail['name']))
+
+        return flag_new_char
 
 
     def update(self):

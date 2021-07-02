@@ -37,9 +37,10 @@ if __name__ == '__main__':
         gameData.unpacker.check_all_update()
         exit()
 
+    flag_new_char = False
     if 'new' in sys.argv:
         Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
-        Basic(wiki, gameData).run()
+        flag_new_char = Basic(wiki, gameData).run()
         Charword(wiki, gameData).run()
 
     if 'regular' in sys.argv:
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         # from jobs.range import Range
         # Range(wiki, gameData).run()
 
-    if 'demand' in sys.argv:
+    if 'demand' in sys.argv or flag_new_char:
         from jobs.demand import Demand
         Demand(wiki, gameData).run()
 
