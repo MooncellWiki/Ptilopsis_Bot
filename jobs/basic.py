@@ -1046,29 +1046,29 @@ class Basic(Job):
             new_text = origin_text
 
             # 更新后勤技能
-            # building_skill = get_building_skill(building_data, char_key)
-            # num1 = origin_text.find('==后勤技能==')
-            # num2 = origin_text.find('==召唤物信息==')
-            # if num2 == -1:
-            #     num2 = origin_text.find('==精英化材料==')
-            # new_text = origin_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + origin_text[num2:]
+            building_skill = get_building_skill(building_data, char_key)
+            num1 = new_text.find('==后勤技能==')
+            num2 = new_text.find('==召唤物信息==')
+            if num2 == -1:
+                num2 = new_text.find('==精英化材料==')
+            new_text = new_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + origin_text[num2:]
 
             # 更新属性
-            # phases_data = get_phases_data(char_detail)
-            # num1 = origin_text.find('==属性==')
-            # num2 = origin_text.find('==攻击范围==')
-            # new_text = origin_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
+            phases_data = get_phases_data(char_detail)
+            num1 = new_text.find('==属性==')
+            num2 = new_text.find('==攻击范围==')
+            new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
                 
             # 更新干员势力
-            # num1 = origin_text.find('|情报编号=')
-            # num2 = origin_text.find('|位置=')
-            # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
-            #     displayNumber = char_detail['displayNumber'],
-            #     nation = trans_team(char_detail['nationId'], team_table),
-            #     group = trans_team(char_detail['groupId'], team_table),
-            #     team = trans_team(char_detail['teamId'], team_table)
-            # )
-            # new_text = origin_text[:num1] + tt + origin_text[num2:]
+            num1 = new_text.find('|情报编号=')
+            num2 = new_text.find('|位置=')
+            tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
+                displayNumber = char_detail['displayNumber'],
+                nation = trans_team(char_detail['nationId'], team_table),
+                group = trans_team(char_detail['groupId'], team_table),
+                team = trans_team(char_detail['teamId'], team_table)
+            )
+            new_text = new_text[:num1] + tt + new_text[num2:]
             
             if new_text != origin_text:
                 self.wiki.edit(
