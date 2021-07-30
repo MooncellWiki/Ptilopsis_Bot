@@ -38,7 +38,7 @@ if __name__ == '__main__':
         exit()
 
     flag_new_char = False
-    if 'new' in sys.argv:
+    if 'new' in sys.argv: 
         Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
         flag_new_char = Basic(wiki, gameData).run()
         Charword(wiki, gameData).run()
@@ -58,8 +58,8 @@ if __name__ == '__main__':
         # Mission(wiki, gameData).run()
         # from jobs.char_attr import CharAttr
         # CharAttr(wiki, gameData).run()
-        from jobs.medal import Medal
-        Medal(wiki, gameData).run()
+        # from jobs.medal import Medal
+        # Medal(wiki, gameData).run()
         # from jobs.story_review import StoryReview
         # StoryReview(wiki, gameData).run()
         # from jobs.term import Term
