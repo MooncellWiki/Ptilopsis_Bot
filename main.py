@@ -52,18 +52,18 @@ if __name__ == '__main__':
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
 
-        # from jobs.activity import Activity
-        # Activity(wiki, gameData).run()
-        # from jobs.mission import Mission
-        # Mission(wiki, gameData).run()
-        # from jobs.char_attr import CharAttr
-        # CharAttr(wiki, gameData).run()
-        # from jobs.medal import Medal
-        # Medal(wiki, gameData).run()
-        # from jobs.story_review import StoryReview
-        # StoryReview(wiki, gameData).run()
-        # from jobs.term import Term
-        # Term(wiki, gameData).run()
+        from jobs.activity import Activity
+        Activity(wiki, gameData).run()
+        from jobs.mission import Mission
+        Mission(wiki, gameData).run()
+        from jobs.char_attr import CharAttr
+        CharAttr(wiki, gameData).run()
+        from jobs.medal import Medal
+        Medal(wiki, gameData).run()
+        from jobs.story_review import StoryReview
+        StoryReview(wiki, gameData).run()
+        from jobs.term import Term
+        Term(wiki, gameData).run()
 
     if 'special' in sys.argv:
         # Furni(wiki, gameData).update()
