@@ -412,7 +412,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             else:
                 pic += '\n|default='
             for i in range(skin_dict[brand]['kvImgNum']):
-                result = re.search(r'\|图{}=([\s\S]+?)\n\|'.format(i+1), old_content)
+                result = re.search(r'\|图{}=([\s\S]*?)\n\|'.format(i+1), old_content)
                 if result:
                     pic += '\n|图{}={}'.format(i+1, result.group(1).rstrip())
                 else:
