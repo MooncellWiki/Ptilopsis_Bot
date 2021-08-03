@@ -915,7 +915,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 
 
 class Basic(Job):
-    def _run(self):
+    def run(self):
         character_table = self.getgd('excel/character_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
