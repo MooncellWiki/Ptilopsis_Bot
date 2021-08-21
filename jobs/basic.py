@@ -8,7 +8,7 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 
-def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts):
+def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts):
     basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
@@ -17,6 +17,7 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
         rarity = char_detail['rarity'],
         profession = trans_profession(char_detail['profession']),
+        subProfession = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'],
         displayNumber = char_detail['displayNumber'],
         nation = trans_team(char_detail['nationId'], team_table),
         group = trans_team(char_detail['groupId'], team_table),
@@ -917,6 +918,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 class Basic(Job):
     def run(self):
         character_table = self.getgd('excel/character_table.json')
+        uniequip_table = self.getgd('excel/uniequip_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
@@ -945,7 +947,7 @@ class Basic(Job):
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
                 # continue
 
-            basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, rts)
+            basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
             phases_data = get_phases_data(char_detail)
             range_data = get_range_data(char_detail)

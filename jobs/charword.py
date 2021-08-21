@@ -147,7 +147,7 @@ def update_charword(wiki, char_list, charword_table):
             print('Same: {}.'.format(char_name + '/语音记录'))
 
 
-def update_charword_jp(wiki, char_list, charword_table, charword_table_jp):
+def update_charword_jp(wiki, char_list, charword_table, charword_table_jp, mode='JP'):
     for char_id, char_name in char_list:
         key_list = word_key_list(char_id, charword_table)
         # 处理阿米娅升变
@@ -177,7 +177,10 @@ def update_charword_jp(wiki, char_list, charword_table, charword_table_jp):
                 new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = text_jp_dict)
             new_text += '\n'
         origin_text = origin_text[:-2]
-        new_text += '<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
+        if mode == 'US':
+            new_text += '<noinclude>[[分类:有官方英文文本的干员语音]]</noinclude>'
+        else:
+            new_text += '<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>'
 
         if origin_text != new_text:
             wiki.edit(
@@ -230,12 +233,19 @@ class Charword(Job):
         character_table_jp = self.getgd('excel/character_table.json', 'JP')
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
 
-        char_list = []
+        en_list = ['char_457_blitz', 'char_456_ash', 'char_458_rfrost', 'char_459_tachak']
+        charword_table_en = self.getgd('excel/charword_table.json', 'US')
+
+        char_list, char_list_en = [], []
         for char_id in character_table_jp:
             if char_id not in character_table:
                 print('Character {} not find.'.format(char_id))
                 continue
             if character_table[char_id]['profession'] == 'TRAP' or character_table[char_id]['profession'] == 'TOKEN':
                 continue
-            char_list.append((char_id, character_table[char_id]['name']))
+            if char_id in en_list:
+                char_list_en.append((char_id, character_table[char_id]['name']))
+            else:
+                char_list.append((char_id, character_table[char_id]['name']))
         update_charword_jp(self.wiki, char_list, charword_table, charword_table_jp)
+        update_charword_jp(self.wiki, char_list_en, charword_table, charword_table_en, mode='US')
