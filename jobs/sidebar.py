@@ -87,7 +87,7 @@ class Sidebar(Job):
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
         # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
             id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}

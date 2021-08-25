@@ -9,7 +9,7 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts):
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
+    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|子职业={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_key = char_key,
@@ -97,7 +97,7 @@ def get_char_approach(char_detail, id_table):
     return text
 
 
-def get_phases_data(char_detail):
+def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
     phases_data = '{{属性\n'
 
     blockCnt_2 = -1
@@ -242,6 +242,21 @@ def get_phases_data(char_detail):
             ','.join(potential_rank_data),
             ','.join(potential_rank_type)
         )
+
+    if char_key in uniequip_table['charEquip']:
+        uniequip_count = 0
+        for equip_id in uniequip_table['charEquip'][char_key]:
+            if equip_id in uniequip_table['equipDict']:
+                if uniequip_table['equipDict'][equip_id]['type'] == 'INITIAL':
+                    phases_data += f"|初始模组名={uniequip_table['equipDict'][equip_id]['uniEquipName']}\n"
+                elif uniequip_table['equipDict'][equip_id]['type'] == 'ADVANCED':
+                    uniequip_count += 1
+                    phases_data += f"|模组{uniequip_count}名={uniequip_table['equipDict'][equip_id]['uniEquipName']}\n"
+                    if equip_id in battle_equip_table:
+                        phases_data += f"|模组{uniequip_count}数据="
+                        phases_data += ';'.join([f"{x['key']}:{x['value']:.0f}" for x in
+                                                 battle_equip_table[equip_id]['phases'][0]['attributeBlackboard']])
+                        phases_data += '\n'
     phases_data += "}}"
 
     return phases_data
@@ -919,6 +934,7 @@ class Basic(Job):
     def run(self):
         character_table = self.getgd('excel/character_table.json')
         uniequip_table = self.getgd('excel/uniequip_table.json')
+        battle_equip_table = self.getgd('excel/battle_equip_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
@@ -926,10 +942,10 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
-            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         flag_new_char = False
@@ -941,7 +957,7 @@ class Basic(Job):
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['稀音','霜华','夕']:
+            # if char_detail['name'] not in ['麦哲伦', '杜宾']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -949,7 +965,7 @@ class Basic(Job):
 
             basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
-            phases_data = get_phases_data(char_detail)
+            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             range_data = get_range_data(char_detail)
             talent_list = get_talent_list(char_detail, rts)
             potential_list = get_potential_list(char_detail)
@@ -1022,6 +1038,8 @@ class Basic(Job):
 
     def update(self):
         character_table = self.getgd('excel/character_table.json')
+        uniequip_table = self.getgd('excel/uniequip_table.json')
+        battle_equip_table = self.getgd('excel/battle_equip_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
@@ -1029,10 +1047,10 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
-            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         char_list = self.wiki.category('分类:干员')
@@ -1056,11 +1074,11 @@ class Basic(Job):
             new_text = new_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + origin_text[num2:]
 
             # 更新属性
-            phases_data = get_phases_data(char_detail)
+            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             num1 = new_text.find('==属性==')
             num2 = new_text.find('==攻击范围==')
             new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
-                
+
             # 更新干员势力
             num1 = new_text.find('|情报编号=')
             num2 = new_text.find('|位置=')
@@ -1071,7 +1089,7 @@ class Basic(Job):
                 team = trans_team(char_detail['teamId'], team_table)
             )
             new_text = new_text[:num1] + tt + new_text[num2:]
-            
+
             if new_text != origin_text:
                 self.wiki.edit(
                     title = char_detail['name'],
