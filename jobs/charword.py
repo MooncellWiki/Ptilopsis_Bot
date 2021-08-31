@@ -170,6 +170,12 @@ def update_charword_jp(wiki, char_list, charword_table, charword_table_jp, mode=
                 title = re.search(r'\|表格标题=(.*)', result.group(1)).group(1).rstrip()
                 text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
                     filter(lambda x: x['wordKey'] == k, charword_table_jp.values())}
+                # 处理泥岩新语音
+                result_jp = re.findall(r'\|日文([0-9]+?)=(.+?)\n', result.group(1))
+                for k0, v0 in result_jp:
+                    if k0 not in text_jp_dict:
+                        text_jp_dict[k0] = v0
+                # 处理end
                 new_text += get_charword_data(k, file_name, charword_table, text_jp_dict = text_jp_dict, title = title)
             else:
                 text_jp_dict = {str(d['voiceIndex']): d['voiceText'] for d in
