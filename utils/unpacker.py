@@ -1,3 +1,4 @@
+import bson
 import io
 import json
 import time
@@ -155,9 +156,17 @@ class Unpacker:
                     is_sign = True if '/levels/' not in full_path else False
                     script = self._CrypticConverter_A(data.script,
                                                       bytes(self.config[region]['chatMask'], encoding='utf-8'), is_sign)
-                    with open(full_path, 'wb') as dist:
-                        dist.write(script)
-                        dists.append(full_path)
+                    try:
+                        if full_path.endswith('.json'):
+                            json.loads(script)
+                        with open(full_path, 'wb') as dist:
+                            dist.write(script)
+                            dists.append(full_path)
+                    except:
+                        file_content = json.dumps(bson.decode(script), indent=2, ensure_ascii=False)
+                        with open(full_path, 'w') as dist:
+                            dist.write(file_content)
+                            dists.append(full_path)
                 else:
                     script = data.script
                     with open(full_path, 'w') as dist:

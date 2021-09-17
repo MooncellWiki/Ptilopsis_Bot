@@ -212,6 +212,7 @@ class Charword(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
+        charword_table = charword_table['charWords']
 
         charword_page_list = self.wiki.category('分类:干员语音')
         char_list = []
@@ -227,6 +228,7 @@ class Charword(Job):
     def update(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
+        charword_table = charword_table['charWords']
 
         char_list = [(k, v['name']) for k, v in filter(char_filter, character_table.items())]
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
@@ -235,6 +237,7 @@ class Charword(Job):
     def update_jp(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
+        charword_table = charword_table['charWords']
 
         character_table_jp = self.getgd('excel/character_table.json', 'JP')
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')

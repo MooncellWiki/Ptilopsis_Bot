@@ -40,5 +40,5 @@ if __name__ == '__main__':
     up = Unpacker(config)
     # up.get_all_ab()
     # up.unpack_all_data()
-    up.get_ab("arts/teamicon/team_icon_hub.ab")
-    # up.unpack_data("battle/prefabs/[uc]skills.ab")
+    # up.get_ab("arts/teamicon/team_icon_hub.ab")
+    up.unpack_data("gamedata/excel/building_data.ab")
