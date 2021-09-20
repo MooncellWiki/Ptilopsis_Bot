@@ -27,9 +27,9 @@ class RichTextStyles:
         return self.termDescriptionDict[code]
 
     def compile(self, s):
-        pattern = re.compile('<@([^>]*)>')
+        pattern = re.compile('<+@([^>]*)>')
         t = re.sub(pattern, self.tran1, s)
-        pattern = re.compile('<\$([^>]*)>')
+        pattern = re.compile('<+\$([^>]*)>')
         t = re.sub(pattern, self.tran2, t)
         t = t.replace('</>', '}}')
         return t
