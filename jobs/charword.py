@@ -56,9 +56,11 @@ def concat_id(voice_data, char_name, flag_CN, text_jp=''):
 
 
 def get_charword_data(word_key, file_name, charword_table, flag_CN, text_jp_dict=None, title='语音记录'):
-    char_word = '<noinclude>\n=={}==\n<!--{}-->\n'.format(title, word_key) + \
-                '</noinclude>{{#invoke:VoiceTable|table|表格标题=' + title + \
-                '\n<noinclude>|可播放=1</noinclude>'
+    char_word = f"<noinclude>\n=={title}==\n"
+    if flag_CN:
+        char_word += '{{#Widget:VoiceLangSelector}}\n'
+    char_word += f"<!--{word_key}-->" + '\n</noinclude>{{#invoke:VoiceTable|table|表格标题='
+    char_word += f"{title}\n<noinclude>|可播放=1</noinclude>"
     for data in sorted(filter(lambda x: x['wordKey'] == word_key, charword_table.values()),
             key = lambda x: x['voiceIndex']):
         if text_jp_dict is not None and str(data['voiceIndex']) in text_jp_dict:
@@ -84,8 +86,6 @@ def create_charword(wiki, char_list, charword_table, voice_lang_dict):
             continue
 
         content = ''
-        if char_id in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[char_id]['cvDictionary']:
-            content += '{{#Widget:VoiceLangSelector}}\n'
         for k in key_list:
             flag_CN = False
             if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
@@ -121,8 +121,6 @@ def update_charword(wiki, char_list, charword_table, voice_lang_dict):
         origin_text = wiki.read(char_name + '/语音记录')
         origin_text += '=='
         new_text = ''
-        if char_id in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[char_id]['cvDictionary']:
-            new_text += '{{#Widget:VoiceLangSelector}}\n'
         for k in key_list:
             flag_CN = False
             if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
@@ -173,8 +171,6 @@ def update_charword_jp(wiki, char_list, charword_table, voice_lang_dict, charwor
         origin_text = wiki.read(char_name + '/语音记录')
         origin_text += '=='
         new_text = ''
-        if char_id in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[char_id]['cvDictionary']:
-            new_text += '{{#Widget:VoiceLangSelector}}\n'
         for k in key_list:
             flag_CN = False
             if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
