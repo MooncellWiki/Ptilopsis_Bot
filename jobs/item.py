@@ -1,4 +1,5 @@
 from utils.job import Job
+import re
 
 
 def find(j, name, p):
@@ -140,6 +141,20 @@ class Item(Job):
                     tbasic_info = tbasic_info + '==加工站==\n' + twf
                 if sort:
                     tbasic_info = tbasic_info + '==材料掉落=='
+                # 更新副产物
+                # if twf:
+                #     old = self.wiki.read(citem['name'].rstrip())
+                #     result = re.search(r"==加工站==\n([\s\S]*?)\n+==", old)
+                #     if result:
+                #         new = old.replace(result.group(1), twf)
+                #     else:
+                #         new = old
+                #     if new != old:
+                #         # print(new)
+                #         self.wiki.edit(title=citem['name'].rstrip(), text=new)
+                #         print("edit", citem['name'].rstrip())
+                #     else:
+                #         print(citem['name'].rstrip(), 'same')
             fin = '{{Navigator|道具一览}}\n' + tbasic_info + '\n{{道具导航}}'
             # print(fin)
             self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)

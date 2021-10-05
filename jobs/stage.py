@@ -238,7 +238,7 @@ def analyze_level_info(level_table):
         for fragment in wave['fragments']:
             fragment_flag, time = False, 0.0
             for unit in fragment['actions']:
-                if unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group:
+                if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
                     fragment_flag = True
                     time = max(time, unit['preDelay'] + (unit['count'] - 1) * unit['interval'])
                     if unit['actionType'] == 0 and unit['key'] != '':
@@ -355,7 +355,7 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
                 if unit['actionType'] == 0:
                     if unit['key'] not in enemy_num_dict:
                         enemy_num_dict[unit['key']] = 0
-                    if unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group:
+                    if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
                         enemy_num_dict[unit['key']] += unit['count']
                     else:
                         enemy_num_dict[unit['key']] += 0
@@ -824,6 +824,23 @@ class Stage(Job):
             # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
             # if result:
             #     stage_content = old.replace(result.group(1), stage_enemy_data)
+            # else:
+            #     continue
+
+            # old = self.wiki.read(stage_page_name)
+            # result1 = re.search(r"\|额外物资=(.*?)\n", old)
+            # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
+            # if result1 and result2:
+            #     stage_content = old.replace(result1.group(1), result2.group(1))
+            #     if stage_content != old:
+            #         print(f'{stage_page_name} differenet. update.')
+            #         self.wiki.edit(
+            #             title=stage_page_name,
+            #             text=stage_content,
+            #             summary='update'
+            #         )
+            #     else:
+            #         print(f'{stage_page_name} same.')
             # else:
             #     continue
 
