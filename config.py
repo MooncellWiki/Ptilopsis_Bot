@@ -1,5 +1,5 @@
 config = {
-    'apiUrl': 'http://prts.wiki/api.php',
+    'apiUrl': 'https://prts.wiki/api.php',
     'username': 'botPtilopsis',
     'password': 'netVyc-3zurba-vupcow',
     'version': 'version.json',
@@ -17,7 +17,7 @@ config = {
             "files": "gamedata/excel",
             "updateMsg": "[JP UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
-            "configUrl": "http://ark-jp-static-online.yo-star.com/assetbundle/official/",
+            "configUrl": "https://ark-jp-static-online.yo-star.com/assetbundle/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         },
         "US": {
@@ -25,7 +25,7 @@ config = {
             "files": "gamedata/excel",
             "updateMsg": "[US UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
-            "configUrl": "http://ark-us-static-online.yo-star.com/assetbundle/official/",
+            "configUrl": "https://ark-us-static-online.yo-star.com/assetbundle/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         },
         "KR": {
@@ -33,7 +33,7 @@ config = {
             "files": "gamedata/excel",
             "updateMsg": "[KR UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
-            "configUrl": "http://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/",
+            "configUrl": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         },
         "TW": {
@@ -41,7 +41,7 @@ config = {
             "files": "gamedata/excel",
             "updateMsg": "[TW UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
-            "configUrl": "http://akcdn.imtxwy.com/assetbundle/official/",
+            "configUrl": "https://akcdn.imtxwy.com/assetbundle/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         }
     },
