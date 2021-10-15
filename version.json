@@ -1,6 +1,6 @@
 {
     "CN": {
-        "resVersion": "21-09-28-11-41-43-f739f9",
+        "resVersion": "21-10-11-12-30-51-9ab9d9",
         "clientVersion": "1.5.81",
         "funcVer": "V022"
     },
@@ -20,8 +20,8 @@
         "funcVer": "V018"
     },
     "TW": {
-        "resVersion": "21-09-18-09-15-02-8a4b62",
-        "clientVersion": "2.0.01",
+        "resVersion": "21-10-12-09-31-02-6a188f",
+        "clientVersion": "2.1.01",
         "funcVer": "V013"
     }
 }
