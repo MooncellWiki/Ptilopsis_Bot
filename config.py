@@ -8,7 +8,7 @@ config = {
             "folder": "zh_CN",
             "files": "gamedata",
             "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
-            "resUrl": "https://ak-hu.hycdn.cn/assetbundle/official/Android/",
+            "resUrl": "https://ak.hycdn.cn/assetbundle/official/Android/",
             "configUrl": "https://ak-conf.hypergryph.com/config/prod/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         },
