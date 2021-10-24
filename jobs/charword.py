@@ -20,14 +20,6 @@ def concat_id(voice_data, char_name, flag_CN, text_jp=''):
     )
     if flag_CN:
         text += f"|中文语音{voice_data['voiceIndex']}={char_name + ' ' + voice_data['voiceTitle'].rstrip() + ' CN.wav'}\n"
-    if char_name == '白金':
-        text = '|标题{id}={title}\n|日文{id}={text_jp}\n|中文{id}={text_cn}\n|语音{id}={voice}\n'.format(
-            id = voice_data['voiceIndex'],
-            title = voice_data['voiceTitle'].rstrip(),
-            text_jp = norm_text(text_jp),
-            text_cn = norm_text(voice_data['voiceText']),
-            voice = ''
-        )
     if voice_data['unlockType'] == 'DIRECT':
         pass
     elif voice_data['unlockType'] == 'FAVOR':

@@ -8,8 +8,21 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 
-def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts):
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|子职业={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}\n|配音={infoName}{limit}'.format(
+def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, charword_table, rts):
+    cv = ''
+    try:
+        cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
+        for k in cv_dict:
+            cv += '\n|{lang}配音={name}'.format(
+                lang = {'CN_MANDARIN': '中文', 'JP': '日文', 'EN': '日文'}.get(k, ''),
+                name = cv_dict[k]
+            )
+    except:
+        if char_key in stories_table['handbookDict']:
+            cv = '\n|日文配音={}'.format(stories_table['handbookDict'][char_key]['infoName'])
+        else:
+            cv = '\n|日文配音='
+    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|子职业={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_key = char_key,
@@ -25,7 +38,7 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
         drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
-        infoName = stories_table['handbookDict'][char_key]['infoName'] if char_key in stories_table['handbookDict'] else '',
+        infoName = cv,
         limit = '\n|限定=1' if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
     )
     if char_detail['trait'] != None:
@@ -942,6 +955,7 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
+        charword_table = self.getgd('excel/charword_table.json')
         id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
@@ -963,7 +977,7 @@ class Basic(Job):
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
                 # continue
 
-            basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, rts)
+            basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, charword_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
             phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             range_data = get_range_data(char_detail)
@@ -1047,6 +1061,7 @@ class Basic(Job):
         stories_table = self.getgd('excel/handbook_info_table.json')
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
+        charword_table = self.getgd('excel/charword_table.json')
         id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
@@ -1089,6 +1104,30 @@ class Basic(Job):
                 team = trans_team(char_detail['teamId'], team_table)
             )
             new_text = new_text[:num1] + tt + new_text[num2:]
+
+            # 更新干员cv
+            num1 = new_text.find('|画师=')
+            num2 = new_text.find('|限定=')
+            if num2 == -1:
+                num2 = new_text.find('\n|精英0')
+            cv = ''
+            try:
+                cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
+                for k in cv_dict:
+                    cv += '\n|{lang}配音={name}'.format(
+                        lang = {'CN_MANDARIN': '中文', 'JP': '日文', 'EN': '日文'}.get(k, ''),
+                        name = cv_dict[k]
+                    )
+            except:
+                if char_key in stories_table['handbookDict']:
+                    cv = '\n|日文配音={}'.format(stories_table['handbookDict'][char_key]['infoName'])
+                else:
+                    cv = '\n|日文配音='
+            ii = '|画师={drawName}{infoName}\n'.format(
+                drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
+                infoName = cv
+            )
+            new_text = new_text[:num1] + ii + new_text[num2:]
 
             if new_text != origin_text:
                 self.wiki.edit(
