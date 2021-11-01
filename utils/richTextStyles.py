@@ -20,7 +20,12 @@ class RichTextStyles:
 
     def tran1(self, matched):
         code = matched.group(1)
-        return self.richTextStyles[code.lower()]
+        if code.lower() in self.richTextStyles:
+            return self.richTextStyles[code.lower()]
+        elif code in self.termDescriptionDict:
+            return self.termDescriptionDict[code]
+        else:
+            return '{{'
 
     def tran2(self, matched):
         code = matched.group(1)
