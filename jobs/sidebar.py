@@ -95,7 +95,7 @@ class Sidebar(Job):
         old_num, char_list = -1, self.wiki.category('分类:干员')
         for char_key in character_table:
             name = character_table[char_key]['name']
-            if name in id_table and id_table[name]['id'] > old_num:
+            if name in id_table and name in char_list and id_table[name]['id'] > old_num:
                 old_num = id_table[name]['id']
         update_menusidebar(self.wiki, old_num, id_table, character_table)
         update_gameinfo(self.wiki, old_num, id_table, character_table)
