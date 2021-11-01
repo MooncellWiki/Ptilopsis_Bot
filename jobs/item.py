@@ -45,6 +45,8 @@ class Item(Job):
                 continue
             if citem['name'].rstrip() in items:
                 continue
+            if 'hideInItemGet' in citem and citem['hideInItemGet']:
+                continue
             if citem['name'].find('的信物') != -1:
                 sort = '信物'
             elif citem['name'].find('信物') != -1:
