@@ -577,6 +577,92 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
     return skill_levelUp_list
 
 
+def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts):
+    if char_key not in uniequip_table['charEquip']:
+        return ''
+    content = '\n==模组=='
+    for equip in uniequip_table['charEquip'][char_key]:
+        if equip not in uniequip_table['equipDict']:
+            continue
+        equip_info = uniequip_table['equipDict'][equip]
+        if equip_info['type'] == 'INITIAL':
+            template = '\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes\n|分支={subProf}\n|基础信息={bInfo}\n}}}}'
+            content += template.format(
+                name = equip_info['uniEquipName'],
+                subProf = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'],
+                bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
+            )
+        else:
+            template = '\n==={name}===\n<section begin=专属模组 />\n{{{{模组\n|名称={name}\n|类型={type}' \
+                       '{typeColor}{params}{trait}{missions}{unlockCond}\n|材料消耗={itemCost}' \
+                       '\n|基础信息={bInfo}\n}}}}\n<section end=专属模组 />'
+            if equip_info['equipShiningColor'] != 'grey':
+                type_color = f"\n|类型颜色={equip_info['equipShiningColor']}"
+            else:
+                type_color = ''
+            params, trait = '', ''
+            if equip in battle_equip_table:
+                for i in battle_equip_table[equip]['phases'][0]['attributeBlackboard']:
+                    params += '\n|{attrType}={value:.0f}'.format(
+                        attrType = {'max_hp': '生命', 'atk': '攻击', 'def': '防御', 'magic_resistance': '法术抗性',
+                                    'respawn_time': '再部署', 'cost': '部署费用', 'block_cnt': '阻挡数',
+                                    'attack_speed': '攻击速度'}.get(i['key'], '其他'),
+                        value = i['value']
+                    )
+                for e in battle_equip_table[equip]['phases'][0]['parts']:
+                    if e['overrideTraitDataBundle']['candidates'] is not None:
+                        trait_text = ''
+                        if e['overrideTraitDataBundle']['candidates'][0]['additionalDescription'] is not None:
+                            trait = '\n|特性追加=yes'
+                            trait_text = e['overrideTraitDataBundle']['candidates'][0]['additionalDescription']
+                        elif e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton'] is not None:
+                            trait = ''
+                            trait_text = e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton']
+                        trait_dic = {}
+                        for eb in e['overrideTraitDataBundle']['candidates'][0]['blackboard']:
+                            k = eb['key'].replace('.', '').replace(']', '').replace('[', '')
+                            if eb['value'] != int(eb['value']):
+                                trait_dic[k] = eb['value']
+                            else:
+                                trait_dic[k] = int(eb['value'])
+                        trait_text = trait_text.replace('-{-', '{').replace('{-', '{').replace('\\n', '<br/>')
+                        trait_text = replace_key(replace_upper(trait_text))
+                        trait_text = trait_text.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
+                        trait_text = trait_text.format(**trait_dic)
+                        trait_text = rts.compile(trait_text)
+                        trait = f"\n|特性={trait_text}" + trait
+            missions = ''
+            for idx, mission_id in enumerate(equip_info['missionList']):
+                desc = uniequip_table['missionList'][mission_id]['desc']
+                result = re.search(r'通关主题曲(.+?)；', desc)
+                if result:
+                    desc = desc.replace(result.group(1), f"[[{result.group(1)}]]")
+                missions += f"\n|任务{idx+1}={desc}"
+            unlock = f"\n|解锁等级={equip_info['unlockLevel']}"
+            if equip_info['unlockFavorPoint'] == 10070:
+                unlock += '\n|解锁信赖=100'
+            else:
+                unlock += f"\n|解锁信赖=?<!-- favorPoint {equip_info['unlockFavorPoint']} -->"
+            item_cost = []
+            for i in equip_info['itemCost']:
+                if i['count'] < 10000:
+                    item_cost.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']}}}}}")
+                else:
+                    item_cost.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']/10000:.0f}万}}}}")
+            content += template.format(
+                name = equip_info['uniEquipName'],
+                type = equip_info['typeName'],
+                typeColor = type_color,
+                params = params,
+                trait = trait,
+                missions = missions,
+                unlockCond = unlock,
+                itemCost = ' '.join(item_cost),
+                bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
+            )
+    return content
+
+
 def get_related_item(char_detail, item_table):
     if char_detail['potentialItemId'] and char_detail['potentialItemId'] in item_table['items']:
         return '{{{{相关道具\n|干员简介={itemUsage}\n|干员简介补充={itemDesc}\n|信物用途={potentialUsage}\n|信物描述={potentialDesc}\n}}}}'.format(
@@ -928,7 +1014,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 ==精英化材料==
 {phase}
 ==技能升级材料==
-{skill_levelup}
+{skill_levelup}{equip}
 ==相关道具==
 {related_item}
 ==干员档案==
@@ -988,6 +1074,7 @@ class Basic(Job):
             building_skill = get_building_skill(building_data, char_key)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
+            battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
@@ -1007,6 +1094,7 @@ class Basic(Job):
                 token_info = token_info,
                 phase = phase_list,
                 skill_levelup = skill_levelUp_list,
+                equip = battle_equip,
                 related_item = related_item,
                 stories = stories_list,
                 handbook_avg = handbook_avg,
