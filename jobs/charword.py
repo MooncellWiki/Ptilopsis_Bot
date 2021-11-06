@@ -53,6 +53,7 @@ def get_charword_data(word_key, file_name, charword_table, flag_CN, text_jp_dict
         char_word += '{{#Widget:VoiceLangSelector}}\n'
     char_word += f"<!--{word_key}-->" + '\n</noinclude>{{#invoke:VoiceTable|table|表格标题='
     char_word += f"{title}\n<noinclude>|可播放=1</noinclude>"
+    char_word += f"\n|语音key={word_key}"
     for data in sorted(filter(lambda x: x['wordKey'] == word_key, charword_table.values()),
             key = lambda x: x['voiceIndex']):
         if text_jp_dict is not None and str(data['voiceIndex']) in text_jp_dict:
