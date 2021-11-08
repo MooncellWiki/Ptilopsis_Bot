@@ -109,7 +109,7 @@ def update_mat_demand(wiki, character_table, item_table):
             wiki.edit(
                 title = item_table['items'][material]['name'].strip(),
                 text = new_text,
-                summary = '更换为widget',
+                summary = 'update',
             )
             # print(new_text)
             print('Update: {}.'.format(item_table['items'][material]['name'].strip()))
