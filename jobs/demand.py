@@ -94,6 +94,9 @@ def update_mat_demand(wiki, character_table, item_table):
             num4 = count1 + count2 + count3
         ) + mat_desc
 
+        # 新版，widget
+        mat_desc = f"==干员需求==\n{{{{#widget:ItemDemand|item={item_table['items'][material]['name'].strip()}}}}}\n"
+        
         num_flag1 = origin_text.find('==干员需求==')
         num_flag2 = origin_text.find('==材料掉落==')
         if num_flag2 != -1:
@@ -104,14 +107,14 @@ def update_mat_demand(wiki, character_table, item_table):
         # edit wiki
         if origin_text != new_text:
             wiki.edit(
-                title = item_table['items'][material]['name'].rstrip(),
+                title = item_table['items'][material]['name'].strip(),
                 text = new_text,
-                summary = 'update',
+                summary = '更换为widget',
             )
             # print(new_text)
-            print('Update: {}.'.format(item_table['items'][material]['name'].rstrip()))
+            print('Update: {}.'.format(item_table['items'][material]['name'].strip()))
         # else:
-        #     print('Same: {}.'.format(item_table['items'][material]['name'].rstrip()))
+        #     print('Same: {}.'.format(item_table['items'][material]['name'].strip()))
 
 
 class Demand(Job):

@@ -82,8 +82,9 @@ if __name__ == '__main__':
         # Range(wiki, gameData).run()
 
     if 'demand' in sys.argv or flag_new_char:
-        from jobs.demand import Demand
-        Demand(wiki, gameData).run()
+        pass
+        # from jobs.demand import Demand
+        # Demand(wiki, gameData).run()
 
     if 'jp' in sys.argv:
         Charword(wiki, gameData).update_jp()
