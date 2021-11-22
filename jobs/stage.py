@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import requests
 
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
@@ -985,13 +986,14 @@ class Stage(Job):
         for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
             stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
 
-            # 从 weedy 读
-            # session = requests.Session()
-            # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
-            # stage_list = [stage_list[0]]
-            # for stage_key in stage_list:
-            #     stage_detail = stage_key
-            #     stage_detail['levelId'] = 'Obt/rune/level_rune_04-01'
+        # 从 weedy 读
+        # session = requests.Session()
+        # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
+        # stage_list = [stage_list[0]]
+        # for stage_key in stage_list:
+        #     stage_detail = stage_key
+        #     stage_detail['stageId'] = stage_detail['id']
+        #     stage_detail['levelId'] = 'Obt/rune/' + stage_detail['id']
 
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
 

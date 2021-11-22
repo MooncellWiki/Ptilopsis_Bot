@@ -72,7 +72,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         Stage(wiki, gameData).run_campaign()  # 剿灭
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
-        # Stage(wiki, gameData).run_id('levels/obt/rune/level_rune_07-01.json')
+        # Stage(wiki, gameData).run_id('levels/obt/rune/level_rune_09-02.json')
         
         # from jobs.route import Route
         # Route(wiki, gameData).run()
