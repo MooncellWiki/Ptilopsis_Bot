@@ -62,6 +62,8 @@ class Enemy(Job):
                     s = {'i': '0', 'f': '0.0', 's': '', 'b': '无'}.get(k, '')
                     if name == '攻击范围半径':
                         s = ''
+                    if name == '攻击速度':
+                        s = '100'
                 else:
                     if k == 's':
                         s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
