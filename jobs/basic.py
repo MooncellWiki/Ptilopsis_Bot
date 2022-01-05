@@ -1056,8 +1056,10 @@ class Basic(Job):
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
+            if char_key == 'char_512_aprot':
+                continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['麦哲伦', '杜宾']:
+            # if char_detail['name'] not in ['暮落']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
