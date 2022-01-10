@@ -122,7 +122,9 @@ class Medal(Job):
         self.wiki.edit(
             title='用户:Seniorious/medal',
             text=content,
-            summary='update'
+            summary='update',
+            bot = None,
+            minor = True
         )
         # print(content)
         print('Updated: {}.'.format('用户:Seniorious/medal'))
