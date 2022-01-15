@@ -1,27 +1,27 @@
 {
     "CN": {
-        "resVersion": "22-01-06-20-31-20-ce087e",
+        "resVersion": "22-01-10-16-38-42-d230b0",
         "clientVersion": "1.7.01",
         "funcVer": "V024"
     },
     "JP": {
-        "resVersion": "21-12-29-10-30-25-3026aa",
-        "clientVersion": "6.0.01",
-        "funcVer": "V020"
+        "resVersion": "22-01-06-14-04-16-7b1957",
+        "clientVersion": "7.0.01",
+        "funcVer": "V021"
     },
     "US": {
-        "resVersion": "22-01-05-05-02-00-6bfe3f",
-        "clientVersion": "6.0.01",
-        "funcVer": "V020"
+        "resVersion": "22-01-12-09-51-26-f47129",
+        "clientVersion": "7.0.01",
+        "funcVer": "V021"
     },
     "KR": {
-        "resVersion": "21-12-29-12-21-52-174ba5",
-        "clientVersion": "6.0.01",
-        "funcVer": "V020"
+        "resVersion": "22-01-06-15-29-02-165c37",
+        "clientVersion": "7.0.01",
+        "funcVer": "V021"
     },
     "TW": {
-        "resVersion": "21-12-21-08-38-14-3ce456",
-        "clientVersion": "2.2.01",
+        "resVersion": "22-01-11-15-19-40-48ded4",
+        "clientVersion": "3.0.01",
         "funcVer": "V013"
     }
 }
