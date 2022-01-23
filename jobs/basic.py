@@ -12,9 +12,10 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
     cv = ''
     try:
         cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
+        lang_ict = charword_table['voiceLangTypeDict']
         for k in cv_dict:
             cv += '\n|{lang}配音={name}'.format(
-                lang = {'CN_MANDARIN': '中文', 'JP': '日文', 'EN': '日文'}.get(k, ''),
+                lang = lang_ict.get(k, ''),
                 name = cv_dict[k]
             )
     except:
@@ -1165,6 +1166,8 @@ class Basic(Job):
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
+            if char_key == 'char_512_aprot':
+                continue
             # if char_detail['name'] not in ['浊心斯卡蒂']:
             #     continue
             origin_text = self.wiki.read(char_detail['name'])
@@ -1203,9 +1206,10 @@ class Basic(Job):
             cv = ''
             try:
                 cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
+                lang_ict = charword_table['voiceLangTypeDict']
                 for k in cv_dict:
                     cv += '\n|{lang}配音={name}'.format(
-                        lang = {'CN_MANDARIN': '中文', 'JP': '日文', 'EN': '日文'}.get(k, ''),
+                        lang = lang_ict.get(k, ''),
                         name = cv_dict[k]
                     )
             except:

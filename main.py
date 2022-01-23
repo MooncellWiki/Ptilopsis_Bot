@@ -68,6 +68,7 @@ if __name__ == '__main__':
     if 'special' in sys.argv:
         # Furni(wiki, gameData).update()
         # Charword(wiki, gameData).update()
+        # Basic(wiki, gameData).update()  # 干员详情
         Basic(wiki, gameData).update_handbook()  # 干员密录
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         Stage(wiki, gameData).run_campaign()  # 剿灭
