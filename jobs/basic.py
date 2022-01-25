@@ -11,12 +11,14 @@ from utils.richTextStyles import RichTextStyles
 def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, charword_table, rts):
     cv = ''
     try:
-        cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
-        lang_ict = charword_table['voiceLangTypeDict']
+        cv_dict = charword_table['voiceLangDict'][char_key]['dict']
+        lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
+        lang_dict['CN_MANDARIN'] = '中文'
+        lang_dict['CN_TOPOLECT'] = '中文方言'
         for k in cv_dict:
             cv += '\n|{lang}配音={name}'.format(
-                lang = lang_ict.get(k, ''),
-                name = cv_dict[k]
+                lang = lang_dict.get(k, ''),
+                name = cv_dict[k]['cvName']
             )
     except:
         if char_key in stories_table['handbookDict']:
@@ -1205,12 +1207,14 @@ class Basic(Job):
                 num2 = new_text.find('\n|精英0')
             cv = ''
             try:
-                cv_dict = charword_table['voiceLangDict'][char_key]['cvDictionary']
-                lang_ict = charword_table['voiceLangTypeDict']
+                cv_dict = charword_table['voiceLangDict'][char_key]['dict']
+                lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
+                lang_dict['CN_MANDARIN'] = '中文'
+                lang_dict['CN_TOPOLECT'] = '中文方言'
                 for k in cv_dict:
                     cv += '\n|{lang}配音={name}'.format(
-                        lang = lang_ict.get(k, ''),
-                        name = cv_dict[k]
+                        lang = lang_dict.get(k, ''),
+                        name = cv_dict[k]['cvName']
                     )
             except:
                 if char_key in stories_table['handbookDict']:

@@ -81,7 +81,7 @@ def create_charword(wiki, char_list, charword_table, voice_lang_dict):
         content = ''
         for k in key_list:
             flag_CN = False
-            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
+            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['dict']:
                 flag_CN = True
             file_name = char_name
             if k != char_id:
@@ -116,7 +116,7 @@ def update_charword(wiki, char_list, charword_table, voice_lang_dict):
         new_text = ''
         for k in key_list:
             flag_CN = False
-            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
+            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['dict']:
                 flag_CN = True
             file_name = char_name
             if k != char_id:
@@ -166,7 +166,7 @@ def update_charword_jp(wiki, char_list, charword_table, voice_lang_dict, charwor
         new_text = ''
         for k in key_list:
             flag_CN = False
-            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['cvDictionary']:
+            if k in voice_lang_dict and 'CN_MANDARIN' in voice_lang_dict[k]['dict']:
                 flag_CN = True
             file_name = char_name
             if k != char_id:
