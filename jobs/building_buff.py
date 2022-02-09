@@ -46,7 +46,7 @@ def get_building_buff(building_data, rts):
                     room = building_data['rooms'][buff_data['roomType']]['name'],
                     icon = buff_data['skillIcon'],
                     # description = special_buff(buff_data['buffName'], rts.compile(buff_data['description']))
-                    description = buff_data['description']
+                    description = rts.compile(buff_data['description'])
                 )
             }
 
