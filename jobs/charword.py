@@ -37,7 +37,7 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
         else:
             print('Unknown wordkey for character', char_id, char_name)
     if char_id == 'char_311_mudrok':
-        path_list.append('日文(摘下头盔时):char_311_mudrok__1')
+        path_list.append('日文(摘下头盔时):voice/char_311_mudrok__1')
     content += ','.join(path_list)
 
     if char_id not in ['char_457_blitz', 'char_456_ash', 'char_458_rfrost', 'char_459_tachak']:
