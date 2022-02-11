@@ -11,14 +11,6 @@ def norm_text(t):
     return result.strip()
 
 
-def word_key_list(char_id, char_lang_dict):
-    key_list = []
-    for word_key, char_lang in filter(lambda x: x[1]['charId'] == char_id, char_lang_dict.items()):
-        if word_key not in key_list:
-            key_list.append(word_key)
-    return key_list
-
-
 def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, old_words=None, title='语音记录', mode='create'):
     char_words = charword_table['charWords']
     char_lang = charword_table['voiceLangDict'][char_id]
@@ -44,6 +36,8 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
             wordkeys_list[char_lang['dict'][lang]['wordkey']].append(lang)
         else:
             print('Unknown wordkey for character', char_id, char_name)
+    if char_id == 'char_311_mudrok':
+        path_list.append('日文(摘下头盔时):char_311_mudrok__1')
     content += ','.join(path_list)
 
     if char_id not in ['char_457_blitz', 'char_456_ash', 'char_458_rfrost', 'char_459_tachak']:
