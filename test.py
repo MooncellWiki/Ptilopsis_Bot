@@ -9,8 +9,9 @@ from jobs._temp import Temp
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
 # from jobs.stage import Stage
-from jobs.furni import Furni
+# from jobs.furni import Furni
 # from jobs.weedy import Weedy
+from jobs.charword_v2 import Charword
 from utils.data import GameData
 from utils.unpacker import Unpacker
 from utils.wiki import Wiki
@@ -36,9 +37,10 @@ if __name__ == '__main__':
     # Basic(wiki, gameData)._run_update(old_num=178)
     # Charword(wiki, gameData)._run_update_jp()
     # Temp(wiki, gameData).test_id()
+    Charword(wiki, gameData).run()
 
-    up = Unpacker(config)
+    # up = Unpacker(config)
     # up.get_all_ab()
     # up.unpack_all_data()
     # up.get_ab("arts/teamicon/team_icon_hub.ab")
-    up.unpack_data("gamedata/excel/building_data.ab")
+    # up.unpack_data("gamedata/excel/building_data.ab")

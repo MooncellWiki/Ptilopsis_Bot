@@ -1059,7 +1059,7 @@ class Basic(Job):
             char_detail = character_table[char_key]
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            if char_key == 'char_512_aprot':
+            if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
             # if char_detail['name'] not in ['暮落']:

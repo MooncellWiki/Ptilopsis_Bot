@@ -88,9 +88,9 @@ if __name__ == '__main__':
         # Demand(wiki, gameData).run()
 
     if 'jp' in sys.argv:
-        Charword(wiki, gameData).update_jp()
-        from jobs.update_jp import UpdateJp
-        UpdateJp(wiki, gameData).run()
+        Charword(wiki, gameData).update()
+        # from jobs.update_jp import UpdateJp
+        # UpdateJp(wiki, gameData).run()
 
     if 'weedy' in sys.argv:
         from jobs.weedy import Weedy
