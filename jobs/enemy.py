@@ -18,15 +18,15 @@ class RtsHtml:
         for s in self.richTextStyles_t:
             temp = self.richTextStyles_t[s]
             if temp.find('</color>') != -1:
-                self.richTextStyles[s] = temp.replace('<color=', '<span style="color:').replace('</color>', '</span>')
+                self.richTextStyles[s] = temp.replace('<color=', '<span style="color:').replace('</color>', '</span>').replace('>{', ';">{')
             else:
                 self.richTextStyles[s] = '{0}'
         for k in self.termDescriptionDict_t:
             temp2 = self.termDescriptionDict_t[k]
             result = ''
             result += '<span class="mc-tooltips">'
-            result += '<span style="text-decoration:underline #222;">{term}</span>'
-            result += '<span style="display:none;" data-size="350">{description}</span>'.format(
+            result += '<span>{term}</span>'
+            result += '<span>{description}</span>'.format(
                 description=remove_term(temp2['description'])
             )
             result += '</span>'
