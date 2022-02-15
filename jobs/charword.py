@@ -95,6 +95,7 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
                         else:
                             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|}}}}"
                 else:
+                    official_flag = False
                     text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|}}}}"
     if char_id == 'char_1001_amiya2':
         voice_file_name = '阿米娅'
@@ -111,7 +112,9 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
             content += f"\n|条件{idx}={word_piece['condition']}"
     content += '\n}}'
     if official_flag == True:
-        content += f"<noinclude>[[分类:有官方{lang_2}文本的干员语音]]</noinclude>"
+        content += f"<noinclude>[[分类:干员语音]][[分类:有官方{lang_2}文本的干员语音]]</noinclude>"
+    else:
+        content += f"<noinclude>[[分类:干员语音]]</noinclude>"
     return content
 
 
@@ -120,16 +123,15 @@ def create_charword(wiki, char_list, charword_table):
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
-        if char_name != '令':
-            continue
 
         content = charword_data(char_id, char_name, charword_table, title='语音记录', mode='create')
         wiki.edit(
             title=char_name + '/语音记录',
             text=content,
-            summary='更新模板',
+            summary='init',
             bot=None,
-            minor=True
+            minor=True,
+            createonly=True
         )
         # print(content)
         print('Created: {}.'.format(char_name + '/语音记录'))
@@ -147,7 +149,7 @@ def update_charword(wiki, char_list, charword_table, charword_table_jp, charword
             wiki.edit(
                 title=char_name + '/语音记录',
                 text=content,
-                summary='更新模板',
+                summary='update',
                 bot=None,
                 minor=True
             )
