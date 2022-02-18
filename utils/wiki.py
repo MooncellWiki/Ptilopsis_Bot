@@ -111,7 +111,7 @@ class Wiki:
             'action': 'query',
             'list': 'categorymembers',
             'cmtitle': category,
-            'cmlimit': 1000
+            'cmlimit': 3000
         })
         ret = res.json()['query']['categorymembers']
         return [page['title'] for page in ret]
