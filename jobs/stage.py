@@ -981,10 +981,13 @@ class Stage(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         # 从 crisis_info 读
+        # https://weedy.baka.icu/crisis/today/internal
         with open('crisis_info.json', 'r', encoding='utf-8') as file:
             stage_table = json.loads(file.read())
         for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
             stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+            stage_detail['stageId'] = stage_key
+            stage_detail['levelId'] = 'Obt/rune/' + stage_key
 
         # 从 weedy 读
         # session = requests.Session()
