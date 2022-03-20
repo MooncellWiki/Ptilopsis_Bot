@@ -41,9 +41,9 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
     content += ','.join(path_list)
 
     if char_id not in ['char_457_blitz', 'char_456_ash', 'char_458_rfrost', 'char_459_tachak']:
-        char_words_2, lang_2 = char_words_jp, '日文'
+        char_words_2, lang_2 = char_words_jp['charWords'], '日文'
     else:
-        char_words_2, lang_2 = char_words_en, '英文'
+        char_words_2, lang_2 = char_words_en['charWords'], '英文'
     official_flag = True
     text_dict = {}
     for word_key in char_lang['wordkeys']:
