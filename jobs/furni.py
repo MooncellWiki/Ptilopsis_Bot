@@ -20,7 +20,7 @@ def update_furni(wiki, building_data, item_table):
 
         num1 = origin_text.find('|描述=')
         num2 = origin_text.find('|', num1 + 4)
-        new_text = origin_text[:num1] + '|描述={}\n'.format(furni_data['description']) + origin_text[num2:]
+        new_text = origin_text[:num1] + '|描述={}\n'.format(furni_data['description'].replace('\n','<br>')) + origin_text[num2:]
 
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
@@ -32,8 +32,13 @@ def update_furni(wiki, building_data, item_table):
 
         num1 = origin_text.find('|类型=')
         num2 = origin_text.find('|描述=')
-        new_text = new_text[:num1] + '|类型={type}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n'.format(
+        if furni_data['subType'] in building_data['customData']['subTypes']:
+            sub_type = '\n|子类型={}'.format(building_data['customData']['subTypes'][furni_data['subType']]['name'])
+        else:
+            sub_type = ''
+        new_text = new_text[:num1] + '|类型={type}{subType}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n'.format(
             type=building_data['customData']['types'][furni_data['type']]['name'],
+            subType = sub_type,
             rarity=furni_data['rarity'],
             comfort=furni_data['comfort'],
             destroyObtain=furni_destroy,
@@ -58,7 +63,7 @@ def create_furni(wiki, building_data, item_table):
     furni_format = '''{{{{家具信息
 |名称={name}
 |iconId={id}
-|类型={type}
+|类型={type}{subType}
 |稀有度={rarity}
 |氛围={comfort}
 |分解获得={destroyObtain}
@@ -95,15 +100,21 @@ def create_furni(wiki, building_data, item_table):
         if groups == '':
             individual_furni.append('{{{{家具|{}}}}}'.format(furni_data['name']))
 
+        if furni_data['subType'] in building_data['customData']['subTypes']:
+            sub_type = '\n|子类型={}'.format(building_data['customData']['subTypes'][furni_data['subType']]['name'])
+        else:
+            sub_type = ''
+
         furni_info = furni_format.format(
             name=furni_data['name'],
             id=furni_data['id'],
             type=building_data['customData']['types'][furni_data['type']]['name'],
+            subType = sub_type,
             rarity=furni_data['rarity'],
             comfort=furni_data['comfort'],
             destroyObtain=furni_destroy,
             size=str(furni_data['width']) + '×' + str(furni_data['depth']) + '×' + str(furni_data['height']),
-            description=furni_data['description'],
+            description=furni_data['description'].replace('\n','<br>'),
             usage=furni_data['usage'],
             obtainApproach=furni_data['obtainApproach'],
             themes=themes,
