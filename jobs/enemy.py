@@ -87,7 +87,12 @@ class Enemy(Job):
         enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
         for enemy in enemy_handbook_table.values():
-            if enemy['name'] in enemy_list:
+            if enemy['name'] == '-' and enemy['enemyId'] in enemy_db_index:
+                try:
+                    enemy['name'] = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]['Value'][0]['enemyData']['name']['m_value']
+                except:
+                    pass
+            if enemy['name'] in enemy_list or enemy['name'] == '-':
                 continue
             enemy_level_dict = {'NORMAL': '普通', 'ELITE': '精英', 'BOSS': '领袖'}
             content = '{{Navigator|敌人一览}}\n{{敌人信息/common'
