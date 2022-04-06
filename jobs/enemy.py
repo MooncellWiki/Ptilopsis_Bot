@@ -87,11 +87,11 @@ class Enemy(Job):
         enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
         for enemy in enemy_handbook_table.values():
-            if enemy['name'] == '-' and enemy['enemyId'] in enemy_db_index:
-                try:
-                    enemy['name'] = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]['Value'][0]['enemyData']['name']['m_value']
-                except:
-                    pass
+            # if enemy['name'] == '-' and enemy['enemyId'] in enemy_db_index:
+            #     try:
+            #         enemy['name'] = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]['Value'][0]['enemyData']['name']['m_value']
+            #     except:
+            #         pass
             if enemy['name'] in enemy_list or enemy['name'] == '-':
                 continue
             enemy_level_dict = {'NORMAL': '普通', 'ELITE': '精英', 'BOSS': '领袖'}
@@ -195,6 +195,8 @@ class Enemy(Job):
                 override_list.append(e.replace('(敌方)', ''))
 
         for enemy_data in enemy_handbook_table.values():
+            if enemy_data['name'] == '-':
+                continue
             attack_info = enemy_data['attackType']
             new_data = {
                 # 'enemyId': enemy_data['enemyId'],
