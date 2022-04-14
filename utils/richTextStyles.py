@@ -29,7 +29,10 @@ class RichTextStyles:
 
     def tran2(self, matched):
         code = matched.group(1)
-        return self.termDescriptionDict[code]
+        if code in self.termDescriptionDict:
+            return self.termDescriptionDict[code]
+        else:
+            return '{{'
 
     def compile(self, s):
         pattern = re.compile('<+@([^>]*)>')

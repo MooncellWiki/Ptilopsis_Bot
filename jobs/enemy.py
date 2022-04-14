@@ -34,11 +34,17 @@ class RtsHtml:
 
     def tran1(self, matched):
         code = matched.group(1)
-        return self.richTextStyles[code.lower()].format(matched.group(2))
+        if code.lower() in self.richTextStyles:
+            return self.richTextStyles[code.lower()].format(matched.group(2))
+        else:
+            return matched.group(2)
 
     def tran2(self, matched):
         code = matched.group(1)
-        return self.termDescriptionDict[code].format(term=matched.group(2))
+        if code in self.termDescriptionDict:
+            return self.termDescriptionDict[code].format(term=matched.group(2))
+        else:
+            return matched.group(2)
 
     def compile(self, s):
         pattern = re.compile('<@([^>]*)>([^<]*)<\/>')
