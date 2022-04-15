@@ -745,7 +745,7 @@ class Stage(Job):
 
         stage_code_dict, duplicate_dict = {}, {}
         for s in stage_table['stages'].values():
-            if s['difficulty'] == 'FOUR_STAR' or s['stageType'] == 'GUIDE':
+            if s['difficulty'] == 'FOUR_STAR' or s['stageType'] == 'GUIDE' or s['diffGroup'] in ['EASY', 'TOUGH']:
                 continue
             if s['code'] not in stage_code_dict:
                 stage_code_dict[s['code'].strip()] = []
@@ -785,7 +785,7 @@ class Stage(Job):
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY'] or stage_detail[
-                'difficulty'] == 'FOUR_STAR':
+                'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY', 'TOUGH']:
                 continue
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
             if stage_page_name in stage_list:
