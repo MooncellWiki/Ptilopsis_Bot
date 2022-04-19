@@ -47,9 +47,9 @@ class RtsHtml:
             return matched.group(2)
 
     def compile(self, s):
-        pattern = re.compile('<@([^>]*)>([^<]*)<\/>')
+        pattern = re.compile('<@([^>]*)>(.*?)<\/>')
         t = re.sub(pattern, self.tran1, s)
-        pattern = re.compile('<\$([^>]*)>([^<]*)<\/>')
+        pattern = re.compile('<\$([^>]*)>(.*?)<\/>')
         t = re.sub(pattern, self.tran2, t)
         return t
 
