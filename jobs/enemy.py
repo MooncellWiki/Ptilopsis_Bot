@@ -144,6 +144,7 @@ class Enemy(Job):
                     content += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
                     content += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
                     content += get_value(idx, lv_data['attributes']['frozenImmune'], '冻结抗性', 'b')
+                    content += get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
                     if lv_data['talentBlackboard']:
                         content += '\n|天赋=<!--{}-->'.format(
                             json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False)
