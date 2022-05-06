@@ -24,7 +24,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
                     drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
                 else:
                     drawer = ''
-                order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 12 + \
+                order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 100 + \
                         skin_table['charSkins'][skin_key]['displaySkin']['onPeriod']
                 skin_desc[
                     order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}描述={des}'.format(
@@ -254,7 +254,7 @@ def update_outfit_gallery(wiki, skin_table, character_table):
                 anchor = anchor,
                 skin_series = brand_list[skin_info['displaySkin']['skinGroupId']]
             )
-            order = skin_info['displaySkin']['onYear'] * 12 + skin_info['displaySkin']['onPeriod']
+            order = skin_info['displaySkin']['onYear'] * 100 + skin_info['displaySkin']['onPeriod']
             if order not in skin_dict:
                 skin_dict[order] = {
                     'title': 'Y-{} {:0>2d}'.format(skin_info['displaySkin']['onYear'],
