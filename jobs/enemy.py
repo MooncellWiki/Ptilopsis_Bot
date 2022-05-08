@@ -271,3 +271,67 @@ class Enemy(Job):
         enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
         enemy_database = self.getgd('levels/enemydata/enemy_database.json')
         pass
+
+    def update_immune(self):
+        def get_value(idx, v, name, k):
+            if idx == 0 or v['m_defined'] == True:
+                if v['m_defined'] == False:
+                    s = {'i': '0', 'f': '0.0', 's': '', 'b': '无'}.get(k, '')
+                    if name == '攻击范围半径':
+                        s = ''
+                    if name == '攻击速度':
+                        s = '100'
+                else:
+                    if k == 's':
+                        s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
+                    elif k == 'i':
+                        s = str(int(v["m_value"]) if v["m_value"] == int(v["m_value"]) else v["m_value"])
+                    elif k == 'f':
+                        s = str(v["m_value"])
+                    elif k == 'b':
+                        s = {True: '有', False: '无'}.get(v["m_value"], '无')
+                    else:
+                        s = ''
+                return f'\n|{name}={s}'
+            else:
+                return ''
+
+        enemy_handbook_table = self.getgd('excel/enemy_handbook_table.json')
+        enemy_database = self.getgd('levels/enemydata/enemy_database.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        enemy_list = self.wiki.category('分类:敌人')
+        enemy_list_2 = {e.replace('(敌方)', ''):e for e in enemy_list}
+        enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
+        for enemy in enemy_handbook_table.values():
+            if enemy['name'] == '-':
+                continue
+            old_page = self.wiki.read(enemy_list_2[enemy['name']])
+            new_page = old_page
+
+            if enemy['enemyId'] in enemy_db_index:
+                enemy_data = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]
+                for idx, d in enumerate(enemy_data['Value']):
+                    if d['level'] != idx:
+                        print(f'enemy {enemy["name"]} database order error.')
+                        continue
+                    lv_data = d['enemyData']
+                    lv_idx = new_page.find(f'==级别{idx}==')
+                    lv_idx2 = new_page.find(f'==级别{idx+1}==')
+                    lv_piece = new_page[lv_idx:lv_idx2]
+                    new_immune = get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
+                    if new_immune != '' and '|浮空抗性=' not in lv_piece:
+                        a = re.findall('(\|.*?抗性=.*?)\n', lv_piece)
+                        if a != []:
+                            flag = lv_piece.find(a[-1]) + len(a[-1])
+                            lv_piece = lv_piece[:flag] + new_immune + lv_piece[flag:]
+                            new_page = new_page[:lv_idx] + lv_piece + new_page[lv_idx2:]
+
+            if new_page != old_page:
+                self.wiki.edit(
+                    title=enemy_list_2[enemy['name']],
+                    text=new_page,
+                    summary='更新抗性'
+                )
+                # print(new_page)
+                print('Updated: {}.'.format(enemy['name']))

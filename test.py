@@ -11,7 +11,7 @@ from jobs._temp import Temp
 # from jobs.stage import Stage
 # from jobs.furni import Furni
 # from jobs.weedy import Weedy
-from jobs.charword_v2 import Charword
+from jobs.enemy import Enemy
 from utils.data import GameData
 from utils.unpacker import Unpacker
 from utils.wiki import Wiki
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # Basic(wiki, gameData)._run_update(old_num=178)
     # Charword(wiki, gameData)._run_update_jp()
     # Temp(wiki, gameData).test_id()
-    Charword(wiki, gameData).run()
+    Enemy(wiki, gameData).update_immune()
 
     # up = Unpacker(config)
     # up.get_all_ab()
