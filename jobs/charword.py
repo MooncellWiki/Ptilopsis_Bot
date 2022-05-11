@@ -148,6 +148,8 @@ def update_charword(wiki, char_list, charword_table, charword_table_jp, charword
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
+        if char_id == 'char_113_cqbw':
+            continue
 
         old = wiki.read(char_name + '/语音记录')
         content = charword_data(char_id, char_name, charword_table, char_words_jp=charword_table_jp, char_words_en=charword_table_en, old_words=old, title='语音记录', mode='update')

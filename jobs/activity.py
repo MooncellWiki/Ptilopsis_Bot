@@ -74,8 +74,11 @@ def update_activity(activity_table, item_table, building_data, character_table, 
             'missionGroup': activity['missionGroup'],
             'rewards': ''
         }
-        for reward in activity['rewards']:
-            activity_dict[activity['id']]['rewards'] += parse_reward(reward, item_table, building_data, character_table, skin_table)
+        if activity['rewards']:
+            for reward in activity['rewards']:
+                activity_dict[activity['id']]['rewards'] += parse_reward(reward, item_table, building_data, character_table, skin_table)
+        else:
+            activity_dict[activity['id']]['rewards'] += ''
     activity_text_dict = {}
     for mission in activity_table['missionGroup']:
         activity_text_dict[mission['id']] = ''
