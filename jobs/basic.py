@@ -15,9 +15,13 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
         lang_dict['CN_MANDARIN'] = '中文'
         lang_dict['CN_TOPOLECT'] = '中文方言'
+        lang_dict['LINKAGE'] = '英文'
         for k in cv_dict:
+            lang = lang_dict.get(k, '')
+            if lang == '英文' and char_detail['name'] == '九色鹿':
+                lang = '中文'
             cv += '\n|{lang}配音={name}'.format(
-                lang = lang_dict.get(k, ''),
+                lang = lang,
                 name = cv_dict[k]['cvName']
             )
     except:
@@ -135,7 +139,7 @@ def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
             blockCnt_2 = char_detail['phases'][phases_num]['attributesKeyFrames'][0]['data']['blockCnt']
             block_data += '→' + str(blockCnt_2)
             cost_2 = char_detail['phases'][phases_num]['attributesKeyFrames'][0]['data']['cost']
-            if cost != cost_2:
+            if cost != cost_2 or (phases_num == 1 and cost == cost_2):
                 cost_data += '→' + str(cost_2)
                 cost = cost_2
     if blockCnt_2 == char_detail['phases'][0]['attributesKeyFrames'][0]['data']['blockCnt']:
@@ -1211,9 +1215,13 @@ class Basic(Job):
                 lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
                 lang_dict['CN_MANDARIN'] = '中文'
                 lang_dict['CN_TOPOLECT'] = '中文方言'
+                lang_dict['LINKAGE'] = '英文'
                 for k in cv_dict:
+                    lang = lang_dict.get(k, '')
+                    if lang == '英文' and char_detail['name'] == '九色鹿':
+                        lang = '中文'
                     cv += '\n|{lang}配音={name}'.format(
-                        lang = lang_dict.get(k, ''),
+                        lang = lang,
                         name = cv_dict[k]['cvName']
                     )
             except:
