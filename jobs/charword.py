@@ -49,7 +49,7 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
         else:
             char_words_2, lang_2 = char_words_en['charWords'], '英文'
     else:
-        char_words_2, lang_2 = None, ''
+        char_words_2, lang_2 = None, '日文'
     official_flag = True
     text_dict = {}
     for word_key in char_lang['wordkeys']:
