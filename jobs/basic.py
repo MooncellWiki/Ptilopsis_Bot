@@ -1083,7 +1083,8 @@ class Basic(Job):
             building_skill = get_building_skill(building_data, char_key)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
-            battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            # battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            battle_equip = ''
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
