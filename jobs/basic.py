@@ -275,7 +275,7 @@ def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
                     if equip_id in battle_equip_table:
                         phases_data += f"|模组{uniequip_count}数据="
                         phases_data += ';'.join([f"{x['key']}:{x['value']:.0f}" for x in
-                                                 battle_equip_table[equip_id]['phases'][0]['attributeBlackboard']])
+                                                 battle_equip_table[equip_id]['phases'][-1]['attributeBlackboard']])
                         phases_data += '\n'
     phases_data += "}}"
 
@@ -601,43 +601,58 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
             )
         else:
             template = '\n==={name}===\n<section begin=专属模组 />\n{{{{模组\n|名称={name}\n|类型={type}' \
-                       '{typeColor}{params}{trait}{missions}{unlockCond}\n|材料消耗={itemCost}' \
+                       '{typeColor}{params}{trait}{talent}{missions}{unlockCond}{itemCost}' \
                        '\n|基础信息={bInfo}\n}}}}\n<section end=专属模组 />'
             if equip_info['equipShiningColor'] != 'grey':
                 type_color = f"\n|类型颜色={equip_info['equipShiningColor']}"
             else:
                 type_color = ''
-            params, trait = '', ''
+            params, trait, talent = '', '', ''
             if equip in battle_equip_table:
-                for i in battle_equip_table[equip]['phases'][0]['attributeBlackboard']:
-                    params += '\n|{attrType}={value:.0f}'.format(
-                        attrType = {'max_hp': '生命', 'atk': '攻击', 'def': '防御', 'magic_resistance': '法术抗性',
-                                    'respawn_time': '再部署', 'cost': '部署费用', 'block_cnt': '阻挡数',
-                                    'attack_speed': '攻击速度'}.get(i['key'], '其他'),
-                        value = i['value']
-                    )
-                for e in battle_equip_table[equip]['phases'][0]['parts']:
-                    if e['overrideTraitDataBundle']['candidates'] is not None:
-                        trait_text = ''
-                        if e['overrideTraitDataBundle']['candidates'][0]['additionalDescription'] is not None:
-                            trait = '\n|特性追加=yes'
-                            trait_text = e['overrideTraitDataBundle']['candidates'][0]['additionalDescription']
-                        elif e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton'] is not None:
-                            trait = ''
-                            trait_text = e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton']
-                        trait_dic = {}
-                        for eb in e['overrideTraitDataBundle']['candidates'][0]['blackboard']:
-                            k = eb['key'].replace('.', '').replace(']', '').replace('[', '')
-                            if eb['value'] != int(eb['value']):
-                                trait_dic[k] = eb['value']
-                            else:
-                                trait_dic[k] = int(eb['value'])
-                        trait_text = trait_text.replace('-{-', '{').replace('{-', '{').replace('\\n', '<br/>')
-                        trait_text = replace_key(replace_upper(trait_text))
-                        trait_text = trait_text.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
-                        trait_text = trait_text.format(**trait_dic)
-                        trait_text = rts.compile(trait_text)
-                        trait = f"\n|特性={trait_text}" + trait
+                for e_lv, e_lv_data in enumerate(battle_equip_table[equip]['phases']):
+                    for i in e_lv_data['attributeBlackboard']:
+                        params += '\n|{attrType}{idx}={value:.0f}'.format(
+                            attrType = {'max_hp': '生命', 'atk': '攻击', 'def': '防御', 'magic_resistance': '法术抗性',
+                                        'respawn_time': '再部署', 'cost': '部署费用', 'block_cnt': '阻挡数',
+                                        'attack_speed': '攻击速度'}.get(i['key'], '其他'),
+                            idx = '' if e_lv == 0 else str(e_lv + 1),
+                            value = i['value']
+                        )
+                    for e in e_lv_data['parts']:
+                        if e['overrideTraitDataBundle']['candidates'] is not None and e_lv == 0:
+                            trait_text = ''
+                            if e['overrideTraitDataBundle']['candidates'][0]['additionalDescription'] is not None:
+                                trait += '\n|特性{idx}追加=yes'.format(idx = '' if e_lv == 0 else str(e_lv + 1))
+                                trait_text = e['overrideTraitDataBundle']['candidates'][0]['additionalDescription']
+                            elif e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton'] is not None:
+                                trait += ''
+                                trait_text = e['overrideTraitDataBundle']['candidates'][0]['overrideDescripton']
+                            trait_dic = {}
+                            for eb in e['overrideTraitDataBundle']['candidates'][0]['blackboard']:
+                                k = eb['key'].replace('.', '').replace(']', '').replace('[', '')
+                                if eb['value'] != int(eb['value']):
+                                    trait_dic[k] = eb['value']
+                                else:
+                                    trait_dic[k] = int(eb['value'])
+                            trait_text = trait_text.replace('-{-', '{').replace('{-', '{').replace('\\n', '<br/>')
+                            trait_text = replace_key(replace_upper(trait_text))
+                            trait_text = trait_text.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
+                            trait_text = trait_text.format(**trait_dic)
+                            trait_text = rts.compile(trait_text)
+                            if trait_text != '':
+                                trait += '\n|特性{idx}={text}'.format(
+                                    idx = '' if e_lv == 0 else str(e_lv + 1),
+                                    text = trait_text
+                                )
+                        if e['addOrOverrideTalentDataBundle']['candidates'] is not None:
+                            talent_text = ''
+                            if e['addOrOverrideTalentDataBundle']['candidates'][0]['upgradeDescription'] is not None:
+                                talent_text += e['addOrOverrideTalentDataBundle']['candidates'][0]['upgradeDescription']
+                            if talent_text != '':
+                                talent += '\n|天赋{idx}={text}'.format(
+                                    idx = '' if e_lv == 0 else str(e_lv + 1),
+                                    text = rts.compile(talent_text)
+                                )
             missions = ''
             for idx, mission_id in enumerate(equip_info['missionList']):
                 desc = uniequip_table['missionList'][mission_id]['desc']
@@ -650,21 +665,29 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
                 unlock += '\n|解锁信赖=100'
             else:
                 unlock += f"\n|解锁信赖=?<!-- favorPoint {equip_info['unlockFavorPoint']} -->"
-            item_cost = []
-            for i in equip_info['itemCost']:
-                if i['count'] < 10000:
-                    item_cost.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']}}}}}")
-                else:
-                    item_cost.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']/10000:.0f}万}}}}")
+            item_cost = ''
+            for idx, lvCost in enumerate(equip_info['itemCost'].values()):
+                item_temp = []
+                for i in lvCost:
+                    if i['count'] < 10000:
+                        item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']}}}}}")
+                    else:
+                        item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']/10000:.0f}万}}}}")
+                if item_temp != []:
+                    item_cost += '\n|材料消耗{idx}={item}'.format(
+                        idx = '' if idx == 0 else str(idx + 1),
+                        item = ' '.join(item_temp)
+                    )
             content += template.format(
                 name = equip_info['uniEquipName'],
-                type = equip_info['typeName'],
+                type = f"{equip_info['typeName1']}-{equip_info['typeName2']}",
                 typeColor = type_color,
                 params = params,
                 trait = trait,
+                talent = talent,
                 missions = missions,
                 unlockCond = unlock,
-                itemCost = ' '.join(item_cost),
+                itemCost = item_cost,
                 bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
             )
     return content
@@ -1066,7 +1089,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['暮落']:
+            # if char_detail['name'] not in ['黑键','异客','斯卡蒂']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -1083,8 +1106,7 @@ class Basic(Job):
             building_skill = get_building_skill(building_data, char_key)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
-            # battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
-            battle_equip = ''
+            battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
@@ -1175,7 +1197,7 @@ class Basic(Job):
                 continue
             if char_key == 'char_512_aprot':
                 continue
-            # if char_detail['name'] not in ['浊心斯卡蒂']:
+            # if char_detail['name'] not in ['斯卡蒂']:
             #     continue
             origin_text = self.wiki.read(char_detail['name'])
             new_text = origin_text
@@ -1204,6 +1226,14 @@ class Basic(Job):
                 team = trans_team(char_detail['teamId'], team_table)
             )
             new_text = new_text[:num1] + tt + new_text[num2:]
+
+            # 更新模组
+            # battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            # num1 = new_text.find('==模组==')
+            # num2 = new_text.find('==相关道具==')
+            # if num1 == -1:
+            #     num1 = num2
+            # new_text = new_text[:num1].rstrip() + battle_equip + '\n' + new_text[num2:]
 
             # 更新干员cv
             num1 = new_text.find('|画师=')
