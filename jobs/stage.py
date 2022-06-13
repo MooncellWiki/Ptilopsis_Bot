@@ -16,7 +16,8 @@ def parse_stage_type(stage_type):
             'GUIDE': '教程',
             'ACTIVITY': '活动',
             'CAMPAIGN': '剿灭',
-            'SPECIAL_STORY': '特殊剧情'
+            'SPECIAL_STORY': '特殊剧情',
+            'CLIMB_TOWER': '保全派驻'
         }[stage_type]
     except:
         print('Unknown stage_type', stage_type)
@@ -442,7 +443,10 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
         )
         unlock_cond_list.append(unlock_cond)
     stage_data += '|解锁条件={}\n'.format(', '.join(unlock_cond_list))
-    stage_data += '|推荐等级={}\n'.format(stage_detail['dangerLevel'])
+    if stage_detail['dangerLevel'] == '' or stage_detail['dangerLevel'] is None:
+        stage_data += '|推荐等级=-\n'
+    else:
+        stage_data += '|推荐等级={}\n'.format(stage_detail['dangerLevel'])
     if zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst']:
         stage_data += '|所属区域={name_1} {name_2}\n'.format(
             name_1=zone_table['zones'][stage_detail['zoneId']]['zoneNameFirst'],
@@ -784,7 +788,7 @@ class Stage(Job):
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
-            if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY'] or stage_detail[
+            if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY', 'CLIMB_TOWER'] or stage_detail[
                 'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY', 'TOUGH']:
                 continue
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
