@@ -179,7 +179,7 @@ class Charword(Job):
                 continue
             if character_table[char_id]['name'] + '/语音记录' in charword_page_list:
                 continue
-            char_list.append((char_id, character_table[char_id]['name']))
+            char_list.append((char_id, character_table[char_id]['name'].strip()))
 
         create_charword(self.wiki, char_list, charword_table)
 
@@ -193,7 +193,7 @@ class Charword(Job):
         for char_id in character_table:
             if character_table[char_id]['profession'] == 'TRAP' or character_table[char_id]['profession'] == 'TOKEN':
                 continue
-            char_list.append((char_id, character_table[char_id]['name']))
+            char_list.append((char_id, character_table[char_id]['name'].strip()))
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
         update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en)

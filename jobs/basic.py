@@ -1084,6 +1084,7 @@ class Basic(Job):
 
         for char_key in character_table:
             char_detail = character_table[char_key]
+            char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
             if char_detail['isNotObtainable'] == True:
@@ -1193,6 +1194,7 @@ class Basic(Job):
 
         for char_key in character_table:
             char_detail = character_table[char_key]
+            char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
             if char_key == 'char_512_aprot':
@@ -1301,6 +1303,7 @@ class Basic(Job):
         memory_list = self.wiki.category('分类:拥有干员密录的干员')
         for char_key in character_table:
             char_detail = character_table[char_key]
+            char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
             if char_detail['name'] in memory_list:
