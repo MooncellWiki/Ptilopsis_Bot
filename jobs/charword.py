@@ -193,6 +193,8 @@ class Charword(Job):
         for char_id in character_table:
             if character_table[char_id]['profession'] == 'TRAP' or character_table[char_id]['profession'] == 'TOKEN':
                 continue
+            if char_id in ['char_512_aprot', 'char_511_asnipe', 'char_510_amedic', 'char_509_acast', 'char_508_aguard']:
+                continue
             char_list.append((char_id, character_table[char_id]['name'].strip()))
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
