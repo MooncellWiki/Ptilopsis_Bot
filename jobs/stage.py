@@ -1068,14 +1068,14 @@ class Stage(Job):
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
 
             stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:集成战略关卡]]'
-            # stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+            stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
-            # self.wiki.edit(
-            #     title=stage_detail['name'].strip(),
-            #     text=stage_redirect,
-            #     summary='init',
-            #     createonly='1'
-            # )
+            self.wiki.edit(
+                title=stage_detail['name'].strip(),
+                text=stage_redirect,
+                summary='init',
+                createonly='1'
+            )
             self.wiki.edit(
                 title=stage_page_name,
                 text=stage_content,
