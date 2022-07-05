@@ -19,8 +19,8 @@ def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_w
     path_list = ['']
     wordkeys_list = {k: [] for k in char_lang['wordkeys']}
     for lang in char_lang['dict']:
-        lang_type = {'CN_MANDARIN': '中文', 'JP': '日文', 'CN_TOPOLECT': '方言', 'LINKAGE': '联动'}.get(lang, '未知')
-        path = {'CN_MANDARIN': 'voice_cn', 'JP': 'voice', 'CN_TOPOLECT': 'voice_custom', 'LINKAGE': 'voice'}.get(lang, 'voice')
+        lang_type = {'CN_MANDARIN': '中文', 'JP': '日文', 'CN_TOPOLECT': '方言', 'LINKAGE': '联动', 'EN': '英文', 'KR': '韩文'}.get(lang, '未知')
+        path = {'CN_MANDARIN': 'voice_cn', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr', 'CN_TOPOLECT': 'voice_custom', 'LINKAGE': 'voice'}.get(lang, 'voice')
         if 'voicePath' in char_lang['dict'][lang]:
             p = char_lang['dict'][lang]['voicePath']
             if p.endswith('/'):

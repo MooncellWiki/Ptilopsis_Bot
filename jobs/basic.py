@@ -1199,7 +1199,7 @@ class Basic(Job):
                 continue
             if char_key == 'char_512_aprot':
                 continue
-            # if char_detail['name'] not in ['斯卡蒂']:
+            # if char_detail['name'] not in ['帕拉斯','麦哲伦']:
             #     continue
             origin_text = self.wiki.read(char_detail['name'])
             new_text = origin_text
