@@ -1294,64 +1294,6 @@ class Basic(Job):
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')
 
-    def update2(self):
-        character_table = self.getgd('excel/character_table.json')
-        uniequip_table = self.getgd('excel/uniequip_table.json')
-        battle_equip_table = self.getgd('excel/battle_equip_table.json')
-        skill_table = self.getgd('excel/skill_table.json')
-        building_data = self.getgd('excel/building_data.json')
-        item_table = self.getgd('excel/item_table.json')
-        team_table = self.getgd('excel/handbook_team_table.json')
-        stories_table = self.getgd('excel/handbook_info_table.json')
-        skin_table = self.getgd('excel/skin_table.json')
-        gamedata_const = self.getgd('excel/gamedata_const.json')
-        charword_table = self.getgd('excel/charword_table.json')
-        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
-        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
-
-        char_list = self.wiki.category('分类:干员')
-        update_token_page = False
-
-        for char_key in character_table:
-            char_detail = character_table[char_key]
-            char_detail['name'] = char_detail['name'].strip()
-            if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
-                continue
-            if char_key == 'char_512_aprot':
-                continue
-            # if char_detail['name'] not in ['帕拉斯','麦哲伦']:
-            #     continue
-            origin_text = self.wiki.read(char_detail['name'])
-            new_text = origin_text
-
-            num1 = new_text.find('==干员信息==')
-            num2 = new_text.find('==获得方式==')
-            if num2 == -1:
-                print(f"{char_detail['name']} Error")
-                continue
-            new_charinfo = new_text[num1:num2]
-            for i in range(10):
-                new_charinfo = new_charinfo.replace(f"|精英{i}描述=", f"|精英{i}介绍=")
-                new_charinfo = new_charinfo.replace(f"|时装{i}描述=", f"|时装{i}介绍=")
-                new_charinfo = new_charinfo.replace(f"|时装{i}color=", f"|时装{i}颜色=")
-            new_charinfo = new_charinfo.replace('{{Charinfo\n', '{{CharinfoV2\n')
-            new_charinfo = new_charinfo.replace('|子职业=', '|分支=')
-            new_text = new_text[:num1] + new_charinfo + new_text[num2:]
-
-            if new_text != origin_text:
-                self.wiki.edit(
-                    title = char_detail['name'],
-                    text = new_text,
-                    summary = '更新Charinfo模板'
-                )
-                # print(new_text)
-                print('Updated: {}.'.format(char_detail['name']))
-            else:
-                print('Same: {}.'.format(char_detail['name']))
-
     def update_handbook(self):
         character_table = self.getgd('excel/character_table.json')
         item_table = self.getgd('excel/item_table.json')
