@@ -29,7 +29,7 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
             cv = '\n|日文配音={}'.format(stories_table['handbookDict'][char_key]['infoName'])
         else:
             cv = '\n|日文配音='
-    basic_info = '{{{{Charinfo\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|子职业={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
+    basic_info = '{{{{CharinfoV2\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|分支={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
         char_key = char_key,
@@ -85,14 +85,14 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         desc = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_id]]['displaySkin']['content']
         if desc != None:
             desc = desc.replace('\n', '<br/>')
-        basic_info += '\n|精英{phase_id}描述={des}'.format(
+        basic_info += '\n|精英{phase_id}介绍={des}'.format(
             phase_id = phase_id,
             des = desc
         )
     for skin_key in skin_table['charSkins']:
         if char_key in skin_key:
             if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                basic_info += '\n|时装{skin_id}名称={name}\n|时装{skin_id}系列={group}\n|时装{skin_id}color={color}\n|时装{skin_id}描述={des}'.format(
+                basic_info += '\n|时装{skin_id}名称={name}\n|时装{skin_id}系列={group}\n|时装{skin_id}颜色={color}\n|时装{skin_id}介绍={des}'.format(
                     skin_id = special_skin_id,
                     name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
                     color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],
@@ -1090,7 +1090,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['黑键','异客','斯卡蒂']:
+            # if char_detail['name'] not in ['阿米娅']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -1210,13 +1210,13 @@ class Basic(Job):
             num2 = new_text.find('==召唤物信息==')
             if num2 == -1:
                 num2 = new_text.find('==精英化材料==')
-            new_text = new_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + origin_text[num2:]
+            new_text = new_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + new_text[num2:]
 
             # 更新属性
             phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             num1 = new_text.find('==属性==')
             num2 = new_text.find('==攻击范围==')
-            new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + origin_text[num2:]
+            new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + new_text[num2:]
 
             # 更新干员势力
             num1 = new_text.find('|情报编号=')
@@ -1293,6 +1293,64 @@ class Basic(Job):
             # f_new.close()
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')
+
+    def update2(self):
+        character_table = self.getgd('excel/character_table.json')
+        uniequip_table = self.getgd('excel/uniequip_table.json')
+        battle_equip_table = self.getgd('excel/battle_equip_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        building_data = self.getgd('excel/building_data.json')
+        item_table = self.getgd('excel/item_table.json')
+        team_table = self.getgd('excel/handbook_team_table.json')
+        stories_table = self.getgd('excel/handbook_info_table.json')
+        skin_table = self.getgd('excel/skin_table.json')
+        gamedata_const = self.getgd('excel/gamedata_const.json')
+        charword_table = self.getgd('excel/charword_table.json')
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
+        reader = csv.DictReader(io.StringIO(id_csv))
+        for row in reader:
+            id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        char_list = self.wiki.category('分类:干员')
+        update_token_page = False
+
+        for char_key in character_table:
+            char_detail = character_table[char_key]
+            char_detail['name'] = char_detail['name'].strip()
+            if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+                continue
+            if char_key == 'char_512_aprot':
+                continue
+            # if char_detail['name'] not in ['帕拉斯','麦哲伦']:
+            #     continue
+            origin_text = self.wiki.read(char_detail['name'])
+            new_text = origin_text
+
+            num1 = new_text.find('==干员信息==')
+            num2 = new_text.find('==获得方式==')
+            if num2 == -1:
+                print(f"{char_detail['name']} Error")
+                continue
+            new_charinfo = new_text[num1:num2]
+            for i in range(10):
+                new_charinfo = new_charinfo.replace(f"|精英{i}描述=", f"|精英{i}介绍=")
+                new_charinfo = new_charinfo.replace(f"|时装{i}描述=", f"|时装{i}介绍=")
+                new_charinfo = new_charinfo.replace(f"|时装{i}color=", f"|时装{i}颜色=")
+            new_charinfo = new_charinfo.replace('{{Charinfo\n', '{{CharinfoV2\n')
+            new_charinfo = new_charinfo.replace('|子职业=', '|分支=')
+            new_text = new_text[:num1] + new_charinfo + new_text[num2:]
+
+            if new_text != origin_text:
+                self.wiki.edit(
+                    title = char_detail['name'],
+                    text = new_text,
+                    summary = '更新Charinfo模板'
+                )
+                # print(new_text)
+                print('Updated: {}.'.format(char_detail['name']))
+            else:
+                print('Same: {}.'.format(char_detail['name']))
 
     def update_handbook(self):
         character_table = self.getgd('excel/character_table.json')
