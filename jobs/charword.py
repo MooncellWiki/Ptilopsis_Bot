@@ -79,27 +79,25 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
             if word_lang == '方言':
-                other_lang_suf = '(方言)'
-            else:
-                other_lang_suf = ''
+                continue
             if mode == 'update':
                 for other_lang, other_words in other_lang_words.items():
                     if text_id in other_words:
-                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{other_lang_suf}|{norm_text(other_words[text_id]['voiceText'])}}}}}"
+                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|{norm_text(other_words[text_id]['voiceText'])}}}}}"
                         official_flag[other_lang] = True
                     elif official_flag[other_lang] is True:
                         print('lack of official words for', text_id, f"({char_id}{char_name})")
-                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{other_lang_suf}|}}}}"
+                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|}}}}"
                     else:
                         result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
                         if result1:
-                            result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}{other_lang_suf}\|(.*?)}}}}{{{{"), result1.group(1))
+                            result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}\|(.*?)}}}}{{{{"), result1.group(1))
                             if result2 is None:
-                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}{other_lang_suf}\|(.*?)}}}}$"), result1.group(1))
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}\|(.*?)}}}}$"), result1.group(1))
                             if result2:
-                                text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{other_lang_suf}|" + result2.group(1) + '}}'
+                                text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|" + result2.group(1) + '}}'
             else:
-                text_dict[text_data['voiceIndex']]['text'] += f"{{VoiceData/word|日文{other_lang_suf}|}}"
+                text_dict[text_data['voiceIndex']]['text'] += '{{VoiceData/word|日文|}}'
     # special case
     if char_id == 'char_113_cqbw' and mode == 'update':
         word_lang, word_key = '中文(恍惚)', 'char_113_cqbw_epoque#7'
@@ -249,7 +247,7 @@ def create_charword(wiki, char_list, charword_table):
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
 
-        content = charword_data(char_id, char_name, charword_table, title='语音记录', mode='create')
+        content = charword_data_new(char_id, char_name, charword_table, title='语音记录', mode='create')
         wiki.edit(
             title=char_name + '/语音记录',
             text=content,
