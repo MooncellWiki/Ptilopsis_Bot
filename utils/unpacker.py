@@ -48,7 +48,7 @@ class Unpacker:
             version = json.load(f)
         # version
         url = self.config[region]['configUrl'] + 'Android/version'
-        url += f'?sign={int(time.time())}'
+        # url += f'?sign={int(time.time())}'
         ret1 = requests.get(url, headers=self.ua).json()
         version[region]['resVersion'] = ret1['resVersion']
         version[region]['clientVersion'] = ret1['clientVersion']
