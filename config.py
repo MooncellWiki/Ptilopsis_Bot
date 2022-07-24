@@ -41,7 +41,7 @@ config = {
             "files": "gamedata/excel",
             "updateMsg": "[TW UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
-            "configUrl": "https://akcdn.imtxwy.com/assetbundle/official/",
+            "configUrl": "https://ak-conf.txwy.tw/config/prod/official/",
             "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
         }
     },

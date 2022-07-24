@@ -39,7 +39,8 @@ class Unpacker:
     def check_all_update(self):
         flag = False
         for r in self.config:
-            flag ^= self.check_update(region=r)
+            if r != 'CN':
+                flag ^= self.check_update(region=r)
         return flag
 
     @retry(stop_max_attempt_number=3)
