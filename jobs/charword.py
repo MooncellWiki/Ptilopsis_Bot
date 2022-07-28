@@ -11,7 +11,7 @@ def norm_text(t):
     return result.strip()
 
 
-def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, old_words=None, title='语音记录', mode='create'):
+def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, char_words_tw=None, old_words=None, title='语音记录', mode='create'):
     content = '<noinclude>\n==' + title + '==\n</noinclude>{{#widget:VoiceTable}}{{VoiceTable|表格标题='
     content += f"{title}\n|语音key={char_id}\n|路径="
     char_lang = charword_table['voiceLangDict'][char_id]
@@ -46,11 +46,12 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
 
     # 语音文本
     text_dict = {}
-    official_flag = {'日文': False, '英文': False, '韩文': False}
+    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False}
     other_lang_words = {
         '日文': char_words_jp,
         '英文': char_words_en,
-        '韩文': char_words_kr
+        '韩文': char_words_kr,
+        '中文(繁体)': char_words_tw
     }
     for word_key in char_lang['wordkeys']:
         word_lang = '中文'
@@ -120,6 +121,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         if word_piece['condition'] != '':
             content += f"\n|条件{idx}={word_piece['condition']}"
     content += '\n}}<noinclude>[[分类:干员语音]]'
+    official_flag['中文(繁体)'] = False  # 繁中暂不考虑加分类
     for lang in official_flag:
         if official_flag[lang] is True:
             content += f"[[分类:有官方{lang}文本的干员语音]]"
@@ -260,14 +262,14 @@ def create_charword(wiki, char_list, charword_table):
         print('Created: {}.'.format(char_name + '/语音记录'))
 
 
-def update_charword(wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr):
+def update_charword(wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
 
         old = wiki.read(char_name + '/语音记录')
-        content = charword_data_new(char_id, char_name, charword_table, char_words_jp=charword_table_jp['charWords'], char_words_en=charword_table_en['charWords'], char_words_kr=charword_table_kr['charWords'], old_words=old, title='语音记录', mode='update')
+        content = charword_data_new(char_id, char_name, charword_table, char_words_jp=charword_table_jp['charWords'], char_words_en=charword_table_en['charWords'], char_words_kr=charword_table_kr['charWords'], char_words_tw=charword_table_tw['charWords'], old_words=old, title='语音记录', mode='update')
         if old != content:
             wiki.edit(
                 title=char_name + '/语音记录',
@@ -304,6 +306,7 @@ class Charword(Job):
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
         charword_table_en = self.getgd('excel/charword_table.json', 'US')
         charword_table_kr = self.getgd('excel/charword_table.json', 'KR')
+        charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
 
         char_list = []
         for char_id in character_table:
@@ -314,4 +317,4 @@ class Charword(Job):
             char_list.append((char_id, character_table[char_id]['name'].strip()))
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
-        update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr)
+        update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw)
