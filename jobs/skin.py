@@ -11,7 +11,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
                 'content'].replace('\n', '<br/>')
         except:
             des = ''
-        basic_info += '\n|精英{phase_id}描述={des}'.format(
+        basic_info += '\n|精英{phase_id}介绍={des}'.format(
             phase_id = phase_id,
             des = des
         )
@@ -27,7 +27,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
                 order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 100 + \
                         skin_table['charSkins'][skin_key]['displaySkin']['onPeriod']
                 skin_desc[
-                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}描述={des}'.format(
+                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}介绍={des}'.format(
                     name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
                     drawer = drawer,
                     color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],
@@ -55,7 +55,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
             continue
 
         origin_text = wiki.read(char_detail['name'])
-        num1 = origin_text.find('\n|精英0描述')
+        num1 = origin_text.find('\n|精英0介绍')
         # num2 = origin_text.find('==获得方式==')
         num2 = origin_text.find('\n}}\n')
         origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'].strip() if char_id in handbook_info_table['handbookDict'] else ''
@@ -502,7 +502,7 @@ class Skin(Job):
             if k not in old_skin:
                 skin_list.append(cid_list[skin_info['charId']])
                 print(f"新时装：{k}")
-        # skin_list = None
+        # skin_list = ['史尔特尔', '羽毛笔', '极境']
         update_skin(self.wiki, character_table, skin_table, skin_list, handbook_info_table)
 
         # update_randomFig(self.wiki, character_table, skin_table)

@@ -40,6 +40,7 @@ class Unpacker:
         flag = False
         for r in self.config:
             if r != 'CN':
+                print(f"Start to check {r} server.")
                 flag ^= self.check_update(region=r)
         return flag
 
