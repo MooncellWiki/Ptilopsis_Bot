@@ -27,7 +27,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
                 order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 100 + \
                         skin_table['charSkins'][skin_key]['displaySkin']['onPeriod']
                 skin_desc[
-                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}color={color}\n|时装{{skin_id}}介绍={des}'.format(
+                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}颜色={color}\n|时装{{skin_id}}介绍={des}'.format(
                     name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
                     drawer = drawer,
                     color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],

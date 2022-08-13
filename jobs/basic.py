@@ -1230,16 +1230,19 @@ class Basic(Job):
             new_text = new_text[:num1] + tt + new_text[num2:]
 
             # 更新模组
-            # battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
-            # num1 = new_text.find('==模组==')
-            # num2 = new_text.find('==相关道具==')
-            # if num1 == -1:
-            #     num1 = num2
-            # new_text = new_text[:num1].rstrip() + battle_equip + '\n' + new_text[num2:]
+            # if char_detail['name'] in ['归溟幽灵鲨']:
+            #     battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            #     num1 = new_text.find('==模组==')
+            #     num2 = new_text.find('==相关道具==')
+            #     if num1 == -1:
+            #         num1 = num2
+            #     new_text = new_text[:num1].rstrip() + battle_equip + '\n' + new_text[num2:]
 
             # 更新干员cv
             num1 = new_text.find('|画师=')
-            num2 = new_text.find('|限定=')
+            num2 = max(-1, new_text.find('|限定='))
+            num2 = min(num2, max(-1, new_text.find('|初始cv=')))
+            num2 = min(num2, max(-1, new_text.find('|初始场景=')))
             if num2 == -1:
                 num2 = new_text.find('\n|精英0')
             cv = ''
