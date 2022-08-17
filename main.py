@@ -44,7 +44,7 @@ if __name__ == '__main__':
         Charword(wiki, gameData).run()
 
     if 'regular' in sys.argv:
-        BuildingBuff(wiki, gameData).run()
+        # BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
         Enemy(wiki, gameData).run()
         Enemy(wiki, gameData).update_data()
