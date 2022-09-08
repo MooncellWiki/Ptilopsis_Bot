@@ -16,6 +16,12 @@ from utils.data import GameData
 from utils.unpacker import Unpacker
 from utils.wiki import Wiki
 
+from jobs.enemy import Enemy
+from jobs.furni import Furni
+from jobs.item import Item
+from jobs.skin import Skin
+from jobs.stage import Stage
+
 if __name__ == '__main__':
     wiki = Wiki(config['apiUrl'], config['username'], config['password'],
                 ('dev' if '-dev' in sys.argv else 'product'))
@@ -24,20 +30,14 @@ if __name__ == '__main__':
     # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding='utf-8') as f:
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
 
-    # Route(wiki, gameData).run()
-    # Weedy(wiki, gameData).run()
-    # Basic(wiki, gameData)._run_handbook_update()
-    # Sidebar(wiki, gameData)._run_update(150)
-    # Crisis(wiki, gameData).run()
-    # Skin(wiki, gameData)._run_update(skin_list=['宴', '能天使', '白金'])
-    # Skin(wiki, gameData).run()
-    # RougeStage(wiki, gameData).run()
-    # Furni(wiki, gameData).check_duplicate()
-    # Temp(wiki, gameData).test_yinyang()
-    # Basic(wiki, gameData)._run_update(old_num=178)
-    # Charword(wiki, gameData)._run_update_jp()
-    # Temp(wiki, gameData).test_id()
-    Enemy(wiki, gameData).update_immune()
+    # Stage(wiki, gameData).run()
+    # Enemy(wiki, gameData).run()
+    # Enemy(wiki, gameData).update_data()
+    Skin(wiki, gameData).run()
+    print('flag1')
+    Furni(wiki, gameData).run()
+    print('flag2')
+    Item(wiki, gameData).run()
 
     # up = Unpacker(config)
     # up.get_all_ab()

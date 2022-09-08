@@ -4,6 +4,7 @@ from utils.job import Job
 def update_furni(wiki, building_data, item_table):
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
+        furni_data['name'] = furni_data['name'].strip()
         page_name = furni_data['name']
         if page_name in duplicate_list:
             themes = ''
@@ -78,6 +79,7 @@ def create_furni(wiki, building_data, item_table):
 
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
+        furni_data['name'] = furni_data['name'].strip()
         if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯']:
             continue
         if furni_data['canBeDestroy'] == True:
@@ -190,6 +192,7 @@ def create_themes(wiki, building_data):
 
     for themes in building_data['customData']['themes']:
         themesData = building_data['customData']['themes'][themes]
+        themesData['name'] = themesData['name'].strip()
         if themesData['name'] in themes_list:
             continue
         # if themesData['name'] != '快捷连锁披萨店':
@@ -284,7 +287,7 @@ def create_themes(wiki, building_data):
         print('Updated: {}.'.format('首页/新增主题'))
 
 
-duplicate_list = ['松软沙发', '玻璃花瓶']
+duplicate_list = ['松软沙发', '玻璃花瓶', '几何纹地毯']
 
 
 class Furni(Job):
@@ -313,4 +316,4 @@ class Furni(Job):
             furni_dict[furni['name']].append(furni['id'])
         for name, f_list in furni_dict.items():
             if len(f_list) > 1 and name not in duplicate_list:
-                print('新重名家具：{name}.')
+                print(f'新重名家具：{name}.')
