@@ -43,8 +43,9 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
         path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
     if char_id == 'char_4067_lolxh':
-        path_list.append('日文(猫形态):voice/char_4067_lolxh__1')
-        path_list.append('中文(猫形态):voice_cn/char_4067_lolxh__1')
+        path_list = list(map(lambda x: x.replace('文:voice','文(猫形态):voice'), path_list))
+        path_list.append('日文:voice/char_4067_lolxh__1')
+        path_list.append('中文:voice_cn/char_4067_lolxh__1')
     content += ','.join(path_list)
 
     # 语音文本
