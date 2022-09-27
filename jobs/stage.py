@@ -1039,7 +1039,7 @@ class Stage(Job):
     def run_rogue_like(self):
         # roguelike_table = self.getgd('excel/roguelike_table.json')
         roguelike_table = self.getgd('excel/roguelike_topic_table.json')
-        roguelike_table = roguelike_table['details']['rogue_1']
+        roguelike_table = roguelike_table['details']['rogue_2']
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         for stage_key in roguelike_table['stages']:
