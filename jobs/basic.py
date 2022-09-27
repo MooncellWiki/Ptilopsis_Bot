@@ -1090,7 +1090,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['阿米娅']:
+            # if char_detail['name'] not in ['郁金香', '预备干员-重装']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
