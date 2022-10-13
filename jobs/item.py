@@ -41,9 +41,9 @@ class Item(Job):
         u_items = self.wiki.category('分类:未实装道具')
         for item in item_table['items']:
             citem = item_table['items'][item]
-            if citem['name'].rstrip() in u_items:
+            if citem['name'].strip() in u_items:
                 continue
-            if citem['name'].rstrip() in items:
+            if citem['name'].strip() in items:
                 continue
             if 'hideInItemGet' in citem and citem['hideInItemGet']:
                 continue
@@ -69,20 +69,20 @@ class Item(Job):
                     sort = '其他道具'
             if item_table['items'][item]['obtainApproach']:
                 tbasic_info = basic_info4.format(
-                    name=citem['name'].rstrip(),
+                    name=citem['name'].strip(),
                     itemId=citem['itemId'],
-                    description=citem['description'],
-                    usage=citem['usage'],
+                    description=citem['description'] if citem['description'] is not None else '',
+                    usage=citem['usage'] if citem['usage'] is not None else '',
                     obtainApproach=citem['obtainApproach'],
                     rarity=citem['rarity'],
                     id=citem['sortId'],
                     sort=sort)
             else:
                 tbasic_info = basic_info3.format(
-                    name=citem['name'].rstrip(),
+                    name=citem['name'].strip(),
                     itemId=citem['itemId'],
-                    description=citem['description'],
-                    usage=citem['usage'],
+                    description=citem['description'] if citem['description'] is not None else '',
+                    usage=citem['usage'] if citem['usage'] is not None else '',
                     rarity=citem['rarity'],
                     id=citem['sortId'],
                     sort=sort)

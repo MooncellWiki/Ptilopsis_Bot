@@ -435,9 +435,13 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     if stage_detail['levelId'] == None:
         stage_data += '|战斗关卡=false\n'
     unlock_cond_list = []
+    if_tough = ''
+    if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 4:
+        if_tough = '磨难'
     for unlock_id in stage_detail['unlockCondition']:
-        unlock_cond = '{num}星通关[[{code} {name}]]'.format(
+        unlock_cond = '{num}星通关[[{ifTough}{code} {name}]]'.format(
             num=unlock_id['completeState'],
+            ifTough=if_tough,
             code=stage_table['stages'][unlock_id['stageId']]['code'],
             name=stage_table['stages'][unlock_id['stageId']]['name']
         )
@@ -789,9 +793,11 @@ class Stage(Job):
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY', 'CLIMB_TOWER'] or stage_detail[
-                'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY', 'TOUGH']:
+                'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY']:
                 continue
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
+            if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 4:
+                stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
                 continue
             # if stage_detail['code'] not in ['WD-EX-3', 'MB-EX-8', 'FA-8']:
