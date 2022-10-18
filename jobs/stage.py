@@ -435,10 +435,10 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     if stage_detail['levelId'] == None:
         stage_data += '|战斗关卡=false\n'
     unlock_cond_list = []
-    if_tough = ''
-    if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 4:
-        if_tough = '磨难'
     for unlock_id in stage_detail['unlockCondition']:
+        if_tough = ''
+        if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 4:
+            if_tough = '磨难'
         unlock_cond = '{num}星通关[[{ifTough}{code} {name}]]'.format(
             num=unlock_id['completeState'],
             ifTough=if_tough,
@@ -838,9 +838,11 @@ class Stage(Job):
             # else:
             #     continue
 
+            # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
+            # if not result2:
+            #     continue
             # old = self.wiki.read(stage_page_name)
             # result1 = re.search(r"\|额外物资=(.*?)\n", old)
-            # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
             # if result1 and result2:
             #     stage_content = old.replace(result1.group(1), result2.group(1))
             #     if stage_content != old:
