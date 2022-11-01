@@ -93,6 +93,7 @@ class Enemy(Job):
         enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
         for enemy in enemy_handbook_table.values():
+            enemy['name'] = enemy['name'].strip()
             # if enemy['name'] == '-' and enemy['enemyId'] in enemy_db_index:
             #     try:
             #         enemy['name'] = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]['Value'][0]['enemyData']['name']['m_value']
@@ -210,8 +211,8 @@ class Enemy(Job):
                 'enemyIndex': enemy_data['enemyIndex'],
                 # 'enemyTags': enemy_data['enemyTags'],
                 'sortId': enemy_data['sortId'],
-                'name': enemy_data['name'],
-                'enemyLink': enemy_data['name'],
+                'name': enemy_data['name'].strip(),
+                'enemyLink': enemy_data['name'].strip(),
                 'enemyRace': enemy_data['enemyRace'],
                 'enemyLevel': enemy_data['enemyLevel'],
                 # 'description': enemy_data['description'],
@@ -306,7 +307,7 @@ class Enemy(Job):
         for enemy in enemy_handbook_table.values():
             if enemy['name'] == '-':
                 continue
-            old_page = self.wiki.read(enemy_list_2[enemy['name']])
+            old_page = self.wiki.read(enemy_list_2[enemy['name'].strip()].strip())
             new_page = old_page
 
             if enemy['enemyId'] in enemy_db_index:
@@ -329,7 +330,7 @@ class Enemy(Job):
 
             if new_page != old_page:
                 self.wiki.edit(
-                    title=enemy_list_2[enemy['name']],
+                    title=enemy_list_2[enemy['name'].strip()].strip(),
                     text=new_page,
                     summary='更新抗性'
                 )

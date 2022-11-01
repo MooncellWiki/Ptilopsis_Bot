@@ -19,12 +19,12 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
 
     # 语音路径
     default_type = charword_table['charDefaultTypeDict']
-    lang_type = {'CN_MANDARIN': '中文', 'CN_TOPOLECT': '方言', 'JP': '日文', 'EN': '英文', 'KR': '韩文', 'LINKAGE': '联动'}
-    lang_path = {'CN_MANDARIN': 'voice_cn', 'CN_TOPOLECT': 'voice_custom', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr',  'LINKAGE': 'voice'}
+    lang_type = {'CN_MANDARIN': '中文', 'CN_TOPOLECT': '方言', 'JP': '日文', 'EN': '英文', 'KR': '韩文', 'LINKAGE': '联动', 'ITA': '意大利文'}
+    lang_path = {'CN_MANDARIN': 'voice_cn', 'CN_TOPOLECT': 'voice_custom', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr',  'LINKAGE': 'voice', 'ITA': 'voice_custom'}
     path_list = ['']
     for lang in char_lang['dict']:
         char_lang_type = lang_type.get(lang, '未知')
-        char_lang_path = lang_path.get(lang, 'voice')
+        char_lang_path = lang_path.get(lang, 'voice_custom')
         if 'voicePath' in char_lang['dict'][lang]:
             p = char_lang['dict'][lang]['voicePath']
             if p.endswith('/'):
@@ -42,6 +42,9 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     if char_id == 'char_113_cqbw':
         path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
         path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
+    if char_id == 'char_472_pasngr':
+        path_list.append('日文(今昔须臾之梦):voice/char_472_pasngr_epoque__17')
+        path_list.append('中文(今昔须臾之梦):voice_cn/char_472_pasngr_epoque__17')
     if char_id == 'char_4067_lolxh':
         path_list = list(map(lambda x: x.replace('文:voice','文(猫形态):voice'), path_list))
         path_list.append('日文:voice/char_4067_lolxh__1')
@@ -62,6 +65,10 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         for k, v in char_lang['dict'].items():
             if v['wordkey'] == word_key and k == 'CN_TOPOLECT':
                 word_lang = '方言'
+            if v['wordkey'] == word_key and k == 'ITA':
+                word_lang = '意大利文'
+        if word_lang in ['意大利文']:
+            continue 
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             if text_data['voiceIndex'] not in text_dict:
@@ -83,7 +90,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-            if word_lang == '方言':
+            if word_lang in ['方言', '意大利文']:
                 continue
             if mode == 'update':
                 for other_lang, other_words in other_lang_words.items():
@@ -91,7 +98,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                         text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|{norm_text(other_words[text_id]['voiceText'])}}}}}"
                         official_flag[other_lang] = True
                     elif official_flag[other_lang] is True:
-                        print('lack of official words for', text_id, f"({char_id}{char_name})")
+                        print('lack of official words for', text_id, f"({char_id} {char_name})")
                         text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|}}}}"
                     else:
                         result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
@@ -106,6 +113,11 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     # special case
     if char_id == 'char_113_cqbw' and mode == 'update':
         word_lang, word_key = '中文(恍惚)', 'char_113_cqbw_epoque#7'
+        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
+                                         key=lambda x: x[1]['voiceIndex']):
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+    if char_id == 'char_472_pasngr' and mode == 'update':
+        word_lang, word_key = '中文(今昔须臾之梦)', 'char_472_pasngr_epoque#17'
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
