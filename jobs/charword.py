@@ -120,7 +120,15 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         word_lang, word_key = '中文(今昔须臾之梦)', 'char_472_pasngr_epoque#17'
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+            # text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+            result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
+            if result1:
+                result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}{{'), result1.group(1))
+                if result2 is None:
+                    result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}$'), result1.group(1))
+                print(result2)
+                if result2:
+                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|" + result2.group(1) + '}}'
 
     # 内容拼合
     if char_id == 'char_1001_amiya2':

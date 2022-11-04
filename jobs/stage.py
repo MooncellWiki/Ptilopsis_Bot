@@ -784,6 +784,7 @@ class Stage(Job):
         skill_table = self.getgd('excel/skill_table.json')
         stage_table = self.getgd('excel/stage_table.json')
         zone_table = self.getgd('excel/zone_table.json')
+        redirect_table = self.getgd('battle/battle_misc_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         stage_list = self.wiki.category('分类:普通难度关卡')
@@ -805,7 +806,10 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
+                    if stage_detail['levelId'] in redirect_table['levelScenePairs']:
+                        level_table = self.getgd('levels/' + redirect_table['levelScenePairs'][stage_detail['levelId']]['levelId'].lower() + '.json')
+                    else:
+                        level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue
