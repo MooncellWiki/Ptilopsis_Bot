@@ -75,7 +75,8 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 text_dict[text_data['voiceIndex']] = {
                     'text': '',
                     'title': '',
-                    'condition': ''
+                    'condition': '',
+                    'voiceId': ''
                 }
                 unlock_cond = ''
                 if text_data['unlockType'] == 'DIRECT':
@@ -89,6 +90,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                     print('new voice unlock type for', text_data['charWordId'])
                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
+                text_dict[text_data['voiceIndex']]['voiceId'] = text_data['voiceId'].strip()
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
             if word_lang in ['方言', '意大利文']:
                 continue
@@ -126,9 +128,13 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}{{'), result1.group(1))
                 if result2 is None:
                     result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}$'), result1.group(1))
-                print(result2)
                 if result2:
-                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|" + result2.group(1) + '}}'
+                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|中文(今昔须臾之梦)|" + result2.group(1) + '}}'
+                result2 = re.search(re.compile('{{VoiceData/word\|日文\(今昔须臾之梦\)\|(.*?)}}{{'), result1.group(1))
+                if result2 is None:
+                    result2 = re.search(re.compile('{{VoiceData/word\|日文\(今昔须臾之梦\)\|(.*?)}}$'), result1.group(1))
+                if result2:
+                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|日文(今昔须臾之梦)|" + result2.group(1) + '}}'
 
     # 内容拼合
     if char_id == 'char_1001_amiya2':
@@ -140,7 +146,8 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
             id=idx,
             title=word_piece['title'],
             text=word_piece['text'],
-            voice=voice_file_name + ' ' + word_piece['title'] + '.wav'
+            # voice=voice_file_name + ' ' + word_piece['title'] + '.wav'
+            voice=word_piece['voiceId'] + '.wav'
         )
         if word_piece['condition'] != '':
             content += f"\n|条件{idx}={word_piece['condition']}"
