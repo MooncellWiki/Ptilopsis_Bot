@@ -16,7 +16,6 @@ from utils.data import GameData
 from utils.wiki import Wiki
 
 if __name__ == '__main__':
-    wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
     if '--remote' in sys.argv:
         conf_remote = config
         conf_remote['version'] = 'version_remote.json'
@@ -37,6 +36,7 @@ if __name__ == '__main__':
         gameData.unpacker.check_all_update()
         exit()
 
+    wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
     flag_new_char = False
     if 'new' in sys.argv: 
         Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
