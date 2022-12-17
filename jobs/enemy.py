@@ -70,6 +70,8 @@ class Enemy(Job):
                         s = ''
                     if name == '攻击速度':
                         s = '100'
+                    if name == '数量':
+                        s = '1'
                 else:
                     if k == 's':
                         s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
@@ -282,6 +284,8 @@ class Enemy(Job):
                         s = ''
                     if name == '攻击速度':
                         s = '100'
+                    if name == '数量':
+                        s = '1'
                 else:
                     if k == 's':
                         s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
