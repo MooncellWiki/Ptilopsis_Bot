@@ -1,5 +1,6 @@
 from utils.job import Job
 import re
+import time
 
 
 def find(j, name, p):
@@ -162,6 +163,7 @@ class Item(Job):
             fin = '{{Navigator|道具一览}}\n' + tbasic_info + '\n{{道具导航}}'
             # print(fin)
             try:
+                # time.sleep(1)
                 self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)
             except:
                 print('Fail editing Page:', citem['name'])

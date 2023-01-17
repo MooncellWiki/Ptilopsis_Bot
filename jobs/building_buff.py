@@ -38,14 +38,21 @@ def get_building_buff(building_data, rts):
 
     for buff in building_data['buffs']:
         buff_data = building_data['buffs'][buff]
-        if buff_data['buffName'] not in buff_text[buff_data['roomType']]:
-            buff_text[buff_data['roomType']][buff_data['buffName']] = {
+        buff_name = buff_data['buffName']
+        buff_name = {
+            'control_dorm_rec[000]': '领袖(控制中枢)',
+            'dorm_rec_all[013]': '领袖(宿舍)',
+            'train_spd_doubleProf[100]': '红龙之血(精英0)',
+            'train_spd_doubleProf[110]': '红龙之血(精英2)'
+        }.get(buff_data['buffId'], buff_name)
+        if buff_name not in buff_text[buff_data['roomType']]:
+            buff_text[buff_data['roomType']][buff_name] = {
                 'sortId': buff_data['sortId'],
                 'text': buff_format.format(
-                    name = buff_data['buffName'],
+                    name = buff_name,
                     room = building_data['rooms'][buff_data['roomType']]['name'],
                     icon = buff_data['skillIcon'],
-                    # description = special_buff(buff_data['buffName'], rts.compile(buff_data['description']))
+                    # description = special_buff(buff_name, rts.compile(buff_data['description']))
                     description = rts.compile(buff_data['description'])
                 )
             }

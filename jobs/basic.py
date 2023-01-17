@@ -8,8 +8,8 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 
-def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, charword_table, rts):
-    cv = ''
+def get_basic_info(char_detail, char_key, id_table, team_table, skin_table, uniequip_table, charword_table, rts):
+    cv, drawer = '', ''
     try:
         cv_dict = charword_table['voiceLangDict'][char_key]['dict']
         lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
@@ -22,13 +22,14 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
                 lang = '中文'
             cv += '\n|{lang}配音={name}'.format(
                 lang = lang,
-                name = cv_dict[k]['cvName']
+                name = "&".join(cv_dict[k]['cvName'])
             )
     except:
-        if char_key in stories_table['handbookDict']:
-            cv = '\n|日文配音={}'.format(stories_table['handbookDict'][char_key]['infoName'])
-        else:
-            cv = '\n|日文配音='
+        cv = '\n|日文配音='
+    try:
+        drawer = '&'.join(skin_table['charSkins'][skin_table['buildinEvolveMap']['char_key']['0']]['displaySkin']['drawerList'])
+    except:
+        drawer = ''
     basic_info = '{{{{CharinfoV2\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|分支={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
         name = char_detail['name'],
         english_name = char_detail['appellation'],
@@ -45,7 +46,7 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
         # drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
-        drawName = '',
+        drawName = drawer,
         infoName = cv,
         limit = '\n|限定=1' if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
     )
@@ -501,9 +502,16 @@ def get_building_skill(building_data, char_key):
             for building_skill_id_2 in range(len(char_building_skill['buffChar'][building_skill_id]['buffData'])):
                 buff_count_text = '后勤技能{}-{}'.format(building_skill_id + 1, building_skill_id_2 + 1)
                 temp = char_building_skill['buffChar'][building_skill_id]['buffData'][building_skill_id_2]
+                buff_name = building_data['buffs'][temp['buffId']]['buffName']
+                buff_name = {
+                    'control_dorm_rec[000]': '领袖(控制中枢)',
+                    'dorm_rec_all[013]': '领袖(宿舍)',
+                    'train_spd_doubleProf[100]': '红龙之血(精英0)',
+                    'train_spd_doubleProf[110]': '红龙之血(精英2)'
+                }.get(temp['buffId'], buff_name)
                 building_skill += '\n|{count_text}={name}\n|{count_text}阶段=精英{phase}'.format(
                     count_text = buff_count_text,
-                    name = building_data['buffs'][temp['buffId']]['buffName'],
+                    name = buff_name,
                     phase = temp['cond']['phase']
                 )
                 if temp['cond']['level'] != 1:
@@ -1091,13 +1099,13 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['郁金香', '预备干员-重装']:
+            # if char_detail['name'] not in ['重岳', '截云']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
                 # continue
 
-            basic_info = get_basic_info(char_detail, char_key, id_table, stories_table, team_table, skin_table, uniequip_table, charword_table, rts)
+            basic_info = get_basic_info(char_detail, char_key, id_table, team_table, skin_table, uniequip_table, charword_table, rts)
             char_approach = get_char_approach(char_detail, id_table)
             phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             range_data = get_range_data(char_detail)
