@@ -48,7 +48,7 @@ class Item(Job):
                 continue
             if 'hideInItemGet' in citem and citem['hideInItemGet']:
                 continue
-            if citem['itemId'] in ['act1bossrush_relic_04', 'act13side_prestige_armorless']:
+            if citem['itemId'] in ['act1bossrush_relic_04', 'act13side_prestige_armorless', 'act2bossrush_relic_04', 'act3bossrush_relic_04']:
                 continue
             if citem['name'].find('的信物') != -1:
                 sort = '信物'
