@@ -161,4 +161,7 @@ class Item(Job):
                 #         print(citem['name'].rstrip(), 'same')
             fin = '{{Navigator|道具一览}}\n' + tbasic_info + '\n{{道具导航}}'
             # print(fin)
-            self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)
+            try:
+                self.wiki.edit(title=citem['name'].rstrip(), text=fin, summary='item init', createonly=True)
+            except:
+                print('Fail editing Page:', citem['name'])

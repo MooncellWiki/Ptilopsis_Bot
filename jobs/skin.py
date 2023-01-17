@@ -485,20 +485,20 @@ class Skin(Job):
         skin_table = self.getgd('excel/skin_table.json')
         handbook_info_table = self.getgd('excel/handbook_info_table.json')
 
-        gallery =  self.wiki.read('模板:时装回廊')
+        gallery = self.wiki.read('模板:时装回廊')
         old_skin = []
         result = re.findall(r'{{时装回廊/半身像\n([\s\S]*?)\n}}', gallery)
         for skin in result:
             r = re.search(r'\|干员名=([^\n]+?)\n[\s\S]*?\|时装名=([^\n]+?)\n', skin)
             char_name, skin_name = r.group(1), r.group(2)
             old_skin.append(f"{char_name} {skin_name}")
-        cid_list = {k: v['name'] for k, v in character_table.items()}
+        cid_list = {k: v['name'].strip() for k, v in character_table.items()}
         cid_list['char_1001_amiya2'] = '阿米娅(近卫)'
         skin_list = []
         for skin_key, skin_info in skin_table['charSkins'].items():
             if skin_info['displaySkin']['skinGroupName'] == '默认服装' or 'token' in skin_key:
                 continue
-            k = f"{cid_list[skin_info['charId']]} {skin_info['displaySkin']['skinName']}"
+            k = f"{cid_list[skin_info['charId']]} {skin_info['displaySkin']['skinName'].strip()}"
             if k not in old_skin:
                 skin_list.append(cid_list[skin_info['charId']])
                 print(f"新时装：{k}")

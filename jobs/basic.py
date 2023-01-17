@@ -44,7 +44,8 @@ def get_basic_info(char_detail, char_key, id_table, stories_table, team_table, s
         team = trans_team(char_detail['teamId'], team_table),
         position = trans_position(char_detail['position']),
         tagList = ' '.join(char_detail['tagList']),
-        drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
+        # drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
+        drawName = '',
         infoName = cv,
         limit = '\n|限定=1' if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
     )
