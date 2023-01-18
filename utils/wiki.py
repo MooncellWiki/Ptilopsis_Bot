@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import traceback
+import time
 from urllib.parse import quote
 
 import requests
@@ -84,6 +85,7 @@ class Wiki:
                     post_data[key] = '1'
                 else:
                     post_data[key] = args[key]
+        # time.sleep(1)
         return self.session.post(self.api_url, data=post_data)
 
     @retry(stop_max_attempt_number=3)

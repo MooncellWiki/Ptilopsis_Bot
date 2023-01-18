@@ -19,7 +19,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
     for skin_key in skin_table['charSkins']:
         if char_key in skin_key:
             if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                skin_drawer = skin_table['charSkins'][skin_key]['displaySkin']['drawerName'].strip()
+                skin_drawer = '&'.join(skin_table['charSkins'][skin_key]['displaySkin']['drawerList'])
                 if skin_drawer is not None and skin_drawer != origin_drawer:
                     drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
                 else:
@@ -48,6 +48,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
     skin_data = []
     for char_id in character_table:
         char_detail = character_table[char_id]
+        char_detail['name'] = char_detail['name'].strip()
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
         if skin_list != None and char_detail['name'] not in skin_list:
@@ -56,9 +57,10 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
 
         origin_text = wiki.read(char_detail['name'])
         num1 = origin_text.find('\n|精英0介绍')
-        # num2 = origin_text.find('==获得方式==')
-        num2 = origin_text.find('\n}}\n')
-        origin_drawer = handbook_info_table['handbookDict'][char_id]['drawName'].strip() if char_id in handbook_info_table['handbookDict'] else ''
+        num2 = origin_text.find('\n|dynlist')
+        if num2 == -1:
+            num2 = origin_text.find('\n}}\n')
+        origin_drawer = '&'.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_id]['0']]['displaySkin']['drawerList'])
         skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
         # new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
         new_text = origin_text[:num1] + skin_info[:-2] + origin_text[num2+1:]
@@ -92,124 +94,124 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         print('Updated: {}.'.format('首页/亮点干员/新增皮肤/数据'))
 
 
-def update_randomFig(wiki, character_table, skin_table):
-    skin_list = {}
-    fin = '<choose uncached before="[[文件:" after="|右|555px]]">'
-    for skin_key in skin_table['charSkins']:
-        skin_content = skin_table['charSkins'][skin_key]
-        if skin_content['displaySkin']['skinGroupSortIndex'] in [-50, -30, 0, 1]:
-            continue
-        if skin_content['displaySkin']['skinGroupName'] == '默认服装':
-            fin += '\n<option>立绘 {name} 2.png|link={name}</option>'.format(
-                name = character_table[skin_content['charId']]['name']
-            )
-        else:
-            char_name = character_table[skin_content['charId']]['name']
-            if char_name in skin_list:
-                skin_list[char_name] += 1
-            else:
-                skin_list[char_name] = 1
+# def update_randomFig(wiki, character_table, skin_table):
+#     skin_list = {}
+#     fin = '<choose uncached before="[[文件:" after="|右|555px]]">'
+#     for skin_key in skin_table['charSkins']:
+#         skin_content = skin_table['charSkins'][skin_key]
+#         if skin_content['displaySkin']['skinGroupSortIndex'] in [-50, -30, 0, 1]:
+#             continue
+#         if skin_content['displaySkin']['skinGroupName'] == '默认服装':
+#             fin += '\n<option>立绘 {name} 2.png|link={name}</option>'.format(
+#                 name = character_table[skin_content['charId']]['name']
+#             )
+#         else:
+#             char_name = character_table[skin_content['charId']]['name']
+#             if char_name in skin_list:
+#                 skin_list[char_name] += 1
+#             else:
+#                 skin_list[char_name] = 1
+#
+#     for char in skin_list:
+#         for skin_num in range(skin_list[char]):
+#             fin += '\n<option>立绘 {name} skin{id}.png|link={name}</option>'.format(
+#                 name = char,
+#                 id = skin_num + 1
+#             )
+#     fin += '\n</choose>'
+#
+#     wiki.edit(
+#         title = '模板:随机干员立绘',
+#         text = fin,
+#         summary = 'update'
+#     )
+#     # print(fin)
+#     print('Updated: {}.'.format('模板:随机干员立绘'))
 
-    for char in skin_list:
-        for skin_num in range(skin_list[char]):
-            fin += '\n<option>立绘 {name} skin{id}.png|link={name}</option>'.format(
-                name = char,
-                id = skin_num + 1
-            )
-    fin += '\n</choose>'
 
-    wiki.edit(
-        title = '模板:随机干员立绘',
-        text = fin,
-        summary = 'update'
-    )
-    # print(fin)
-    print('Updated: {}.'.format('模板:随机干员立绘'))
-
-
-def update_skin_handbook(wiki, character_table, skin_table):
-    skin_format = '''{{{{锚点|{skinKey}}}}}
-\'\'\'{name}\'\'\'
-{{{{干员时装
-|干员名={name}
-|皮肤序号={skinNo}
-|时装名={skinName}
-|画师={drawerName}
-|时装组名称={skinGroupName}
-|内容={content}
-|获得途径={obtainApproach}
-
-|dialog={dialog}
-|usage={usage}
-|desc={description}
-}}}}'''
-
-    skin_char = {}
-    max_index = 0
-    for skin_key in skin_table['charSkins']:
-        if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupSortIndex'] > max_index:
-            max_index = skin_table['charSkins'][skin_key]['displaySkin']['skinGroupSortIndex']
-
-    skin_group_order = ['' for x in range(max_index)]
-    skin_group_list1 = {}
-    skin_group_list2 = {}
-
-    for skin_key in skin_table['charSkins']:
-        skin_info = skin_table['charSkins'][skin_key]
-        if skin_info['displaySkin']['skinGroupName'] != '默认服装' and 'token' not in skin_key:
-            if skin_group_order[skin_info['displaySkin']['skinGroupSortIndex'] - 1] == '':
-                skin_group_order[skin_info['displaySkin']['skinGroupSortIndex'] - 1] = skin_info['displaySkin'][
-                    'skinGroupName']
-                skin_group_list1[skin_info['displaySkin']['skinGroupName']] = []
-                skin_group_list2[skin_info['displaySkin']['skinGroupName']] = []
-
-            if skin_table['charSkins'][skin_key]['charId'] not in skin_char:
-                skin_char[skin_table['charSkins'][skin_key]['charId']] = 0
-
-            skin_char[skin_info['charId']] += 1
-            skin_text1 = skin_format.format(
-                skinKey = skin_info['portraitId'].replace('#', ''),
-                name = character_table[skin_info['charId']]['name'],
-                skinName = skin_info['displaySkin']['skinName'],
-                skinNo = skin_char[skin_info['charId']],
-                modelName = skin_info['displaySkin']['modelName'],
-                drawerName = skin_info['displaySkin']['drawerName'],
-                skinGroupId = skin_info['displaySkin']['skinGroupId'],
-                skinGroupName = skin_info['displaySkin']['skinGroupName'],
-                content = skin_table['charSkins'][skin_key]['displaySkin']['content'].replace('<color name=#ffffff>',
-                    '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
-                dialog = skin_info['displaySkin']['dialog'],
-                usage = skin_info['displaySkin']['usage'],
-                description = skin_info['displaySkin']['description'],
-                obtainApproach = skin_info['displaySkin']['obtainApproach']
-            )
-            skin_text2 = '{{{{皮肤头像|{name}|90px|{skinNo}|link=#{skinKey}}}}}'.format(
-                name = character_table[skin_info['charId']]['name'],
-                skinNo = skin_char[skin_info['charId']],
-                skinKey = skin_info['portraitId'].replace('#', '')
-            )
-            skin_group_list1[skin_info['displaySkin']['skinGroupName']].append(skin_text1)
-            skin_group_list2[skin_info['displaySkin']['skinGroupName']].append(skin_text2)
-
-    handbook = '__NOTOC__\n{|class="wikitable" style="width:1000px; white-space:normal; display:table;"\n!皮肤组\n!干员'
-    for group_name in skin_group_order:
-        if group_name != '':
-            handbook += '\n|-\n|\'\'\'{groupName}\'\'\'\n|'.format(
-                groupName = group_name
-            ) + ''.join(skin_group_list2[group_name])
-    handbook += '\n|}'
-    for group_name in skin_group_order:
-        if group_name != '':
-            handbook += '\n=={}==\n'.format(group_name)
-            handbook += '\n'.join(skin_group_list1[group_name])
-
-    wiki.edit(
-        title = '用户:Seniorious/skins',
-        text = handbook,
-        summary = 'update'
-    )
-    # print(handbook)
-    print('Updated: {}.'.format('用户:Seniorious/skins'))
+# def update_skin_handbook(wiki, character_table, skin_table):
+#     skin_format = '''{{{{锚点|{skinKey}}}}}
+# \'\'\'{name}\'\'\'
+# {{{{干员时装
+# |干员名={name}
+# |皮肤序号={skinNo}
+# |时装名={skinName}
+# |画师={drawerName}
+# |时装组名称={skinGroupName}
+# |内容={content}
+# |获得途径={obtainApproach}
+#
+# |dialog={dialog}
+# |usage={usage}
+# |desc={description}
+# }}}}'''
+#
+#     skin_char = {}
+#     max_index = 0
+#     for skin_key in skin_table['charSkins']:
+#         if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupSortIndex'] > max_index:
+#             max_index = skin_table['charSkins'][skin_key]['displaySkin']['skinGroupSortIndex']
+#
+#     skin_group_order = ['' for x in range(max_index)]
+#     skin_group_list1 = {}
+#     skin_group_list2 = {}
+#
+#     for skin_key in skin_table['charSkins']:
+#         skin_info = skin_table['charSkins'][skin_key]
+#         if skin_info['displaySkin']['skinGroupName'] != '默认服装' and 'token' not in skin_key:
+#             if skin_group_order[skin_info['displaySkin']['skinGroupSortIndex'] - 1] == '':
+#                 skin_group_order[skin_info['displaySkin']['skinGroupSortIndex'] - 1] = skin_info['displaySkin'][
+#                     'skinGroupName']
+#                 skin_group_list1[skin_info['displaySkin']['skinGroupName']] = []
+#                 skin_group_list2[skin_info['displaySkin']['skinGroupName']] = []
+#
+#             if skin_table['charSkins'][skin_key]['charId'] not in skin_char:
+#                 skin_char[skin_table['charSkins'][skin_key]['charId']] = 0
+#
+#             skin_char[skin_info['charId']] += 1
+#             skin_text1 = skin_format.format(
+#                 skinKey = skin_info['portraitId'].replace('#', ''),
+#                 name = character_table[skin_info['charId']]['name'],
+#                 skinName = skin_info['displaySkin']['skinName'],
+#                 skinNo = skin_char[skin_info['charId']],
+#                 modelName = skin_info['displaySkin']['modelName'],
+#                 drawerName = skin_info['displaySkin']['drawerName'],
+#                 skinGroupId = skin_info['displaySkin']['skinGroupId'],
+#                 skinGroupName = skin_info['displaySkin']['skinGroupName'],
+#                 content = skin_table['charSkins'][skin_key]['displaySkin']['content'].replace('<color name=#ffffff>',
+#                     '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
+#                 dialog = skin_info['displaySkin']['dialog'],
+#                 usage = skin_info['displaySkin']['usage'],
+#                 description = skin_info['displaySkin']['description'],
+#                 obtainApproach = skin_info['displaySkin']['obtainApproach']
+#             )
+#             skin_text2 = '{{{{皮肤头像|{name}|90px|{skinNo}|link=#{skinKey}}}}}'.format(
+#                 name = character_table[skin_info['charId']]['name'],
+#                 skinNo = skin_char[skin_info['charId']],
+#                 skinKey = skin_info['portraitId'].replace('#', '')
+#             )
+#             skin_group_list1[skin_info['displaySkin']['skinGroupName']].append(skin_text1)
+#             skin_group_list2[skin_info['displaySkin']['skinGroupName']].append(skin_text2)
+#
+#     handbook = '__NOTOC__\n{|class="wikitable" style="width:1000px; white-space:normal; display:table;"\n!皮肤组\n!干员'
+#     for group_name in skin_group_order:
+#         if group_name != '':
+#             handbook += '\n|-\n|\'\'\'{groupName}\'\'\'\n|'.format(
+#                 groupName = group_name
+#             ) + ''.join(skin_group_list2[group_name])
+#     handbook += '\n|}'
+#     for group_name in skin_group_order:
+#         if group_name != '':
+#             handbook += '\n=={}==\n'.format(group_name)
+#             handbook += '\n'.join(skin_group_list1[group_name])
+#
+#     wiki.edit(
+#         title = '用户:Seniorious/skins',
+#         text = handbook,
+#         summary = 'update'
+#     )
+#     # print(handbook)
+#     print('Updated: {}.'.format('用户:Seniorious/skins'))
 
 
 def update_outfit_gallery(wiki, skin_table, character_table):
@@ -384,7 +386,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             name = character_table[skin_info['charId']]['name'],
             skinName = skin_name,
             skinNo = char_count[skin_info['charId']],
-            drawerName = skin_info['displaySkin']['drawerName'].rstrip(),
+            drawerName = '&'.join(skin_info['displaySkin']['drawerList']),
             skinGroupName = skin_info['displaySkin']['skinGroupName'].rstrip(),
             content = skin_info['displaySkin']['content'].replace('<color name=#ffffff>',
                 '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),

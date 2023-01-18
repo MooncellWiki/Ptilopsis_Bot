@@ -39,6 +39,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     # special case
     if char_id == 'char_311_mudrok':
         path_list.append('日文(摘下头盔时):voice/char_311_mudrok__1')
+        path_list.append('中文(摘下头盔时):voice_cn/char_311_mudrok__1')
     if char_id == 'char_113_cqbw':
         path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
         path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
