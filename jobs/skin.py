@@ -19,7 +19,7 @@ def get_skin_info(char_key, skin_table, origin_drawer):
     for skin_key in skin_table['charSkins']:
         if char_key in skin_key:
             if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                skin_drawer = '&'.join(skin_table['charSkins'][skin_key]['displaySkin']['drawerList'])
+                skin_drawer = ','.join(skin_table['charSkins'][skin_key]['displaySkin']['drawerList'])
                 if skin_drawer is not None and skin_drawer != origin_drawer:
                     drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
                 else:
@@ -60,7 +60,7 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
         num2 = origin_text.find('\n|dynlist')
         if num2 == -1:
             num2 = origin_text.find('\n}}\n')
-        origin_drawer = '&'.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_id]['0']]['displaySkin']['drawerList'])
+        origin_drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_id]['0']]['displaySkin']['drawerList'])
         skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
         # new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
         new_text = origin_text[:num1] + skin_info[:-2] + origin_text[num2+1:]
@@ -386,7 +386,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             name = character_table[skin_info['charId']]['name'],
             skinName = skin_name,
             skinNo = char_count[skin_info['charId']],
-            drawerName = '&'.join(skin_info['displaySkin']['drawerList']),
+            drawerName = ','.join(skin_info['displaySkin']['drawerList']),
             skinGroupName = skin_info['displaySkin']['skinGroupName'].rstrip(),
             content = skin_info['displaySkin']['content'].replace('<color name=#ffffff>',
                 '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),

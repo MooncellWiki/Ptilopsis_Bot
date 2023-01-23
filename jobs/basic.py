@@ -22,12 +22,12 @@ def get_basic_info(char_detail, char_key, id_table, team_table, skin_table, unie
                 lang = '中文'
             cv += '\n|{lang}配音={name}'.format(
                 lang = lang,
-                name = "&".join(cv_dict[k]['cvName'])
+                name = ",".join(cv_dict[k]['cvName'])
             )
     except:
         cv = '\n|日文配音='
     try:
-        drawer = '&'.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
+        drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
     except:
         drawer = ''
     basic_info = '{{{{CharinfoV2\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|分支={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
