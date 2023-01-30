@@ -5,7 +5,7 @@ from config import config
 from jobs._temp import Temp
 # from jobs.basic import Basic
 # from jobs.charword import Charword
-# from jobs.route import Route
+from jobs.route import Route
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
 # from jobs.stage import Stage
@@ -33,11 +33,12 @@ if __name__ == '__main__':
     # Stage(wiki, gameData).run()
     # Enemy(wiki, gameData).run()
     # Enemy(wiki, gameData).update_data()
-    Skin(wiki, gameData).run()
-    print('flag1')
-    Furni(wiki, gameData).run()
-    print('flag2')
-    Item(wiki, gameData).run()
+    # Skin(wiki, gameData).run()
+    # print('flag1')
+    # Furni(wiki, gameData).run()
+    # print('flag2')
+    # Item(wiki, gameData).run()
+    Route(wiki,gameData).run()
 
     # up = Unpacker(config)
     # up.get_all_ab()
