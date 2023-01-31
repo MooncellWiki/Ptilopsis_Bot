@@ -88,6 +88,7 @@ class Unpacker:
             if not self.compare_ab_md5(md5=ab_info['md5'], path=ab_info['name'], region=region):
                 self.get_ab(path=ab_info['name'], region=region)
 
+    @retry(stop_max_attempt_number=3)
     def get_ab(self, path, region='CN'):
         res_version = self.version[region]['resVersion']
         dir = os.path.dirname(path)

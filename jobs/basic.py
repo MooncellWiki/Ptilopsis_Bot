@@ -1179,7 +1179,6 @@ class Basic(Job):
 
         return flag_new_char
 
-
     def update(self):
         character_table = self.getgd('excel/character_table.json')
         uniequip_table = self.getgd('excel/uniequip_table.json')
