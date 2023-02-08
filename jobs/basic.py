@@ -605,18 +605,18 @@ def get_skill_levelUp_list(char_detail, item_table, skill_table):
 def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts):
     if char_key not in uniequip_table['charEquip']:
         return ''
-    content = '\n==模组=='
+    content = ['\n==模组==']
     for equip in uniequip_table['charEquip'][char_key]:
         if equip not in uniequip_table['equipDict']:
             continue
         equip_info = uniequip_table['equipDict'][equip]
         if equip_info['type'] == 'INITIAL':
             template = '\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes\n|分支={subProf}\n|基础信息={bInfo}\n}}}}'
-            content += template.format(
-                name = equip_info['uniEquipName'],
+            content.append(template.format(
+                name = equip_info['uniEquipName'].strip(),
                 subProf = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'],
                 bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
-            )
+            ))
         else:
             template = '\n==={name}===\n<section begin=专属模组 />\n{{{{模组\n|名称={name}\n|类型={type}' \
                        '{typeColor}{params}{trait}{talent}{missions}{unlockCond}{itemCost}' \
@@ -696,8 +696,8 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
                         idx = '' if idx == 0 else str(idx + 1),
                         item = ' '.join(item_temp)
                     )
-            content += template.format(
-                name = equip_info['uniEquipName'],
+            content.append(template.format(
+                name = equip_info['uniEquipName'].strip(),
                 type = f"{equip_info['typeName1']}-{equip_info['typeName2']}",
                 typeColor = type_color,
                 params = params,
@@ -707,7 +707,7 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
                 unlockCond = unlock,
                 itemCost = item_cost,
                 bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
-            )
+            ))
     return content
 
 
@@ -1108,7 +1108,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['重岳', '截云']:
+            # if char_detail['name'] not in ['异客']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -1125,7 +1125,7 @@ class Basic(Job):
             building_skill = get_building_skill(building_data, char_key)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
-            battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            battle_equip = ''.join(get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts))
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
@@ -1247,13 +1247,22 @@ class Basic(Job):
             # new_text = new_text[:num1] + tt + new_text[num2:]
 
             # 更新模组
-            # if char_detail['name'] in ['归溟幽灵鲨']:
-            #     battle_equip = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
-            #     num1 = new_text.find('==模组==')
-            #     num2 = new_text.find('==相关道具==')
-            #     if num1 == -1:
-            #         num1 = num2
-            #     new_text = new_text[:num1].rstrip() + battle_equip + '\n' + new_text[num2:]
+            equip_list = get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts)
+            num1 = new_text.find('==模组==')
+            num2 = new_text.find('\n==相关道具==')
+            if num1 == -1:
+                num1 = num2
+                new_text = new_text[:num1].rstrip() + ''.join(equip_list) + new_text[num2:]
+            else:
+                equip_text = new_text[num1:num2]
+                for equip in equip_list:
+                    result = re.search('===(.+?)===', equip)
+                    if not result:
+                        continue
+                    if f"==={result.group(1)}===" not in equip_text:
+                        equip_text += equip
+                new_text = new_text[:num1] + equip_text + new_text[num2:]
+
 
             # 更新干员cv
             num1 = new_text.find('\n|画师=')
@@ -1297,11 +1306,11 @@ class Basic(Job):
             # # num2 = origin_text.find('==语音记录==')
             # num1 = origin_text.find('==技能==')
             # num2 = origin_text.find('==后勤技能==')
-            # f_wiki.write(origin_text[num1:num2])
+            # f_wiki.write(origin_text)
             # f_wiki.close()
             # f_new = open('new.txt', 'w')
             # # f_new.write('==干员档案==\n{}\n'.format(stories_list))
-            # f_new.write('==技能=={}\n'.format(skill_list))
+            # f_new.write(new_text)
             # f_new.close()
             # os.system('echo {}'.format(char_detail['name']))
             # os.system('diff old.txt new.txt')

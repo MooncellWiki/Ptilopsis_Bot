@@ -813,7 +813,16 @@ class Stage(Job):
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY', 'CLIMB_TOWER'] or stage_detail[
                 'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY']:
                 continue
-            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
+            stage_detail['name'] = {
+                'act21side_01_t': '新城区大街(德克萨斯)',
+                'act21side_02_t': '萨卢佐家(拉普兰德2)',
+                'act21side_03_m2': '后巷(拉普兰德1)',
+                'act21side_04_m1': '萨卢佐家(拉普兰德1)',
+                'act21side_05_m1': '后巷(乔万娜)',
+                'act21side_05_t': '后巷(拉普兰德2)',
+                'act21side_06_t': '新城区大街(丹布朗)'
+            }.get(stage_id, stage_detail['name'].strip())
+            stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name']
             if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 4:
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
