@@ -745,6 +745,23 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
 
     return stage_data
 
+def get_sandbox_data(stage_detail, rts, level_table):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    stage_data += '|关卡类型={}\n'.format('生息演算')
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc=rts.compile(stage_detail['description'].replace('\n', '<br/>'))
+    )
+    stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
+    stage_data += '|power消耗={}\n'.format(stage_detail['powerCost'])
+    stage_data += '}}'
+
+    return stage_data
+
 
 class Stage(Job):
     def check_duplicate(self):
@@ -1164,6 +1181,58 @@ class Stage(Job):
             )
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
+
+    def run_sandbox(self):
+        sandbox_table = self.getgd('excel/sandbox_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        stage_list = self.wiki.category('分类:生息演算关卡')
+        new_stage_list = []
+
+        for act_key in sandbox_table['sandboxActTables']:
+            for stage_id, stage_data in sandbox_table['sandboxActTables'][act_key]['stageDatas'].items():
+                stage_data['name'] = stage_data['name'].strip()
+                stage_page_name = f"{stage_data['code']} {stage_data['name']}"
+                if stage_page_name in stage_list:
+                    continue
+                if stage_data['name'] not in ['最初的落脚点', '树林之主']:
+                    continue
+
+                if stage_data['levelId']:
+                    try:
+                        level_table = self.getgd('levels/' + stage_data['levelId'].lower() + '.json')
+                    except:
+                        print('Cannot find level data of {}.'.format(stage_page_name))
+                        continue
+                else:
+                    level_table = {}
+
+                stage_normal_data = get_sandbox_data(stage_data, rts, level_table)
+                stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
+                stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+
+                self.wiki.edit(
+                    title='沙中之火/关卡样例/'+stage_page_name,
+                    text=stage_content,
+                    summary='init',
+                    bot=None,
+                    minor=True
+                )
+                # print(stage_content)
+                print('Created: {}.'.format(stage_page_name))
+
+                new_stage_list.append('\n* [[{}]]'.format(stage_page_name))
+
+            # if new_stage_list != []:
+            #     self.wiki.edit(
+            #         title='首页/新增关卡',
+            #         appendtext=''.join(new_stage_list),
+            #         summary='update',
+            #         bot=None,
+            #         minor=True
+            #     )
+            #     # print('\n'.join(new_stage_list))
+            #     print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_id(self, path):
         if self.gamedata._source() != 'Unpacker':

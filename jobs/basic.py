@@ -8,101 +8,110 @@ from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
 
-def get_basic_info(char_detail, char_key, id_table, team_table, skin_table, uniequip_table, charword_table, rts):
-    cv, drawer = '', ''
-    try:
-        cv_dict = charword_table['voiceLangDict'][char_key]['dict']
-        lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
-        lang_dict['CN_MANDARIN'] = '中文'
-        lang_dict['CN_TOPOLECT'] = '中文方言'
-        lang_dict['LINKAGE'] = '英文'
-        for k in cv_dict:
-            lang = lang_dict.get(k, '')
-            if lang == '英文' and char_detail['name'] == '九色鹿':
-                lang = '中文'
-            cv += '\n|{lang}配音={name}'.format(
-                lang = lang,
-                name = ",".join(cv_dict[k]['cvName'])
-            )
-    except:
-        cv = '\n|日文配音='
-    try:
-        drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
-    except:
-        drawer = ''
-    basic_info = '{{{{CharinfoV2\n|干员名={name}\n|干员外文名={english_name}\n|干员id={char_key}\n|干员序号={char_id}\n|特性={description}\n|稀有度={rarity}\n|职业={profession}\n|分支={subProfession}\n|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n|位置={position}\n|标签={tagList}\n|画师={drawName}{infoName}{limit}'.format(
-        name = char_detail['name'],
-        english_name = char_detail['appellation'],
-        char_key = char_key,
-        char_id = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1,
-        description = rts.compile(char_detail['description']).replace('\\n', '<br/>'),
-        rarity = char_detail['rarity'],
-        profession = trans_profession(char_detail['profession']),
-        subProfession = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'],
-        displayNumber = char_detail['displayNumber'],
-        nation = trans_team(char_detail['nationId'], team_table),
-        group = trans_team(char_detail['groupId'], team_table),
-        team = trans_team(char_detail['teamId'], team_table),
-        position = trans_position(char_detail['position']),
-        tagList = ' '.join(char_detail['tagList']),
-        # drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
-        drawName = drawer,
-        infoName = cv,
-        limit = '\n|限定=1' if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访'] else ''
-    )
-    if char_detail['trait'] != None:
-        override_desc_text = ''
-        override_desc_list = ['', '', '']
-        for desc in char_detail['trait']['candidates']:
-            if desc['overrideDescripton'] != None:
+def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_table, skin_table, charword_table):
+    basic_info = '{{CharinfoV2'
+    basic_info += '\n<!--下方为自动更新部分，您的修改可能会被覆盖-->'
+    basic_info += f"\n|干员名={char_detail['name']}"
+    basic_info += f"\n|干员外文名={char_detail['appellation']}"
+    basic_info += f"\n|干员id={char_key}"
+    char_no = id_table[char_detail['name']]['id'] if char_detail['name'] in id_table else -1
+    basic_info += f"\n|干员序号={char_no}"
+    # 特性
+    if char_detail['trait'] is not None:
+        trait_list = ['', '', '']
+        for trait_desc in char_detail['trait']['candidates']:
+            if trait_desc['overrideDescripton'] is not None:
                 desc_dic = {}
-                for i in desc['blackboard']:
+                for i in trait_desc['blackboard']:
                     if i['value'] != int(i['value']):
                         desc_dic[i['key'].replace('.', '').replace(']', '').replace('[', '')] = i['value']
                     else:
                         desc_dic[i['key'].replace('.', '').replace(']', '').replace('[', '')] = int(i['value'])
-                override_desc = desc['overrideDescripton'].replace('-{-', '{').replace('{-', '{').replace('\\n',
+                override_desc = trait_desc['overrideDescripton'].replace('-{-', '{').replace('{-', '{').replace('\\n',
                     '<br/>')
                 override_desc = replace_key(replace_upper(override_desc))
                 override_desc = override_desc.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
                 override_desc = override_desc.format(**desc_dic)
                 override_desc = rts.compile(override_desc)
-
-                override_desc_list[desc['unlockCondition']['phase']] = override_desc
-
-        if override_desc_list[2] != '':
-            override_desc_text = '|特性2={}\n'.format(override_desc_list[2]) + override_desc_text
-        if override_desc_list[1] != '':
-            override_desc_text = '|特性1={}\n'.format(override_desc_list[1]) + override_desc_text
-        if override_desc_list[0] != '':
-            override_desc_text = '|特性={}\n'.format(override_desc_list[0]) + override_desc_text
-        if override_desc_list != ['', '', '']:
-            num1 = basic_info.find('|特性=')
-            num2 = basic_info.find('|稀有度=')
-            basic_info = basic_info[:num1] + override_desc_text + basic_info[num2:]
-
-    basic_info += '\n'
-    special_skin_id = 1
-    for phase_id in skin_table['buildinEvolveMap'][char_key]:
-        desc = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_id]]['displaySkin']['content']
-        if desc != None:
-            desc = desc.replace('\n', '<br/>')
-        basic_info += '\n|精英{phase_id}介绍={des}'.format(
-            phase_id = phase_id,
-            des = desc
-        )
-    for skin_key in skin_table['charSkins']:
-        if char_key in skin_key:
-            if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                basic_info += '\n|时装{skin_id}名称={name}\n|时装{skin_id}系列={group}\n|时装{skin_id}颜色={color}\n|时装{skin_id}介绍={des}'.format(
-                    skin_id = special_skin_id,
-                    name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
-                    color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],
-                    group = skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'],
-                    des = skin_table['charSkins'][skin_key]['displaySkin']['content'].replace('<color name=#ffffff>',
-                        '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
-                )
-                special_skin_id += 1
+                trait_list[trait_desc['unlockCondition']['phase']] = override_desc
+        if trait_list[0] != '':
+            basic_info += f"\n|特性={trait_list[0]}"
+        else:
+            trait = rts.compile(char_detail['description']).replace('\\n', '<br/>')
+            basic_info += f"\n|特性={trait}"
+        if trait_list[1] != '':
+            basic_info += f"\n|特性1={trait_list[1]}"
+        if trait_list[2] != '':
+            basic_info += f"\n|特性2={trait_list[2]}"
+    else:
+        trait = rts.compile(char_detail['description']).replace('\\n', '<br/>')
+        basic_info += f"\n|特性={trait}"
+    basic_info += f"\n|稀有度={char_detail['rarity']}"
+    basic_info += f"\n|职业={trans_profession(char_detail['profession'])}"
+    basic_info += f"\n|分支={uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'].strip()}"
+    basic_info += f"\n|情报编号={char_detail['displayNumber']}"
+    basic_info += f"\n|所属国家={trans_team(char_detail['nationId'], team_table)}"
+    basic_info += f"\n|所属组织={trans_team(char_detail['groupId'], team_table)}"
+    basic_info += f"\n|所属团队={trans_team(char_detail['teamId'], team_table)}"
+    basic_info += f"\n|位置={trans_position(char_detail['position'])}"
+    basic_info += f"\n|标签={' '.join(char_detail['tagList'])}"
+    # 画师
+    try:
+        drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
+    except:
+        drawer = ''
+    basic_info += f"\n|画师={drawer}"
+    # 声优
+    try:
+        cv_dict = charword_table['voiceLangDict'][char_key]['dict']
+        lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
+        lang_dict['CN_MANDARIN'], lang_dict['CN_TOPOLECT'] = '中文', '中文方言'
+        for k in cv_dict:
+            lang = lang_dict.get(k, '未知语言')
+            if lang == '联动':
+                if char_key in ['char_4019_ncdeer']:
+                    lang = '中文'
+                elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak']:
+                    lang = '英文'
+            basic_info += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
+    except:
+        basic_info += '\n|日文配音='
+    # 常规皮肤description
+    for phase_no in skin_table['buildinEvolveMap'][char_key]:
+        phase_desc = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_no]]['displaySkin']['content']
+        phase_drawer_list = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList']
+        if phase_drawer_list is not None:
+            phase_drawer = ','.join(phase_drawer_list)
+        else:
+            phase_drawer = ''
+        phase_desc = phase_desc.replace('\n', '<br/>') if phase_desc is not None else ''
+        basic_info += f"\n|精英{phase_no}介绍={phase_desc}"
+        if phase_drawer != drawer:
+            basic_info += f"\n|精英{phase_no}画师={phase_drawer}"
+    # 时装
+    skin_counter = 1
+    skin_filter = lambda x: x['charId'] == char_key and x['displaySkin']['skinGroupName'] != '默认服装'
+    order_func = lambda x: x['displaySkin']['onYear'] * 100 + x['displaySkin']['onPeriod']
+    for skin_content in sorted(filter(skin_filter, skin_table['charSkins'].values()), key = order_func):
+        basic_info += f"\n|时装{skin_counter}名称={skin_content['displaySkin']['skinName']}"
+        if skin_content['displaySkin']['drawerList'] is not None:
+            skin_drawer = ','.join(skin_content['displaySkin']['drawerList'])
+        else:
+            skin_drawer = ''
+        if skin_drawer != drawer:
+            basic_info += f"\n|时装{skin_counter}画师={skin_drawer}"
+        basic_info += f"\n|时装{skin_counter}系列={skin_content['displaySkin']['skinGroupName']}"
+        skin_color = skin_content['displaySkin']['colorList'][0]
+        if not skin_color.startswith('#') and len(skin_color) == 6:
+            skin_color = '#' + skin_color
+        basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
+        skin_desc = skin_content['displaySkin']['content']
+        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+        basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
+        skin_counter += 1
+    basic_info += '\n<!--上方为自动更新部分，您的修改可能会被覆盖-->'
+    if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访']:
+        basic_info += '\n|限定=1'
     basic_info += '\n}}'
     return basic_info
 
@@ -1105,7 +1114,7 @@ class Basic(Job):
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
                 # continue
 
-            basic_info = get_basic_info(char_detail, char_key, id_table, team_table, skin_table, uniequip_table, charword_table, rts)
+            basic_info = get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_table, skin_table, charword_table)
             char_approach = get_char_approach(char_detail, id_table)
             phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
             range_data = get_range_data(char_detail)
@@ -1205,7 +1214,7 @@ class Basic(Job):
             char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            if char_key == 'char_512_aprot':
+            if char_key in ['char_512_aprot', 'char_508_aguard', 'char_509_acast', 'char_511_asnipe', 'char_510_amedic', 'char_513_apionr']:
                 continue
             # if char_detail['name'] not in ['帕拉斯','麦哲伦']:
             #     continue
@@ -1227,15 +1236,15 @@ class Basic(Job):
             new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + new_text[num2:]
 
             # 更新干员势力
-            num1 = new_text.find('|情报编号=')
-            num2 = new_text.find('|位置=')
-            tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
-                displayNumber = char_detail['displayNumber'],
-                nation = trans_team(char_detail['nationId'], team_table),
-                group = trans_team(char_detail['groupId'], team_table),
-                team = trans_team(char_detail['teamId'], team_table)
-            )
-            new_text = new_text[:num1] + tt + new_text[num2:]
+            # num1 = new_text.find('|情报编号=')
+            # num2 = new_text.find('|位置=')
+            # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
+            #     displayNumber = char_detail['displayNumber'],
+            #     nation = trans_team(char_detail['nationId'], team_table),
+            #     group = trans_team(char_detail['groupId'], team_table),
+            #     team = trans_team(char_detail['teamId'], team_table)
+            # )
+            # new_text = new_text[:num1] + tt + new_text[num2:]
 
             # 更新模组
             # if char_detail['name'] in ['归溟幽灵鲨']:
@@ -1247,37 +1256,29 @@ class Basic(Job):
             #     new_text = new_text[:num1].rstrip() + battle_equip + '\n' + new_text[num2:]
 
             # 更新干员cv
-            num1 = new_text.find('|画师=')
-            num2 = max(-1, new_text.find('|限定='))
-            num2 = min(num2, max(-1, new_text.find('|初始cv=')))
-            num2 = min(num2, max(-1, new_text.find('|初始场景=')))
-            if num2 == -1:
-                num2 = new_text.find('\n|精英0')
-            cv = ''
+            num1 = new_text.find('\n|画师=')
+            num2 = new_text.find('\n|精英0介绍=')
+            cv, drawer = '', '\n|画师='
             try:
                 cv_dict = charword_table['voiceLangDict'][char_key]['dict']
-                lang_dict = {k:v['name'] for k,v in charword_table['voiceLangTypeDict'].items()}
-                lang_dict['CN_MANDARIN'] = '中文'
-                lang_dict['CN_TOPOLECT'] = '中文方言'
-                lang_dict['LINKAGE'] = '英文'
+                lang_dict = {k: v['name'] for k, v in charword_table['voiceLangTypeDict'].items()}
+                lang_dict['CN_MANDARIN'], lang_dict['CN_TOPOLECT'] = '中文', '中文方言'
                 for k in cv_dict:
-                    lang = lang_dict.get(k, '')
-                    if lang == '英文' and char_detail['name'] == '九色鹿':
-                        lang = '中文'
-                    cv += '\n|{lang}配音={name}'.format(
-                        lang = lang,
-                        name = cv_dict[k]['cvName']
-                    )
+                    lang = lang_dict.get(k, '未知语言')
+                    if lang == '联动':
+                        if char_key in ['char_4019_ncdeer']:
+                            lang = '中文'
+                        elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak']:
+                            lang = '英文'
+                    cv += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
             except:
-                if char_key in stories_table['handbookDict']:
-                    cv = '\n|日文配音={}'.format(stories_table['handbookDict'][char_key]['infoName'])
-                else:
-                    cv = '\n|日文配音='
-            ii = '|画师={drawName}{infoName}\n'.format(
-                drawName = stories_table['handbookDict'][char_key]['drawName'] if char_key in stories_table['handbookDict'] else '',
-                infoName = cv
-            )
-            new_text = new_text[:num1] + ii + new_text[num2:]
+                cv += '\n|日文配音='
+            try:
+                drawer += ','.join(
+                    skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
+            except:
+                drawer += ''
+            new_text = new_text[:num1] + drawer + cv + new_text[num2:]
 
             if new_text != origin_text:
                 self.wiki.edit(
@@ -1343,4 +1344,3 @@ class Basic(Job):
                     print('Updated: {}.'.format(char_detail['name']))
                 else:
                     print('Same: {}.'.format(char_detail['name']))
-
