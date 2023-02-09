@@ -1206,9 +1206,6 @@ class Basic(Job):
             id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        char_list = self.wiki.category('分类:干员')
-        update_token_page = False
-
         for char_key in character_table:
             char_detail = character_table[char_key]
             char_detail['name'] = char_detail['name'].strip()

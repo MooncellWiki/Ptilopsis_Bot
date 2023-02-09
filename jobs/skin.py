@@ -3,48 +3,46 @@ import json
 import re
 
 
-def get_skin_info(char_key, skin_table, origin_drawer):
+def get_skin_info(char_key, skin_table, drawer):
     basic_info = ''
-    for phase_id in skin_table['buildinEvolveMap'][char_key]:
-        try:
-            des = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_id]]['displaySkin'][
-                'content'].replace('\n', '<br/>')
-        except:
-            des = ''
-        basic_info += '\n|精英{phase_id}介绍={des}'.format(
-            phase_id = phase_id,
-            des = des
-        )
-    skin_desc = {}
-    for skin_key in skin_table['charSkins']:
-        if char_key in skin_key:
-            if skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'] != '默认服装':
-                skin_drawer = ','.join(skin_table['charSkins'][skin_key]['displaySkin']['drawerList'])
-                if skin_drawer is not None and skin_drawer != origin_drawer:
-                    drawer = f'\n|时装{{skin_id}}画师={skin_drawer}'
-                else:
-                    drawer = ''
-                order = skin_table['charSkins'][skin_key]['displaySkin']['onYear'] * 100 + \
-                        skin_table['charSkins'][skin_key]['displaySkin']['onPeriod']
-                skin_desc[
-                    order] = '\n|时装{{skin_id}}名称={name}{drawer}\n|时装{{skin_id}}系列={group}\n|时装{{skin_id}}颜色={color}\n|时装{{skin_id}}介绍={des}'.format(
-                    name = skin_table['charSkins'][skin_key]['displaySkin']['skinName'],
-                    drawer = drawer,
-                    color = skin_table['charSkins'][skin_key]['displaySkin']['colorList'][0],
-                    group = skin_table['charSkins'][skin_key]['displaySkin']['skinGroupName'],
-                    des = skin_table['charSkins'][skin_key]['displaySkin']['content'].replace('<color name=#ffffff>',
-                        '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
-                )
-    special_skin_id = 1
-    skin_desc_sorted = [skin_desc[k] for k in sorted(skin_desc.keys())]
-    for desc in skin_desc_sorted:
-        basic_info += desc.format(skin_id = special_skin_id)
-        special_skin_id += 1
-    basic_info += '\n}}'
-    return basic_info, special_skin_id - 1
+    # 常规皮肤description
+    for phase_no in skin_table['buildinEvolveMap'][char_key]:
+        phase_desc = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key][phase_no]]['displaySkin']['content']
+        phase_drawer_list = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList']
+        if phase_drawer_list is not None:
+            phase_drawer = ','.join(phase_drawer_list)
+        else:
+            phase_drawer = ''
+        phase_desc = phase_desc.replace('\n', '<br/>') if phase_desc is not None else ''
+        basic_info += f"\n|精英{phase_no}介绍={phase_desc}"
+        if phase_drawer != drawer:
+            basic_info += f"\n|精英{phase_no}画师={phase_drawer}"
+    # 时装
+    skin_counter = 1
+    skin_filter = lambda x: x['charId'] == char_key and x['displaySkin']['skinGroupName'] != '默认服装'
+    order_func = lambda x: x['displaySkin']['onYear'] * 100 + x['displaySkin']['onPeriod']
+    for skin_content in sorted(filter(skin_filter, skin_table['charSkins'].values()), key = order_func):
+        basic_info += f"\n|时装{skin_counter}名称={skin_content['displaySkin']['skinName']}"
+        if skin_content['displaySkin']['drawerList'] is not None:
+            skin_drawer = ','.join(skin_content['displaySkin']['drawerList'])
+        else:
+            skin_drawer = ''
+        if skin_drawer != drawer:
+            basic_info += f"\n|时装{skin_counter}画师={skin_drawer}"
+        basic_info += f"\n|时装{skin_counter}系列={skin_content['displaySkin']['skinGroupName']}"
+        skin_color = skin_content['displaySkin']['colorList'][0]
+        if not skin_color.startswith('#') and len(skin_color) == 6:
+            skin_color = '#' + skin_color
+        basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
+        skin_desc = skin_content['displaySkin']['content']
+        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+        basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
+        skin_counter += 1
+    basic_info += '\n<!--'
+    return basic_info, skin_counter - 1
 
 
-def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_table):
+def update_skin(wiki, character_table, skin_table, skin_list):
     skin_data = []
     for char_id in character_table:
         char_detail = character_table[char_id]
@@ -57,13 +55,14 @@ def update_skin(wiki, character_table, skin_table, skin_list, handbook_info_tabl
 
         origin_text = wiki.read(char_detail['name'])
         num1 = origin_text.find('\n|精英0介绍')
-        num2 = origin_text.find('\n|dynlist')
-        if num2 == -1:
-            num2 = origin_text.find('\n}}\n')
-        origin_drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_id]['0']]['displaySkin']['drawerList'])
+        num2 = origin_text.find('上方为自动更新部分，您的修改可能会被覆盖')
+        try:
+            origin_drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_id]['0']]['displaySkin']['drawerList'])
+        except:
+            origin_drawer = ''
         skin_info, count = get_skin_info(char_id, skin_table, origin_drawer)
         # new_text = origin_text[:num1] + skin_info + '\n' + origin_text[num2:]
-        new_text = origin_text[:num1] + skin_info[:-2] + origin_text[num2+1:]
+        new_text = origin_text[:num1] + skin_info + origin_text[num2:]
 
         if origin_text != new_text:
             skin_data.append('1={name}:skin={count}'.format(
@@ -505,7 +504,7 @@ class Skin(Job):
                 skin_list.append(cid_list[skin_info['charId']])
                 print(f"新时装：{k}")
         # skin_list = ['史尔特尔', '羽毛笔', '极境']
-        update_skin(self.wiki, character_table, skin_table, skin_list, handbook_info_table)
+        update_skin(self.wiki, character_table, skin_table, skin_list)
 
         # update_randomFig(self.wiki, character_table, skin_table)
         # update_skin_handbook(self.wiki, character_table, skin_table)
