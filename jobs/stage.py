@@ -745,6 +745,54 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
 
     return stage_data
 
+
+def analyze_xb_level_info(level_table):
+    level_info = ''
+    level_info += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
+    level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
+    level_info += '|COST上限={}\n'.format(level_table['options']['maxCost'])
+    level_info += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
+    enemy_count = 0
+    min_time = 0.0
+    normal_hidden_group = analyze_normal_hidden_group(level_table)
+    for wave in level_table['waves']:
+        min_time += wave['preDelay'] + wave['postDelay']
+        for fragment in wave['fragments']:
+            fragment_flag, time = False, 0.0
+            for unit in fragment['actions']:
+                if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
+                    fragment_flag = True
+                    time = max(time, unit['preDelay'] + (unit['count'] - 1) * unit['interval'])
+                    if unit['actionType'] == 0 and unit['key'] != '':
+                        enemy_count += unit['count']
+            if fragment_flag:
+                min_time += fragment['preDelay']
+                min_time += time
+    level_info += '|敌人数量={}\n'.format(enemy_count)
+    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
+    if level_table['options']['maxPlayTime'] > 0:
+        mptime = level_table['options']['maxPlayTime']
+        level_info += '|倒计时={}分{}秒\n'.format(int(mptime / 60), int(mptime % 60))
+    else:
+        if abs(min_time - int(min_time)) < 0.0001:
+            level_info += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
+        else:
+            level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
+    return level_info
+
+
+def analyze_action(actions, normal_hidden_group):
+    min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
+    num_filter = lambda x: x['actionType'] == 0 and x['key'] != ''
+    time_filter = lambda x: 'hiddenGroup' in x and (x['hiddenGroup'] == None or x['hiddenGroup'] in normal_hidden_group)
+    random_dict = {}
+    # for action in filter(num_filter, actions):
+    #     if action['randomSpawnGroupKey'] != None and action['randomSpawnGroupKey'] not in random_dict:
+    #         random_dict[action['randomSpawnGroupKey']] = (,)
+
+    return min_time, action_enemy_min, action_enemy_max
+
+
 def get_sandbox_data(stage_detail, rts, level_table):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
@@ -752,12 +800,13 @@ def get_sandbox_data(stage_detail, rts, level_table):
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format('生息演算')
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_xb_level_info(level_table)
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\n', '<br/>'))
     )
     stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
     stage_data += '|power消耗={}\n'.format(stage_detail['powerCost'])
+    stage_data += '|特殊地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n'
     stage_data += '}}'
 
     return stage_data
@@ -1204,8 +1253,8 @@ class Stage(Job):
                 stage_page_name = f"{stage_data['code']} {stage_data['name']}"
                 if stage_page_name in stage_list:
                     continue
-                if stage_data['name'] not in ['最初的落脚点', '树林之主']:
-                    continue
+                # if stage_data['name'] not in ['最初的落脚点', '树林之主']:
+                #     continue
 
                 if stage_data['levelId']:
                     try:
@@ -1221,9 +1270,17 @@ class Stage(Job):
                 stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
 
                 self.wiki.edit(
-                    title='沙中之火/关卡样例/'+stage_page_name,
+                    title=stage_page_name+'/data',
+                    text=json.dumps(level_table, ensure_ascii=False),
+                    summary='init',
+                    createonly=True,
+                    contentmodel='json'
+                )
+                self.wiki.edit(
+                    title=stage_page_name,
                     text=stage_content,
                     summary='init',
+                    createonly=True,
                     bot=None,
                     minor=True
                 )
@@ -1232,16 +1289,16 @@ class Stage(Job):
 
                 new_stage_list.append('\n* [[{}]]'.format(stage_page_name))
 
-            # if new_stage_list != []:
-            #     self.wiki.edit(
-            #         title='首页/新增关卡',
-            #         appendtext=''.join(new_stage_list),
-            #         summary='update',
-            #         bot=None,
-            #         minor=True
-            #     )
-            #     # print('\n'.join(new_stage_list))
-            #     print('Updated: {}.'.format('首页/新增关卡'))
+        if new_stage_list != []:
+            self.wiki.edit(
+                title='首页/新增关卡',
+                appendtext=''.join(new_stage_list),
+                summary='update',
+                bot=None,
+                minor=True
+            )
+            # print('\n'.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_id(self, path):
         if self.gamedata._source() != 'Unpacker':
