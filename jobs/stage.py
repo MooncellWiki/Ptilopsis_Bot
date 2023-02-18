@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -226,29 +227,104 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
     return rewards_data
 
 
+def analyze_action(actions, normal_hidden_group):
+    action_list = [ActionInfo(action) for action in actions]
+    pack_dict = {}
+    for action in action_list:
+        if action.random_key is not None and action.random_pack is not None:
+            if action.random_pack in pack_dict and pack_dict[action.random_pack] != action.random_key:
+                print(f"Error: randomSpawnGroupPackKey duplicate! ({action.random_key} - {action.random_pack})")
+            pack_dict[action.random_pack] = action.random_key
+    for action in action_list:
+        action.update_pack(pack_dict)
+    min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
+    fragment_flag = False
+    time_filter = lambda x: x.hidden_group == None or x.hidden_group in normal_hidden_group
+    num_filter = lambda x: x.key is not None and (x.hidden_group == None or x.hidden_group in normal_hidden_group)
+    time_dict = {'fix_time': -1.0, 'random_group': {}}
+    num_dict = {'base_num': 0, 'random_group': {}}
+    # 最短用时
+    for action in filter(time_filter, action_list):
+        fragment_flag = True
+        if action.random_key is not None:
+            if action.random_key not in time_dict['random_group']:
+                time_dict['random_group'][action.random_key] = {'single': 1000000.0, 'pack': {}}
+            if action.random_pack is not None:
+                if action.random_pack not in time_dict['random_group'][action.random_key]['pack']:
+                    time_dict['random_group'][action.random_key]['pack'][action.random_pack] = -1.0
+                time_dict['random_group'][action.random_key]['pack'][action.random_pack] = max(action.time, time_dict['random_group'][action.random_key]['pack'][action.random_pack])
+            else:
+                time_dict['random_group'][action.random_key]['single'] = min(action.time, time_dict['random_group'][action.random_key]['single'])
+        else:
+            time_dict['fix_time'] = max(action.time, time_dict['fix_time'])
+    if time_dict['random_group'] != {}:
+        pack_time_list = [0.0]
+        for action_k_iter in time_dict['random_group']:
+            pack_time = 1000000.0
+            if time_dict['random_group'][action_k_iter]['pack'] != {}:
+                pack_time = min(pack_time, min(time_dict['random_group'][action_k_iter]['pack'].values()))
+            if time_dict['random_group'][action_k_iter]['single'] != {}:
+                pack_time = min(pack_time, max(time_dict['random_group'][action_k_iter]['single'], 0))
+            pack_time_list.append(pack_time)
+        min_time = max(0.0, time_dict['fix_time'], min(pack_time_list))
+    else:
+        min_time = max(0.0, time_dict['fix_time'])
+
+    # 敌人数量
+    for action in filter(num_filter, action_list):
+        if action.random_key is not None:
+            if action.random_key not in num_dict['random_group']:
+                num_dict['random_group'][action.random_key] = {'single': [], 'pack': {}}
+            if action.random_pack is not None:
+                if action.random_pack not in num_dict['random_group'][action.random_key]['pack']:
+                    num_dict['random_group'][action.random_key]['pack'][action.random_pack] = 0
+                num_dict['random_group'][action.random_key]['pack'][action.random_pack] += action.count
+            else:
+                num_dict['random_group'][action.random_key]['single'].append(action.count)
+        else:
+            num_dict['base_num'] += action.count
+    if num_dict['random_group'] != {}:
+        for action_k_iter in num_dict['random_group']:
+            pack_min, pack_max = 100000, -1
+            if num_dict['random_group'][action_k_iter]['pack'] != {}:
+                pack_min = min(pack_min, min(num_dict['random_group'][action_k_iter]['pack'].values()))
+                pack_max = max(pack_max, max(num_dict['random_group'][action_k_iter]['pack'].values()))
+            if num_dict['random_group'][action_k_iter]['single'] != []:
+                pack_min = min(pack_min, min(num_dict['random_group'][action_k_iter]['single']))
+                pack_max = max(pack_max, max(num_dict['random_group'][action_k_iter]['single']))
+            action_enemy_min += pack_min
+            action_enemy_max += pack_max
+        action_enemy_min += num_dict['base_num']
+        action_enemy_max += num_dict['base_num']
+    else:
+        action_enemy_min = num_dict['base_num']
+        action_enemy_max = num_dict['base_num']
+
+    return min_time, action_enemy_min, action_enemy_max, fragment_flag
+
+
 def analyze_level_info(level_table):
     level_info = ''
     level_info += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
     level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
     level_info += '|COST上限={}\n'.format(level_table['options']['maxCost'])
     level_info += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
-    enemy_count = 0
+    enemy_count = {'min': 0, 'max': 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level_table)
     for wave in level_table['waves']:
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
-            fragment_flag, time = False, 0.0
-            for unit in fragment['actions']:
-                if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
-                    fragment_flag = True
-                    time = max(time, unit['preDelay'] + (unit['count'] - 1) * unit['interval'])
-                    if unit['actionType'] == 0 and unit['key'] != '':
-                        enemy_count += unit['count']
+            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group)
+            enemy_count['min'] += action_enemy_min
+            enemy_count['max'] += action_enemy_max
             if fragment_flag:
                 min_time += fragment['preDelay']
                 min_time += time
-    level_info += '|敌人数量={}\n'.format(enemy_count)
+    if enemy_count['min'] == enemy_count['max']:
+        level_info += '|敌人数量={}\n'.format(enemy_count['min'])
+    else:
+        level_info += '|敌人数量={}~{}\n'.format(enemy_count['min'], enemy_count['max'])
     level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
     if abs(min_time - int(min_time)) < 0.0001:
         level_info += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
@@ -349,18 +425,59 @@ def analyze_tile(level_table, stage_tile_info):
 def get_enemy_data(level_table, enemy_table, enemy_database):
     enemy_data = '\n==敌方情报==\n{{敌方情报\n'
     count = 1
-    enemy_num_dict = {}
     normal_hidden_group = analyze_normal_hidden_group(level_table)
+    enemy_count_dict = {}
     for wave in level_table['waves']:
         for fragment in wave['fragments']:
-            for unit in fragment['actions']:
-                if unit['actionType'] == 0:
-                    if unit['key'] not in enemy_num_dict:
-                        enemy_num_dict[unit['key']] = 0
-                    if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
-                        enemy_num_dict[unit['key']] += unit['count']
+            action_list = [ActionInfo(action) for action in fragment['actions']]
+            pack_dict = {}
+            actions_count_type = {}
+            for action in action_list:
+                if action.random_key is not None and action.random_pack is not None:
+                    pack_dict[action.random_pack] = action.random_key
+                if action.key is not None and action.key not in enemy_count_dict:
+                    enemy_count_dict[action.key] = {'min': 0, 'max': 0}
+                if action.key is not None and action.key not in actions_count_type:
+                    actions_count_type[action.key] = {'min': 0, 'max': 0}
+            for action in action_list:
+                action.update_pack(pack_dict)
+            actions_count = {'fixed': copy.deepcopy(actions_count_type), 'random': {}}
+            for action in action_list:
+                if action.key is not None and (action.hidden_group == None or action.hidden_group in normal_hidden_group):
+                    if action.random_key is not None:
+                        if action.random_key not in actions_count['random']:
+                            actions_count['random'][action.random_key] = {'single':[], 'pack': {}}
+                        if action.random_pack is not None:
+                            if action.random_pack not in actions_count['random'][action.random_key]['pack']:
+                                actions_count['random'][action.random_key]['pack'][action.random_pack] = copy.deepcopy(actions_count_type)
+                            actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['min'] += action.count
+                            actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['max'] += action.count
+                        else:
+                            actions_count['random'][action.random_key]['single'].append(copy.deepcopy(actions_count_type))
+                            actions_count['random'][action.random_key]['single'][-1][action.key]['min'] = action.count
+                            actions_count['random'][action.random_key]['single'][-1][action.key]['max'] = action.count
                     else:
-                        enemy_num_dict[unit['key']] += 0
+                        actions_count['fixed'][action.key]['min'] += action.count
+                        actions_count['fixed'][action.key]['max'] += action.count
+            if actions_count['random'] != {}:
+                for k_iter in actions_count['random']:
+                    if actions_count['random'][k_iter]['pack'] != {}:
+                        for count_p in actions_count['random'][k_iter]['pack'].values():
+                            actions_count['random'][k_iter]['single'].append(count_p)
+                    if actions_count['random'][k_iter]['single'] != {}:
+                        for enemy_k in actions_count_type:
+                            actions_count['fixed'][enemy_k]['min'] += min(x[enemy_k]['min'] for x in actions_count['random'][k_iter]['single'])
+                            actions_count['fixed'][enemy_k]['max'] += max(x[enemy_k]['max'] for x in actions_count['random'][k_iter]['single'])
+            for k in enemy_count_dict:
+                if k in actions_count['fixed']:
+                    enemy_count_dict[k]['min'] += actions_count['fixed'][k]['min']
+                    enemy_count_dict[k]['max'] += actions_count['fixed'][k]['max']
+    enemy_num_dict = {}
+    for k in enemy_count_dict:
+        if enemy_count_dict[k]['min'] == enemy_count_dict[k]['max']:
+            enemy_num_dict[k] = enemy_count_dict[k]['min']
+        else:
+            enemy_num_dict[k] = f"{enemy_count_dict[k]['min']}~{enemy_count_dict[k]['max']}"
     for enemy in level_table['enemyDbRefs']:
         if enemy['id'] not in enemy_num_dict:
             # continue
@@ -382,7 +499,7 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
         else:
             if enemy['id'] in enemy_table:
                 enemy_name = enemy_table[enemy['id']]['name']
-                if enemy_name in ['W', '泥岩']:
+                if enemy_name in ['W', '泥岩', '多萝西']:
                     enemy_data += '|敌人{count}={name}(敌方)\n|敌人{count}显示名={name}\n'.format(
                         count=count,
                         name=enemy_name
@@ -752,23 +869,22 @@ def analyze_xb_level_info(level_table):
     level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
     level_info += '|COST上限={}\n'.format(level_table['options']['maxCost'])
     level_info += '|目标点耐久={}\n'.format(level_table['options']['maxLifePoint'])
-    enemy_count = 0
+    enemy_count = {'min': 0, 'max': 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level_table)
     for wave in level_table['waves']:
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
-            fragment_flag, time = False, 0.0
-            for unit in fragment['actions']:
-                if 'hiddenGroup' in unit and (unit['hiddenGroup'] == None or unit['hiddenGroup'] in normal_hidden_group):
-                    fragment_flag = True
-                    time = max(time, unit['preDelay'] + (unit['count'] - 1) * unit['interval'])
-                    if unit['actionType'] == 0 and unit['key'] != '':
-                        enemy_count += unit['count']
+            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group)
+            enemy_count['min'] += action_enemy_min
+            enemy_count['max'] += action_enemy_max
             if fragment_flag:
                 min_time += fragment['preDelay']
                 min_time += time
-    level_info += '|敌人数量={}\n'.format(enemy_count)
+    if enemy_count['min'] == enemy_count['max']:
+        level_info += '|敌人数量={}\n'.format(enemy_count['min'])
+    else:
+        level_info += '|敌人数量={}~{}\n'.format(enemy_count['min'], enemy_count['max'])
     level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
     if level_table['options']['maxPlayTime'] > 0:
         mptime = level_table['options']['maxPlayTime']
@@ -779,18 +895,6 @@ def analyze_xb_level_info(level_table):
         else:
             level_info += '|最短用时={}分{:.1f}秒\n'.format(int(min_time / 60), min_time % 60)
     return level_info
-
-
-def analyze_action(actions, normal_hidden_group):
-    min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
-    num_filter = lambda x: x['actionType'] == 0 and x['key'] != ''
-    time_filter = lambda x: 'hiddenGroup' in x and (x['hiddenGroup'] == None or x['hiddenGroup'] in normal_hidden_group)
-    random_dict = {}
-    # for action in filter(num_filter, actions):
-    #     if action['randomSpawnGroupKey'] != None and action['randomSpawnGroupKey'] not in random_dict:
-    #         random_dict[action['randomSpawnGroupKey']] = (,)
-
-    return min_time, action_enemy_min, action_enemy_max
 
 
 def get_sandbox_data(stage_detail, rts, level_table):
@@ -810,6 +914,38 @@ def get_sandbox_data(stage_detail, rts, level_table):
     stage_data += '}}'
 
     return stage_data
+
+
+class ActionInfo:
+    def __init__(self, action):
+        self.time = action['preDelay'] + (action['count'] - 1) * action['interval']
+        if action['actionType'] == 0 and action['key'] != '':
+            self.key = action['key']
+        else:
+            self.key = None
+        self.count = action['count']
+        if 'hiddenGroup' in action and action['hiddenGroup'] is not None:
+            self.hidden_group = action['hiddenGroup']
+        else:
+            self.hidden_group = None
+        self.random_type = 0
+        if 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] is not None:
+            self.random_key = action['randomSpawnGroupKey']
+            self.random_type += 1
+        else:
+            self.random_key = None
+        if 'randomSpawnGroupPackKey' in action and action['randomSpawnGroupPackKey'] is not None:
+            self.random_pack = action['randomSpawnGroupPackKey']
+            self.random_type += 2
+        else:
+            self.random_pack = None
+
+    def update_pack(self, pack_dict):
+        if self.random_key is None and self.random_pack is not None:
+            if self.random_pack in pack_dict:
+                self.random_key = pack_dict[self.random_pack]
+            else:
+                print(f"Error: cannot find random_key for pack {self.random_pack}")
 
 
 class Stage(Job):
@@ -876,7 +1012,7 @@ class Stage(Job):
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
                 continue
-            # if stage_detail['code'] not in ['WD-EX-3', 'MB-EX-8', 'FA-8']:
+            # if stage_detail['code'] not in ['TR-3', 'IC-P-2']:
             #     continue
 
             if stage_detail['levelId']:
@@ -1253,7 +1389,7 @@ class Stage(Job):
                 stage_page_name = f"{stage_data['code']} {stage_data['name']}"
                 if stage_page_name in stage_list:
                     continue
-                # if stage_data['name'] not in ['最初的落脚点', '树林之主']:
+                # if stage_data['name'] not in ['生计']:
                 #     continue
 
                 if stage_data['levelId']:
