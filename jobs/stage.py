@@ -475,22 +475,30 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
     enemy_num_dict = {}
     for k in enemy_count_dict:
         if enemy_count_dict[k]['min'] == enemy_count_dict[k]['max']:
-            enemy_num_dict[k] = enemy_count_dict[k]['min']
+            enemy_num_dict[k] = f"{enemy_count_dict[k]['min']}"
         else:
-            enemy_num_dict[k] = f"{enemy_count_dict[k]['min']}~{enemy_count_dict[k]['max']}"
+            enemy_num_dict[k] = f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
     for enemy in level_table['enemyDbRefs']:
         if enemy['id'] not in enemy_num_dict:
             # continue
-            enemy_num_dict[enemy['id']] = 0
+            enemy_num_dict[enemy['id']] = '0'
         if enemy['useDb'] == False:
             enemy_data += '|敌人{count}={name}\n'.format(
                 count=count,
                 name=enemy['overwrittenData']['name']['m_value']
             )
-            enemy_data += '|敌人{count}数量={enemy_num}\n'.format(
-                count=count,
-                enemy_num=enemy_num_dict[enemy['id']]
-            )
+            if ',' in enemy_num_dict[enemy['id']]:
+                num_list = enemy_num_dict[enemy['id']].split(',')
+                enemy_data += '|敌人{count}数量={enemy_num}\n|敌人{count}数量下限={enemy_num_2}\n'.format(
+                    count=count,
+                    enemy_num=num_list[1],
+                    enemy_num_2=num_list[0]
+                )
+            else:
+                enemy_data += '|敌人{count}数量={enemy_num}\n'.format(
+                    count=count,
+                    enemy_num=enemy_num_dict[enemy['id']]
+                )
             enemy_data += '|敌人{count}级别={level}\n'.format(
                 count=count,
                 level=enemy['level']
@@ -518,10 +526,18 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
                     count=count,
                     name=enemy_name
                 )
-            enemy_data += '|敌人{count}数量={enemy_num}\n'.format(
-                count=count,
-                enemy_num=enemy_num_dict[enemy['id']]
-            )
+            if ',' in enemy_num_dict[enemy['id']]:
+                num_list = enemy_num_dict[enemy['id']].split(',')
+                enemy_data += '|敌人{count}数量={enemy_num}\n|敌人{count}数量下限={enemy_num_2}\n'.format(
+                    count=count,
+                    enemy_num=num_list[1],
+                    enemy_num_2=num_list[0]
+                )
+            else:
+                enemy_data += '|敌人{count}数量={enemy_num}\n'.format(
+                    count=count,
+                    enemy_num=enemy_num_dict[enemy['id']]
+                )
             enemy_data += '|敌人{count}级别={level}\n'.format(
                 count=count,
                 level=enemy['level']
@@ -897,7 +913,7 @@ def analyze_xb_level_info(level_table):
     return level_info
 
 
-def get_sandbox_data(stage_detail, rts, level_table):
+def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
     stage_data += '|关卡名={}\n'.format(stage_detail['name'])
@@ -908,6 +924,13 @@ def get_sandbox_data(stage_detail, rts, level_table):
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\n', '<br/>'))
     )
+    rewards = []
+    for k in reward_data:
+        if stage_detail['stageId'] in reward_data[k]:
+            for r in reward_data[k][stage_detail['stageId']]['rewardList']:
+                if item_data[r['rewardItem']]['itemType'] != 'PLACEHOLDER':
+                    rewards.append(f"{{{{ZheiSandbox|{item_data[r['rewardItem']]['itemName'].strip()}}}}}")
+    stage_data += '|资源概览={}\n'.format(''.join(rewards))
     stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
     stage_data += '|power消耗={}\n'.format(stage_detail['powerCost'])
     stage_data += '|特殊地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n'
@@ -1401,7 +1424,7 @@ class Stage(Job):
                 else:
                     level_table = {}
 
-                stage_normal_data = get_sandbox_data(stage_data, rts, level_table)
+                stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_table['sandboxActTables'][act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
                 stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
                 stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
 
