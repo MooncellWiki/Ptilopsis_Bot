@@ -937,7 +937,7 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
         if stage_detail['stageId'] in reward_data[k]:
             for r in reward_data[k][stage_detail['stageId']]['rewardList']:
                 if item_data[r['rewardItem']]['itemType'] != 'PLACEHOLDER':
-                    rewards.append(f"{{{{ZheiSandbox|{item_data[r['rewardItem']]['itemName'].strip()}}}}}")
+                    rewards.append(f"{{{{资源概览|{item_data[r['rewardItem']]['itemName'].strip()}}}}}")
     stage_data += '|资源概览={}\n'.format(''.join(rewards))
     stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
     stage_data += '|power消耗={}\n'.format(stage_detail['powerCost'])
