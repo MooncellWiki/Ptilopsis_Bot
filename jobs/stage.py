@@ -194,6 +194,11 @@ def parse_overwritten_data(overwritten_data, count):
             count=count,
             value=overwritten_data['rangeRadius']['m_value']
         )
+    if overwritten_data['lifePointReduce']['m_defined'] == True:
+        return_data += '|敌人{count}目标价值={value}\n'.format(
+            count=count,
+            value=overwritten_data['lifePointReduce']['m_value']
+        )
     return return_data
 
 
@@ -240,7 +245,7 @@ def analyze_action(actions, normal_hidden_group):
     min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
     fragment_flag = False
     time_filter = lambda x: x.hidden_group == None or x.hidden_group in normal_hidden_group
-    num_filter = lambda x: x.key is not None and (x.hidden_group == None or x.hidden_group in normal_hidden_group)
+    num_filter = lambda x: (x.key is not None or x.random_key is not None) and (x.hidden_group == None or x.hidden_group in normal_hidden_group)
     time_dict = {'fix_time': -1.0, 'random_group': {}}
     num_dict = {'base_num': 0, 'random_group': {}}
     # 最短用时
@@ -443,22 +448,25 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
                 action.update_pack(pack_dict)
             actions_count = {'fixed': copy.deepcopy(actions_count_type), 'random': {}}
             for action in action_list:
-                if action.key is not None and (action.hidden_group == None or action.hidden_group in normal_hidden_group):
+                if (action.key is not None or action.random_key is not None) and (action.hidden_group == None or action.hidden_group in normal_hidden_group):
                     if action.random_key is not None:
                         if action.random_key not in actions_count['random']:
                             actions_count['random'][action.random_key] = {'single':[], 'pack': {}}
                         if action.random_pack is not None:
                             if action.random_pack not in actions_count['random'][action.random_key]['pack']:
                                 actions_count['random'][action.random_key]['pack'][action.random_pack] = copy.deepcopy(actions_count_type)
-                            actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['min'] += action.count
-                            actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['max'] += action.count
+                            if action.key is not None:
+                                actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['min'] += action.count
+                                actions_count['random'][action.random_key]['pack'][action.random_pack][action.key]['max'] += action.count
                         else:
                             actions_count['random'][action.random_key]['single'].append(copy.deepcopy(actions_count_type))
-                            actions_count['random'][action.random_key]['single'][-1][action.key]['min'] = action.count
-                            actions_count['random'][action.random_key]['single'][-1][action.key]['max'] = action.count
+                            if action.key is not None:
+                                actions_count['random'][action.random_key]['single'][-1][action.key]['min'] = action.count
+                                actions_count['random'][action.random_key]['single'][-1][action.key]['max'] = action.count
                     else:
-                        actions_count['fixed'][action.key]['min'] += action.count
-                        actions_count['fixed'][action.key]['max'] += action.count
+                        if action.key is not None:
+                            actions_count['fixed'][action.key]['min'] += action.count
+                            actions_count['fixed'][action.key]['max'] += action.count
             if actions_count['random'] != {}:
                 for k_iter in actions_count['random']:
                     if actions_count['random'][k_iter]['pack'] != {}:
@@ -941,12 +949,16 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
 
 class ActionInfo:
     def __init__(self, action):
-        self.time = action['preDelay'] + (action['count'] - 1) * action['interval']
         if action['actionType'] == 0 and action['key'] != '':
             self.key = action['key']
         else:
             self.key = None
-        self.count = action['count']
+        if self.key is not None:
+            self.time = action['preDelay'] + (action['count'] - 1) * action['interval']
+            self.count = action['count']
+        else:
+            self.time = 0.0
+            self.count = 0
         if 'hiddenGroup' in action and action['hiddenGroup'] is not None:
             self.hidden_group = action['hiddenGroup']
         else:
@@ -1412,7 +1424,7 @@ class Stage(Job):
                 stage_page_name = f"{stage_data['code']} {stage_data['name']}"
                 if stage_page_name in stage_list:
                     continue
-                # if stage_data['name'] not in ['生计']:
+                # if stage_data['name'] not in ['吝啬陷阱']:
                 #     continue
 
                 if stage_data['levelId']:
@@ -1427,6 +1439,13 @@ class Stage(Job):
                 stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_table['sandboxActTables'][act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
                 stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
                 stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+
+                # old = self.wiki.read(stage_page_name)
+                # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
+                # if result:
+                #     stage_content = old.replace(result.group(1), stage_enemy_data)
+                # else:
+                #     continue
 
                 self.wiki.edit(
                     title=stage_page_name+'/data',
