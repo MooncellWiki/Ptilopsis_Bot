@@ -54,12 +54,13 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
 
     # 语音文本
     text_dict = {}
-    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False}
+    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False, '意大利文': False}
     other_lang_words = {
         '日文': char_words_jp,
         '英文': char_words_en,
         '韩文': char_words_kr,
-        '中文(繁体)': char_words_tw
+        '中文(繁体)': char_words_tw,
+        '意大利文': []
     }
     for word_key in char_lang['wordkeys']:
         word_lang = '中文'
