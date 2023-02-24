@@ -1010,7 +1010,8 @@ class Stage(Job):
                         stage_table['stages'][sid]['name'].strip(),
                         cat
                     )
-                    duplicate_dict[code] += page_name
+                    if page_name not in duplicate_dict[code]:
+                        duplicate_dict[code] += page_name
         self.duplicate_dict = duplicate_dict
         # print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
 
