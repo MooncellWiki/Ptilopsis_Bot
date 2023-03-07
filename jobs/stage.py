@@ -352,14 +352,18 @@ def analyze_normal_hidden_group(level_table):
     return normal_hidden_group
 
 
-def analyze_char_card_info(level_table, stage_page_name, character_table, skill_table):
-    char_pre = ''
+def analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = None):
+    char_pre, memory_desc = '', ''
     favor_point = []
     try:
         if level_table['predefines'] == None or 'characterCards' not in level_table['predefines']:
             return ''
         for char_card in level_table['predefines']['characterCards']:
             char_card_name = character_table[char_card['inst']['characterKey']]['name']
+            if stage_charId is not None and char_card['inst']['characterKey'] == stage_charId:
+                char_pre += f"{{{{悖论模拟对象|{char_card_name}}}}}"
+                memory_desc = '<br>模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准'
+                continue
             if char_card['skillIndex'] != -1:
                 skill_name = skill_table[
                     character_table[char_card['inst']['characterKey']]['skills'][char_card['skillIndex']][
@@ -376,7 +380,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
             if char_card['inst']['potentialRank'] != 0:
                 char_pre += '||{}'.format(char_card['inst']['potentialRank'] + 1)
             char_pre += '}}'
-            favor_point.append('{}信赖为{}'.format(char_card_name, char_card['inst']['favorPoint'] * 2))
+            favor_point.append('{}信赖为{}%'.format(char_card_name, char_card['inst']['favorPoint']))
         if char_pre != '':
             char_pre = '''
 ==固定编队==
@@ -387,13 +391,55 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
 |-
 !备注
 |-
-|{}
-|}}'''.format(char_pre, '，'.join(favor_point))
+|{}{}
+|}}'''.format(char_pre, '，'.join(favor_point), memory_desc)
     except:
         print(stage_page_name, 'characterCards error.')
 
     return char_pre
 
+
+def analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table):
+    char_pre = ''
+    favor_point = []
+    try:
+        if level_table['predefines'] == None or 'characterInsts' not in level_table['predefines']:
+            return ''
+        for char_insert in level_table['predefines']['characterInsts']:
+            char_insert_name = character_table[char_insert['inst']['characterKey']]['name']
+            if char_insert['skillIndex'] != -1:
+                skill_name = skill_table[
+                    character_table[char_insert['inst']['characterKey']]['skills'][char_insert['skillIndex']][
+                        'skillId']]['levels'][0]['name']
+            else:
+                skill_name = ''
+            char_pre += '{{{{编队单位|{}|{}|{}|{}|{}'.format(
+                char_insert_name,
+                char_insert['inst']['phase'],
+                char_insert['inst']['level'],
+                skill_name,
+                char_insert['mainSkillLvl'],
+            )
+            if char_insert['inst']['potentialRank'] != 0:
+                char_pre += '||{}'.format(char_insert['inst']['potentialRank'] + 1)
+            char_pre += '}}'
+            favor_point.append('{}信赖为{}%'.format(char_insert_name, char_insert['inst']['favorPoint']))
+        if char_pre != '':
+            char_pre = '''
+==已部署干员==
+{{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
+!style="background-color:#0098DC;color:#FFFFFF"|已部署干员
+|-
+|{}
+|-
+!备注
+|-
+|{}
+|}}'''.format(char_pre, '，'.join(favor_point))
+    except:
+        print(stage_page_name, 'characterInsts error.')
+
+    return char_pre
 
 def analyze_tile(level_table, stage_tile_info):
     try:
@@ -1076,6 +1122,7 @@ class Stage(Job):
                 stage_drop = ''
             if stage_detail['levelId']:
                 char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+                char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
             else:
                 char_pre = ''
 
@@ -1365,6 +1412,8 @@ class Stage(Job):
             stage_page_name = '悖论模拟 {}'.format(stage_detail['name'].strip())
             if stage_page_name in stage_list:
                 continue
+            # if stage_page_name not in ['悖论模拟 书写悲痛', '悖论模拟 御护', '悖论模拟 高效除虫', '悖论模拟 射术传承']:
+            #     continue
 
             if stage_detail['levelId']:
                 try:
@@ -1378,7 +1427,8 @@ class Stage(Job):
             stage_normal_data = get_memory_data(stage_detail, level_table, rts, character_table, building_data,
                                                 item_table)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
-            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId'])
+            char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
 
             stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
@@ -1414,6 +1464,8 @@ class Stage(Job):
 
     def run_sandbox(self):
         sandbox_table = self.getgd('excel/sandbox_table.json')
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         stage_list = self.wiki.category('分类:生息演算关卡')
@@ -1439,7 +1491,12 @@ class Stage(Job):
 
                 stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_table['sandboxActTables'][act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
                 stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
-                stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+                if stage_data['levelId']:
+                    char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+                    char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
+                else:
+                    char_pre = ''
+                stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
 
                 # old = self.wiki.read(stage_page_name)
                 # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
@@ -1530,6 +1587,7 @@ class Stage(Job):
 
             stage_enemy_data = self._run_enemy_data(level_table)
             char_pre = analyze_char_card_info(level_table, stage_id, character_table, skill_table)
+            char_pre += analyze_char_insert_info(level_table, stage_id, character_table, skill_table)
             stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
 
             self.wiki.edit(
