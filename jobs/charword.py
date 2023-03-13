@@ -4,9 +4,14 @@ import re
 from utils.job import Job
 
 
-def norm_text(t):
-    result = t.replace('Dr.{@nickname}', '{{DrName|前缀=Dr.}}')
-    result = result.replace('{@nickname}', '{{DrName}}')
+def norm_text(t, lang=None):
+    if lang != None and lang in ['日文', '英文', '韩文', '意大利文']:
+        add = f"|语言={lang}"
+    else:
+        add = ''
+    result = t.replace('Dr.{@nickname}', f"{{{{DrName|前缀=Dr.{add}}}}}")
+    result = result.replace('Dr. {@nickname}', f"{{{{DrName|前缀=Dr.{add}}}}}")
+    result = result.replace('{@nickname}', f"{{{{DrName{add}}}}}")
     result = result.replace('~~~', '<nowiki>~~~</nowiki>')
     return result.strip()
 
@@ -93,13 +98,13 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
                 text_dict[text_data['voiceIndex']]['voiceId'] = text_data['voiceId'].strip()
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'], word_lang)}}}}}"
             if word_lang in ['方言', '意大利文']:
                 continue
             if mode == 'update':
                 for other_lang, other_words in other_lang_words.items():
                     if text_id in other_words:
-                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|{norm_text(other_words[text_id]['voiceText'])}}}}}"
+                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|{norm_text(other_words[text_id]['voiceText'], other_lang)}}}}}"
                         official_flag[other_lang] = True
                     elif official_flag[other_lang] is True:
                         print('lack of official words for', text_id, f"({char_id} {char_name})")
