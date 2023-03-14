@@ -512,14 +512,16 @@ def get_building_skill(building_data, char_key):
                 buff_count_text = '后勤技能{}-{}'.format(building_skill_id + 1, building_skill_id_2 + 1)
                 temp = char_building_skill['buffChar'][building_skill_id]['buffData'][building_skill_id_2]
                 buff_name = building_data['buffs'][temp['buffId']]['buffName']
-                buff_name = {
+                buff_name_extra = {
                     'control_dorm_rec[000]': '领袖(控制中枢)',
                     'dorm_rec_all[013]': '领袖(宿舍)',
                     'train_spd_doubleProf[100]': '红龙之血(精英0)',
                     'train_spd_doubleProf[110]': '红龙之血(精英2)',
                     'control_token_prod_spd2[000]': '以身作则(控制中枢)',
                     'train_spd&profession2[440]': '以身作则(训练室)'
-                }.get(temp['buffId'], buff_name)
+                }.get(temp['buffId'], None)
+                if buff_name_extra is not None:
+                    buff_name = buff_name_extra + f"\n|{buff_count_text}显示名=" + buff_name
                 building_skill += '\n|{count_text}={name}\n|{count_text}阶段=精英{phase}'.format(
                     count_text = buff_count_text,
                     name = buff_name,
