@@ -263,7 +263,7 @@ class Route(Job):
 
         filelist = []
         base_dir = './Unpacker/zh_CN/gameData/'
-        path = 'levels/obt/roguelike/ro2/level_rogue2_1-2.json'
+        path = 'levels/activities/act24side/level_act24side_sub-01.json'
         # path = 'levels/activities'
 
         def get_files(curr_path):
