@@ -354,7 +354,7 @@ def analyze_normal_hidden_group(level_table):
 
 def analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = None):
     char_pre, memory_desc = '', ''
-    favor_point = []
+    favor_point, fp_set = [], set()
     try:
         if level_table['predefines'] == None or 'characterCards' not in level_table['predefines']:
             return ''
@@ -362,7 +362,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
             char_card_name = character_table[char_card['inst']['characterKey']]['name']
             if stage_charId is not None and char_card['inst']['characterKey'] == stage_charId:
                 char_pre += f"{{{{悖论模拟对象|{char_card_name}}}}}"
-                memory_desc = '<br>模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准'
+                memory_desc = '模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准'
                 continue
             if char_card['skillIndex'] != -1:
                 skill_name = skill_table[
@@ -380,8 +380,19 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
             if char_card['inst']['potentialRank'] != 0:
                 char_pre += '||{}'.format(char_card['inst']['potentialRank'] + 1)
             char_pre += '}}'
-            favor_point.append('{}信赖为{}%'.format(char_card_name, char_card['inst']['favorPoint']))
+            this_p = min(200, char_card['inst']['favorPoint'] * 2)
+            fp_set.add(this_p)
+            favor_point.append('{}信赖值为{}%'.format(char_card_name, this_p))
         if char_pre != '':
+            if favor_point != []:
+                memory_desc = '<br>' + memory_desc
+            if fp_set.__len__() == 1 and favor_point.__len__() > 1:
+                if stage_charId is not None:
+                    fp_desc = '本关卡除模拟对象干员外的随队干员信赖值都为{}%'.format(fp_set.pop())
+                else:
+                    fp_desc = '本关卡随队干员信赖值都为{}%'.format(fp_set.pop())
+            else:
+                fp_desc = '，'.join(favor_point)
             char_pre = '''
 ==固定编队==
 {{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
@@ -392,7 +403,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
 !备注
 |-
 |{}{}
-|}}'''.format(char_pre, '，'.join(favor_point), memory_desc)
+|}}'''.format(char_pre, fp_desc, memory_desc)
     except:
         print(stage_page_name, 'characterCards error.')
 
@@ -401,7 +412,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
 
 def analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table):
     char_pre = ''
-    favor_point = []
+    favor_point, fp_set = [], set()
     try:
         if level_table['predefines'] == None or 'characterInsts' not in level_table['predefines']:
             return ''
@@ -423,8 +434,14 @@ def analyze_char_insert_info(level_table, stage_page_name, character_table, skil
             if char_insert['inst']['potentialRank'] != 0:
                 char_pre += '||{}'.format(char_insert['inst']['potentialRank'] + 1)
             char_pre += '}}'
-            favor_point.append('{}信赖为{}%'.format(char_insert_name, char_insert['inst']['favorPoint']))
+            this_p = min(200, char_insert['inst']['favorPoint']*2)
+            fp_set.add(this_p)
+            favor_point.append('{}信赖值为{}%'.format(char_insert_name, this_p))
         if char_pre != '':
+            if fp_set.__len__() == 1 and favor_point.__len__() > 1:
+                fp_desc = '本关卡已部署干员信赖值都为{}%'.format(fp_set.pop())
+            else:
+                fp_desc = '，'.join(favor_point)
             char_pre = '''
 ==已部署干员==
 {{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
@@ -435,7 +452,7 @@ def analyze_char_insert_info(level_table, stage_page_name, character_table, skil
 !备注
 |-
 |{}
-|}}'''.format(char_pre, '，'.join(favor_point))
+|}}'''.format(char_pre, fp_desc)
     except:
         print(stage_page_name, 'characterInsts error.')
 
@@ -1432,6 +1449,20 @@ class Stage(Job):
 
             stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+
+            # old = self.wiki.read(stage_page_name)
+            # result = re.search('(\n==固定编队==\n[\s\S]*?)\n==', old)
+            # if result:
+            #     stage_content = old.replace(result.group(1), analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId']))
+            # else:
+            #     pass
+            # result2 = re.search('(\n==已部署干员==\n[\s\S]*?)\n==', stage_content)
+            # if result2:
+            #     stage_content = stage_content.replace(result2.group(1), analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table))
+            # else:
+            #     pass
+            # if stage_content == old:
+            #     continue
 
             self.wiki.edit(
                 title=stage_detail['name'].strip(),
