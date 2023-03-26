@@ -384,7 +384,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
             fp_set.add(this_p)
             favor_point.append('{}信赖值为{}%'.format(char_card_name, this_p))
         if char_pre != '':
-            if favor_point != []:
+            if favor_point != [] and memory_desc != '':
                 memory_desc = '<br>' + memory_desc
             if fp_set.__len__() == 1 and favor_point.__len__() > 1:
                 if stage_charId is not None:
@@ -1145,7 +1145,7 @@ class Stage(Job):
 
             stage_content = '{{pathnav2|关卡一览}}' + stage_normal_data + stage_4star_data + stage_enemy_data + char_pre + stage_drop + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
-            
+
             # old = self.wiki.read(stage_page_name)
             # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
             # if result:
@@ -1451,9 +1451,10 @@ class Stage(Job):
             stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
 
             # old = self.wiki.read(stage_page_name)
-            # result = re.search('(\n==固定编队==\n[\s\S]*?)\n==', old)
+            # stage_content = old
+            # result = re.search('(\n==固定编队==\n[\s\S]*?)\n==', stage_content)
             # if result:
-            #     stage_content = old.replace(result.group(1), analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId']))
+            #     stage_content = stage_content.replace(result.group(1), analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId']))
             # else:
             #     pass
             # result2 = re.search('(\n==已部署干员==\n[\s\S]*?)\n==', stage_content)
