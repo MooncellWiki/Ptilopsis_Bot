@@ -110,6 +110,13 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
         basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
         skin_counter += 1
     basic_info += '\n<!--上方为自动更新部分，您的修改可能会被覆盖-->'
+    # 原案
+    try:
+        designer_list = skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['designerList']
+        if designer_list is not None:
+            basic_info += f"\n|原案={','.join(designer_list)}"
+    except:
+        pass
     if char_detail['name'] in id_table and id_table[char_detail['name']]['approach'] in ['活动获得', '限定寻访']:
         basic_info += '\n|限定=1'
     basic_info += '\n}}'
