@@ -1,8 +1,8 @@
 {
     "CN": {
-        "resVersion": "23-03-27-11-50-38-b42880",
-        "clientVersion": "1.9.81",
-        "funcVer": "V036"
+        "resVersion": "23-04-06-16-40-37-12274d",
+        "clientVersion": "1.9.91",
+        "funcVer": "V037"
     },
     "JP": {
         "resVersion": "23-03-27-15-22-00-2108d9",
@@ -20,7 +20,7 @@
         "funcVer": "V032"
     },
     "TW": {
-        "resVersion": "23-03-28-11-40-23-06d2b6",
+        "resVersion": "23-04-03-10-19-07-5ccc39",
         "clientVersion": "13.0.01",
         "funcVer": "V029"
     }
