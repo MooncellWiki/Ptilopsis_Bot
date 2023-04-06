@@ -51,6 +51,8 @@ class Item(Job):
                 continue
             if citem['name'].find('的信物') != -1:
                 sort = '信物'
+            elif citem['name'].find('的中坚信物') != -1:
+                sort = '中坚信物'
             elif citem['name'].find('信物') != -1:
                 sort = '通用信物'
             elif citem['name'].find('芯片组') > 0:
@@ -87,7 +89,8 @@ class Item(Job):
                     usage=citem['usage'] if citem['usage'] is not None else '',
                     rarity=citem['rarity'],
                     id=citem['sortId'],
-                    sort=sort)
+                    sort=sort
+                )
             if citem['buildingProductList']:
                 tmf = ''
                 twf = ''
