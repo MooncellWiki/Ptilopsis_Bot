@@ -10,9 +10,9 @@
         "funcVer": "V032"
     },
     "US": {
-        "resVersion": "23-04-11-10-25-21-91c816",
+        "resVersion": "23-04-25-10-10-55-972129",
         "clientVersion": "15.9.01",
-        "funcVer": "V030"
+        "funcVer": "V032"
     },
     "KR": {
         "resVersion": "23-04-26-05-24-31-084239",
@@ -20,7 +20,7 @@
         "funcVer": "V032"
     },
     "TW": {
-        "resVersion": "23-04-05-09-34-13-4bd4a8",
+        "resVersion": "23-04-24-16-48-34-4e1645",
         "clientVersion": "13.0.01",
         "funcVer": "V029"
     }
