@@ -1119,7 +1119,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['异客']:
+            # if char_detail['name'] not in ['霍尔海雅', '玫拉', '淬羽赫默', '缪尔赛思']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -1175,7 +1175,8 @@ class Basic(Job):
             )
             self.wiki.protect(
                 title = char_detail['name'],
-                protections = 'edit=autoconfirmed|move=sysop',
+                # protections = 'edit=autoconfirmed|move=sysop',
+                protections = 'move=sysop',
                 reason = 'protect'
             )
             # self.wiki.edit(
