@@ -10,7 +10,25 @@ config = {
             "updateMsg": "[CN UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ak.hycdn.cn/assetbundle/official/Android/",
             "configUrl": "https://ak-conf.hypergryph.com/config/prod/official/",
-            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
+            "enableFlatBuffers": True,
+            "flatBuffers": [
+                "activity_table",
+                "building_data",
+                "campaign_table",
+                "chapter_table",
+                "character_table",
+                "charword_table",
+                "enemy_database",
+                "handbook_info_table",
+                "medal_table",
+                "open_server_table",
+                "roguelike_topic_table",
+                "sandbox_table",
+                "shop_client_table",
+                "skill_table",
+                "stage_table"
+            ]
         },
         "JP": {
             "folder": "ja_JP",

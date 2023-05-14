@@ -7,6 +7,7 @@ import zipfile
 import hashlib
 import requests
 import unitypack
+import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
 from retrying import retry
@@ -122,7 +123,10 @@ class Unpacker:
         hot_update_list = self.hot_update_list[region]
 
         for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']), hot_update_list['abInfos']):
-            self.unpack_data(ab_info['name'], region=region)
+            try:
+                self.unpack_data(ab_info['name'], region=region)
+            except:
+                print(f"Unpack {ab_info['name']} fail.")
 
     def unpack_data(self, path, region='CN'):
         ab_dir = os.path.join(f"./Unpacker/{self.config[region]['folder']}/ab", path)
@@ -142,6 +146,9 @@ class Unpacker:
 
             dir_set = set()
             dists = []
+            fbs_flag = 'enableFlatBuffers' in self.config[region] and self.config[region]['enableFlatBuffers']
+            if fbs_flag:
+                os.makedirs(f"./Unpacker/{self.config[region]['folder']}/flatbuffers", exist_ok=True)
             for data, data_path_id in dataArr:
                 ori_path = path_dict[data_path_id]
                 full_path = os.path.join(f"./Unpacker/{self.config[region]['folder']}",
@@ -157,6 +164,26 @@ class Unpacker:
                     else:
                         full_path = full_path[:-6] + '.json'
                     # is_sign = True if '/levels/' not in full_path else False
+                    if fbs_flag:
+                        fbs_name = None
+                        fbs_path = f"./Unpacker/{self.config[region]['folder']}/flatbuffers"
+                        for k in self.config[region]['flatBuffers']:
+                            if k in full_path:
+                                fbs_name = k
+                                continue
+                        if fbs_name is not None:
+                            with open(f"{fbs_path}/{fbs_name}.bytes", mode='wb') as f:
+                                f.write(bytes(data.script)[128:])
+                            os.system(f"flatc -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./OpenArknightsFBS/FBS/{fbs_name}.fbs -- {fbs_path}/{fbs_name}.bytes")
+                            with open(f"{fbs_path}/{fbs_name}.json", mode='r', encoding='utf-8') as f:
+                                jsons = json.loads(f.read())
+                                if fbs_name == 'activity_table':
+                                    for (k_act, v_act) in jsons['dynActs'].items():
+                                        if 'base64' in v_act:
+                                            jsons['dynActs'][k_act] = bson.decode(base64.b64decode(v_act['base64']))
+                            with open(f"{os.path.dirname(full_path)}/{fbs_name}.json", mode='w', encoding='utf-8') as f:
+                                f.write(json.dumps(jsons, indent=2, ensure_ascii=False))
+                            continue
                     if '/levels/' not in full_path:
                         is_sign = True
                         script = self._CrypticConverter_A(data.script,
