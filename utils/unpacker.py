@@ -24,6 +24,9 @@ class Unpacker:
         self.hot_update_list = {}
 
     def check_update(self, region='CN'):
+        if region == 'CN':
+            self.unpack_data("gamedata/excel/stage_tabled27f97.ab")
+            return True
         local_version = self.version[region]['resVersion']
         if local_version != self.get_version(region):
             print(f"[{region} UPDATE] New version detected. Start to update.")
