@@ -174,7 +174,7 @@ class Unpacker:
                         if fbs_name is not None:
                             with open(f"{fbs_path}/{fbs_name}.bytes", mode='wb') as f:
                                 f.write(bytes(data.script)[128:])
-                            os.system(f"flatc -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./OpenArknightsFBS/FBS/{fbs_name}.fbs -- {fbs_path}/{fbs_name}.bytes")
+                            os.system(f"./flatc -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./OpenArknightsFBS/FBS/{fbs_name}.fbs -- {fbs_path}/{fbs_name}.bytes")
                             with open(f"{fbs_path}/{fbs_name}.json", mode='r', encoding='utf-8') as f:
                                 jsons = json.loads(f.read())
                                 if fbs_name == 'activity_table':
