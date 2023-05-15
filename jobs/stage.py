@@ -201,31 +201,6 @@ def parse_overwritten_data(overwritten_data, count):
 def analyze_rewards(rewards, character_table, building_data, item_table):
     reward_list = [[], [], [], [], [], [], [], [], []]
     for reward in rewards:
-        if 'occPercent' in reward:
-            reward['occPercent'] = {
-                'ALWAYS': 0,
-                'ALMOST': 1,
-                'USUAL': 2,
-                'OFTEN': 3,
-                'SOMETIMES': 4,
-                'NEVER': 5,
-                'DEFINITELY_BUFF': 6,
-            }.get(reward['occPercent'], reward['occPercent'])
-        if 'dropType' in reward:
-            reward['dropType'] = {
-                'NONE': 0,
-                'ONCE': 1,
-                'NORMAL': 2,
-                'SPECIAL': 3,
-                'ADDITIONAL': 4,
-                'APRETURN': 5,
-                'DIAMOND_MATERIAL': 6,
-                'FUNITURE_DROP': 7,
-                'COMPLETE': 8,
-                'CHARM_DROP': 9,
-                'OVERRIDE_DROP': 10,
-                'ITEM_RETURN': 11,
-            }.get(reward['dropType'], reward['dropType'])
         if reward['type'] == 'FURN':
             reward_item = ':家具=yes:1={name}{occ_type}'.format(
                 name=parse_drop_item(reward, character_table, building_data, item_table),
@@ -666,7 +641,7 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
         if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 4:
             if_tough = '磨难'
         unlock_cond = '{num}星通关[[{ifTough}{code} {name}]]'.format(
-            num={'UNLOCKED': 0, 'PLAYED': 1, 'PASS': 2, 'COMPLETE': 3, }.get(unlock_id['completeState'], unlock_id['completeState']),
+            num=unlock_id['completeState'],
             ifTough=if_tough,
             code=stage_table['stages'][unlock_id['stageId']]['code'],
             name=stage_table['stages'][unlock_id['stageId']]['name']
@@ -721,13 +696,13 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
     for unlock_id in stage_detail['unlockCondition']:
         if stage_table['stages'][unlock_id['stageId']]['code'] != stage_detail['code']:
             unlock_cond = '{num}星通关[[{code} {name}]]'.format(
-                num={'UNLOCKED': 0, 'PLAYED': 1, 'PASS': 2, 'COMPLETE': 3, }.get(unlock_id['completeState'], unlock_id['completeState']),
+                num=unlock_id['completeState'],
                 code=stage_table['stages'][unlock_id['stageId']]['code'],
                 name=stage_table['stages'][unlock_id['stageId']]['name']
             )
         else:
             unlock_cond = '{num}星通关[[#普通|{code} {name}]]普通难度'.format(
-                num={'UNLOCKED': 0, 'PLAYED': 1, 'PASS': 2, 'COMPLETE': 3, }.get(unlock_id['completeState'], unlock_id['completeState']),
+                num=unlock_id['completeState'],
                 code=stage_table['stages'][unlock_id['stageId']]['code'],
                 name=stage_table['stages'][unlock_id['stageId']]['name']
             )
@@ -798,7 +773,7 @@ def get_campaign_data(stage_detail, stage_table, campaign_table, character_table
     unlock_cond_list = []
     for unlock_id in stage_detail['unlockCondition']:
         unlock_cond = '{num}星通关[[{code} {name}]]'.format(
-            num={'UNLOCKED': 0, 'PLAYED': 1, 'PASS': 2, 'COMPLETE': 3, }.get(unlock_id['completeState'], unlock_id['completeState']),
+            num=unlock_id['completeState'],
             code=stage_table['stages'][unlock_id['stageId']]['code'],
             name=stage_table['stages'][unlock_id['stageId']]['name']
         )
@@ -1129,15 +1104,6 @@ class Stage(Job):
                 'act21side_06_t': '新城区大街(丹布朗)'
             }.get(stage_id, stage_detail['name'].strip())
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name']
-            stage_detail['appearanceStyle'] = {
-                'MAIN_NORMAL': 0,
-                'MAIN_PREDEFINED': 1,
-                'SUB': 2,
-                'TRAINING': 3,
-                'HIGH_DIFFICULTY': 4,
-                'MIST_OPS': 5,
-                'SPECIAL_STORY': 6
-            }.get(stage_detail['appearanceStyle'], stage_detail['appearanceStyle'])
             if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 4:
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:

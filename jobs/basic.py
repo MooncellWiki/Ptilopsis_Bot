@@ -1175,8 +1175,7 @@ class Basic(Job):
             )
             self.wiki.protect(
                 title = char_detail['name'],
-                # protections = 'edit=autoconfirmed|move=sysop',
-                protections = 'move=sysop',
+                protections = 'edit=autoconfirmed|move=sysop',
                 reason = 'protect'
             )
             # self.wiki.edit(

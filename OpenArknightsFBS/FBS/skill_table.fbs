@@ -1,27 +1,4 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
-enum enum__Torappu_SkillType : int {
-    PASSIVE = 0,
-    MANUAL = 1,
-    AUTO = 2,
-}
-
-enum enum__Torappu_SkillDurationType : int {
-    PASSIVE = 0,
-    INSTANT = 1,
-    LIMITED = 2,
-    INFINITY = 3,
-    SWITCHABLE = 4,
-    AMMO = 5,
-}
-
-enum enum__Torappu_SpType : int {
-    NONE = 0,
-    INCREASE_WITH_TIME = 1,
-    INCREASE_WHEN_ATTACK = 2,
-    INCREASE_WHEN_TAKEN_DAMAGE = 4,
-    ATTACK_OR_DAMAGE = 6,
-    ALL = 7,
-}
 
 enum enum__Torappu_ItemType : int {
     NONE = 0,
@@ -100,7 +77,7 @@ table clz_Torappu_ItemBundle {
 }
 
 table clz_Torappu_SpData {
-    spType: enum__Torappu_SpType; 
+    spType: int; 
     levelUpCost: [clz_Torappu_ItemBundle]; 
     maxChargeTime: int; 
     spCost: int; 
@@ -118,8 +95,8 @@ table clz_Torappu_SkillDataBundle_LevelData {
     name: string; 
     rangeId: string; 
     description: string; 
-    skillType: enum__Torappu_SkillType; 
-    durationType: enum__Torappu_SkillDurationType; 
+    skillType: int; 
+    durationType: int; 
     spData: clz_Torappu_SpData; 
     prefabId: string; 
     duration: float; 
