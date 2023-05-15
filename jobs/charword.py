@@ -30,7 +30,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     for lang in char_lang['dict']:
         char_lang_type = lang_type.get(lang, '未知')
         char_lang_path = lang_path.get(lang, 'voice_custom')
-        if 'voicePath' in char_lang['dict'][lang]:
+        if 'voicePath' in char_lang['dict'][lang] and char_lang['dict'][lang]['voicePath'] is not None:
             p = char_lang['dict'][lang]['voicePath']
             if p.endswith('/'):
                 p = p[:-1]
