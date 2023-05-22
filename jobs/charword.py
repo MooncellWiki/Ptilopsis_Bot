@@ -52,6 +52,9 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     if char_id == 'char_472_pasngr':
         path_list.append('日文(今昔须臾之梦):voice/char_472_pasngr_epoque__17')
         path_list.append('中文(今昔须臾之梦):voice_cn/char_472_pasngr_epoque__17')
+    if char_id == 'char_003_kalts':
+        path_list.append('日文(残余):voice/char_003_kalts_boc__6')
+        path_list.append('中文(残余):voice_cn/char_003_kalts_boc__6')
     if char_id == 'char_4067_lolxh':
         path_list = list(map(lambda x: x.replace('文:voice','文(猫形态):voice'), path_list))
         path_list.append('日文:voice/char_4067_lolxh__1')
@@ -123,6 +126,11 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     # special case
     if char_id == 'char_113_cqbw' and mode == 'update':
         word_lang, word_key = '中文(恍惚)', 'char_113_cqbw_epoque#7'
+        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
+                                         key=lambda x: x[1]['voiceIndex']):
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+    if char_id == 'char_003_kalts' and mode == 'update':
+        word_lang, word_key = '中文(残余)', 'char_003_kalts_boc#6'
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
