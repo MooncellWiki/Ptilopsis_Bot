@@ -71,43 +71,43 @@ enum enum__Torappu_ItemType : int {
 }
 
 table clz_Torappu_ItemBundle {
-    id: string; 
-    count: int; 
-    type: enum__Torappu_ItemType; 
+    id: string;
+    count: int;
+    type: enum__Torappu_ItemType;
 }
 
 table clz_Torappu_SpData {
-    spType: int; 
-    levelUpCost: [clz_Torappu_ItemBundle]; 
-    maxChargeTime: int; 
-    spCost: int; 
-    initSp: int; 
-    increment: float; 
+    spType: int;
+    levelUpCost: [clz_Torappu_ItemBundle];
+    maxChargeTime: int;
+    spCost: int;
+    initSp: int;
+    increment: float;
 }
 
 table clz_Torappu_Blackboard_DataPair {
-    key: string; 
-    value: float; 
-    valueStr: string; 
+    key: string;
+    value: float;
+    valueStr: string;
 }
 
 table clz_Torappu_SkillDataBundle_LevelData {
-    name: string; 
-    rangeId: string; 
-    description: string; 
-    skillType: int; 
-    durationType: int; 
-    spData: clz_Torappu_SpData; 
-    prefabId: string; 
-    duration: float; 
-    blackboard: [clz_Torappu_Blackboard_DataPair]; 
+    name: string;
+    rangeId: string;
+    description: string;
+    skillType: int;
+    durationType: int;
+    spData: clz_Torappu_SpData;
+    prefabId: string;
+    duration: float;
+    blackboard: [clz_Torappu_Blackboard_DataPair];
 }
 
 table clz_Torappu_SkillDataBundle {
-    skillId: string; 
-    iconId: string; 
-    hidden: bool; 
-    levels: [clz_Torappu_SkillDataBundle_LevelData]; 
+    skillId: string;
+    iconId: string;
+    hidden: bool;
+    levels: [clz_Torappu_SkillDataBundle_LevelData];
 }
 
 table dict__string__clz_Torappu_SkillDataBundle {

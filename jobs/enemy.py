@@ -94,7 +94,7 @@ class Enemy(Job):
         enemy_list = self.wiki.category('分类:敌人')
         enemy_list = [e.replace('(敌方)', '') for e in enemy_list]
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
-        for enemy in enemy_handbook_table.values():
+        for enemy in enemy_handbook_table['enemyData'].values():
             enemy['name'] = enemy['name'].strip()
             # if enemy['name'] == '-' and enemy['enemyId'] in enemy_db_index:
             #     try:
@@ -111,13 +111,13 @@ class Enemy(Job):
             content += f'\n|地位级别={enemy_level_dict.get(enemy["enemyLevel"], "其他")}'
             content += f'\n|描述={rts.compile(enemy["description"])}'
             content += f'\n|攻击方式={enemy["attackType"]}'
-            content += f'\n|耐久={enemy["endure"]}'
-            content += f'\n|攻击力={enemy["attack"]}'
-            content += f'\n|防御力={enemy["defence"]}'
-            content += f'\n|法术抗性={enemy["resistance"]}'
-            if enemy['enemyRace'] is not None:
+            # content += f'\n|耐久={enemy["endure"]}'
+            # content += f'\n|攻击力={enemy["attack"]}'
+            # content += f'\n|防御力={enemy["defence"]}'
+            # content += f'\n|法术抗性={enemy["resistance"]}'
+            if 'enemyRace' in enemy and enemy['enemyRace'] is not None:
                 content += f'\n|种类={enemy["enemyRace"]}'
-            if enemy['ability'] is not None:
+            if 'ability' in enemy and enemy['ability'] is not None:
                 content += f'\n|能力={rts.compile(enemy["ability"])}'
             content += '\n}}'
 
@@ -204,7 +204,7 @@ class Enemy(Job):
             if '(敌方)' in e:
                 override_list.append(e.replace('(敌方)', ''))
 
-        for enemy_data in enemy_handbook_table.values():
+        for enemy_data in enemy_handbook_table['enemyData'].values():
             if enemy_data['name'] == '-':
                 continue
             attack_info = enemy_data['attackType']
@@ -308,7 +308,7 @@ class Enemy(Job):
         enemy_list = self.wiki.category('分类:敌人')
         enemy_list_2 = {e.replace('(敌方)', ''):e for e in enemy_list}
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
-        for enemy in enemy_handbook_table.values():
+        for enemy in enemy_handbook_table['enemyData'].values():
             if enemy['name'] == '-':
                 continue
             old_page = self.wiki.read(enemy_list_2[enemy['name'].strip()].strip())
