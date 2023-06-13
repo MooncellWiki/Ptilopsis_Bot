@@ -1,11 +1,11 @@
 {
     "CN": {
-        "resVersion": "23-05-19-08-02-12-33274f",
-        "clientVersion": "2.0.01",
-        "funcVer": "V038"
+        "resVersion": "23-06-08-06-12-20-12bb39",
+        "clientVersion": "2.0.11",
+        "funcVer": "V039"
     },
     "JP": {
-        "resVersion": "23-05-18-12-12-53-52b849",
+        "resVersion": "23-06-08-14-58-26-0463a7",
         "clientVersion": "16.9.21",
         "funcVer": "V033"
     },
@@ -15,12 +15,12 @@
         "funcVer": "V033"
     },
     "KR": {
-        "resVersion": "23-05-18-03-24-08-f571a2",
+        "resVersion": "23-06-08-12-46-08-97d7a0",
         "clientVersion": "16.9.21",
         "funcVer": "V033"
     },
     "TW": {
-        "resVersion": "23-05-17-20-01-27-1850e8",
+        "resVersion": "23-06-02-15-54-55-2c19d2",
         "clientVersion": "14.9.01",
         "funcVer": "V032"
     }
