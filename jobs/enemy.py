@@ -60,6 +60,22 @@ def remove_term(text):
     return t.replace('</>', '')
 
 
+def format_abilityList(aList, rts):
+    if aList is None or aList == []:
+        return ''
+    a_content = ''
+    for aa in aList:
+        if aa['textFormat'] == 'NORMAL':
+            a_content += '·' + rts.compile(aa['text']) + '<br>'
+        elif aa['textFormat'] == 'SILENCE':
+            a_content += '※' + rts.compile(aa['text']) + '<br>'
+        elif aa['textFormat'] == 'TITLE':
+            a_content += '{{color|#FF4F0B|' + rts.compile(aa['text']) + '}}<br>'
+        else:
+            a_content += rts.compile(aa['text']) + '<br>'
+    return a_content[:-4]
+
+
 class Enemy(Job):
     def _run(self):
         def get_value(idx, v, name, k):
@@ -101,24 +117,27 @@ class Enemy(Job):
             #         enemy['name'] = enemy_database['enemies'][enemy_db_index[enemy['enemyId']]]['Value'][0]['enemyData']['name']['m_value']
             #     except:
             #         pass
-            if enemy['name'] in enemy_list or enemy['name'] == '-':
+            # if enemy['name'] in enemy_list or enemy['name'] == '-':
+            #     continue
+            if enemy['name'] not in ['啮齿兽', '饥饿啮齿兽', '伏翼兽', '惊躁伏翼兽', '荒原窃盗者', '荒原窃盗者精英', '荒原潜伏者', '荒原潜伏者精英', '荒原劫掠者', '荒原劫掠者精英', '赏金猎人弩手', '赏金猎人弩手队长', '赏金猎人扰乱者', '赏金猎人扰乱者队长', '堕天使福尔图娜', '修道院居民', '修道院居民', '“不死的黑蛇”', '“花匠”', '艺术的慈悲!', '艺术的绝杀!', '弱弹']:
                 continue
             enemy_level_dict = {'NORMAL': '普通', 'ELITE': '精英', 'BOSS': '领袖'}
+            enemy_damage_dict = {'PHYSIC': '物理', 'MAGIC': '法术', 'NO_DAMAGE': '不攻击', 'HEAL': '治疗'}
             content = '{{Navigator|敌人一览}}\n{{敌人信息/common'
             content += f'\n|id={enemy["sortId"]}'
             content += f'\n|名称={enemy["name"]}'
             content += f'\n|index={enemy["enemyIndex"]}'
             content += f'\n|地位级别={enemy_level_dict.get(enemy["enemyLevel"], "其他")}'
             content += f'\n|描述={rts.compile(enemy["description"])}'
-            content += f'\n|攻击方式={enemy["attackType"]}'
+            content += f'\n|攻击方式={" ".join(enemy_damage_dict.get(x, "") for x in enemy["damageType"])}'
             # content += f'\n|耐久={enemy["endure"]}'
             # content += f'\n|攻击力={enemy["attack"]}'
             # content += f'\n|防御力={enemy["defence"]}'
             # content += f'\n|法术抗性={enemy["resistance"]}'
             if 'enemyRace' in enemy and enemy['enemyRace'] is not None:
                 content += f'\n|种类={enemy["enemyRace"]}'
-            if 'ability' in enemy and enemy['ability'] is not None:
-                content += f'\n|能力={rts.compile(enemy["ability"])}'
+            if 'abilityList' in enemy and enemy['abilityList'] != []:
+                content += '\n|能力=' + format_abilityList(enemy['abilityList'], rts)
             content += '\n}}'
 
             if enemy['enemyId'] in enemy_db_index:
@@ -160,34 +179,34 @@ class Enemy(Job):
             spine_content['name'] = f'{enemy["name"]}'
             spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
 
-            self.wiki.edit(
-                title=enemy['name'],
-                text=content,
-                summary='init',
-                bot=None,
-                minor=True,
-                createonly='1'
-            )
-            self.wiki.protect(
-                title=enemy['name'],
-                protections='edit=autoconfirmed|move=sysop',
-                reason='protect'
-            )
-            self.wiki.edit(
-                title=enemy['name'] + '/spine',
-                text=json.dumps(spine_content, indent=4, ensure_ascii=False),
-                summary='init',
-                bot=None,
-                minor=True,
-                createonly='1',
-                contentmodel='json'
-            )
-            self.wiki.protect(
-                title=enemy['name'] + '/spine',
-                protections='edit=autoconfirmed|move=sysop',
-                reason='protect'
-            )
-            # print(content)
+            # self.wiki.edit(
+            #     title=enemy['name'],
+            #     text=content,
+            #     summary='init',
+            #     bot=None,
+            #     minor=True,
+            #     createonly='1'
+            # )
+            # self.wiki.protect(
+            #     title=enemy['name'],
+            #     protections='edit=autoconfirmed|move=sysop',
+            #     reason='protect'
+            # )
+            # self.wiki.edit(
+            #     title=enemy['name'] + '/spine',
+            #     text=json.dumps(spine_content, indent=4, ensure_ascii=False),
+            #     summary='init',
+            #     bot=None,
+            #     minor=True,
+            #     createonly='1',
+            #     contentmodel='json'
+            # )
+            # self.wiki.protect(
+            #     title=enemy['name'] + '/spine',
+            #     protections='edit=autoconfirmed|move=sysop',
+            #     reason='protect'
+            # )
+            print(content)
             # print(json.dumps(spine_content, indent=4, ensure_ascii=False))
             print('Created: {}.'.format(enemy['name']))
 
@@ -206,6 +225,8 @@ class Enemy(Job):
 
         for enemy_data in enemy_handbook_table['enemyData'].values():
             if enemy_data['name'] == '-':
+                continue
+            if enemy_data['hideInHandbook'] == True:
                 continue
             attack_info = enemy_data['attackType']
             new_data = {

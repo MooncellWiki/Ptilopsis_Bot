@@ -1644,4 +1644,4 @@ class Stage(Job):
     def _run_enemy_data(self, level_table):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')
         enemy_database = self.getgd('levels/enemydata/enemy_database.json')
-        return get_enemy_data(level_table, enemy_table, enemy_database)
+        return get_enemy_data(level_table, enemy_table['enemyData'], enemy_database)

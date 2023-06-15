@@ -46,8 +46,8 @@ if __name__ == '__main__':
     if 'regular' in sys.argv:
         BuildingBuff(wiki, gameData).run()
         Stage(wiki, gameData).run()
-        Enemy(wiki, gameData).run()
-        Enemy(wiki, gameData).update_data()
+        # Enemy(wiki, gameData).run()
+        # Enemy(wiki, gameData).update_data()
         Skin(wiki, gameData).run()
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
