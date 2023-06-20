@@ -226,12 +226,20 @@ class Enemy(Job):
             content += f'\n|伤害类型={" ".join(enemy_damage_dict.get(x, "未知") for x in enemy["damageType"])}'
             content += f'\n|攻击方式={enemy_applyway_dict.get(apply_way, "未知")}'
             content += f'\n|位置={enemy_motion_dict.get(motion, "未知")}'
-            content += f'\n|耐久={level_standard.getMaxHP(attribute_data[0])}'
-            content += f'\n|攻击力={level_standard.getAttack(attribute_data[1])}'
-            content += f'\n|防御力={level_standard.getDef(attribute_data[2])}'
-            content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
-            content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
-            content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
+            if enemy['invisibleDetail'] is True:
+                content += f'\n|耐久=?'
+                content += f'\n|攻击力=?'
+                content += f'\n|防御力=?'
+                content += f'\n|移动速度=?'
+                content += f'\n|攻击速度=?'
+                content += f'\n|法术抗性=?'
+            else:
+                content += f'\n|耐久={level_standard.getMaxHP(attribute_data[0])}'
+                content += f'\n|攻击力={level_standard.getAttack(attribute_data[1])}'
+                content += f'\n|防御力={level_standard.getDef(attribute_data[2])}'
+                content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
+                content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
+                content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
             if race_tag.__len__() > 0:
                 content += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
             if 'abilityList' in enemy and enemy['abilityList'] != []:
