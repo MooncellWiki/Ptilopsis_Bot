@@ -33,7 +33,7 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
                 override_desc = override_desc.replace(':0%}', ':.0%}').replace(':0.0%}', ':0.1%}').replace(':0.0}', '}')
                 override_desc = override_desc.format(**desc_dic)
                 override_desc = rts.compile(override_desc)
-                trait_list[trait_desc['unlockCondition']['phase']] = override_desc
+                trait_list[trans_phase(trait_desc['unlockCondition']['phase'])] = override_desc
         if trait_list[0] != '':
             basic_info += f"\n|特性={trait_list[0]}"
         else:
@@ -46,7 +46,7 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
     else:
         trait = rts.compile(char_detail['description']).replace('\\n', '<br/>')
         basic_info += f"\n|特性={trait}"
-    basic_info += f"\n|稀有度={char_detail['rarity']}"
+    basic_info += f"\n|稀有度={trans_rarity(char_detail['rarity'])}"
     basic_info += f"\n|职业={trans_profession(char_detail['profession'])}"
     basic_info += f"\n|分支={uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'].strip()}"
     basic_info += f"\n|情报编号={char_detail['displayNumber']}"
@@ -223,33 +223,33 @@ def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
     potential_rank_type = []
     for potential_rank_id in range(len(char_detail['potentialRanks'])):
         potentialRank = char_detail['potentialRanks'][potential_rank_id]
-        if potentialRank['type'] == 0:
+        if potentialRank['type'] == 'BUFF':
             attributeType = potentialRank['buff']['attributes']['attributeModifiers'][0]['attributeType']
-            if attributeType == 1:
+            if attributeType == 'ATK':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('atk')
-            elif attributeType == 2:
+            elif attributeType == 'DEF':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('def')
-            elif attributeType == 0:
+            elif attributeType == 'MAX_HP':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('hp')
-            elif attributeType == 3:
+            elif attributeType == 'MAGIC_RESISTANCE':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('res')
-            elif attributeType == 4:
+            elif attributeType == 'COST':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('cost')
-            elif attributeType == 7:
+            elif attributeType == 'ATTACK_SPEED':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('interval')
-            elif attributeType == 21:
+            elif attributeType == 'RESPAWN_TIME':
                 potential_rank_data.append(
                     str(int(potentialRank['buff']['attributes']['attributeModifiers'][0]['value'])))
                 potential_rank_type.append('re_deploy')
@@ -318,7 +318,7 @@ def get_talent_list(char_detail, rts):
         for talent_table_id in range(len(talent_table)):
             talent_description = rts.compile(talent_table[talent_table_id]['description']).replace('\\n', '<br/>')
             talent_condition = get_tal_condition(talent_table[talent_table_id]['requiredPotentialRank'],
-                talent_table[talent_table_id]['unlockCondition']['phase'],
+                trans_phase(talent_table[talent_table_id]['unlockCondition']['phase']),
                 talent_table[talent_table_id]['unlockCondition']['level'])
 
             talent_list += '|第' + trans_id(talent_id + 1) + '天赋' + str(talent_table_id + 1) + '=' + \
@@ -406,7 +406,7 @@ def get_skill_list(char_detail, skill_table, rts):
                 continue
             skill_list += '\n\'\'\'技能{num}（{skill_cond}开放）\'\'\'\n'.format(
                 num = skill_id + 1,
-                skill_cond = get_tal_condition(0, char_detail['skills'][skill_id]['unlockCond']['phase'],
+                skill_cond = get_tal_condition(0, trans_phase(char_detail['skills'][skill_id]['unlockCond']['phase']),
                     char_detail['skills'][skill_id]['unlockCond']['level'])
             )
             try:
@@ -481,7 +481,7 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
                 id_count += 1
                 skill_list += '\n\'\'\'技能{num}（{skill_cond}开放）\'\'\'\n'.format(
                     num=id_count,
-                    skill_cond=get_tal_condition(0, skill_data['unlockCond']['phase'],
+                    skill_cond=get_tal_condition(0, trans_phase(skill_data['unlockCond']['phase']),
                                                    skill_data['unlockCond']['level']))
                 try:
                     skill_list += get_skill_text(skill_table, skill_data['skillId'], rts)
@@ -532,7 +532,7 @@ def get_building_skill(building_data, char_key):
                 building_skill += '\n|{count_text}={name}\n|{count_text}阶段=精英{phase}'.format(
                     count_text = buff_count_text,
                     name = buff_name,
-                    phase = temp['cond']['phase']
+                    phase = trans_phase(temp['cond']['phase'])
                 )
                 if temp['cond']['level'] != 1:
                     building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
@@ -551,7 +551,7 @@ def get_phase_list(char_detail, gamedata_const, item_table):
             if char_detail['phases'][phase_id]['evolveCost'] == None:
                 phase_list = '该干员无精英化材料需求'
                 return phase_list
-            money = gamedata_const['evolveGoldCost'][char_detail['rarity']][phase_id - 1]
+            money = gamedata_const['evolveGoldCost'][trans_rarity(char_detail['rarity'])][phase_id - 1]
             if int(money / 10000) == money / 10000:
                 money_str = str(int(money / 10000))
             else:
@@ -789,14 +789,14 @@ def get_stories_list(char_detail, stories_table, char_key):
             storyText = handle_ifrit(storyText)
         storyTitle = char_stories['storyTextAudio'][stories_id]['storyTitle']
         storyCondition_id = char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockType']
-        if storyCondition_id == 0:
+        if storyCondition_id == 'DIRECT':
             storyCondition = '初始开放'
-        elif storyCondition_id == 1:
+        elif storyCondition_id == 'AWAKE':
             phase_param = char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'].split(';')
             storyCondition = '提升至精英阶段2以查看'.format(phase_param[0])
-        elif storyCondition_id == 2:
+        elif storyCondition_id == 'FAVOR':
             storyCondition = '提升信赖至{}%以查看'.format(char_stories['storyTextAudio'][stories_id]['stories'][0]['unLockParam'])
-        elif storyCondition_id == 6:
+        elif storyCondition_id == 'PATCH':
             storyCondition = '升变解锁'
         else:
             storyCondition = ''
@@ -819,10 +819,10 @@ def get_handbook_avg(char_detail, stories_table, char_key):
     for avg in stories_table['handbookDict'][char_key]['handbookAvgList']:
         phase, lv, favor = -1, -1, -1
         for p in avg['unlockParam']:
-            if p['unlockType'] == 1:
+            if p['unlockType'] == 'AWAKE':
                 phase = p['unlockParam1']
                 lv = p['unlockParam2']
-            elif p['unlockType'] == 2:
+            elif p['unlockType'] == 'FAVOR':
                 favor = p['unlockParam1']
             else:
                 print('Unknown handbook_avg unLock condition for {}.'.format(char_detail['name']))
@@ -862,7 +862,7 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table):
 |picId={picId}{reward}
 }}}}'''
     stage_info = stories_table['handbookStageData'][char_key]
-    if len(stage_info['unlockParam']) != 1 or stage_info['unlockParam'][0]['unlockType'] != 1:
+    if len(stage_info['unlockParam']) != 1 or stage_info['unlockParam'][0]['unlockType'] != 'AWAKE':
         print('Unknown handbook_stage unLock condition for {}.'.format(char_detail['name']))
         unlock_phase, unlock_lv = '', ''
     else:
@@ -954,7 +954,10 @@ def trans_skill_type(skill_type):
         0: '',
         1: '\n|技能类型2=手动触发',
         2: '\n|技能类型2=自动触发',
-    }[skill_type]
+        'PASSIVE': '被动',
+        'MANUAL': '\n|技能类型2=手动触发',
+        'AUTO': '\n|技能类型2=自动触发',
+    }.get(skill_type, '')
 
 
 def trans_sp_type(sp_type):
@@ -963,7 +966,10 @@ def trans_sp_type(sp_type):
         2: '攻击回复',
         4: '受击回复',
         8: '被动',
-    }[sp_type]
+        'INCREASE_WITH_TIME': '自动回复',
+        'INCREASE_WHEN_ATTACK': '攻击回复',
+        'INCREASE_WHEN_TAKEN_DAMAGE': '受击回复'
+    }.get(sp_type, '')
 
 
 def trans_position(position):
@@ -972,6 +978,26 @@ def trans_position(position):
         'RANGED': '远程位',
         'ALL': '近战/远程位'
     }[position]
+
+
+def trans_phase(phase):
+    return {
+        'PHASE_0': 0,
+        'PHASE_1': 1,
+        'PHASE_2': 2,
+        'PHASE_3': 3
+    }.get(phase, phase)
+
+
+def trans_rarity(rarity):
+    return {
+        'TIER_1': 0,
+        'TIER_2': 1,
+        'TIER_3': 2,
+        'TIER_4': 3,
+        'TIER_5': 4,
+        'TIER_6': 5
+    }.get(rarity, rarity)
 
 
 def replace_upper(text):

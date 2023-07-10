@@ -387,7 +387,7 @@ def analyze_char_card_info(level_table, stage_page_name, character_table, skill_
                 skill_name = ''
             char_pre += '{{{{编队单位|{}|{}|{}|{}|{}'.format(
                 char_card_name,
-                char_card['inst']['phase'],
+                {'PHASE_0': 0, 'PHASE_1': 1, 'PHASE_2': 2, 'PHASE_3': 3}.get(char_card['inst']['phase'], char_card['inst']['phase']),
                 char_card['inst']['level'],
                 skill_name,
                 char_card['mainSkillLvl'],
@@ -441,7 +441,7 @@ def analyze_char_insert_info(level_table, stage_page_name, character_table, skil
                 skill_name = ''
             char_pre += '{{{{编队单位|{}|{}|{}|{}|{}'.format(
                 char_insert_name,
-                char_insert['inst']['phase'],
+                {'PHASE_0': 0, 'PHASE_1': 1, 'PHASE_2': 2, 'PHASE_3': 3}.get(char_insert['inst']['phase'], char_insert['inst']['phase']),
                 char_insert['inst']['level'],
                 skill_name,
                 char_insert['mainSkillLvl'],

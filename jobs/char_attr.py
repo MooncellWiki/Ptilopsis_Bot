@@ -43,21 +43,21 @@ def get_char_attr(character_table, id_table, rts):
         maxHp += char_detail['favorKeyFrames'][1]['data']['maxHp']
 
         for potentialRank in char_detail['potentialRanks']:
-            if potentialRank['type'] == 0:
+            if potentialRank['type'] == 'BUFF':
                 attributeType = potentialRank['buff']['attributes']['attributeModifiers'][0]['attributeType']
-                if attributeType == 0:
+                if attributeType == 'MAX_HP':
                     maxHp += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 1:
+                elif attributeType == 'ATK':
                     atk += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 2:
+                elif attributeType == 'DEF':
                     defence += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 3:
+                elif attributeType == 'MAGIC_RESISTANCE':
                     magicResistance += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 4:
+                elif attributeType == 'COST':
                     cost += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 7:
+                elif attributeType == 'ATTACK_SPEED':
                     attackSpeed += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
-                elif attributeType == 21:
+                elif attributeType == 'RESPAWN_TIME':
                     respawnTime += potentialRank['buff']['attributes']['attributeModifiers'][0]['value']
                 else:
                     print('Error! Char {name} attributeType {num} don\'t know!'.format(
