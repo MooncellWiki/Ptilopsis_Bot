@@ -1,8 +1,18 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
+enum enum__Torappu_DataUnlockType : int {
+    DIRECT = 0,
+    AWAKE = 1,
+    FAVOR = 2,
+    STAGE = 3,
+    ITEM = 4,
+    NEVER = 5,
+    PATCH = 6,
+    NONE = 7,
+}
 
 table clz_Torappu_HandBookStoryViewData_StoryText {
     storyText: string; 
-    unLockType: int; 
+    unLockType: enum__Torappu_DataUnlockType; 
     unLockParam: string; 
     unLockString: string; 
 }
@@ -81,6 +91,9 @@ enum enum__Torappu_ItemType : int {
     LIMITED_BUFF = 64,
     CLASSIC_FES_PICK_TIER_5 = 65,
     CLASSIC_FES_PICK_TIER_6 = 66,
+    RETURN_PROGRESS = 67,
+    NEW_PROGRESS = 68,
+    MCARD_VOUCHER = 69,
 }
 
 table clz_Torappu_ItemBundle {
@@ -90,7 +103,7 @@ table clz_Torappu_ItemBundle {
 }
 
 table clz_Torappu_HandbookUnlockParam {
-    unlockType: int; 
+    unlockType: enum__Torappu_DataUnlockType; 
     unlockParam1: string; 
     unlockParam2: string; 
     unlockParam3: string; 
@@ -151,7 +164,7 @@ enum enum__Torappu_IllustNPCResType : int {
 }
 
 table clz_Torappu_NPCUnlock {
-    unLockType: int; 
+    unLockType: enum__Torappu_DataUnlockType; 
     unLockParam: string; 
     unLockString: string; 
 }

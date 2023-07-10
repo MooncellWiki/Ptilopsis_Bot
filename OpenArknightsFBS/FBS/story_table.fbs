@@ -1,24 +1,45 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
-enum enum__Torappu_MedalRarity : int {
-    T1 = 0,
-    T1D5 = 1,
-    T2 = 2,
-    T2D5 = 3,
-    T3 = 4,
-    T3D5 = 5,
+enum enum__Torappu_StoryData_Trigger_TriggerType : int {
+    GAME_START = 0,
+    BEFORE_BATTLE = 1,
+    AFTER_BATTLE = 2,
+    SWITCH_TO_SCENE = 3,
+    PAGE_LOADED = 4,
+    STORY_FINISH = 5,
+    CUSTOM_OPERATION = 6,
+    STORY_FINISH_OR_PAGE_LOADED = 7,
+    ACTIVITY_LOADED = 8,
+    ACTIVITY_ANNOUNCE = 9,
+    CRISIS_SEASON_LOADED = 10,
+    E_NUM = 11,
 }
 
-enum enum__Torappu_MedalExpireType : int {
-    NONE = 0,
-    INIT = 1,
-    TEMP = 2,
-    PERM = 3,
+table clz_Torappu_StoryData_Trigger {
+    type: enum__Torappu_StoryData_Trigger_TriggerType; 
+    key: string; 
+    useRegex: bool; 
 }
 
-table clz_Torappu_MedalExpireTime {
-    start: long; 
-    end: long; 
-    type: enum__Torappu_MedalExpireType; 
+enum enum__Torappu_PlayerStageState : int {
+    UNLOCKED = 0,
+    PLAYED = 1,
+    PASS = 2,
+    COMPLETE = 3,
+}
+
+table clz_Torappu_StoryData_Condition_StageCondition {
+    stageId: string; 
+    minState: enum__Torappu_PlayerStageState; 
+    maxState: enum__Torappu_PlayerStageState; 
+}
+
+table clz_Torappu_StoryData_Condition {
+    minProgress: int; 
+    maxProgress: int; 
+    minPlayerLevel: int; 
+    requiredFlags: [string]; 
+    excludedFlags: [string]; 
+    requiredStages: [clz_Torappu_StoryData_Condition_StageCondition]; 
 }
 
 enum enum__Torappu_ItemType : int {
@@ -100,57 +121,24 @@ table clz_Torappu_ItemBundle {
     type: enum__Torappu_ItemType; 
 }
 
-table clz_Torappu_MedalRewardGroupData {
-    groupId: string; 
-    slotId: int; 
-    itemList: [clz_Torappu_ItemBundle]; 
+table clz_Torappu_StoryData {
+    id: string; 
+    needCommit: bool; 
+    repeatable: bool; 
+    disabled: bool; 
+    videoResource: bool; 
+    trigger: clz_Torappu_StoryData_Trigger; 
+    condition: clz_Torappu_StoryData_Condition; 
+    setProgress: int; 
+    setFlags: [string]; 
+    completedRewards: [clz_Torappu_ItemBundle]; 
 }
 
-table clz_Torappu_MedalPerData {
-    medalId: string; 
-    medalName: string; 
-    medalType: string; 
-    slotId: int; 
-    preMedalIdList: [string]; 
-    rarity: enum__Torappu_MedalRarity; 
-    template: string; 
-    unlockParam: [string]; 
-    getMethod: string; 
-    description: string; 
-    advancedMedal: string; 
-    originMedal: string; 
-    displayTime: long; 
-    expireTimes: [clz_Torappu_MedalExpireTime]; 
-    medalRewardGroup: [clz_Torappu_MedalRewardGroupData]; 
-    isHidden: bool; 
-}
-
-table clz_Torappu_MedalGroupData {
-    groupId: string; 
-    groupName: string; 
-    groupDesc: string; 
-    medalId: [string]; 
-    sortId: int; 
-    groupBackColor: string; 
-    groupGetTime: long; 
-    sharedExpireTimes: [clz_Torappu_MedalExpireTime]; 
-}
-
-table clz_Torappu_MedalTypeData {
-    medalGroupId: string; 
-    sortId: int; 
-    medalName: string; 
-    groupData: [clz_Torappu_MedalGroupData]; 
-}
-
-table dict__string__clz_Torappu_MedalTypeData {
+table dict__string__clz_Torappu_StoryData {
     key: string(key);
-    value: clz_Torappu_MedalTypeData;
+    value: clz_Torappu_StoryData;
 }
-
-table clz_Torappu_MedalData {
-    medalList: [clz_Torappu_MedalPerData]; 
-    medalTypeData: [dict__string__clz_Torappu_MedalTypeData]; 
+table clz_Torappu_SimpleKVTable_clz_Torappu_StoryData {
+    stories: [dict__string__clz_Torappu_StoryData];
 }
-
-root_type clz_Torappu_MedalData;
+root_type clz_Torappu_SimpleKVTable_clz_Torappu_StoryData;

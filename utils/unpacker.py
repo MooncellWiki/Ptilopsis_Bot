@@ -184,6 +184,16 @@ class Unpacker:
                             with open(f"{os.path.dirname(full_path)}/{fbs_name}.json", mode='w', encoding='utf-8') as f:
                                 f.write(json.dumps(jsons, indent=2, ensure_ascii=False))
                             continue
+                        elif '/levels/' in full_path:
+                            fbs_name = os.path.splitext(os.path.split(full_path)[1])[0]
+                            with open(f"{fbs_path}/{fbs_name}.bytes", mode='wb') as f:
+                                f.write(bytes(data.script)[128:])
+                            os.system(f"{os.path.join('.', 'flatc')} -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./OpenArknightsFBS/FBS/prts___levels.fbs -- {fbs_path}/{fbs_name}.bytes")
+                            with open(f"{fbs_path}/{fbs_name}.json", mode='r', encoding='utf-8') as f:
+                                jsons = json.loads(f.read())
+                            with open(f"{os.path.dirname(full_path)}/{fbs_name}.json", mode='w', encoding='utf-8') as f:
+                                f.write(json.dumps(jsons, indent=2, ensure_ascii=False))
+                            continue
                     if '/levels/' not in full_path:
                         is_sign = True
                         script = self._CrypticConverter_A(data.script,

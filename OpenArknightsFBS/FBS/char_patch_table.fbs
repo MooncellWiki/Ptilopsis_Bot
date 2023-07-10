@@ -1,4 +1,14 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
+table clz_Torappu_CharPatchData_PatchInfo {
+    tmplIds: [string]; 
+    default: string; // __prts__check_required__defaultPatch__
+}
+
+table dict__string__clz_Torappu_CharPatchData_PatchInfo {
+    key: string(key);
+    value: clz_Torappu_CharPatchData_PatchInfo;
+}
+
 enum enum__Torappu_BuildableType : int {
     NONE = 0,
     MELEE = 1,
@@ -396,7 +406,44 @@ table dict__string__clz_Torappu_CharacterData {
     key: string(key);
     value: clz_Torappu_CharacterData;
 }
-table clz_Torappu_SimpleKVTable_clz_Torappu_CharacterData {
-    characters: [dict__string__clz_Torappu_CharacterData];
+
+enum enum__Torappu_PlayerBattleRank : int {
+    FAIL = 1,
+    PASS = 2,
+    COMPLETE = 3,
+    ERR_ZERO = 0,
 }
-root_type clz_Torappu_SimpleKVTable_clz_Torappu_CharacterData;
+
+table clz_Torappu_CharPatchData_UnlockCond_Item {
+    stageId: string; 
+    completeState: enum__Torappu_PlayerBattleRank; 
+}
+
+table clz_Torappu_CharPatchData_UnlockCond {
+    conds: [clz_Torappu_CharPatchData_UnlockCond_Item]; 
+}
+
+table dict__string__clz_Torappu_CharPatchData_UnlockCond {
+    key: string(key);
+    value: clz_Torappu_CharPatchData_UnlockCond;
+}
+
+table clz_Torappu_CharPatchData_PatchDetailInfo {
+    patchId: string; 
+    sortId: int; 
+    infoParam: string; 
+}
+
+table dict__string__clz_Torappu_CharPatchData_PatchDetailInfo {
+    key: string(key);
+    value: clz_Torappu_CharPatchData_PatchDetailInfo;
+}
+
+table clz_Torappu_CharPatchData {
+    infos: [dict__string__clz_Torappu_CharPatchData_PatchInfo]; 
+    patchChars: [dict__string__clz_Torappu_CharacterData]; 
+    unlockConds: [dict__string__clz_Torappu_CharPatchData_UnlockCond]; 
+    patchDetailInfoList: [dict__string__clz_Torappu_CharPatchData_PatchDetailInfo]; 
+}
+
+root_type clz_Torappu_CharPatchData;

@@ -1,4 +1,23 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
+enum enum__Torappu_SkillType : int {
+    PASSIVE = 0,
+    MANUAL = 1,
+    AUTO = 2,
+}
+
+enum enum__Torappu_SkillDurationType : int {
+    NONE = 0,
+    AMMO = 1,
+}
+
+enum enum__Torappu_SpType : int {
+    NONE = 0,
+    INCREASE_WITH_TIME = 1,
+    INCREASE_WHEN_ATTACK = 2,
+    INCREASE_WHEN_TAKEN_DAMAGE = 4,
+    ATTACK_OR_DAMAGE = 6,
+    ALL = 7,
+}
 
 enum enum__Torappu_ItemType : int {
     NONE = 0,
@@ -68,46 +87,49 @@ enum enum__Torappu_ItemType : int {
     LIMITED_BUFF = 64,
     CLASSIC_FES_PICK_TIER_5 = 65,
     CLASSIC_FES_PICK_TIER_6 = 66,
+    RETURN_PROGRESS = 67,
+    NEW_PROGRESS = 68,
+    MCARD_VOUCHER = 69,
 }
 
 table clz_Torappu_ItemBundle {
-    id: string;
-    count: int;
-    type: enum__Torappu_ItemType;
+    id: string; 
+    count: int; 
+    type: enum__Torappu_ItemType; 
 }
 
 table clz_Torappu_SpData {
-    spType: int;
-    levelUpCost: [clz_Torappu_ItemBundle];
-    maxChargeTime: int;
-    spCost: int;
-    initSp: int;
-    increment: float;
+    spType: enum__Torappu_SpType; 
+    levelUpCost: [clz_Torappu_ItemBundle]; 
+    maxChargeTime: int; 
+    spCost: int; 
+    initSp: int; 
+    increment: float; 
 }
 
 table clz_Torappu_Blackboard_DataPair {
-    key: string;
-    value: float;
-    valueStr: string;
+    key: string; 
+    value: float; 
+    valueStr: string; 
 }
 
 table clz_Torappu_SkillDataBundle_LevelData {
-    name: string;
-    rangeId: string;
-    description: string;
-    skillType: int;
-    durationType: int;
-    spData: clz_Torappu_SpData;
-    prefabId: string;
-    duration: float;
-    blackboard: [clz_Torappu_Blackboard_DataPair];
+    name: string; 
+    rangeId: string; 
+    description: string; 
+    skillType: enum__Torappu_SkillType; 
+    durationType: enum__Torappu_SkillDurationType; 
+    spData: clz_Torappu_SpData; 
+    prefabId: string; 
+    duration: float; 
+    blackboard: [clz_Torappu_Blackboard_DataPair]; 
 }
 
 table clz_Torappu_SkillDataBundle {
-    skillId: string;
-    iconId: string;
-    hidden: bool;
-    levels: [clz_Torappu_SkillDataBundle_LevelData];
+    skillId: string; 
+    iconId: string; 
+    hidden: bool; 
+    levels: [clz_Torappu_SkillDataBundle_LevelData]; 
 }
 
 table dict__string__clz_Torappu_SkillDataBundle {

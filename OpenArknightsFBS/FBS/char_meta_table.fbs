@@ -1,24 +1,12 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
-enum enum__Torappu_MedalRarity : int {
-    T1 = 0,
-    T1D5 = 1,
-    T2 = 2,
-    T2D5 = 3,
-    T3 = 4,
-    T3D5 = 5,
+table dict__string__list_string {
+    key: string(key);
+    value: [string];
 }
 
-enum enum__Torappu_MedalExpireType : int {
+enum enum__Torappu_SpCharMissionCondType : int {
     NONE = 0,
-    INIT = 1,
-    TEMP = 2,
-    PERM = 3,
-}
-
-table clz_Torappu_MedalExpireTime {
-    start: long; 
-    end: long; 
-    type: enum__Torappu_MedalExpireType; 
+    EVOLVE_PHASE = 1,
 }
 
 enum enum__Torappu_ItemType : int {
@@ -100,57 +88,34 @@ table clz_Torappu_ItemBundle {
     type: enum__Torappu_ItemType; 
 }
 
-table clz_Torappu_MedalRewardGroupData {
-    groupId: string; 
-    slotId: int; 
-    itemList: [clz_Torappu_ItemBundle]; 
-}
-
-table clz_Torappu_MedalPerData {
-    medalId: string; 
-    medalName: string; 
-    medalType: string; 
-    slotId: int; 
-    preMedalIdList: [string]; 
-    rarity: enum__Torappu_MedalRarity; 
-    template: string; 
-    unlockParam: [string]; 
-    getMethod: string; 
-    description: string; 
-    advancedMedal: string; 
-    originMedal: string; 
-    displayTime: long; 
-    expireTimes: [clz_Torappu_MedalExpireTime]; 
-    medalRewardGroup: [clz_Torappu_MedalRewardGroupData]; 
-    isHidden: bool; 
-}
-
-table clz_Torappu_MedalGroupData {
-    groupId: string; 
-    groupName: string; 
-    groupDesc: string; 
-    medalId: [string]; 
+table clz_Torappu_SpCharMissionData {
+    charId: string; 
+    missionId: string; 
     sortId: int; 
-    groupBackColor: string; 
-    groupGetTime: long; 
-    sharedExpireTimes: [clz_Torappu_MedalExpireTime]; 
+    condType: enum__Torappu_SpCharMissionCondType; 
+    param: [string]; 
+    rewards: [clz_Torappu_ItemBundle]; 
 }
 
-table clz_Torappu_MedalTypeData {
-    medalGroupId: string; 
-    sortId: int; 
-    medalName: string; 
-    groupData: [clz_Torappu_MedalGroupData]; 
-}
-
-table dict__string__clz_Torappu_MedalTypeData {
+table dict__string__clz_Torappu_SpCharMissionData {
     key: string(key);
-    value: clz_Torappu_MedalTypeData;
+    value: clz_Torappu_SpCharMissionData;
 }
 
-table clz_Torappu_MedalData {
-    medalList: [clz_Torappu_MedalPerData]; 
-    medalTypeData: [dict__string__clz_Torappu_MedalTypeData]; 
+table dict__string__list_dict__string__clz_Torappu_SpCharMissionData {
+    key: string(key);
+    value: [dict__string__clz_Torappu_SpCharMissionData];
 }
 
-root_type clz_Torappu_MedalData;
+table dict__string__long {
+    key: string(key);
+    value: long;
+}
+
+table clz_Torappu_CharMetaTable {
+    spCharGroups: [dict__string__list_string]; 
+    spCharMissions: [dict__string__list_dict__string__clz_Torappu_SpCharMissionData]; 
+    spCharVoucherSkinTime: [dict__string__long]; 
+}
+
+root_type clz_Torappu_CharMetaTable;

@@ -1,26 +1,4 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
-enum enum__Torappu_MedalRarity : int {
-    T1 = 0,
-    T1D5 = 1,
-    T2 = 2,
-    T2D5 = 3,
-    T3 = 4,
-    T3D5 = 5,
-}
-
-enum enum__Torappu_MedalExpireType : int {
-    NONE = 0,
-    INIT = 1,
-    TEMP = 2,
-    PERM = 3,
-}
-
-table clz_Torappu_MedalExpireTime {
-    start: long; 
-    end: long; 
-    type: enum__Torappu_MedalExpireType; 
-}
-
 enum enum__Torappu_ItemType : int {
     NONE = 0,
     CHAR = 1,
@@ -94,63 +72,50 @@ enum enum__Torappu_ItemType : int {
     MCARD_VOUCHER = 69,
 }
 
+table clz_Torappu_MonthlySignInData {
+    itemId: string; 
+    itemType: enum__Torappu_ItemType; 
+    count: int; 
+}
+
+table clz_Torappu_MonthlySignInGroupData {
+    groupId: string; 
+    title: string; 
+    description: string; 
+    signStartTime: long; 
+    signEndTime: long; 
+    items: [clz_Torappu_MonthlySignInData]; 
+}
+
+table dict__string__clz_Torappu_MonthlySignInGroupData {
+    key: string(key);
+    value: clz_Torappu_MonthlySignInGroupData;
+}
+
 table clz_Torappu_ItemBundle {
     id: string; 
     count: int; 
     type: enum__Torappu_ItemType; 
 }
 
-table clz_Torappu_MedalRewardGroupData {
+table clz_Torappu_MonthlyDailyBonusGroup {
     groupId: string; 
-    slotId: int; 
-    itemList: [clz_Torappu_ItemBundle]; 
+    startTime: long; 
+    endTime: long; 
+    items: [clz_Torappu_ItemBundle]; 
+    imgId: string; 
+    backId: string; 
 }
 
-table clz_Torappu_MedalPerData {
-    medalId: string; 
-    medalName: string; 
-    medalType: string; 
-    slotId: int; 
-    preMedalIdList: [string]; 
-    rarity: enum__Torappu_MedalRarity; 
-    template: string; 
-    unlockParam: [string]; 
-    getMethod: string; 
-    description: string; 
-    advancedMedal: string; 
-    originMedal: string; 
-    displayTime: long; 
-    expireTimes: [clz_Torappu_MedalExpireTime]; 
-    medalRewardGroup: [clz_Torappu_MedalRewardGroupData]; 
-    isHidden: bool; 
-}
-
-table clz_Torappu_MedalGroupData {
-    groupId: string; 
-    groupName: string; 
-    groupDesc: string; 
-    medalId: [string]; 
-    sortId: int; 
-    groupBackColor: string; 
-    groupGetTime: long; 
-    sharedExpireTimes: [clz_Torappu_MedalExpireTime]; 
-}
-
-table clz_Torappu_MedalTypeData {
-    medalGroupId: string; 
-    sortId: int; 
-    medalName: string; 
-    groupData: [clz_Torappu_MedalGroupData]; 
-}
-
-table dict__string__clz_Torappu_MedalTypeData {
+table dict__string__list_clz_Torappu_MonthlyDailyBonusGroup {
     key: string(key);
-    value: clz_Torappu_MedalTypeData;
+    value: [clz_Torappu_MonthlyDailyBonusGroup];
 }
 
-table clz_Torappu_MedalData {
-    medalList: [clz_Torappu_MedalPerData]; 
-    medalTypeData: [dict__string__clz_Torappu_MedalTypeData]; 
+table clz_Torappu_CheckInTable {
+    groups: [dict__string__clz_Torappu_MonthlySignInGroupData]; 
+    monthlySubItem: [dict__string__list_clz_Torappu_MonthlyDailyBonusGroup]; 
+    currentMonthlySubId: string; 
 }
 
-root_type clz_Torappu_MedalData;
+root_type clz_Torappu_CheckInTable;

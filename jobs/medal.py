@@ -33,10 +33,11 @@ def update_medal(medal_table, character_table, building_data, item_table, rts):
              for item_group in medal['medalRewardGroup']])
         if reward_list != '':
             reward_list = '\n|奖励=' + reward_list
+        medal_rarity = {'T1': 0, 'T1D5': 1, 'T2': 2, 'T2D5': 3, 'T3': 4, 'T3D5': 5}.get(medal['rarity'], medal['rarity'])
         medal_dict[medal['medalType']][medal['medalId']] = {
             'group': '',
             'name': medal['medalName'],
-            'rarity': medal['rarity'],
+            'rarity': medal_rarity,
             'desc': rts.compile(medal['description'].replace('\n', '<br/>')) if medal['description'] != None else '',
             'getMethod': medal['getMethod'] if medal['getMethod'] != None else '',
             'advancedMedal': medal['advancedMedal'] if medal['advancedMedal'] != None else '',

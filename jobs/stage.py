@@ -31,7 +31,16 @@ def parse_drop_type(drop_type):
         5: '作战失败返回',
         6: '报酬',  # 剿灭给的合成玉
         7: '幸运掉落',  # 家具
-        8: '三星获得'
+        8: '三星获得',
+        'NONE': 'None',
+        'ONCE': '首次掉落',
+        'NORMAL': '常规掉落',
+        'SPECIAL': '特殊掉落',
+        'ADDITIONAL': '额外物资',
+        'APRETURN': '作战失败返回',
+        'DIAMOND_MATERIAL': '报酬',  # 剿灭给的合成玉
+        'FUNITURE_DROP': '幸运掉落',  # 家具
+        'COMPLETE': '三星获得'
     }.get(drop_type, 'None')
 
 
@@ -40,11 +49,11 @@ def parse_occ_type(occ_percent, drop_type, if_furni):
         ex = ':2='
     else:
         ex = ':'
-    if drop_type in [4, 6, 7]:
+    if drop_type in [4, 6, 7] or drop_type in ['ADDITIONAL', 'DIAMOND_MATERIAL', 'FUNITURE_DROP']:
         return ''
-    elif drop_type == 8:
+    elif drop_type == 8 or drop_type == 'COMPLETE':
         return ex + '三星获得'
-    elif drop_type == 1:
+    elif drop_type == 1 or drop_type == 'ONCE':
         return ex + '首次掉落'
     else:
         return ex + {
@@ -54,7 +63,14 @@ def parse_occ_type(occ_percent, drop_type, if_furni):
             3: '小概率',  # Often
             4: '罕见',  # Sometimes
             5: '从不',  # Never
-            6: '完成'  # Complete
+            6: '完成',  # Complete
+            'ALWAYS': '固定掉落',  # Always
+            'ALMOST': '大概率',  # Almost
+            'USUAL': '概率掉落',  # Usual
+            'OFTEN': '小概率',  # Often
+            'SOMETIMES': '罕见',  # Sometimes
+            'NEVER': '从不',  # Never
+            'DEFINITELY_BUFF': '完成'  # Complete
         }.get(occ_percent, '未知类型')
 
 
@@ -199,7 +215,10 @@ def parse_overwritten_data(overwritten_data, count):
 
 
 def analyze_rewards(rewards, character_table, building_data, item_table):
-    reward_list = [[], [], [], [], [], [], [], [], []]
+    reward_list = {
+        'NONE': [], 'ONCE': [], 'NORMAL': [], 'SPECIAL':[], 'ADDITIONAL':[], 'APRETURN': [], 'DIAMOND_MATERIAL': [],
+        'FUNITURE_DROP': [], 'COMPLETE': [], 'CHARM_DROP': [], 'OVERRIDE_DROP': [], 'ITEM_RETURN': []
+    }
     for reward in rewards:
         if reward['type'] == 'FURN':
             reward_item = ':家具=yes:1={name}{occ_type}'.format(
@@ -212,18 +231,18 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
                 occ_type=parse_occ_type(reward['occPercent'], reward['dropType'], False)
             )
         reward_list[reward['dropType']].append(reward_item)
-    reward_list[1] = reward_list[8] + reward_list[1]
-    reward_list[8] = []
+    reward_list['ONCE'] = reward_list['COMPLETE'] + reward_list['ONCE']
+    reward_list['COMPLETE'] = []
 
     rewards_data = ''
-    for drop_type in range(9):
+    for drop_type in reward_list:
         if reward_list[drop_type] != []:
             reward_content = ','.join(reward_list[drop_type])
             rewards_data += '|{drop_type}={content}\n'.format(
                 drop_type=parse_drop_type(drop_type),
                 content=reward_content
             )
-            if drop_type == 2:
+            if drop_type == 2 or drop_type == 'NORMAL':
                 print('\t—— ' + reward_content)
     return rewards_data
 
@@ -326,7 +345,7 @@ def analyze_level_info(level_table):
         level_info += '|敌人数量={}\n'.format(enemy_count['min'])
     else:
         level_info += '|敌人数量={}~{}\n'.format(enemy_count['min'], enemy_count['max'])
-    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
+    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['map'][0].__len__(), level_table['mapData']['map'].__len__())
     if abs(min_time - int(min_time)) < 0.0001:
         level_info += '|最短用时={}分{}秒\n'.format(int(min_time / 60), int(min_time % 60))
     else:
@@ -626,9 +645,9 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
     if stage_detail['hilightMark'] == True:
         stage_data += '|子类型=难关\n'
-    elif stage_detail['appearanceStyle'] == 4:
+    elif stage_detail['appearanceStyle'] == 'HIGH_DIFFICULTY':
         stage_data += '|子类型=绝境\n'
-    elif stage_detail['appearanceStyle'] == 5:
+    elif stage_detail['appearanceStyle'] == 'MIST_OPS':
         stage_data += '|子类型=迷雾\n'
     if stage_detail['bossMark'] == True:
         stage_data += '|领袖标志=Yes\n'
@@ -638,10 +657,10 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     unlock_cond_list = []
     for unlock_id in stage_detail['unlockCondition']:
         if_tough = ''
-        if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 4:
+        if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 'HIGH_DIFFICULTY':
             if_tough = '磨难'
         unlock_cond = '{num}星通关[[{ifTough}{code} {name}]]'.format(
-            num=unlock_id['completeState'],
+            num={'PASS':2, 'COMPLETE':3}.get(unlock_id['completeState'], unlock_id['completeState']),
             ifTough=if_tough,
             code=stage_table['stages'][unlock_id['stageId']]['code'],
             name=stage_table['stages'][unlock_id['stageId']]['name']
@@ -696,13 +715,13 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
     for unlock_id in stage_detail['unlockCondition']:
         if stage_table['stages'][unlock_id['stageId']]['code'] != stage_detail['code']:
             unlock_cond = '{num}星通关[[{code} {name}]]'.format(
-                num=unlock_id['completeState'],
+                num={'PASS':2, 'COMPLETE':3}.get(unlock_id['completeState'], unlock_id['completeState']),
                 code=stage_table['stages'][unlock_id['stageId']]['code'],
                 name=stage_table['stages'][unlock_id['stageId']]['name']
             )
         else:
             unlock_cond = '{num}星通关[[#普通|{code} {name}]]普通难度'.format(
-                num=unlock_id['completeState'],
+                num={'PASS':2, 'COMPLETE':3}.get(unlock_id['completeState'], unlock_id['completeState']),
                 code=stage_table['stages'][unlock_id['stageId']]['code'],
                 name=stage_table['stages'][unlock_id['stageId']]['name']
             )
@@ -773,7 +792,7 @@ def get_campaign_data(stage_detail, stage_table, campaign_table, character_table
     unlock_cond_list = []
     for unlock_id in stage_detail['unlockCondition']:
         unlock_cond = '{num}星通关[[{code} {name}]]'.format(
-            num=unlock_id['completeState'],
+            num={'PASS':2, 'COMPLETE':3}.get(unlock_id['completeState'], unlock_id['completeState']),
             code=stage_table['stages'][unlock_id['stageId']]['code'],
             name=stage_table['stages'][unlock_id['stageId']]['name']
         )
@@ -922,9 +941,9 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
     for p in stage_detail['unlockParam']:
         if unlock_cond != '':
             unlock_cond += '，'
-        if p['unlockType'] == 1:
+        if p['unlockType'] == 1 or p['unlockType'] == 'AWAKE':
             unlock_cond += '提升至精英阶段{}等级{}'.format(p['unlockParam1'], p['unlockParam2'])
-        elif p['unlockType'] == 2:
+        elif p['unlockType'] == 2 or p['unlockType'] == 'FAVOR':
             unlock_cond += '提升信赖至{}'.format(p['unlockParam1'])
         else:
             print('Unknown unlockType', p['unlockType'])
@@ -969,7 +988,7 @@ def analyze_xb_level_info(level_table):
         level_info += '|敌人数量={}\n'.format(enemy_count['min'])
     else:
         level_info += '|敌人数量={}~{}\n'.format(enemy_count['min'], enemy_count['max'])
-    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['width'], level_table['mapData']['height'])
+    level_info += '|地图大小={}×{}\n'.format(level_table['mapData']['map'][0].__len__(), level_table['mapData']['map'].__len__())
     if level_table['options']['maxPlayTime'] > 0:
         mptime = level_table['options']['maxPlayTime']
         level_info += '|倒计时={}分{}秒\n'.format(int(mptime / 60), int(mptime % 60))
@@ -1104,7 +1123,7 @@ class Stage(Job):
                 'act21side_06_t': '新城区大街(丹布朗)'
             }.get(stage_id, stage_detail['name'].strip())
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name']
-            if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 4:
+            if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 'HIGH_DIFFICULTY':
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
                 continue
@@ -1122,7 +1141,6 @@ class Stage(Job):
                     continue
             else:
                 level_table = {}
-
             stage_normal_data = get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data,
                                                 item_table, level_table, rts)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''

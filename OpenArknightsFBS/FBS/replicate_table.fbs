@@ -1,26 +1,4 @@
 // This file is auto-generated, see https://github.com/MooncellWiki/OpenArknightsFBS for details.
-enum enum__Torappu_MedalRarity : int {
-    T1 = 0,
-    T1D5 = 1,
-    T2 = 2,
-    T2D5 = 3,
-    T3 = 4,
-    T3D5 = 5,
-}
-
-enum enum__Torappu_MedalExpireType : int {
-    NONE = 0,
-    INIT = 1,
-    TEMP = 2,
-    PERM = 3,
-}
-
-table clz_Torappu_MedalExpireTime {
-    start: long; 
-    end: long; 
-    type: enum__Torappu_MedalExpireType; 
-}
-
 enum enum__Torappu_ItemType : int {
     NONE = 0,
     CHAR = 1,
@@ -100,57 +78,20 @@ table clz_Torappu_ItemBundle {
     type: enum__Torappu_ItemType; 
 }
 
-table clz_Torappu_MedalRewardGroupData {
-    groupId: string; 
-    slotId: int; 
-    itemList: [clz_Torappu_ItemBundle]; 
+table clz_Torappu_ReplicateData {
+    item: clz_Torappu_ItemBundle; 
+    replicateTokenItem: clz_Torappu_ItemBundle; 
 }
 
-table clz_Torappu_MedalPerData {
-    medalId: string; 
-    medalName: string; 
-    medalType: string; 
-    slotId: int; 
-    preMedalIdList: [string]; 
-    rarity: enum__Torappu_MedalRarity; 
-    template: string; 
-    unlockParam: [string]; 
-    getMethod: string; 
-    description: string; 
-    advancedMedal: string; 
-    originMedal: string; 
-    displayTime: long; 
-    expireTimes: [clz_Torappu_MedalExpireTime]; 
-    medalRewardGroup: [clz_Torappu_MedalRewardGroupData]; 
-    isHidden: bool; 
+table clz_Torappu_ReplicateTable {
+    replicateList: [clz_Torappu_ReplicateData]; 
 }
 
-table clz_Torappu_MedalGroupData {
-    groupId: string; 
-    groupName: string; 
-    groupDesc: string; 
-    medalId: [string]; 
-    sortId: int; 
-    groupBackColor: string; 
-    groupGetTime: long; 
-    sharedExpireTimes: [clz_Torappu_MedalExpireTime]; 
-}
-
-table clz_Torappu_MedalTypeData {
-    medalGroupId: string; 
-    sortId: int; 
-    medalName: string; 
-    groupData: [clz_Torappu_MedalGroupData]; 
-}
-
-table dict__string__clz_Torappu_MedalTypeData {
+table dict__string__clz_Torappu_ReplicateTable {
     key: string(key);
-    value: clz_Torappu_MedalTypeData;
+    value: clz_Torappu_ReplicateTable;
 }
-
-table clz_Torappu_MedalData {
-    medalList: [clz_Torappu_MedalPerData]; 
-    medalTypeData: [dict__string__clz_Torappu_MedalTypeData]; 
+table clz_Torappu_SimpleKVTable_clz_Torappu_ReplicateTable {
+    replications: [dict__string__clz_Torappu_ReplicateTable];
 }
-
-root_type clz_Torappu_MedalData;
+root_type clz_Torappu_SimpleKVTable_clz_Torappu_ReplicateTable;

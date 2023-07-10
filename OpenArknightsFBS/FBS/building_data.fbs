@@ -127,6 +127,9 @@ enum enum__Torappu_ItemType : int {
     LIMITED_BUFF = 64,
     CLASSIC_FES_PICK_TIER_5 = 65,
     CLASSIC_FES_PICK_TIER_6 = 66,
+    RETURN_PROGRESS = 67,
+    NEW_PROGRESS = 68,
+    MCARD_VOUCHER = 69,
 }
 
 table clz_Torappu_ItemBundle {
@@ -341,8 +344,16 @@ table clz_Torappu_BuildingData_PowerRoomBean {
     phases: [clz_Torappu_BuildingData_PowerPhase]; 
 }
 
+enum enum__Torappu_EvolvePhase : int {
+    PHASE_0 = 0,
+    PHASE_1 = 1,
+    PHASE_2 = 2,
+    PHASE_3 = 3,
+    E_NUM = 4,
+}
+
 table clz_Torappu_CharacterData_UnlockCondition {
-    phase: int; 
+    phase: enum__Torappu_EvolvePhase; 
     level: int; 
 }
 
