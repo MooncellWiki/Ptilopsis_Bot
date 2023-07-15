@@ -1028,7 +1028,7 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
 
 class ActionInfo:
     def __init__(self, action):
-        if action['actionType'] == 0 and action['key'] != '':
+        if (action['actionType'] == 0 or action['actionType'] == 'SPAWN') and action['key'] != '':
             self.key = action['key']
         else:
             self.key = None
@@ -1210,6 +1210,7 @@ class Stage(Job):
                 title=stage_page_name,
                 text=stage_content,
                 summary='init',
+                createonly='1',
                 bot=None,
                 minor=True
             )
@@ -1381,7 +1382,7 @@ class Stage(Job):
     def run_rogue_like(self):
         # roguelike_table = self.getgd('excel/roguelike_table.json')
         roguelike_table = self.getgd('excel/roguelike_topic_table.json')
-        roguelike_table = roguelike_table['details']['rogue_2']
+        roguelike_table = roguelike_table['details']['rogue_3']
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         for stage_key in roguelike_table['stages']:
@@ -1490,6 +1491,7 @@ class Stage(Job):
                 title=stage_page_name,
                 text=stage_content,
                 summary='init',
+                createonly='1',
                 bot=None,
                 minor=True
             )
