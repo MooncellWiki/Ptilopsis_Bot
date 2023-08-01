@@ -420,15 +420,17 @@ def get_skill_list(char_detail, skill_table, rts):
 
 
 def get_token_info(wiki, char_detail, update_token_page, character_table, skill_table, rts):
-    if char_detail['tokenKey'] == None:
+    if char_detail['displayTokenDict'] == None:
         return ''
-    token_info = '\n==召唤物信息==\n{{{{参阅|{token_name}|该持有者的召唤物}}}}'.format(
-        token_name = character_table[char_detail['tokenKey']]['name']
-    )
-    token_key_list = [char_detail['tokenKey']]
+    token_info = '\n==召唤物信息=='
+    token_key_list = set(char_detail['displayTokenDict'].keys())
     for skill in char_detail['skills']:
         if skill['overrideTokenKey'] != None:
-            token_key_list.append(skill['overrideTokenKey'])
+            token_key_list.add(skill['overrideTokenKey'])
+    for token_key in token_key_list:
+        token_info += '\n{{{{参阅|{token_name}|该持有者的召唤物}}}}'.format(
+            token_name=character_table[token_key]['name']
+        )
     for token_key in token_key_list:
         token_detail = character_table[token_key]
         token_page = '==召唤物信息==\n{{{{召唤物信息\n|中文名称={name_cn}\n|外文名称={appellation}\n|持有者={owner}\n|使用条件=—'.format(

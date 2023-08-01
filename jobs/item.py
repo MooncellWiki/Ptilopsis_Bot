@@ -22,6 +22,17 @@ def build_time(sec):
     return "%02d:%02d:%02d" % (h, m, s)
 
 
+def trans_rarity(rarity):
+    return {
+        'TIER_1': 0,
+        'TIER_2': 1,
+        'TIER_3': 2,
+        'TIER_4': 3,
+        'TIER_5': 4,
+        'TIER_6': 5
+    }.get(rarity, rarity)
+
+
 basic_info4 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|描述={description}\n|用途={usage}\n|' \
               '获得方式={obtainApproach}\n|稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n'
 basic_info3 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|描述={description}\n|用途={usage}\n|' \
@@ -78,7 +89,7 @@ class Item(Job):
                     description=citem['description'] if citem['description'] is not None else '',
                     usage=citem['usage'] if citem['usage'] is not None else '',
                     obtainApproach=citem['obtainApproach'],
-                    rarity=citem['rarity'],
+                    rarity=trans_rarity(citem['rarity']),
                     id=citem['sortId'],
                     sort=sort)
             else:
@@ -87,7 +98,7 @@ class Item(Job):
                     itemId=citem['itemId'],
                     description=citem['description'] if citem['description'] is not None else '',
                     usage=citem['usage'] if citem['usage'] is not None else '',
-                    rarity=citem['rarity'],
+                    rarity=trans_rarity(citem['rarity']),
                     id=citem['sortId'],
                     sort=sort
                 )

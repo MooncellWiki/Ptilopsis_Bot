@@ -234,7 +234,7 @@ def update_outfit_gallery(wiki, skin_table, character_table):
     brand_list = {}
     for brand in skin_table['brandList']:
         for group in skin_table['brandList'][brand]['groupList']:
-            brand_list[group] = skin_table['brandList'][brand]['brandName'].replace('/', '-').rstrip()
+            brand_list[group['skinGroupId']] = skin_table['brandList'][brand]['brandName'].replace('/', '-').rstrip()
 
     skin_dict = {}
     char_count = {}
@@ -364,7 +364,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             'detail_content': {}
         }
         for group in v['groupList']:
-            brand_list[group] = brand_name
+            brand_list[group['skinGroupId']] = brand_name
 
     char_count = {}
     for skin_info in skin_list:
