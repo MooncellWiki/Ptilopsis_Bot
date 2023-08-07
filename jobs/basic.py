@@ -421,12 +421,15 @@ def get_skill_list(char_detail, skill_table, rts):
 
 def get_token_info(wiki, char_detail, update_token_page, character_table, skill_table, rts):
     if char_detail['displayTokenDict'] == None:
-        return ''
+        token_key_list = set()
+    else:
+        token_key_list = set(char_detail['displayTokenDict'].keys())
     token_info = '\n==召唤物信息=='
-    token_key_list = set(char_detail['displayTokenDict'].keys())
     for skill in char_detail['skills']:
         if skill['overrideTokenKey'] != None:
             token_key_list.add(skill['overrideTokenKey'])
+    if token_key_list.__len__() == 0:
+        return ''
     for token_key in token_key_list:
         token_info += '\n{{{{参阅|{token_name}|该持有者的召唤物}}}}'.format(
             token_name=character_table[token_key]['name']
@@ -1147,7 +1150,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['霍尔海雅', '玫拉', '淬羽赫默', '缪尔赛思']:
+            # if char_detail['name'] not in ['琳琅诗怀雅']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))

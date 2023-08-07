@@ -261,7 +261,7 @@ class Enemy(Job):
             content += content_lv + '\n==敌人模型==\n{{spine}}<references/>{{敌人导航}}'
 
             spine_content = {'prefix': '', 'name': '', 'skin': {'默认': {'战斗': {'file': ''}}}}
-            spine_content['prefix'] = f'https://static.prts.wiki/spine/enemy/{enemy["enemyId"]}/'
+            spine_content['prefix'] = f'https://torappu.prts.wiki/assets/enemySpine/{enemy["enemyId"]}/'
             spine_content['name'] = f'{enemy["name"]}'
             spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
 
