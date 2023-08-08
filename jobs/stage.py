@@ -107,24 +107,29 @@ def parse_rune(runes):
     runes_text = []
     for rune in runes:
         text = []
-        if rune['difficultyMask'] == 2:  # 突袭
+        if rune['difficultyMask'] == 2 or rune['difficultyMask'] == 'FOUR_STAR':  # 突袭
             pass
-        elif rune['difficultyMask'] == 1:  # 普通
+        elif rune['difficultyMask'] == 1 or rune['difficultyMask'] == 'NORMAL':  # 普通
             text.append('普通难度')
-        elif rune['difficultyMask'] == 0:  # 未知
+        elif rune['difficultyMask'] == 'EASY':  # 普通
+            text.append('简单难度')
+        elif rune['difficultyMask'] == 0 or rune['difficultyMask'] == 'NONE':  # 未知
             text.append('未知关卡难度')
 
-        if rune['buildableMask'] == 3:  # 全部单位
+        if rune['buildableMask'] == 3 or rune['buildableMask'] == "ALL":  # 全部单位
             pass
-        elif rune['buildableMask'] == 2:  # 远程单位
+        elif rune['buildableMask'] == 2 or rune['buildableMask'] == "RANGED":  # 远程单位
             text.append('远程单位')
-        elif rune['buildableMask'] == 1:  # 近战单位
+        elif rune['buildableMask'] == 1 or rune['buildableMask'] == "MELEE":  # 近战单位
             text.append('近战单位')
-        elif rune['buildableMask'] == 0:  # 未知
+        elif rune['buildableMask'] == 0 or rune['buildableMask'] == "NONE":  # 未知
             text.append('未知单位')
 
         if rune['professionMask'] != 1023:
-            text.append(parse_rune_profession(rune['professionMask']))
+            if isinstance(rune['professionMask'], int):
+                text.append(parse_rune_profession(rune['professionMask']))
+            else:
+                text.append(rune['professionMask'])
         text.append(rune['key'])
 
         blackboard = []

@@ -42,7 +42,7 @@ def get_skin_info(char_key, skin_table, drawer):
             skin_color = '#' + skin_color
         basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
         skin_desc = skin_content['displaySkin']['content']
-        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('<color name=#000000>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
         basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
         skin_counter += 1
     basic_info += '\n<!--'
@@ -409,7 +409,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             drawerName = ','.join(skin_info['displaySkin']['drawerList']),
             skinGroupName = skin_info['displaySkin']['skinGroupName'].rstrip(),
             content = skin_info['displaySkin']['content'].replace('<color name=#ffffff>',
-                '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
+                '').replace('<color name=#000000>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
             obtainApproach = skin_info['displaySkin']['obtainApproach'],
 
             dialog = skin_info['displaySkin']['dialog'],
