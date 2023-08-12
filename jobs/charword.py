@@ -49,6 +49,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
         path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
         path_list.append('韩文(恍惚):voice_kr/char_113_cqbw_epoque__7')
+        path_list.append('英文(恍惚):voice_en/char_113_cqbw_epoque__7')
     if char_id == 'char_472_pasngr':
         path_list.append('日文(今昔须臾之梦):voice/char_472_pasngr_epoque__17')
         path_list.append('中文(今昔须臾之梦):voice_cn/char_472_pasngr_epoque__17')
