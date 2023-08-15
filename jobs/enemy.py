@@ -115,10 +115,16 @@ class ClassLevel:
     def getMoveSpeed(self, target_moveSpeed):
         return self.level[max(1, bisect.bisect_right(self.moveSpeed, target_moveSpeed))-1]
 
-    def getBaseAttackTime(self, target_BaseAttackTime):
-        if target_BaseAttackTime < 0:
+    def getBaseAttackTime(self, target_baseAttackTime):
+        if target_baseAttackTime < 0:
             return self.level[len(self.level) - bisect.bisect_right(self.baseAttackTime, 1.0)]
-        return self.level[len(self.level) - bisect.bisect_right(self.baseAttackTime, target_BaseAttackTime)]
+        return self.level[len(self.level) - bisect.bisect_right(self.baseAttackTime, target_baseAttackTime)]
+
+    def getEnemyDamageRes(self, target_enemyDamageRes):
+        return self.level[max(1, bisect.bisect_right(self.moveSpeed, target_enemyDamageRes))-1]
+
+    def getEnemyRes(self, target_enemyRes):
+        return self.level[max(1, bisect.bisect_right(self.moveSpeed, target_enemyRes))-1]
 
 
 class Enemy(Job):
@@ -172,7 +178,7 @@ class Enemy(Job):
 
             # 先分析database中数据
             content_lv = ''
-            attribute_data = [-1, -1, -1, -1, -1, -1]
+            attribute_data = [-1, -1, -1, -1, -1, -1, -1, -1]
             apply_way, motion = None, None
             race_tag = set()
             if enemy['enemyId'] in enemy_db_index:
@@ -182,7 +188,7 @@ class Enemy(Job):
                         print(f'enemy {enemy["name"]} database order error.')
                         continue
                     lv_data = d['enemyData']
-                    for idx_a, k in enumerate(['maxHp', 'atk', 'def', 'magicResistance', 'moveSpeed', 'baseAttackTime']):
+                    for idx_a, k in enumerate(['maxHp', 'atk', 'def', 'magicResistance', 'moveSpeed', 'baseAttackTime', 'epResistance', 'epDamageResistance']):
                         if lv_data['attributes'][k]['m_defined'] is True and attribute_data[idx_a] == -1:
                             attribute_data[idx_a] = lv_data['attributes'][k]['m_value']
                     if lv_data['applyWay']['m_defined'] is True and apply_way is None:
@@ -207,6 +213,8 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['hpRecoveryPerSec'], '生命恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['spRecoveryPerSec'], 'sp恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['massLevel'], '重量等级', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['epResistance'], '元素抗性', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['epDamageResistance'], '损伤抵抗', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['stunImmune'], '眩晕抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
@@ -234,6 +242,8 @@ class Enemy(Job):
                 content += f'\n|移动速度=?'
                 content += f'\n|攻击速度=?'
                 content += f'\n|法术抗性=?'
+                content += f'\n|元素抗性=?'
+                content += f'\n|损伤抵抗=?'
             else:
                 content += f'\n|耐久={level_standard.getMaxHP(attribute_data[0])}'
                 content += f'\n|攻击力={level_standard.getAttack(attribute_data[1])}'
@@ -241,6 +251,8 @@ class Enemy(Job):
                 content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
                 content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
                 content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
+                content += f'\n|元素抗性={level_standard.getEnemyRes(attribute_data[6])}'
+                content += f'\n|损伤抵抗={level_standard.getEnemyDamageRes(attribute_data[7])}'
             if race_tag.__len__() > 0:
                 content += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
             if 'abilityList' in enemy and enemy['abilityList'] != []:
@@ -322,7 +334,7 @@ class Enemy(Job):
             if enemy['hideInHandbook'] == True:
                 continue
 
-            attribute_data = [-1, -1, -1, -1, -1, -1]
+            attribute_data = [-1, -1, -1, -1, -1, -1, -1, -1]
             apply_way, motion = None, None
             race_tag = set()
             if enemy['enemyId'] in enemy_db_index:
@@ -332,7 +344,7 @@ class Enemy(Job):
                         print(f'enemy {enemy_data["name"]} database order error.')
                         continue
                     lv_data = d['enemyData']
-                    for idx_a, k in enumerate(['maxHp', 'atk', 'def', 'magicResistance', 'moveSpeed', 'baseAttackTime']):
+                    for idx_a, k in enumerate(['maxHp', 'atk', 'def', 'magicResistance', 'moveSpeed', 'baseAttackTime', 'epResistance', 'epDamageResistance']):
                         if lv_data['attributes'][k]['m_defined'] is True and attribute_data[idx_a] == -1:
                             attribute_data[idx_a] = lv_data['attributes'][k]['m_value']
                     if lv_data['applyWay']['m_defined'] is True and apply_way is None:
@@ -361,6 +373,8 @@ class Enemy(Job):
                 'moveSpeed': level_standard.getMoveSpeed(attribute_data[4]),
                 'attackSpeed': level_standard.getBaseAttackTime(attribute_data[5]),
                 'resistance': level_standard.getMagicRes(attribute_data[3]),
+                'enemyRes': level_standard.getEnemyRes(attribute_data[6]),
+                'enemyDamageRes': level_standard.getEnemyDamageRes(attribute_data[7]),
                 'ability': '',
                 # 'isInvalidKilled': enemy['isInvalidKilled'],
                 # 'overrideKillCntInfos': enemy['overrideKillCntInfos'],
@@ -372,6 +386,8 @@ class Enemy(Job):
                 new_data['moveSpeed'] = '?'
                 new_data['attackSpeed'] = '?'
                 new_data['resistance'] = '?'
+                new_data['enemyRes'] = '?'
+                new_data['enemyDamageRes'] = '?'
             # 链接
             if new_data['enemyLink'] in override_list:
                 new_data['enemyLink'] += '(敌方)'
