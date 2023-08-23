@@ -275,7 +275,7 @@ class Enemy(Job):
             spine_content = {'prefix': '', 'name': '', 'skin': {'默认': {'战斗': {'file': ''}}}}
             spine_content['prefix'] = f'https://torappu.prts.wiki/assets/enemySpine/{enemy["enemyId"]}/'
             spine_content['name'] = f'{enemy["name"]}'
-            spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}/{enemy["enemyId"]}'
+            spine_content['skin']['默认']['战斗']['file'] = f'{enemy["enemyId"]}'
 
             self.wiki.edit(
                 title=enemy['name'],
