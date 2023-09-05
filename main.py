@@ -37,6 +37,7 @@ if __name__ == '__main__':
         exit()
 
     wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
+    os.system('git submodule update --init --recursive')
     flag_new_char = False
     if 'new' in sys.argv: 
         Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
