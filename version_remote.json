@@ -5,9 +5,9 @@
         "funcVer": "V042"
     },
     "JP": {
-        "resVersion": "23-08-11-15-34-20-50685f",
-        "clientVersion": "17.9.62",
-        "funcVer": "V035"
+        "resVersion": "23-09-05-18-26-04-20fc0e",
+        "clientVersion": "18.9.81",
+        "funcVer": "V036"
     },
     "US": {
         "resVersion": "23-08-11-20-56-32-b5083e",
@@ -15,9 +15,9 @@
         "funcVer": "V035"
     },
     "KR": {
-        "resVersion": "23-08-14-16-31-14-fd5728",
-        "clientVersion": "17.9.62",
-        "funcVer": "V035"
+        "resVersion": "23-09-06-07-29-47-6e48ca",
+        "clientVersion": "18.9.81",
+        "funcVer": "V036"
     },
     "TW": {
         "resVersion": "23-08-25-07-21-06-cb827d",
