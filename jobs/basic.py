@@ -515,15 +515,16 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
     return token_info
 
 
-def get_building_skill(building_data, char_key):
-    building_skill = '{{后勤技能'
+def get_building_skill(building_data, char_key, rts):
+    building_skill = '{{后勤技能2'
     if char_key in building_data['chars']:
         char_building_skill = building_data['chars'][char_key]
         for building_skill_id in range(len(char_building_skill['buffChar'])):
             for building_skill_id_2 in range(len(char_building_skill['buffChar'][building_skill_id]['buffData'])):
                 buff_count_text = '后勤技能{}-{}'.format(building_skill_id + 1, building_skill_id_2 + 1)
                 temp = char_building_skill['buffChar'][building_skill_id]['buffData'][building_skill_id_2]
-                buff_name = building_data['buffs'][temp['buffId']]['buffName']
+                buff_data = building_data['buffs'][temp['buffId']]
+                buff_name = buff_data['buffName']
                 buff_name_extra = {
                     'control_dorm_rec[000]': '领袖(控制中枢)',
                     'dorm_rec_all[013]': '领袖(宿舍)',
@@ -541,6 +542,10 @@ def get_building_skill(building_data, char_key):
                 )
                 if temp['cond']['level'] != 1:
                     building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
+                # 屎山临时补丁
+                building_skill += f"\n|{buff_count_text}图标={buff_data['skillIcon']}"
+                building_skill += f"\n|{buff_count_text}房间={building_data['rooms'][buff_data['roomType']]['name']}"
+                building_skill += f"\n|{buff_count_text}描述={rts.compile(buff_data['description'])}"
     else:
         return '该干员无后勤技能'
     if building_skill == '{{后勤技能':
@@ -1164,7 +1169,7 @@ class Basic(Job):
             potential_list = get_potential_list(char_detail)
             skill_list = get_skill_list(char_detail, skill_table, rts)
             token_info = get_token_info(self.wiki, char_detail, update_token_page, character_table, skill_table, rts)
-            building_skill = get_building_skill(building_data, char_key)
+            building_skill = get_building_skill(building_data, char_key, rts)
             phase_list = get_phase_list(char_detail, gamedata_const, item_table)
             skill_levelUp_list = get_skill_levelUp_list(char_detail, item_table, skill_table)
             battle_equip = ''.join(get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, item_table, rts))
@@ -1255,13 +1260,13 @@ class Basic(Job):
                 continue
             if char_key in ['char_512_aprot', 'char_508_aguard', 'char_509_acast', 'char_511_asnipe', 'char_510_amedic', 'char_513_apionr']:
                 continue
-            # if char_detail['name'] not in ['帕拉斯','麦哲伦']:
+            # if char_detail['name'] not in ['温蒂']:
             #     continue
             origin_text = self.wiki.read(char_detail['name'])
             new_text = origin_text
 
             # 更新后勤技能
-            building_skill = get_building_skill(building_data, char_key)
+            building_skill = get_building_skill(building_data, char_key, rts)
             num1 = new_text.find('==后勤技能==')
             num2 = new_text.find('==召唤物信息==')
             if num2 == -1:
