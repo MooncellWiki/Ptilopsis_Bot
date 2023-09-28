@@ -23,6 +23,7 @@ if __name__ == '__main__':
     else:
         gameData = GameData(config=config, source='Unpacker')
     if '--check' in sys.argv:
+        os.system('git submodule update --init --recursive')
         if not gameData.unpacker.check_update():
             print('No version update. Program exit.')
             exit()
@@ -37,7 +38,6 @@ if __name__ == '__main__':
         exit()
 
     wiki = Wiki(config['apiUrl'], config['username'], config['password'], ('dev' if '-dev' in sys.argv else 'product'))
-    os.system('git submodule update --init --recursive')
     flag_new_char = False
     if 'new' in sys.argv: 
         Sidebar(wiki, gameData).update() # 先sidebar，避免影响old_num
