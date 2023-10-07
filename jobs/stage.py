@@ -363,7 +363,7 @@ def analyze_normal_hidden_group(level_table):
     if level_table['runes']:
         try:
             for rune in level_table['runes']:
-                if rune['difficultyMask'] == 1 and rune['key'] == 'level_hidden_group_enable':
+                if (rune['difficultyMask'] == 1 or rune['difficultyMask'] == 'NORMAL') and rune['key'] == 'level_hidden_group_enable':
                     for d in rune['blackboard']:
                         if d['key'] == 'key':
                             normal_hidden_group.append(d['valueStr'])

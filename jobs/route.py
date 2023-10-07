@@ -41,8 +41,9 @@ def parse_route(route):
     if route['spawnOffset']['y'] != 0.0:
         start_y += '+{}'.format(route['spawnOffset']['y'])
     route_result += '({}, {})'.format(start_x, start_y)
-    for checkpoint in route['checkpoints']:
-        route_result += parse_checkpoint(checkpoint)
+    if route['checkpoints'] is not None:
+        for checkpoint in route['checkpoints']:
+            route_result += parse_checkpoint(checkpoint)
     route_result += '→({}, {})'.format(route['endPosition']['col'], route['endPosition']['row'])
     return route_result
 
@@ -61,6 +62,8 @@ def parse_motionMode(motionMode):
 
 
 def parse_actionType(action_count, key, actionType):
+    if not isinstance(actionType, int):
+        print('No.{} {} actionType: {}'.format(action_count, key, actionType))
     if actionType == 0:
         pass
     elif actionType == 1:
@@ -84,13 +87,13 @@ def parse_actionType(action_count, key, actionType):
 def parse_checkPointType(checkpoint_type, time, x, y):
     try:
         return {
-            0: '→({}, {})'.format(x, y),
-            1: '(WAIT: {}s)'.format(time),
-            2: '(WAIT_PLAY: {}s)'.format(time),
-            3: '(WAIT_FRAGMENT: {}s)'.format(time),
-            4: '(WAIT_WAVE: {}s)'.format(time),
-            5: '→通道',
-            6: '→({}, {})'.format(x, y)
+            'MOVE': '→({}, {})'.format(x, y),
+            'WAIT_FOR_SECONDS': '(WAIT: {}s)'.format(time),
+            'WAIT_FOR_PLAY_TIME': '(WAIT_PLAY: {}s)'.format(time),
+            'WAIT_CURRENT_FRAGMENT_TIME': '(WAIT_FRAGMENT: {}s)'.format(time),
+            'WAIT_CURRENT_WAVE_TIME': '(WAIT_WAVE: {}s)'.format(time),
+            'DISAPPEAR': '→通道',
+            'APPEAR_AT_POS': '→({}, {})'.format(x, y)
         }[checkpoint_type]
     except:
         return '(UNKNOWN)'
@@ -222,7 +225,7 @@ def get_waves_table(level_waves, routes, enemy_table):
             wave_time += fragment['preDelay']
             total_time += fragment['preDelay']
             for action in fragment['actions']:
-                if action['actionType'] != 0:
+                if action['actionType'] != 'SPAWN':
                     continue
                 for action_count in range(action['count']):
                     if action['key'] not in enemy_table:
@@ -263,7 +266,7 @@ class Route(Job):
 
         filelist = []
         base_dir = './Unpacker/zh_CN/gameData/'
-        path = 'levels/activities/act24side/level_act24side_sub-01.json'
+        path = 'levels/obt/roguelike/ro3/level_rogue3_5-1.json'
         # path = 'levels/activities'
 
         def get_files(curr_path):
@@ -282,7 +285,7 @@ class Route(Job):
             level_table = self.getgd(file.lower())
             routes = get_routes(level_table['routes'])
             get_waves(level_table['waves'])
-            wave_table = get_waves_table(level_table['waves'], routes, enemy_table)
+            wave_table = get_waves_table(level_table['waves'], routes, enemy_table['enemyData'])
 
             # roguelike_table = self.getgd('excel/roguelike_table.json')
             # for stage in roguelike_table['stages']:
