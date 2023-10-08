@@ -68,7 +68,7 @@ def get_char_attr(character_table, id_table, rts):
 
         desc = '|[[{name}]]||{rarity}||{profession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s'.format(
             name = char_detail['name'],
-            rarity = char_detail['rarity'] + 1,
+            rarity = char_detail['rarity'][-1],
             profession = trans_profession(char_detail['profession']),
             maxHp = maxHp,
             atk = atk,
@@ -109,7 +109,7 @@ class CharAttr(Job):
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
         # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
             id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
