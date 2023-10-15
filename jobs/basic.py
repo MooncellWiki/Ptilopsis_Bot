@@ -1118,7 +1118,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 {{{{参阅三|{{{{FULLPAGENAME}}}}|yy}}}}
 {{{{:{{{{FULLPAGENAME}}}}/语音记录}}}}{handbook_avg}{handbook_stage}
 ==干员模型==
-{{{{spine}}}}
+{{{{spineId}}}}
 ==注释与链接==
 <references/>
 {{{{干员导航}}}}'''
