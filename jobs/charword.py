@@ -5,7 +5,7 @@ from utils.job import Job
 
 
 def norm_text(t, lang=None):
-    if lang != None and lang in ['日文', '英文', '韩文', '意大利文']:
+    if lang != None and lang in ['日文', '英文', '韩文', '意大利文', '德文', '俄文']:
         add = f"|语言={lang}"
     else:
         add = ''
@@ -24,8 +24,8 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
 
     # 语音路径
     default_type = charword_table['charDefaultTypeDict']
-    lang_type = {'CN_MANDARIN': '中文', 'CN_TOPOLECT': '方言', 'JP': '日文', 'EN': '英文', 'KR': '韩文', 'LINKAGE': '联动', 'ITA': '意大利文'}
-    lang_path = {'CN_MANDARIN': 'voice_cn', 'CN_TOPOLECT': 'voice_custom', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr',  'LINKAGE': 'voice', 'ITA': 'voice_custom'}
+    lang_type = {'CN_MANDARIN': '中文', 'CN_TOPOLECT': '方言', 'JP': '日文', 'EN': '英文', 'KR': '韩文', 'LINKAGE': '联动', 'ITA': '意大利文', 'GER': '德文', 'RUS': '俄文'}
+    lang_path = {'CN_MANDARIN': 'voice_cn', 'CN_TOPOLECT': 'voice_custom', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr',  'LINKAGE': 'voice', 'ITA': 'voice_custom', 'GER': 'voice_custom', 'RUS': 'voice_custom'}
     path_list = ['']
     for lang in char_lang['dict']:
         char_lang_type = lang_type.get(lang, '未知')
@@ -56,6 +56,9 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     if char_id == 'char_003_kalts':
         path_list.append('日文(残余):voice/char_003_kalts_boc__6')
         path_list.append('中文(残余):voice_cn/char_003_kalts_boc__6')
+    if char_id == 'char_4064_mlynar':
+        path_list.append('日文(远路):voice/char_4064_mlynar_epoque__28')
+        path_list.append('中文(远路):voice_cn/char_4064_mlynar_epoque__28')
     if char_id == 'char_4067_lolxh':
         path_list = list(map(lambda x: x.replace('文:voice','文(猫形态):voice'), path_list))
         path_list.append('日文:voice/char_4067_lolxh__1')
@@ -64,13 +67,15 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
 
     # 语音文本
     text_dict = {}
-    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False, '意大利文': False}
+    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False, '意大利文': False, '德文': False, '俄文': False}
     other_lang_words = {
         '日文': char_words_jp,
         '英文': char_words_en,
         '韩文': char_words_kr,
         '中文(繁体)': char_words_tw,
-        '意大利文': []
+        '意大利文': [],
+        '德文': [],
+        '俄文': []
     }
     for word_key in char_lang['wordkeys']:
         word_lang = '中文'
@@ -132,6 +137,11 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
     if char_id == 'char_003_kalts' and mode == 'update':
         word_lang, word_key = '中文(残余)', 'char_003_kalts_boc#6'
+        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
+                                         key=lambda x: x[1]['voiceIndex']):
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+    if char_id == 'char_4064_mlynar' and mode == 'update':
+        word_lang, word_key = '中文(远路)', 'char_4064_mlynar_epoque#28'
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
