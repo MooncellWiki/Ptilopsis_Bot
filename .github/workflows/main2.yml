@@ -6,8 +6,8 @@ name: main-jp
 on: 
 #  push:
 #    branches: [ master ]
-  schedule:
-    - cron: '30 6 * * *'
+#  schedule:
+#    - cron: '30 6 * * *'
   workflow_dispatch:
 
 jobs:
