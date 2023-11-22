@@ -1331,15 +1331,13 @@ class Stage(Job):
         # 从 crisis_info 读
         # https://weedy.baka.icu/crisis/today/internal
         with open('crisis_info.json', 'r', encoding='utf-8') as file:
-            stage_table = json.loads(file.read())
+            stage_table = json.loads(file.read())['info']['mapStageDataMap']
         # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
         #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
         #     stage_detail['stageId'] = stage_key
         #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
-        for stage_x in stage_table['stages']:
+        for stage_x in stage_table.values():
             stage_detail = stage_x
-            stage_detail['stageId'] = stage_detail['id']
-            stage_detail['levelId'] = 'Obt/rune/' + stage_detail['id']
 
         # 从 weedy 读
         # session = requests.Session()
@@ -1373,14 +1371,14 @@ class Stage(Job):
                 summary='init',
                 createonly='1'
             )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary='init',
-                bot=None,
-                minor=True,
-                createonly='1'
-            )
+            # self.wiki.edit(
+            #     title=stage_page_name,
+            #     text=stage_content,
+            #     summary='init',
+            #     bot=None,
+            #     minor=True,
+            #     createonly='1'
+            # )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
 

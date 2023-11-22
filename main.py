@@ -74,7 +74,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         Stage(wiki, gameData).run_campaign()  # 剿灭
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
-        # Stage(wiki, gameData).run_id('levels/obt/roguelike/ro3/level_rogue3_3-2.json')
+        # Stage(wiki, gameData).run_id('levels/obt/crisis/v2')
         # Stage(wiki, gameData).run_sandbox()
         Charword(wiki, gameData).update()
         
