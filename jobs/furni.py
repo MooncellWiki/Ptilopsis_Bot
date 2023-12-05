@@ -242,6 +242,8 @@ def create_themes(wiki, building_data):
                     comfort=groupsData['comfort']
                 )
                 for groupFurni in groupsData['furniture']:
+                    if groupFurni not in building_data['customData']['furnitures']:
+                        continue
                     groupsContent += '{{{{家具|{name}}}}}'.format(
                         name=building_data['customData']['furnitures'][groupFurni]['name']
                     )
