@@ -220,6 +220,7 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['frozenImmune'], '冻结抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
+                    content_lv += get_value(idx, lv_data['attributes']['disarmedCombatImmune'], '战栗抗性', 'b')
                     if 'talentBlackboard' in lv_data and lv_data['talentBlackboard']:
                         content_lv += '\n|天赋=<!--{}-->'.format(
                             json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False)
@@ -463,8 +464,8 @@ class Enemy(Job):
                     lv_idx = new_page.find(f'==级别{idx}==')
                     lv_idx2 = new_page.find(f'==级别{idx+1}==')
                     lv_piece = new_page[lv_idx:lv_idx2]
-                    new_immune = get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
-                    if new_immune != '' and '|浮空抗性=' not in lv_piece:
+                    new_immune = get_value(idx, lv_data['attributes']['disarmedCombatImmune'], '战栗抗性', 'b')
+                    if new_immune != '' and '|战栗抗性=' not in lv_piece:
                         a = re.findall('(\|.*?抗性=.*?)\n', lv_piece)
                         if a != []:
                             flag = lv_piece.find(a[-1]) + len(a[-1])
