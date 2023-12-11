@@ -16,7 +16,7 @@ def norm_text(t, lang=None):
     return result.strip()
 
 
-def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, char_words_tw=None, old_words=None, title='语音记录', mode='create'):
+def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, old_words=None, title='语音记录', mode='create'):
     content = '<noinclude>\n==' + title + '==\n</noinclude>{{#widget:VoiceTable}}{{VoiceTable|表格标题='
     content += f"{title}\n|语音key={char_id}\n|路径="
     char_lang = charword_table['voiceLangDict'][char_id]
@@ -72,7 +72,7 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         '日文': char_words_jp,
         '英文': char_words_en,
         '韩文': char_words_kr,
-        '中文(繁体)': char_words_tw,
+        '中文(繁体)': [],
         '意大利文': [],
         '德文': [],
         '俄文': []
@@ -122,9 +122,10 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                     else:
                         result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
                         if result1:
-                            result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}\|(.*?)}}}}{{{{"), result1.group(1))
+                            other_lang_re = other_lang.replace(')','\)').replace('(','\(')
+                            result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
                             if result2 is None:
-                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang}\|(.*?)}}}}$"), result1.group(1))
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
                             if result2:
                                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|" + result2.group(1) + '}}'
             else:
@@ -135,9 +136,17 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+        word_lang, word_key = '日文(恍惚)', 'char_113_cqbw_epoque#7'
+        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words_jp.items()),
+                                         key=lambda x: x[1]['voiceIndex']):
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
     if char_id == 'char_003_kalts' and mode == 'update':
         word_lang, word_key = '中文(残余)', 'char_003_kalts_boc#6'
         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
+                                         key=lambda x: x[1]['voiceIndex']):
+            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
+        word_lang, word_key = '日文(残余)', 'char_003_kalts_boc#6'
+        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words_jp.items()),
                                          key=lambda x: x[1]['voiceIndex']):
             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
     if char_id == 'char_4064_mlynar' and mode == 'update':
@@ -320,14 +329,14 @@ def create_charword(wiki, char_list, charword_table):
         print('Created: {}.'.format(char_name + '/语音记录'))
 
 
-def update_charword(wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw):
+def update_charword(wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
 
         old = wiki.read(char_name + '/语音记录')
-        content = charword_data_new(char_id, char_name, charword_table, char_words_jp=charword_table_jp['charWords'], char_words_en=charword_table_en['charWords'], char_words_kr=charword_table_kr['charWords'], char_words_tw=charword_table_tw['charWords'], old_words=old, title='语音记录', mode='update')
+        content = charword_data_new(char_id, char_name, charword_table, char_words_jp=charword_table_jp['charWords'], char_words_en=charword_table_en['charWords'], char_words_kr=charword_table_kr['charWords'], old_words=old, title='语音记录', mode='update')
         if old != content:
             wiki.edit(
                 title=char_name + '/语音记录',
@@ -364,7 +373,7 @@ class Charword(Job):
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
         charword_table_en = self.getgd('excel/charword_table.json', 'US')
         charword_table_kr = self.getgd('excel/charword_table.json', 'KR')
-        charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
+        # charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
 
         char_list = []
         for char_id in character_table:
@@ -375,4 +384,4 @@ class Charword(Job):
             char_list.append((char_id, character_table[char_id]['name'].strip()))
         char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
-        update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw)
+        update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr)
