@@ -1,11 +1,38 @@
+import json
 import os
 import re
 
 from utils.job import Job
 
+class LangType:
+    def __init__(self, charword_table):
+        self.voice_type = {}
+        self.word_type = {}
+        self.voice_path = {}
+        for k,v in charword_table['voiceLangTypeDict'].items():
+            if v['name'].endswith('文'):
+                self.voice_type[k] = v['name'][:-1] + '语'
+            else:
+                self.voice_type[k] = v['name']
+            self.voice_path[k] = f"voice_{v['groupType'].lower()}"
+        # self.voice_type['CN_MANDARIN'] = '中文'
+        # self.voice_type['CN_TOPOLECT'] = '方言'
+        self.voice_path['CN_MANDARIN'] = 'voice_cn'
+        self.voice_path['JP'] = 'voice'
+        self.voice_path['LINKAGE'] = 'voice'
+        self.default_type = charword_table['charDefaultTypeDict']
+
+    def get_voice_type(self, lang_key):
+        return self.voice_type.get(lang_key, '未知')
+
+    def get_voice_path(self, lang_key):
+        return self.voice_path.get(lang_key, 'voice')
+
+    def get_default_type(self, char_id):
+        return self.default_type.get(char_id, 'CN_MANDARIN')
 
 def norm_text(t, lang=None):
-    if lang != None and lang in ['日文', '英文', '韩文', '意大利文', '德文', '俄文']:
+    if lang != None and lang not in ['中文', '方言', '中文-普通话', '中文-方言', '繁体中文', '中文(繁体)']:
         add = f"|语言={lang}"
     else:
         add = ''
@@ -16,85 +43,138 @@ def norm_text(t, lang=None):
     return result.strip()
 
 
-def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, old_words=None, title='语音记录', mode='create'):
+def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words_jp=None, char_words_en=None, char_words_kr=None, char_words_tw=None, old_words='', title='语音记录', mode='create'):
     content = '<noinclude>\n==' + title + '==\n</noinclude>{{#widget:VoiceTable}}{{VoiceTable|表格标题='
     content += f"{title}\n|语音key={char_id}\n|路径="
-    char_lang = charword_table['voiceLangDict'][char_id]
     char_words = charword_table['charWords']
 
     # 语音路径
-    default_type = charword_table['charDefaultTypeDict']
-    lang_type = {'CN_MANDARIN': '中文', 'CN_TOPOLECT': '方言', 'JP': '日文', 'EN': '英文', 'KR': '韩文', 'LINKAGE': '联动', 'ITA': '意大利文', 'GER': '德文', 'RUS': '俄文'}
-    lang_path = {'CN_MANDARIN': 'voice_cn', 'CN_TOPOLECT': 'voice_custom', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr',  'LINKAGE': 'voice', 'ITA': 'voice_custom', 'GER': 'voice_custom', 'RUS': 'voice_custom'}
     path_list = ['']
-    for lang in char_lang['dict']:
-        char_lang_type = lang_type.get(lang, '未知')
-        char_lang_path = lang_path.get(lang, 'voice_custom')
-        if 'voicePath' in char_lang['dict'][lang] and char_lang['dict'][lang]['voicePath'] is not None:
-            p = char_lang['dict'][lang]['voicePath']
-            if p.endswith('/'):
-                p = p[:-1]
-            char_lang_path = os.path.basename(p).lower()
-        word_key_id = char_lang['dict'][lang]['wordkey'].lower().replace('#', '__').replace('/', '_')
-        path = f"{char_lang_type}:{char_lang_path}/{word_key_id}"
-        if char_id in default_type and lang == default_type[char_id]:
-            path_list[0] = path
-        else:
-            path_list.append(path)
-    # special case
-    if char_id == 'char_311_mudrok':
-        path_list.append('日文(摘下头盔时):voice/char_311_mudrok__1')
-        path_list.append('中文(摘下头盔时):voice_cn/char_311_mudrok__1')
-    if char_id == 'char_113_cqbw':
-        path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
-        path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
-        path_list.append('韩文(恍惚):voice_kr/char_113_cqbw_epoque__7')
-        path_list.append('英文(恍惚):voice_en/char_113_cqbw_epoque__7')
-    if char_id == 'char_472_pasngr':
-        path_list.append('日文(今昔须臾之梦):voice/char_472_pasngr_epoque__17')
-        path_list.append('中文(今昔须臾之梦):voice_cn/char_472_pasngr_epoque__17')
-    if char_id == 'char_003_kalts':
-        path_list.append('日文(残余):voice/char_003_kalts_boc__6')
-        path_list.append('中文(残余):voice_cn/char_003_kalts_boc__6')
-    if char_id == 'char_4064_mlynar':
-        path_list.append('日文(远路):voice/char_4064_mlynar_epoque__28')
-        path_list.append('中文(远路):voice_cn/char_4064_mlynar_epoque__28')
-    if char_id == 'char_4067_lolxh':
-        path_list = list(map(lambda x: x.replace('文:voice','文(猫形态):voice'), path_list))
-        path_list.append('日文:voice/char_4067_lolxh__1')
-        path_list.append('中文:voice_cn/char_4067_lolxh__1')
+    for lang_k, char_lang in filter(lambda x:x[1]['charId'] == char_id, charword_table['voiceLangDict'].items()):
+        default_type = lt.get_default_type(char_lang['charId'])
+        suffix = ''
+        if lang_k != char_lang['charId']:
+            suffix = f"({lang_k})"
+            for skin_v in filter(lambda x:x['voiceId'] == lang_k, skin_table['charSkins'].values()):
+                suffix = f"({skin_v['displaySkin']['skinName']})"
+                break
+            if lang_k == 'char_311_mudrok#1':
+                suffix = '(摘下头盔时)'
+        if char_id == 'char_4067_lolxh':
+            suffix = '(猫形态)' if lang_k == 'char_4067_lolxh' else ''
+        if suffix == '(char_1001_amiya2)':
+            continue
+        for lang, lang_v in char_lang['dict'].items():
+            char_voice_type = lt.get_voice_type(lang)
+            char_voice_path = lt.get_voice_path(lang)
+            if 'voicePath' in lang_v and lang_v['voicePath'] is not None:
+                p = lang_v['voicePath']
+                if p.endswith('/'):
+                    p = p[:-1]
+                char_voice_path = os.path.basename(p).lower()
+            word_key_id = lang_v['wordkey'].lower().replace('#', '__').replace('/', '_')
+            path = f"{char_voice_type}{suffix}:{char_voice_path}/{word_key_id}"
+            if lang == default_type and lang_k == char_lang['charId']:
+                path_list[0] = path
+            else:
+                path_list.append(path)
     content += ','.join(path_list)
 
     # 语音文本
     text_dict = {}
-    official_flag = {'日文': False, '英文': False, '韩文': False, '中文(繁体)': False, '意大利文': False, '德文': False, '俄文': False}
-    other_lang_words = {
-        '日文': char_words_jp,
-        '英文': char_words_en,
-        '韩文': char_words_kr,
-        '中文(繁体)': [],
-        '意大利文': [],
-        '德文': [],
-        '俄文': []
-    }
-    for word_key in char_lang['wordkeys']:
-        word_lang = '中文'
-        for k, v in char_lang['dict'].items():
-            if v['wordkey'] == word_key and k == 'CN_TOPOLECT':
-                word_lang = '方言'
-            if v['wordkey'] == word_key and k == 'ITA':
-                word_lang = '意大利文'
-        if word_lang in ['意大利文']:
-            continue 
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            if text_data['voiceIndex'] not in text_dict:
-                text_dict[text_data['voiceIndex']] = {
-                    'text': '',
-                    'title': '',
-                    'condition': '',
-                    'voiceId': ''
-                }
+    other_lang_words = {'日文': char_words_jp, '英文': char_words_en, '韩文': char_words_kr, '繁体中文': char_words_tw}
+    official_flag = {'日文': False, '英文': False, '韩文': False, '繁体中文': False}
+    current_lang_set = set(re.findall('{{VoiceData/word\|(.+?)\|', old_words))
+    for lang_k, char_lang in filter(lambda x:x[1]['charId'] == char_id, charword_table['voiceLangDict'].items()):
+        suffix1, suffix2 = '', ''
+        if lang_k in ['char_4067_lolxh#1', 'char_311_mudrok#1', 'char_1001_amiya2']:
+            continue
+        if lang_k != char_lang['charId']:
+            suffix2 = f"({lang_k})"
+            for skin_v in filter(lambda x:x['voiceId'] == lang_k, skin_table['charSkins'].values()):
+                suffix2 = f"({skin_v['displaySkin']['skinName']})"
+                break
+        for word_key in char_lang['wordkeys']:
+            word_lang = '中文'
+            suffix1_custom_flag = True
+            for k, v in filter(lambda x:x[1]['wordkey'] == word_key, char_lang['dict'].items()):
+                if charword_table['voiceLangTypeDict'][k]['groupType'] != 'CUSTOM':
+                    suffix1_custom_flag = False
+                    break
+                suffix1 = {
+                    'CN_TOPOLECT': '-方言',
+                    'ITA': '-意大利语版',
+                    'GER': '-德语版',
+                    'RUS': '-俄语版'
+                }.get(k, k)
+            if not suffix1_custom_flag:
+                suffix1 = ''
+            if suffix1 in ['-意大利语版']:
+                continue
+            exists_flag = {
+                '日文': {'flag':False, 'wiki_key':''},
+                '英文': {'flag':False, 'wiki_key':''},
+                '韩文': {'flag':False, 'wiki_key':''},
+                '繁体中文': {'flag':False, 'wiki_key':''}
+            }
+            for i in ['日文', '日语']:
+                if f"{i}{suffix1}{suffix2}" in current_lang_set:
+                    exists_flag['日文']['flag'] = True
+                    exists_flag['日文']['wiki_key'] = f"{i}{suffix1}{suffix2}"
+            for i in ['英文', '英语']:
+                if f"{i}{suffix1}{suffix2}" in current_lang_set:
+                    exists_flag['英文']['flag'] = True
+                    exists_flag['英文']['wiki_key'] = f"{i}{suffix1}{suffix2}"
+            for i in ['韩文', '韩语']:
+                if f"{i}{suffix1}{suffix2}" in current_lang_set:
+                    exists_flag['韩文']['flag'] = True
+                    exists_flag['韩文']['wiki_key'] = f"{i}{suffix1}{suffix2}"
+            for i in ['繁体中文', '中文(繁体)']:
+                if f"{i}{suffix1}{suffix2}" in current_lang_set:
+                    exists_flag['繁体中文']['flag'] = True
+                    exists_flag['繁体中文']['wiki_key'] = f"{i}{suffix1}{suffix2}"
+            for l in charword_table['voiceLangGroupTypeDict']['CUSTOM']['members']:
+                if l == 'CN_TOPOLECT':
+                    continue
+                l_name = charword_table['voiceLangTypeDict'][l]['name']
+                if l_name.endswith('语') or l_name.endswith('文'):
+                    potential_l_key = [l_name[:-1]+'文', l_name[:-1]+'语']
+                else:
+                    potential_l_key = [l_name]
+                for i in potential_l_key:
+                    if f"{i}{suffix1}{suffix2}" in current_lang_set:
+                        if l_name[:-1]+'文' not in exists_flag:
+                            exists_flag[l_name[:-1]+'文'] = {'flag':True, 'wiki_key':''}
+                        exists_flag[l_name[:-1]+'文']['flag'] = True
+                        exists_flag[l_name[:-1]+'文']['wiki_key'] = f"{i}{suffix1}{suffix2}"
+            for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
+                                             key=lambda x: x[1]['voiceIndex']):
+                if text_data['voiceIndex'] not in text_dict:
+                    text_dict[text_data['voiceIndex']] = {
+                        'text': '',
+                        'title': '',
+                        'condition': '',
+                        'voiceId': ''
+                    }
+                # 先处理异客语音皮的厨放，全部优先wiki文本
+                if char_id == 'char_472_pasngr' and suffix2 == '(今昔须臾之梦)':
+                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
+                    exists_flag = dict(list({'中文': {'flag': True, 'wiki_key':'中文(今昔须臾之梦)'}}.items()) + list(exists_flag.items()))
+                    for other_lang in exists_flag:
+                        if exists_flag[other_lang]['flag'] is True:
+                            if result1:
+                                other_lang_re = exists_flag[other_lang]['wiki_key'].replace(')', '\)').replace('(', '\(')
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
+                                if result2 is None:
+                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
+                                if result2:
+                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1) + '}}'
+                                    continue
+                        if other_lang in other_lang_words and text_id in other_lang_words[other_lang]:
+                            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|{norm_text(other_lang_words[other_lang][text_id]['voiceText'], other_lang)}}}}}"
+                    continue
+                # 以上
+
                 unlock_cond = ''
                 if text_data['unlockType'] == 'DIRECT':
                     pass
@@ -108,87 +188,42 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
                 text_dict[text_data['voiceIndex']]['voiceId'] = text_data['voiceId'].strip()
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'], word_lang)}}}}}"
-            if word_lang in ['方言', '意大利文']:
-                continue
-            if mode == 'update':
-                for other_lang, other_words in other_lang_words.items():
-                    if text_id in other_words:
-                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|{norm_text(other_words[text_id]['voiceText'], other_lang)}}}}}"
-                        official_flag[other_lang] = True
-                    elif official_flag[other_lang] is True:
-                        print('lack of official words for', text_id, f"({char_id} {char_name})")
-                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|}}}}"
-                    else:
-                        result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
-                        if result1:
-                            other_lang_re = other_lang.replace(')','\)').replace('(','\(')
-                            result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
-                            if result2 is None:
-                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
-                            if result2:
-                                text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}|" + result2.group(1) + '}}'
-            else:
-                text_dict[text_data['voiceIndex']]['text'] += '{{VoiceData/word|日文|}}'
-    # special case
-    if char_id == 'char_113_cqbw' and mode == 'update':
-        word_lang, word_key = '中文(恍惚)', 'char_113_cqbw_epoque#7'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-        word_lang, word_key = '日文(恍惚)', 'char_113_cqbw_epoque#7'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words_jp.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-    if char_id == 'char_003_kalts' and mode == 'update':
-        word_lang, word_key = '中文(残余)', 'char_003_kalts_boc#6'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-        word_lang, word_key = '日文(残余)', 'char_003_kalts_boc#6'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words_jp.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-    if char_id == 'char_4064_mlynar' and mode == 'update':
-        word_lang, word_key = '中文(远路)', 'char_4064_mlynar_epoque#28'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-    if char_id == 'char_472_pasngr' and mode == 'update':
-        word_lang, word_key = '中文(今昔须臾之梦)', 'char_472_pasngr_epoque#17'
-        for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-                                         key=lambda x: x[1]['voiceIndex']):
-            # text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-            result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
-            if result1:
-                result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}{{'), result1.group(1))
-                if result2 is None:
-                    result2 = re.search(re.compile('{{VoiceData/word\|中文\(今昔须臾之梦\)\|(.*?)}}$'), result1.group(1))
-                if result2:
-                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|中文(今昔须臾之梦)|" + result2.group(1) + '}}'
-                result2 = re.search(re.compile('{{VoiceData/word\|日文\(今昔须臾之梦\)\|(.*?)}}{{'), result1.group(1))
-                if result2 is None:
-                    result2 = re.search(re.compile('{{VoiceData/word\|日文\(今昔须臾之梦\)\|(.*?)}}$'), result1.group(1))
-                if result2:
-                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|日文(今昔须臾之梦)|" + result2.group(1) + '}}'
+                text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}{suffix1}{suffix2}|{norm_text(text_data['voiceText'], word_lang)}}}}}"
+                if mode == 'update':
+                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
+                    for other_lang in exists_flag:
+                        if suffix1 == '-方言' and other_lang != '繁体中文':
+                            continue
+                        if other_lang in other_lang_words and text_id in other_lang_words[other_lang]:
+                            text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|{norm_text(other_lang_words[other_lang][text_id]['voiceText'], other_lang)}}}}}"
+                            official_flag[other_lang] = True
+                            continue
+                        if exists_flag[other_lang]['flag'] is True:
+                            if result1:
+                                other_lang_re = exists_flag[other_lang]['wiki_key'].replace(')','\)').replace('(','\(')
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
+                                if result2 is None:
+                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
+                                if result2:
+                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1) + '}}'
+                            else:
+                                text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|}}}}"
+                else:
+                    if suffix1 == '':
+                        text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|日文{suffix2}|}}}}"
 
     # 内容拼合
-    if char_id == 'char_1001_amiya2':
-        voice_file_name = '阿米娅'
-    else:
-        voice_file_name = char_name
     for idx, word_piece in text_dict.items():
         content += '\n\n|标题{id}={title}\n|台词{id}={text}\n|语音{id}={voice}'.format(
             id=idx,
             title=word_piece['title'],
             text=word_piece['text'],
-            # voice=voice_file_name + ' ' + word_piece['title'] + '.wav'
             voice=word_piece['voiceId'] + '.wav'
         )
         if word_piece['condition'] != '':
             content += f"\n|条件{idx}={word_piece['condition']}"
     content += '\n}}<noinclude>[[分类:干员语音]]'
-    official_flag['中文(繁体)'] = False  # 繁中暂不考虑加分类
+    official_flag['繁体中文'] = False  # 繁中暂不考虑加分类
     for lang in official_flag:
         if official_flag[lang] is True:
             content += f"[[分类:有官方{lang}文本的干员语音]]"
@@ -197,126 +232,14 @@ def charword_data_new(char_id, char_name, charword_table, char_words_jp=None, ch
     return content
 
 
-# def charword_data(char_id, char_name, charword_table, char_words_jp=None, char_words_en=None, old_words=None, title='语音记录', mode='create'):
-#     char_words = charword_table['charWords']
-#     char_lang = charword_table['voiceLangDict'][char_id]
-#     content = '<noinclude>\n==' + title + '==\n</noinclude>{{#widget:VoiceTable}}{{VoiceTable|表格标题='
-#     content += f"{title}\n|语音key={char_id}\n|路径="
-#     path_list = ['']
-#     wordkeys_list = {k: [] for k in char_lang['wordkeys']}
-#     for lang in char_lang['dict']:
-#         lang_type = {'CN_MANDARIN': '中文', 'JP': '日文', 'CN_TOPOLECT': '方言', 'LINKAGE': '联动', 'EN': '英文', 'KR': '韩文'}.get(lang, '未知')
-#         path = {'CN_MANDARIN': 'voice_cn', 'JP': 'voice', 'EN': 'voice_en', 'KR': 'voice_kr', 'CN_TOPOLECT': 'voice_custom', 'LINKAGE': 'voice'}.get(lang, 'voice')
-#         if 'voicePath' in char_lang['dict'][lang]:
-#             p = char_lang['dict'][lang]['voicePath']
-#             if p.endswith('/'):
-#                 p = p[:-1]
-#             path = os.path.basename(p).lower()
-#         word_key_id = char_lang['dict'][lang]['wordkey'].lower().replace('#', '__').replace('/', '_')
-#         lang_path = f"{lang_type}:{path}/{word_key_id}"
-#         if char_id in charword_table['charDefaultTypeDict'] and lang == charword_table['charDefaultTypeDict'][char_id]:
-#             path_list[0] = lang_path
-#         else:
-#             path_list.append(lang_path)
-#         if char_lang['dict'][lang]['wordkey'] in wordkeys_list:
-#             wordkeys_list[char_lang['dict'][lang]['wordkey']].append(lang)
-#         else:
-#             print('Unknown wordkey for character', char_id, char_name)
-#     if char_id == 'char_311_mudrok':
-#         path_list.append('日文(摘下头盔时):voice/char_311_mudrok__1')
-#     if char_id == 'char_113_cqbw':
-#         path_list.append('日文(恍惚):voice/char_113_cqbw_epoque__7')
-#         path_list.append('中文(恍惚):voice_cn/char_113_cqbw_epoque__7')
-#     content += ','.join(path_list)
-#
-#     if mode == 'update':
-#         if char_id not in ['char_457_blitz', 'char_456_ash', 'char_458_rfrost', 'char_459_tachak']:
-#             char_words_2, lang_2 = char_words_jp['charWords'], '日文'
-#         else:
-#             char_words_2, lang_2 = char_words_en['charWords'], '英文'
-#     else:
-#         char_words_2, lang_2 = None, '日文'
-#     official_flag = True
-#     text_dict = {}
-#     for word_key in char_lang['wordkeys']:
-#         if 'CN_MANDARIN' in wordkeys_list[word_key] or 'JP' in wordkeys_list[word_key]:
-#             word_lang = '中文'
-#         elif 'CN_TOPOLECT' in wordkeys_list[word_key]:
-#             word_lang = '方言'
-#         elif 'LINKAGE' in wordkeys_list[word_key]:
-#             word_lang = '联动'
-#         else:
-#             print('Unknown language type', wordkeys_list[word_key] ,'for character', char_id, char_name)
-#             word_lang = '未知'
-#         for text_id, text_data in sorted(filter(lambda x: x[1]['wordKey'] == word_key, char_words.items()),
-#                                          key=lambda x: x[1]['voiceIndex']):
-#             if text_data['voiceIndex'] not in text_dict:
-#                 text_dict[text_data['voiceIndex']] = {
-#                     'text': '',
-#                     'title': '',
-#                     'condition': ''
-#                 }
-#                 unlock_cond = ''
-#                 if text_data['unlockType'] == 'DIRECT':
-#                     pass
-#                 elif text_data['unlockType'] == 'FAVOR':
-#                     unlock_cond = '提升信赖至{}%以查看'.format(text_data['unlockParam'][0]['valueInt'])
-#                 elif text_data['unlockType'] == 'AWAKE':
-#                     unlock_cond = '提升至精英阶段{}以查看'.format(text_data['unlockParam'][0]['valueInt'])
-#                 else:
-#                     unlock_cond = text_data['lockDescription'].strip()
-#                     print('new voice unlock type for', text_data['charWordId'])
-#                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
-#                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
-#             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}|{norm_text(text_data['voiceText'])}}}}}"
-#             if word_lang == '中文' or len(char_lang['wordkeys']) == 1:
-#                 if mode == 'update':
-#                     if text_id in char_words_2:
-#                         text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|" + norm_text(char_words_2[text_id]['voiceText']) + '}}'
-#                     else:
-#                         official_flag = False
-#                         result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
-#                         if result1:
-#                             result2 = re.search(re.compile(f"{{{{VoiceData/word\|{lang_2}\|(.*?)}}}}{{{{"), result1.group(1))
-#                             if result2 is None:
-#                                 result2 = re.search(re.compile(f"{{{{VoiceData/word\|{lang_2}\|(.*?)}}}}$"), result1.group(1))
-#                             if result2:
-#                                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|" + result2.group(1) + '}}'
-#                             else:
-#                                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|}}}}"
-#                         else:
-#                             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|}}}}"
-#                 else:
-#                     official_flag = False
-#                     text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{lang_2}|}}}}"
-#     if char_id == 'char_1001_amiya2':
-#         voice_file_name = '阿米娅'
-#     else:
-#         voice_file_name = char_name
-#     for idx, word_piece in text_dict.items():
-#         content += '\n\n|标题{id}={title}\n|台词{id}={text}\n|语音{id}={voice}'.format(
-#             id=idx,
-#             title=word_piece['title'],
-#             text=word_piece['text'],
-#             voice=voice_file_name + ' ' + word_piece['title'].rstrip() + '.wav'
-#         )
-#         if word_piece['condition'] != '':
-#             content += f"\n|条件{idx}={word_piece['condition']}"
-#     content += '\n}}'
-#     if official_flag == True:
-#         content += f"<noinclude>[[分类:干员语音]][[分类:有官方{lang_2}文本的干员语音]]</noinclude>"
-#     else:
-#         content += f"<noinclude>[[分类:干员语音]]</noinclude>"
-#     return content
-
-
-def create_charword(wiki, char_list, charword_table):
+def create_charword(wiki, char_list, skin_table, charword_table):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
+    lt = LangType(charword_table)
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
 
-        content = charword_data_new(char_id, char_name, charword_table, title='语音记录', mode='create')
+        content = charword_data(char_id, char_name, lt, skin_table, charword_table, title='语音记录', mode='create')
         wiki.edit(
             title=char_name + '/语音记录',
             text=content,
@@ -329,14 +252,15 @@ def create_charword(wiki, char_list, charword_table):
         print('Created: {}.'.format(char_name + '/语音记录'))
 
 
-def update_charword(wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr):
+def update_charword(wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
+    lt = LangType(charword_table)
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
             continue
 
         old = wiki.read(char_name + '/语音记录')
-        content = charword_data_new(char_id, char_name, charword_table, char_words_jp=charword_table_jp['charWords'], char_words_en=charword_table_en['charWords'], char_words_kr=charword_table_kr['charWords'], old_words=old, title='语音记录', mode='update')
+        content = charword_data(char_id, char_name, lt, skin_table, charword_table, charword_table_jp['charWords'], charword_table_en['charWords'], charword_table_kr['charWords'], charword_table_tw['charWords'], old_words=old, title='语音记录', mode='update')
         if old != content:
             wiki.edit(
                 title=char_name + '/语音记录',
@@ -355,6 +279,7 @@ class Charword(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
         charword_table = self.getgd('excel/charword_table.json')
+        skin_table = self.getgd('excel/skin_table.json')
 
         charword_page_list = self.wiki.category('分类:干员语音')
         char_list = []
@@ -365,7 +290,7 @@ class Charword(Job):
                 continue
             char_list.append((char_id, character_table[char_id]['name'].strip()))
 
-        create_charword(self.wiki, char_list, charword_table)
+        create_charword(self.wiki, char_list, skin_table, charword_table)
 
     def update(self):
         character_table = self.getgd('excel/character_table.json')
@@ -373,7 +298,8 @@ class Charword(Job):
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
         charword_table_en = self.getgd('excel/charword_table.json', 'US')
         charword_table_kr = self.getgd('excel/charword_table.json', 'KR')
-        # charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
+        charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
+        skin_table = self.getgd('excel/skin_table.json')
 
         char_list = []
         for char_id in character_table:
@@ -382,6 +308,6 @@ class Charword(Job):
             if char_id in ['char_512_aprot', 'char_511_asnipe', 'char_510_amedic', 'char_509_acast', 'char_508_aguard']:
                 continue
             char_list.append((char_id, character_table[char_id]['name'].strip()))
-        char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
+        # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
-        update_charword(self.wiki, char_list, charword_table, charword_table_jp, charword_table_en, charword_table_kr)
+        update_charword(self.wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw)

@@ -42,7 +42,7 @@ class GameData:
             return text
 
     def _source(self, region):
-        if region == 'CN':
+        if region == 'CN' or region == 'TW':
             return self.source
         else:
             return self.source_YoStar

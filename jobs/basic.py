@@ -516,7 +516,7 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
 
 
 def get_building_skill(building_data, char_key, rts):
-    building_skill = '{{后勤技能2'
+    building_skill = '{{后勤技能'
     if char_key in building_data['chars']:
         char_building_skill = building_data['chars'][char_key]
         for building_skill_id in range(len(char_building_skill['buffChar'])):
@@ -543,9 +543,9 @@ def get_building_skill(building_data, char_key, rts):
                 if temp['cond']['level'] != 1:
                     building_skill += '\n|{}等级={}级'.format(buff_count_text, temp['cond']['level'])
                 # 屎山临时补丁
-                building_skill += f"\n|{buff_count_text}图标={buff_data['skillIcon']}"
-                building_skill += f"\n|{buff_count_text}房间={building_data['rooms'][buff_data['roomType']]['name']}"
-                building_skill += f"\n|{buff_count_text}描述={rts.compile(buff_data['description'])}"
+                # building_skill += f"\n|{buff_count_text}图标={buff_data['skillIcon']}"
+                # building_skill += f"\n|{buff_count_text}房间={building_data['rooms'][buff_data['roomType']]['name']}"
+                # building_skill += f"\n|{buff_count_text}描述={rts.compile(buff_data['description'])}"
     else:
         return '该干员无后勤技能'
     if building_skill == '{{后勤技能':
