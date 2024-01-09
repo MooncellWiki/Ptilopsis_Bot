@@ -5,22 +5,22 @@
         "funcVer": "V045"
     },
     "JP": {
-        "resVersion": "23-12-02-18-09-39-9c20e1",
-        "clientVersion": "19.0.01",
-        "funcVer": "V038"
+        "resVersion": "23-12-15-12-13-14-e02eb2",
+        "clientVersion": "20.0.62",
+        "funcVer": "V041"
     },
     "US": {
-        "resVersion": "23-12-02-12-38-25-4aee51",
-        "clientVersion": "19.0.01",
-        "funcVer": "V038"
+        "resVersion": "23-12-10-06-27-44-6e2118",
+        "clientVersion": "20.0.62",
+        "funcVer": "V041"
     },
     "KR": {
-        "resVersion": "23-12-02-21-26-21-31e5ce",
-        "clientVersion": "19.0.01",
-        "funcVer": "V038"
+        "resVersion": "23-12-11-03-33-48-84229c",
+        "clientVersion": "20.0.62",
+        "funcVer": "V041"
     },
     "TW": {
-        "resVersion": "23-12-12-14-04-44-f845c2",
+        "resVersion": "23-12-13-19-58-30-f2ff6e",
         "clientVersion": "17.9.81",
         "funcVer": "V036"
     }
