@@ -15,7 +15,7 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_building_buff(building_data, rts):
-    buff_format = '''{{{{后勤技能信息
+    buff_format = '''{{{{后勤技能信息/store
 |技能名={name}
 |房间={room}
 |技能图标={icon}
@@ -75,20 +75,20 @@ class BuildingBuff(Job):
         building_data = self.getgd('excel/building_data.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        origin_text = self.wiki.read('后勤技能一览')
+        origin_text = self.wiki.read('后勤技能一览/store')
         flag = origin_text.find('==控制中枢==')
         head = origin_text[:flag].rstrip()
         content = head + '\n' + get_building_buff(building_data, rts).rstrip()
 
         if content != origin_text:
             self.wiki.edit(
-                title = '后勤技能一览',
+                title = '后勤技能一览/store',
                 text = content,
                 summary = 'update',
                 bot = None,
                 minor = True
             )
             # print(content)
-            print('Updated: {}.'.format('后勤技能一览'))
+            print('Updated: {}.'.format('后勤技能一览/store'))
         else:
-            print('Same: {}.'.format('后勤技能一览'))
+            print('Same: {}.'.format('后勤技能一览/store'))
