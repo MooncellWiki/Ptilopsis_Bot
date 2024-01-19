@@ -158,7 +158,7 @@ def create_themes(wiki, building_data):
 
     themes_info = '''{{{{pathnav2|家具一览}}}}
 ==总览==
-{{{{家具主题总览|{themesName}|{description}}}}}
+{{{{家具主题总览|{themesName}|{description}|主题图片={themeId}}}}}
 ==快速布置==
 {{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:500px;"
 !width="60%"|家具
@@ -252,6 +252,7 @@ def create_themes(wiki, building_data):
 
         themesContent = themes_info.format(
             themesName=building_data['customData']['themes'][themes]['name'].replace('/', ''),
+            themeId=building_data['customData']['themes'][themes]['id'],
             description=building_data['customData']['themes'][themes]['desc'],
             quickSetupFurni=quickSetupFurni,
             furniComfort=furniComfort,
