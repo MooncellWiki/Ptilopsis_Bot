@@ -153,12 +153,12 @@ def create_furni(wiki, building_data, item_table):
         print('Updated: {}.'.format('首页/新增单件'))
 
 
-def create_themes(wiki, building_data):
+def create_themes(wiki, building_data, shop_client_table):
     themes_list = wiki.category('分类:家具主题')
 
     themes_info = '''{{{{pathnav2|家具一览}}}}
 ==总览==
-{{{{家具主题总览|{themesName}|{description}|主题图片={themeId}}}}}
+{{{{家具主题总览|{themesName}|{description}|主题图片={themeId}{previewPic}}}}}
 ==快速布置==
 {{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:500px;"
 !width="60%"|家具
@@ -195,8 +195,8 @@ def create_themes(wiki, building_data):
         themesData['name'] = themesData['name'].strip()
         if themesData['name'] in themes_list:
             continue
-        # if themesData['name'] != '快捷连锁披萨店':
-        # continue
+        # if themesData['name'] != '神农祭庙会':
+        #     continue
 
         groupsContent = ''
         quickSetupFurni = ''
@@ -250,9 +250,19 @@ def create_themes(wiki, building_data):
 
         totalComfort = furniComfort + groupsComfort
 
+        preview_pic = ''
+        for shop_furni in filter(lambda x: x['templateType'] == 'NORFURN', shop_client_table['recommendList']):
+            try:
+                if shop_furni['templateParam']['normalFurnParam']['furnPackId'] == building_data['customData']['themes'][themes]['id']:
+                    preview_pic = '|preview图片=' + shop_furni['groupList'][0]['dataList'][0]['param1']
+                    break
+            except:
+                continue
+
         themesContent = themes_info.format(
             themesName=building_data['customData']['themes'][themes]['name'].replace('/', ''),
             themeId=building_data['customData']['themes'][themes]['id'],
+            previewPic=preview_pic,
             description=building_data['customData']['themes'][themes]['desc'],
             quickSetupFurni=quickSetupFurni,
             furniComfort=furniComfort,
@@ -297,8 +307,9 @@ class Furni(Job):
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
+        shop_client_table = self.getgd('excel/shop_client_table.json')
 
-        create_themes(self.wiki, building_data)
+        create_themes(self.wiki, building_data, shop_client_table)
         create_furni(self.wiki, building_data, item_table)
         self.check_duplicate()
 
