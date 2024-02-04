@@ -254,7 +254,7 @@ def create_themes(wiki, building_data, shop_client_table):
         for shop_furni in filter(lambda x: x['templateType'] == 'NORFURN', shop_client_table['recommendList']):
             try:
                 if shop_furni['templateParam']['normalFurnParam']['furnPackId'] == building_data['customData']['themes'][themes]['id']:
-                    preview_pic = '|preview图片=' + shop_furni['groupList'][0]['dataList'][0]['param1']
+                    preview_pic = '|总览图片=' + shop_furni['groupList'][0]['dataList'][0]['param1']
                     break
             except:
                 continue
