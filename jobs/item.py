@@ -33,9 +33,9 @@ def trans_rarity(rarity):
     }.get(rarity, rarity)
 
 
-basic_info4 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|描述={description}\n|用途={usage}\n|' \
+basic_info4 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|iconId={iconId}\n|描述={description}\n|用途={usage}\n|' \
               '获得方式={obtainApproach}\n|稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n'
-basic_info3 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|描述={description}\n|用途={usage}\n|' \
+basic_info3 = '==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|iconId={iconId}\n|描述={description}\n|用途={usage}\n|' \
               '稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n'
 basic_mf = '{{{{道具配方/制造站\n|产物={name}\n|产物数量={count}\n|仓库消耗={weight}\n|' \
            '时间消耗={costPoint}\n|制造站等级需求={roomLevel}\n'
@@ -86,6 +86,7 @@ class Item(Job):
                 tbasic_info = basic_info4.format(
                     name=citem['name'].strip(),
                     itemId=citem['itemId'],
+                    iconId=citem['iconId'] if citem['iconId'] is not None else '',
                     description=citem['description'] if citem['description'] is not None else '',
                     usage=citem['usage'] if citem['usage'] is not None else '',
                     obtainApproach=citem['obtainApproach'],
@@ -96,6 +97,7 @@ class Item(Job):
                 tbasic_info = basic_info3.format(
                     name=citem['name'].strip(),
                     itemId=citem['itemId'],
+                    iconId=citem['iconId'] if citem['iconId'] is not None else '',
                     description=citem['description'] if citem['description'] is not None else '',
                     usage=citem['usage'] if citem['usage'] is not None else '',
                     rarity=trans_rarity(citem['rarity']),

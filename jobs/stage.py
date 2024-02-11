@@ -1030,6 +1030,25 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
 
     return stage_data
 
+def get_sandboxV2_data(stage_detail, rts, level_table):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['name'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    stage_data += '|关卡类型={}\n'.format('生息演算')
+    if stage_detail['levelId']:
+        stage_data += analyze_xb_level_info(level_table)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>').replace('\n', '<br/>'))
+    )
+    stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
+    stage_data += '|特殊地图=<tabber>\n实景地图=\n'
+    stage_data += f"<img alt=\"{stage_detail['code']} {stage_detail['name']} 地图\" class=\"lazyload\" data-src=\"//torappu.prts.wiki/assets/map_preview/{stage_detail['stageId']}.png\" width=\"580\"/>"
+    stage_data += '\n|-|\n全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n</tabber>\n'
+    stage_data += '}}'
+
+    return stage_data
+
 
 class ActionInfo:
     def __init__(self, action):
@@ -1515,7 +1534,8 @@ class Stage(Job):
             print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_sandbox(self):
-        sandbox_table = self.getgd('excel/sandbox_table.json')
+        # sandbox_table = self.getgd('excel/sandbox_table.json')
+        sandbox_table = self.getgd('excel/sandbox_perm_table.json')
         character_table = self.getgd('excel/character_table.json')
         skill_table = self.getgd('excel/skill_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
@@ -1523,13 +1543,16 @@ class Stage(Job):
         stage_list = self.wiki.category('分类:生息演算关卡')
         new_stage_list = []
 
-        for act_key in sandbox_table['sandboxActTables']:
-            for stage_id, stage_data in sandbox_table['sandboxActTables'][act_key]['stageDatas'].items():
+        # sandbox_stage_list = sandbox_table['sandboxActTables']
+        sandbox_stage_list = sandbox_table['detail']['SANDBOX_V2']
+
+        for act_key in sandbox_stage_list:
+            for stage_id, stage_data in sandbox_stage_list[act_key]['stageData'].items():
                 stage_data['name'] = stage_data['name'].strip()
-                stage_page_name = f"{stage_data['code']} {stage_data['name']}"
+                stage_page_name = f"{stage_data['code']} {stage_data['name']}(沙洲遗闻)"
                 if stage_page_name in stage_list:
                     continue
-                # if stage_data['name'] not in ['吝啬陷阱']:
+                # if stage_data['name'] not in ['炎岩关']:
                 #     continue
 
                 if stage_data['levelId']:
@@ -1541,7 +1564,8 @@ class Stage(Job):
                 else:
                     level_table = {}
 
-                stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_table['sandboxActTables'][act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
+                # stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_stage_list[act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
+                stage_normal_data = get_sandboxV2_data(stage_data, rts, level_table)
                 stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
                 if stage_data['levelId']:
                     char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
