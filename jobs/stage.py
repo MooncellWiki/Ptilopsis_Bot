@@ -642,11 +642,13 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
 
 
 def get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table,
-                    rts):
+                    rts, map_override=''):
     stage_data = '\n==普通==\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    if map_override != '':
+        stage_data += '|地图预览override={}\n'.format(map_override)
     stage_data += '|关卡类型={}\n'.format(parse_stage_type(stage_detail['stageType']))
     if stage_detail['hilightMark'] == True:
         stage_data += '|子类型=难关\n'
@@ -1154,10 +1156,13 @@ class Stage(Job):
             # if stage_detail['code'] not in ['TR-3', 'IC-P-2']:
             #     continue
 
+            map_override = ''
             if stage_detail['levelId']:
                 try:
                     if stage_detail['levelId'] in redirect_table['levelScenePairs']:
                         level_table = self.getgd('levels/' + redirect_table['levelScenePairs'][stage_detail['levelId']]['levelId'].lower() + '.json')
+                        if redirect_table['levelScenePairs'][stage_detail['levelId']]['hookedMapPreviewId'] is not None:
+                            map_override = redirect_table['levelScenePairs'][stage_detail['levelId']]['hookedMapPreviewId']
                     else:
                         level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
@@ -1165,8 +1170,9 @@ class Stage(Job):
                     continue
             else:
                 level_table = {}
+
             stage_normal_data = get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data,
-                                                item_table, level_table, rts)
+                                                item_table, level_table, rts, map_override=map_override)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
             stage_4star_data = get_4star_data(stage_table['stages'][stage_detail['hardStagedId']], stage_table,
                                               zone_table, character_table, building_data, item_table, level_table,
