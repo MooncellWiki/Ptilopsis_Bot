@@ -260,7 +260,7 @@ def update_charword(wiki, char_list, skin_table, charword_table, charword_table_
             continue
 
         old = wiki.read(char_name + '/语音记录')
-        content = charword_data(char_id, char_name, lt, skin_table, charword_table, charword_table_jp['charWords'], charword_table_en['charWords'], charword_table_kr['charWords'], charword_table_tw['charWords'], old_words=old, title='语音记录', mode='update')
+        content = charword_data(char_id, char_name, lt, skin_table, charword_table, charword_table_jp['charWords'], charword_table_en['charWords'], charword_table_kr['charWords'], None, old_words=old, title='语音记录', mode='update')
         if old != content:
             wiki.edit(
                 title=char_name + '/语音记录',
