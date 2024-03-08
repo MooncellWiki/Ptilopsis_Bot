@@ -298,7 +298,7 @@ class Charword(Job):
         charword_table_jp = self.getgd('excel/charword_table.json', 'JP')
         charword_table_en = self.getgd('excel/charword_table.json', 'US')
         charword_table_kr = self.getgd('excel/charword_table.json', 'KR')
-        charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
+        # charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
         skin_table = self.getgd('excel/skin_table.json')
 
         char_list = []
@@ -310,4 +310,4 @@ class Charword(Job):
             char_list.append((char_id, character_table[char_id]['name'].strip()))
         # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
 
-        update_charword(self.wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw)
+        update_charword(self.wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, None)
