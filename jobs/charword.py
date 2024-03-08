@@ -170,7 +170,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                                 if result2:
                                     text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1) + '}}'
                                     continue
-                        if other_lang in other_lang_words and text_id in other_lang_words[other_lang]:
+                        if other_lang in other_lang_words and other_lang_words[other_lang] is not None and text_id in other_lang_words[other_lang]:
                             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|{norm_text(other_lang_words[other_lang][text_id]['voiceText'], other_lang)}}}}}"
                     continue
                 # 以上
@@ -194,7 +194,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                     for other_lang in exists_flag:
                         if suffix1 == '-方言' and other_lang != '繁体中文':
                             continue
-                        if other_lang in other_lang_words and text_id in other_lang_words[other_lang]:
+                        if other_lang in other_lang_words and other_lang_words[other_lang] is not None and text_id in other_lang_words[other_lang]:
                             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|{norm_text(other_lang_words[other_lang][text_id]['voiceText'], other_lang)}}}}}"
                             official_flag[other_lang] = True
                             continue
