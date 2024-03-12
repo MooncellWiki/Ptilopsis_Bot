@@ -171,7 +171,7 @@ class Enemy(Job):
         for enemy in enemy_handbook_table['enemyData'].values():
             enemy['name'] = enemy['name'].strip()
             if enemy['name'] in enemy_list:
-            # if enemy['name'] not in ['勘察用自走车']:
+            # if enemy['name'] not in ['马特奥上尉']:
                 continue
             if enemy['name'] == '-' or enemy['hideInHandbook'] is True:
                 continue
