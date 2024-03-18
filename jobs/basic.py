@@ -71,7 +71,7 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
             if lang == '联动':
                 if char_key in ['char_4019_ncdeer']:
                     lang = '中文'
-                elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak']:
+                elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak', 'char_4123_ela', 'char_4124_iana', 'char_4125_rdoc', 'char_4126_fuze']:
                     lang = '英文'
             basic_info += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
     except:
