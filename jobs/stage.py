@@ -1619,8 +1619,8 @@ class Stage(Job):
             print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_id(self, path):
-        if self.gamedata._source() != 'Unpacker':
-            return
+        # if self.gamedata._source() != 'Unpacker':
+        #     return
 
         character_table = self.getgd('excel/character_table.json')
         skill_table = self.getgd('excel/skill_table.json')
@@ -1655,7 +1655,7 @@ class Stage(Job):
             stage_data = '\n{{普通关卡信息\n'
             stage_data += '|关卡代号={}\n'.format('—')
             stage_data += '|关卡名={}\n'.format(stage_id)
-            stage_data += '|关卡id={}\n'.format(stage_id)
+            stage_data += '|关卡id={}\n'.format(stage_id.replace('level_', ''))
             stage_data += '|关卡类型={}\n'.format('活动')
             stage_data += '|关卡难度={}\n'.format('NORMAL')
             stage_data += '|解锁条件={}\n'.format('—')
