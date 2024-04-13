@@ -1,4 +1,5 @@
 from utils.job import Job
+import re
 
 
 def update_furni(wiki, building_data, item_table):
