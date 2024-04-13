@@ -1,6 +1,6 @@
 import os
 import sys
-
+import sentry_sdk
 from config import config
 
 from jobs.basic import Basic
@@ -15,6 +15,11 @@ from jobs.stage import Stage
 from utils.data import GameData
 from utils.wiki import Wiki
 
+
+sentry_sdk.init(
+    dsn="https://e2e7848581775da8b4369c6b8e1856c9@ingest.sentry.mooncell.wiki/10",
+    traces_sample_rate=1.0,
+)
 if __name__ == '__main__':
     if '--remote' in sys.argv:
         os.system('git submodule update --init --recursive')
