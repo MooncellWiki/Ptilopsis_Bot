@@ -50,7 +50,8 @@ config = {
                 "enemy_database",
                 "ep_breakbuff_table",
                 "extra_battlelog_table",
-                "buff_table"
+                "buff_table",
+                "cooperate_battle_table"
             ]
         },
         "JP": {
