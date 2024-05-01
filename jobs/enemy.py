@@ -169,6 +169,10 @@ class Enemy(Job):
         level_standard = ClassLevel(enemy_handbook_table['levelInfoList'])
 
         for enemy in enemy_handbook_table['enemyData'].values():
+        #     enemy['name'] = '孽茨雷，“食腐者之王”'
+        #     enemy['enemyId'] = 'enemy_1555_lrking'
+        #     enemy['hideInHandbook'] = False
+
             enemy['name'] = enemy['name'].strip()
             if enemy['name'] in enemy_list:
             # if enemy['name'] not in ['马特奥上尉']:

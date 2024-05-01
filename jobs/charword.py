@@ -62,7 +62,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                 suffix = '(摘下头盔时)'
         if char_id == 'char_4067_lolxh':
             suffix = '(猫形态)' if lang_k == 'char_4067_lolxh' else ''
-        if suffix == '(char_1001_amiya2)':
+        if suffix in ['(char_1001_amiya2)', '(char_1037_amiya3)']:
             continue
         for lang, lang_v in char_lang['dict'].items():
             char_voice_type = lt.get_voice_type(lang)
@@ -87,7 +87,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
     current_lang_set = set(re.findall('{{VoiceData/word\|(.+?)\|', old_words))
     for lang_k, char_lang in filter(lambda x:x[1]['charId'] == char_id, charword_table['voiceLangDict'].items()):
         suffix1, suffix2 = '', ''
-        if lang_k in ['char_4067_lolxh#1', 'char_311_mudrok#1', 'char_1001_amiya2']:
+        if lang_k in ['char_4067_lolxh#1', 'char_311_mudrok#1', 'char_1001_amiya2', 'char_1037_amiya3']:
             continue
         if lang_k != char_lang['charId']:
             suffix2 = f"({lang_k})"
@@ -234,6 +234,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
 
 def create_charword(wiki, char_list, skin_table, charword_table):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
+    charword_table['charDefaultTypeDict']['char_1037_amiya3'] = 'JP'
     lt = LangType(charword_table)
     for char_id, char_name in char_list:
         if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
@@ -254,9 +255,10 @@ def create_charword(wiki, char_list, skin_table, charword_table):
 
 def update_charword(wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, charword_table_tw):
     charword_table['charDefaultTypeDict']['char_1001_amiya2'] = 'JP'
+    charword_table['charDefaultTypeDict']['char_1037_amiya3'] = 'JP'
     lt = LangType(charword_table)
     for char_id, char_name in char_list:
-        if char_id not in charword_table['voiceLangDict'] or char_id == 'char_311_mudrok#1':
+        if char_id not in charword_table['voiceLangDict'] or char_id in ['char_311_mudrok#1', 'char_4134_cetsyr']:
             continue
 
         old = wiki.read(char_name + '/语音记录')
