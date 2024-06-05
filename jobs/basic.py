@@ -316,6 +316,8 @@ def get_talent_list(char_detail, rts):
     for talent_id in range(len(char_detail['talents'])):
         talent_table = char_detail['talents'][talent_id]['candidates']
         for talent_table_id in range(len(talent_table)):
+            if talent_table[talent_table_id]['isHideTalent'] is True or talent_table[talent_table_id]['description'] is None:
+                continue
             talent_description = rts.compile(talent_table[talent_table_id]['description']).replace('\\n', '<br/>')
             talent_condition = get_tal_condition(talent_table[talent_table_id]['requiredPotentialRank'],
                 trans_phase(talent_table[talent_table_id]['unlockCondition']['phase']),
