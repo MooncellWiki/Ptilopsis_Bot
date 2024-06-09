@@ -239,7 +239,7 @@ class Enemy(Job):
             content += f'\n|描述={rts.compile(enemy["description"])}'
             content += f'\n|伤害类型={" ".join(enemy_damage_dict.get(x, "未知") for x in enemy["damageType"])}'
             content += f'\n|攻击方式={enemy_applyway_dict.get(apply_way, "未知")}'
-            content += f'\n|行动方式={enemy_motion_dict.get(motion, "未知")}'
+            content += f'\n|行动方式={enemy_motion_dict.get(motion, "地面")}'
             if enemy['invisibleDetail'] is True:
                 content += f'\n|耐久=?'
                 content += f'\n|攻击力=?'
