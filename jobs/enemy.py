@@ -225,6 +225,7 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['frozenImmune'], '冻结抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['disarmedCombatImmune'], '战栗抗性', 'b')
+                    content_lv += get_value(idx, lv_data['attributes']['fearedImmune'], '恐惧抗性', 'b')
                     if 'talentBlackboard' in lv_data and lv_data['talentBlackboard']:
                         content_lv += '\n|天赋=<!--{}-->'.format(
                             json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False)
