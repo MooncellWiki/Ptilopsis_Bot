@@ -497,7 +497,7 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
                     print(f"召唤物{token_detail['name']}技能解析出错")
         if id_count > 0:
             token_page += skill_list
-        token_page += '\n==召唤物模型==\n{{spine}}'
+        token_page += '\n==召唤物模型==\n{{SpineId|id={spineId}}}'.format(spineId=token_key)
 
         if update_token_page == True:
             wiki.edit(
