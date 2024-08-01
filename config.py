@@ -37,6 +37,7 @@ config = {
                 "retro_table",
                 "roguelike_topic_table",
                 "sandbox_table",
+                "sandbox_perm_table",
                 "shop_client_table",
                 "skill_table",
                 "skin_table",

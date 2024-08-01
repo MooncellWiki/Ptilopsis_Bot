@@ -1618,6 +1618,70 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
+    def run_mechanism(self):
+        story_review_meta_table = self.getgd('excel/story_review_meta_table.json')
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+
+        stage_list = self.wiki.category('分类:训练场关卡')
+        new_stage_list = []
+
+        for stage_data in story_review_meta_table['trainingCampData']['stageData'].values():
+            stage_page_name = f"{stage_data['code']} {stage_data['name'].strip()}"
+            # if stage_page_name in stage_list:
+            #     continue
+
+            if stage_data['levelId']:
+                try:
+                    level_table = self.getgd('levels/' + stage_data['levelId'].lower() + '.json')
+                except:
+                    print('Cannot find level data of {}.'.format(stage_page_name))
+                    continue
+            else:
+                level_table = {}
+
+            stage_content = '\n{{普通关卡信息\n'
+            stage_content += '|关卡代号={}\n'.format(stage_data['code'])
+            stage_content += '|关卡名={}\n'.format(stage_data['name'].strip())
+            stage_content += '|关卡id={}\n'.format(stage_data['stageId'])
+            stage_content += '|关卡类型={}\n'.format('训练场')
+            stage_content += '|关卡难度={}\n'.format('NORMAL')
+            stage_content += '|解锁条件={}\n'.format('—')
+            stage_content += '|推荐等级={}\n'.format('—')
+            stage_content += '|所属区域={}\n'.format('-')
+            stage_content += analyze_level_info(level_table)
+            stage_content += '|关卡描述={}\n'.format(stage_data['description'])
+            stage_content += '|作战消耗={}\n'.format(0)
+            stage_content += '|演习消耗=-1\n'
+            stage_content += '}}'
+
+            stage_enemy_data = self._run_enemy_data(level_table)
+            char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+            char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
+            stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_content + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+
+            self.wiki.edit(
+                title=stage_page_name,
+                text=stage_content,
+                summary='init',
+                bot=None,
+                minor=True
+            )
+            # print(stage_content)
+            print('Created: {}.'.format(stage_page_name))
+            new_stage_list.append('\n* [[{}]]'.format(stage_page_name))
+
+        if new_stage_list != []:
+            self.wiki.edit(
+                title='首页/新增关卡',
+                appendtext=''.join(new_stage_list),
+                summary='update',
+                bot=None,
+                minor=True
+            )
+            # print(''.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
+
     def run_id(self, path):
         # if self.gamedata._source() != 'Unpacker':
         #     return
