@@ -702,10 +702,16 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
                     desc = desc.replace(result.group(1), f"[[{result.group(1)}]]")
                 missions += f"\n|任务{idx+1}={desc}"
             unlock = f"\n|解锁等级={equip_info['unlockLevel']}"
-            if equip_info['unlockFavorPoint'] == 10070:
-                unlock += '\n|解锁信赖=100'
+            if equip_info['unlockFavors'] is not None:
+                try:
+                    unlock_favor = '\n|解锁信赖=' + '0' if equip_info['unlockFavors']['1'] == 0 else '?'
+                    unlock_favor += '\n|解锁信赖2=' + '50' if equip_info['unlockFavors']['2'] == 2732 else '?'
+                    unlock_favor += '\n|解锁信赖3=' + '100' if equip_info['unlockFavors']['3'] == 10070 else '?'
+                    unlock += unlock_favor
+                except:
+                    unlock += '\n|解锁信赖=?'
             else:
-                unlock += f"\n|解锁信赖=?<!-- favorPoint {equip_info['unlockFavorPoint']} -->"
+                unlock += '\n|解锁信赖=0'
             item_cost = ''
             for idx, lvCost in enumerate(equip_info['itemCost'].values()):
                 item_temp = []
@@ -1157,7 +1163,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['琳琅诗怀雅']:
+            # if char_detail['name'] not in ['娜仁图亚']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
