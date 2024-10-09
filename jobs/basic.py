@@ -900,8 +900,10 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table):
     return template.format(
         stage_name = stage_info['name'],
         stage_desc = stage_info['description'],
-        zoneNameForShow = stage_info['zoneNameForShow'],
-        stageNameForShow = stage_info['stageNameForShow'],
+        # zoneNameForShow = stage_info['zoneNameForShow'],
+        # stageNameForShow = stage_info['stageNameForShow'],
+        zoneNameForShow = '',
+        stageNameForShow = '',
         picId = stage_info['picId'],
         unlock_phase = unlock_phase,
         unlock_lv = unlock_lv,
