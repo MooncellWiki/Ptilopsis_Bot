@@ -902,9 +902,10 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table):
         stage_desc = stage_info['description'],
         # zoneNameForShow = stage_info['zoneNameForShow'],
         # stageNameForShow = stage_info['stageNameForShow'],
+        # picId = stage_info['picId'],
         zoneNameForShow = '',
         stageNameForShow = '',
-        picId = stage_info['picId'],
+        picId = '',
         unlock_phase = unlock_phase,
         unlock_lv = unlock_lv,
         reward = reward
