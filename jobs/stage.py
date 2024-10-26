@@ -872,7 +872,7 @@ def get_crisis_data(stage_detail, level_table, rts):
 
 
 def get_roguelike_data(stage_detail, level_table, rts):
-    stage_data = '\n==普通=={{普通关卡信息\n'
+    stage_data = '\n==普通==\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
     stage_data += '|关卡id={}\n'.format(stage_detail['id'])
