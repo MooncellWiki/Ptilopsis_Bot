@@ -599,7 +599,7 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
         else:
             if enemy['id'] in enemy_table:
                 enemy_name = enemy_table[enemy['id']]['name']
-                if enemy_name in ['W', '泥岩', '多萝西']:
+                if enemy_name in ['W', '泥岩', '多萝西', '弑君者']:
                     enemy_data += '|敌人{count}={name}(敌方)\n|敌人{count}显示名={name}\n'.format(
                         count=count,
                         name=enemy_name
