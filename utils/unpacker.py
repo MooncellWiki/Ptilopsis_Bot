@@ -22,12 +22,14 @@ class Unpacker:
             self.version = json.load(f)
         print(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
+        self.manifest_idx = {}
 
     def check_update(self, region='CN'):
         local_version = self.version[region]['resVersion']
         if local_version != self.get_version(region):
             print(f"[{region} UPDATE] New version detected. Start to update.")
             self.get_update_list(region)
+            self.load_idx(region)
             self.get_all_ab(region)
             print('Finish download all AB.')
             self.unpack_all_data(region)
@@ -80,12 +82,42 @@ class Unpacker:
         self.hot_update_list[region] = ret
         return ret
 
+    def load_idx(self, region='CN'):
+        if 'manifestName' not in self.hot_update_list[region]:
+            return
+        idx_path = self.hot_update_list[region]['manifestName']
+        url = "{0}assets/{1}/{2}.dat".format(
+            self.config[region]['resUrl'],
+            self.version[region]['resVersion'],
+            idx_path[:-4]
+        )
+        r = requests.get(url, headers=self.ua)
+        zipfile.ZipFile(io.BytesIO(r.content)).extractall(f"./Unpacker/{self.config[region]['folder']}/ab/")
+        fbs_path = f"./Unpacker/{self.config[region]['folder']}/flatbuffers"
+        with open(f"./Unpacker/{self.config[region]['folder']}/ab/{idx_path}", 'rb') as f:
+            data = f.read()
+        with open(f"{fbs_path}/ResourceManifest.bytes", mode='wb') as f:
+            f.write(bytes(data)[128:])
+        os.system(f"{os.path.join('.', 'flatc')} -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./ResourceManifest.fbs -- {fbs_path}/ResourceManifest.bytes")
+        with open(f"{fbs_path}/ResourceManifest.json", mode='r', encoding='utf-8') as f:
+            jsons = json.loads(f.read())
+        gamedata_idx = {'bundleToAsset':{}, 'assetToBundle':{}}
+        for asset in jsons['assetToBundleList']:
+            if asset['assetName'].startswith('gamedata'):
+                gamedata_idx['assetToBundle'][asset['assetName']] = jsons["bundles"][asset["bundleIndex"]]["name"]
+                if jsons["bundles"][asset["bundleIndex"]]["name"] not in gamedata_idx['bundleToAsset']:
+                    gamedata_idx['bundleToAsset'][jsons['bundles'][asset['bundleIndex']]['name']] = []
+                gamedata_idx['bundleToAsset'][jsons['bundles'][asset['bundleIndex']]['name']].append(asset['assetName'])
+        with open(f"./Unpacker/{self.config[region]['folder']}/idx.json", mode='w', encoding='utf-8') as f:
+            f.write(json.dumps(gamedata_idx, indent=2, ensure_ascii=False))
+            self.manifest_idx = gamedata_idx
+
     def get_all_ab(self, region='CN'):
         if region not in self.hot_update_list:
             self.get_update_list(region=region)
         hot_update_list = self.hot_update_list[region]
 
-        for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']), hot_update_list['abInfos']):
+        for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']) or x['name'] in self.manifest_idx['bundleToAsset'], hot_update_list['abInfos']):
             if not self.compare_ab_md5(md5=ab_info['md5'], path=ab_info['name'], region=region):
                 self.get_ab(path=ab_info['name'], region=region)
 
@@ -122,11 +154,11 @@ class Unpacker:
             self.get_update_list(region=region)
         hot_update_list = self.hot_update_list[region]
 
-        for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']), hot_update_list['abInfos']):
+        for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']) or x['name'] in self.manifest_idx['bundleToAsset'], hot_update_list['abInfos']):
             try:
                 self.unpack_data(ab_info['name'], region=region)
             except:
-                print(f"Unpack {ab_info['name']} fail.")
+                print(f"Unpack {ab_info['name']} fail. ({self.manifest_idx['bundleToAsset'][ab_info['name']][0]})")
 
     def unpack_data(self, path, region='CN'):
         ab_dir = os.path.join(f"./Unpacker/{self.config[region]['folder']}/ab", path)

@@ -23,8 +23,8 @@ from jobs.skin import Skin
 from jobs.stage import Stage
 
 if __name__ == '__main__':
-    wiki = Wiki(config['apiUrl'], config['username'], config['password'],
-                ('dev' if '-dev' in sys.argv else 'product'))
+    # wiki = Wiki(config['apiUrl'], config['username'], config['password'],
+    #             ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config=config, source='Unpacker')
 
     # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding='utf-8') as f:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # Furni(wiki, gameData).run()
     # print('flag2')
     # Item(wiki, gameData).run()
-    Route(wiki,gameData).run()
+    # Route(wiki,gameData).run()
 
     # up = Unpacker(config)
     # up.get_all_ab()
