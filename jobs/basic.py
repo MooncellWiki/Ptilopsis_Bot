@@ -824,14 +824,14 @@ def get_stories_list(char_detail, stories_table, char_key):
     return stories_list_set, stories_list
 
 
-def get_handbook_avg(char_detail, stories_table, char_key):
+def get_handbook_avg(char_detail, stories_table, char_key, medal_table):
     if char_key not in stories_table['handbookDict'] or stories_table['handbookDict'][char_key]['handbookAvgList'] == []:
         return ''
     avg_content = '\n==干员密录==\n{{干员密录|list='
     template = '''\n{{{{干员密录/list
 |精英化={phase}
 |等级={lv}
-|信赖={favor}
+|信赖={favor}{medaloverride}
 |storySetName={name}{stories}
 }}}}'''
     for avg in stories_table['handbookDict'][char_key]['handbookAvgList']:
@@ -844,6 +844,11 @@ def get_handbook_avg(char_detail, stories_table, char_key):
                 favor = p['unlockParam1']
             else:
                 print('Unknown handbook_avg unLock condition for {}.'.format(char_detail['name']))
+        medal_override = ''
+        for i in filter(lambda x:x['medalType'] == 'storyMedal' and avg['storySetId'] in x['unlockParam'], medal_table['medalList']):
+            if medal_override != '':
+                break
+            medal_override = "\n|蚀刻章override=" + i['medalId']
         stories = ''
         for idx, story in enumerate(avg['avgList'], start = 1):
             story_txt = '{}/干员密录/{}'.format('{{FULLPAGENAME}}', avg['sortId'])
@@ -858,6 +863,7 @@ def get_handbook_avg(char_detail, stories_table, char_key):
             phase = phase,
             lv = lv,
             favor = favor,
+            medaloverride = medal_override,
             name = avg['storySetName'],
             stories = stories
         )
@@ -865,7 +871,7 @@ def get_handbook_avg(char_detail, stories_table, char_key):
     return avg_content
 
 
-def get_handbook_stage(char_detail, char_key, stories_table, item_table):
+def get_handbook_stage(char_detail, char_key, stories_table, item_table, rts):
     if char_key not in stories_table['handbookStageData']:
         return ''
     template = '''
@@ -897,12 +903,10 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table):
         )
     if len(stage_info['rewardItem']) > 1:
         print('Too many handbook_stage rewardItem for {}.'.format(char_detail['name']))
+    desc = rts.compile(stage_info['description']).replace('#FFFFFF', '#000000')
     return template.format(
         stage_name = stage_info['name'],
-        stage_desc = stage_info['description'],
-        # zoneNameForShow = stage_info['zoneNameForShow'],
-        # stageNameForShow = stage_info['stageNameForShow'],
-        # picId = stage_info['picId'],
+        stage_desc = desc,
         zoneNameForShow = '',
         stageNameForShow = '',
         picId = '',
@@ -1374,19 +1378,20 @@ class Basic(Job):
         character_table = self.getgd('excel/character_table.json')
         item_table = self.getgd('excel/item_table.json')
         stories_table = self.getgd('excel/handbook_info_table.json')
+        medal_table = self.getgd('excel/medal_table.json')
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        memory_list = self.wiki.category('分类:拥有干员密录的干员')
+        # memory_list = self.wiki.category('分类:拥有干员密录的干员')
         for char_key in character_table:
             char_detail = character_table[char_key]
             char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
                 continue
-            if char_detail['name'] in memory_list:
-                continue
+            # if char_detail['name'] in memory_list:
+            #     continue
 
-            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key)
-            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table)
+            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key, medal_table)
+            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table, rts)
 
             if handbook_avg != '' or handbook_stage != '':
                 origin_text = self.wiki.read(char_detail['name'])
