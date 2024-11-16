@@ -94,6 +94,7 @@ class Unpacker:
         r = requests.get(url, headers=self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(f"./Unpacker/{self.config[region]['folder']}/ab/")
         fbs_path = f"./Unpacker/{self.config[region]['folder']}/flatbuffers"
+        os.makedirs(f"./Unpacker/{self.config[region]['folder']}/flatbuffers", exist_ok=True)
         with open(f"./Unpacker/{self.config[region]['folder']}/ab/{idx_path}", 'rb') as f:
             data = f.read()
         with open(f"{fbs_path}/ResourceManifest.bytes", mode='wb') as f:
