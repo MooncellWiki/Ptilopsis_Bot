@@ -1277,6 +1277,8 @@ class Basic(Job):
                 continue
             if char_key in ['char_512_aprot', 'char_508_aguard', 'char_509_acast', 'char_511_asnipe', 'char_510_amedic', 'char_513_apionr']:
                 continue
+            if char_detail['isNotObtainable'] == True:
+                continue
             # if char_detail['name'] not in ['温蒂']:
             #     continue
             origin_text = self.wiki.read(char_detail['name'])
@@ -1388,6 +1390,8 @@ class Basic(Job):
             char_detail = character_table[char_key]
             char_detail['name'] = char_detail['name'].strip()
             if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
+                continue
+            if char_detail['isNotObtainable'] == True:
                 continue
             # if char_detail['name'] in memory_list:
             #     continue
