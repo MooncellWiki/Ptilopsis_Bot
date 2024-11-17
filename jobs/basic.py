@@ -376,6 +376,8 @@ def get_skill_text(skill_table, skill_id, rts):
         # 处理暴雨1技能缺失的duration
         if skill_data['skillId'] == 'skchr_zebra_1':
             skill_dic['duration'] = int(level_data['duration'])
+        if skill_data['skillId'] == 'skchr_accast_3':
+            skill_description = skill_description.replace('atk_scale_AOE', 'atk_scale_aoe')
         skill_description = skill_description.format(**skill_dic)
         skill_description = rts.compile(skill_description)
 
@@ -715,18 +717,19 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
             else:
                 unlock += '\n|解锁信赖=0'
             item_cost = ''
-            for idx, lvCost in enumerate(equip_info['itemCost'].values()):
-                item_temp = []
-                for i in lvCost:
-                    if i['count'] < 10000:
-                        item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']}}}}}")
-                    else:
-                        item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']/10000:.0f}万}}}}")
-                if item_temp != []:
-                    item_cost += '\n|材料消耗{idx}={item}'.format(
-                        idx = '' if idx == 0 else str(idx + 1),
-                        item = ' '.join(item_temp)
-                    )
+            if equip_info['itemCost'] is not None:
+                for idx, lvCost in enumerate(equip_info['itemCost'].values()):
+                    item_temp = []
+                    for i in lvCost:
+                        if i['count'] < 10000:
+                            item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']}}}}}")
+                        else:
+                            item_temp.append(f"{{{{材料消耗|{item_table['items'][i['id']]['name']}|{i['count']/10000:.0f}万}}}}")
+                    if item_temp != []:
+                        item_cost += '\n|材料消耗{idx}={item}'.format(
+                            idx = '' if idx == 0 else str(idx + 1),
+                            item = ' '.join(item_temp)
+                        )
             content.append(template.format(
                 name = equip_info['uniEquipName'].strip(),
                 type = f"{equip_info['typeName1']}-{equip_info['typeName2']}",
@@ -936,7 +939,7 @@ def trans_profession(profession):
         'WARRIOR': '近卫',
         'CASTER': '术师',
         'SPECIAL': '特种',
-    }[profession]
+    }.get(profession, profession)
 
 
 # def trans_display_logo(display_logo):
@@ -1154,6 +1157,7 @@ class Basic(Job):
         skin_table = self.getgd('excel/skin_table.json')
         gamedata_const = self.getgd('excel/gamedata_const.json')
         charword_table = self.getgd('excel/charword_table.json')
+        medal_table = self.getgd('excel/medal_table.json')
         id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
@@ -1172,7 +1176,7 @@ class Basic(Job):
             if char_detail['isNotObtainable'] == True:
                 continue
             if char_detail['name'] in char_list:
-            # if char_detail['name'] not in ['娜仁图亚']:
+            # if char_detail['name'] not in ['Pith(卫戍协议)']:
                 continue
             if char_detail['name'] not in id_table:
                 print('Unknown Character: {} {}.'.format(char_key, char_detail['name']))
@@ -1193,8 +1197,8 @@ class Basic(Job):
             related_item = get_related_item(char_detail, item_table)
             stories_list_set, stories_list = get_stories_list(char_detail, stories_table, char_key)
             stories_list = stories_list_set + stories_list
-            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key)
-            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table)
+            handbook_avg = get_handbook_avg(char_detail, stories_table, char_key, medal_table)
+            handbook_stage = get_handbook_stage(char_detail, char_key, stories_table, item_table, rts)
 
             char_info = content.format(
                 name = char_detail['name'],
@@ -1245,7 +1249,8 @@ class Basic(Job):
                 self.wiki.edit(
                     title = char_detail['appellation'],
                     text = redirect_text,
-                    summary = 'init'
+                    summary = 'init',
+                    createonly = True
                 )
             # print(fin)
             print('Created: {}.'.format(char_detail['name']))
