@@ -511,7 +511,7 @@ def analyze_tile(level_table, stage_tile_info):
     return content
 
 
-def get_enemy_data(level_table, enemy_table, enemy_database):
+def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
     enemy_data = '\n==敌方情报==\n{{敌方情报\n'
     count = 1
     normal_hidden_group = analyze_normal_hidden_group(level_table)
@@ -574,6 +574,8 @@ def get_enemy_data(level_table, enemy_table, enemy_database):
         if enemy['id'] not in enemy_num_dict:
             # continue
             enemy_num_dict[enemy['id']] = '0'
+        if flag_skip0 == True and enemy_num_dict[enemy['id']] == '0':
+            continue
         if enemy['useDb'] == False:
             enemy_data += '|敌人{count}={name}\n'.format(
                 count=count,
@@ -1758,7 +1760,7 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-    def _run_enemy_data(self, level_table):
+    def _run_enemy_data(self, level_table, flag_skip0 = True):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')
         enemy_database = self.getgd('levels/enemydata/enemy_database.json')
-        return get_enemy_data(level_table, enemy_table['enemyData'], enemy_database)
+        return get_enemy_data(level_table, enemy_table['enemyData'], enemy_database, flag_skip0)
