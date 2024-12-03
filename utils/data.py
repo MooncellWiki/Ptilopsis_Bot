@@ -24,9 +24,12 @@ class GameData:
             if self._source(region) == 'Unpacker' and not os.path.exists(fullpath):
                 if 'excel' not in path:
                     self.unpacker.config[region]['files'] = 'gamedata'
-                self.unpacker.get_version(region)
-                self.unpacker.get_all_ab(region)
-                self.unpacker.unpack_all_data(region)
+                if region == 'CN':
+                    self.unpacker.get_version(region)
+                    self.unpacker.get_update_list(region)
+                    self.unpacker.load_idx(region)
+                    self.unpacker.get_all_ab(region)
+                    self.unpacker.unpack_all_data(region)
             with open(fullpath, 'r', encoding='utf-8') as file:
                 data = json.loads(file.read())
                 if 'excel' in fullpath:
