@@ -325,6 +325,7 @@ class Enemy(Job):
         for e in enemy_list:
             if '(敌方)' in e:
                 override_list.append(e.replace('(敌方)', ''))
+        override_list2 = ['SD49', 'SD47', 'SD45']
 
         enemy_db_index = {v['Key']: idx for idx, v in enumerate(enemy_database['enemies'])}
         enemy_level_dict = {'NORMAL': '普通', 'ELITE': '精英', 'BOSS': '领袖'}
@@ -397,6 +398,8 @@ class Enemy(Job):
             # 链接
             if new_data['enemyLink'] in override_list:
                 new_data['enemyLink'] += '(敌方)'
+            if new_data['enemyIndex'] in override_list2:
+                new_data['enemyLink'] += '(我方)'
             # 种族
             if race_tag.__len__() > 0:
                 new_data['enemyRace'] = ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
