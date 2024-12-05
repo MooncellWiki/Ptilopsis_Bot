@@ -1,16 +1,16 @@
 {
     "CN": {
-        "resVersion": "24-11-21-11-04-45-bae23b",
-        "clientVersion": "2.4.01",
+        "resVersion": "24-12-04-14-14-07-f01d68",
+        "clientVersion": "2.4.21",
         "funcVer": "V056"
     },
     "JP": {
-        "resVersion": "24-12-02-10-38-51-5f30eb",
+        "resVersion": "24-12-03-20-30-31-65a0a0",
         "clientVersion": "26.3.21",
         "funcVer": "V053"
     },
     "US": {
-        "resVersion": "24-12-02-13-28-59-b060a9",
+        "resVersion": "24-12-03-17-16-44-43f926",
         "clientVersion": "26.3.21",
         "funcVer": "V053"
     },
