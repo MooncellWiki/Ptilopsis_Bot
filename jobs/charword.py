@@ -258,7 +258,7 @@ def update_charword(wiki, char_list, skin_table, charword_table, charword_table_
     charword_table['charDefaultTypeDict']['char_1037_amiya3'] = 'JP'
     lt = LangType(charword_table)
     for char_id, char_name in char_list:
-        if char_id not in charword_table['voiceLangDict'] or char_id in ['char_311_mudrok#1', 'char_4134_cetsyr']:
+        if char_id not in charword_table['voiceLangDict'] or char_id in ['char_311_mudrok#1']:
             continue
 
         old = wiki.read(char_name + '/语音记录')
@@ -311,5 +311,6 @@ class Charword(Job):
                 continue
             char_list.append((char_id, character_table[char_id]['name'].strip()))
         # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
+        # char_list.append(('char_1037_amiya3', '阿米娅(医疗)'))
 
         update_charword(self.wiki, char_list, skin_table, charword_table, charword_table_jp, charword_table_en, charword_table_kr, None)
