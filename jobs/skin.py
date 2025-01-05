@@ -53,11 +53,12 @@ def update_skin(wiki, character_table, skin_table, skin_list):
     skin_data = []
     name_to_id = {v['name'].strip(): k for k, v in character_table.items()}
     name_to_id['阿米娅(近卫)'] = 'char_1001_amiya2'
+    name_to_id['阿米娅(医疗)'] = 'char_1037_amiya3'
     for skin_char_name in skin_list:
         skin_char_id = name_to_id[skin_char_name]
 
         origin_text = wiki.read(skin_char_name)
-        if skin_char_id == 'char_1001_amiya2':
+        if skin_char_id in ['char_1001_amiya2', 'char_1037_amiya3']:
             num1 = origin_text.find('\n|精英2介绍')
         else:
             num1 = origin_text.find('\n|精英0介绍')
@@ -65,7 +66,7 @@ def update_skin(wiki, character_table, skin_table, skin_list):
         try:
             origin_drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][skin_char_id]['0']]['displaySkin']['drawerList'])
         except:
-            if skin_char_id == 'char_1001_amiya2':
+            if skin_char_id in ['char_1001_amiya2', 'char_1037_amiya3']:
                 origin_drawer = ','.join(skin_table['charSkins'][skin_table['buildinPatchMap']['char_002_amiya']['char_1001_amiya2']]['displaySkin']['drawerList'])
             else:
                 origin_drawer = ''
@@ -251,6 +252,9 @@ def update_outfit_gallery(wiki, skin_table, character_table):
             if skin_info['charId'] == 'char_002_amiya' and skin_info['tmplId'] == 'char_1001_amiya2':
                 skin_char_id = 'char_1001_amiya2'
                 skin_char_name = '阿米娅(近卫)'
+            elif skin_info['charId'] == 'char_002_amiya' and skin_info['tmplId'] == 'char_1037_amiya3':
+                skin_char_id = 'char_1037_amiya3'
+                skin_char_name = '阿米娅(医疗)'
             else:
                 skin_char_id = skin_info['charId']
                 skin_char_name = character_table[skin_char_id]['name']
@@ -378,6 +382,9 @@ def update_outfit_brand(wiki, skin_table, character_table):
         if skin_info['charId'] == 'char_002_amiya' and skin_info['tmplId'] == 'char_1001_amiya2':
             skin_char_id = 'char_1001_amiya2'
             skin_char_name = '阿米娅(近卫)'
+        elif skin_info['charId'] == 'char_002_amiya' and skin_info['tmplId'] == 'char_1037_amiya3':
+                skin_char_id = 'char_1037_amiya3'
+                skin_char_name = '阿米娅(医疗)'
         else:
             skin_char_id = skin_info['charId']
             skin_char_name = character_table[skin_char_id]['name']
@@ -516,12 +523,15 @@ class Skin(Job):
             old_skin.append(f"{char_name} {skin_name}")
         cid_list = {k: v['name'].strip() for k, v in character_table.items()}
         cid_list['char_1001_amiya2'] = '阿米娅(近卫)'
+        cid_list['char_1037_amiya3'] = '阿米娅(医疗)'
         skin_list = []
         for skin_key, skin_info in skin_table['charSkins'].items():
             if skin_info['displaySkin']['skinGroupName'] == '默认服装' or 'token' in skin_key:
                 continue
             if skin_info['charId'] == 'char_002_amiya' and skin_info['tmplId'] == 'char_1001_amiya2':
                 skin_char_key = 'char_1001_amiya2'
+            if skin_info['charId'] == 'char_1037_amiya3' and skin_info['tmplId'] == 'char_1037_amiya3':
+                skin_char_key = 'char_1037_amiya3'
             else:
                 skin_char_key = skin_info['charId']
             k = f"{cid_list[skin_char_key]} {skin_info['displaySkin']['skinName'].strip()}"

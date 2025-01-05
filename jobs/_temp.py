@@ -173,7 +173,7 @@ class Temp(Job):
                     print(stage_page_name, stage_detail['stageId'], tile['tileKey'], 'effects')
 
     def test_id(self):
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read('干员一览/干员id'), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader:
             id_table[row['name']] = { 'id': row['sortId'], 'approach': row['approach'], 'date': row['date']}
