@@ -35,6 +35,8 @@ class RichTextStyles:
             return '{{'
 
     def compile(self, s):
+        if s is None:
+            return ''
         pattern = re.compile('<+@([^>]*)>')
         t = re.sub(pattern, self.tran1, s)
         pattern = re.compile('<+\$([^>]*)>')

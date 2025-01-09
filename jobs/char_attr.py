@@ -19,7 +19,7 @@ def trans_profession(profession):
     }[profession]
 
 
-def get_char_attr(character_table, id_table, rts):
+def get_char_attr(character_table, uniequip_table, id_table, rts):
     content = []
     for char in character_table:
         char_detail = character_table[char]
@@ -66,10 +66,11 @@ def get_char_attr(character_table, id_table, rts):
                     ))
 
 
-        desc = '|[[{name}]]||{rarity}||{profession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s'.format(
+        desc = '|[[{name}]]||{rarity}||{profession}||{subProfession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s'.format(
             name = char_detail['name'],
             rarity = char_detail['rarity'][-1],
             profession = trans_profession(char_detail['profession']),
+            subProfession = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'].strip(),
             maxHp = maxHp,
             atk = atk,
             defence = defence,
@@ -83,7 +84,7 @@ def get_char_attr(character_table, id_table, rts):
         if char_detail['talents']:
             remark = '<br/>'.join(
                 [rts.compile(talent['candidates'][-1]['description']) for talent in char_detail['talents']])
-            desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="12"|{}'.format(
+            desc += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{}'.format(
                 remark
             )
 
@@ -92,9 +93,9 @@ def get_char_attr(character_table, id_table, rts):
             'text': desc
         })
 
-    table = '''{{cbox2|lv=2|text=以下为全体干员\'\'\'满精英化 满级 满潜能 满信赖\'\'\'时的面板白值，\'\'\'不包括\'\'\'天赋和技能加成。}}
+    table = '''{{cbox2|lv=2|text=以下为全体干员\'\'\'满精英化 满级 满潜能 满信赖\'\'\'时的面板白值，\'\'\'不包括\'\'\'天赋、模组和技能加成。}}
 {|class="wikitable sortable" style="text-align:center; width:1000px; display:table; white-space:normal;"
-!名字!!稀有度!!职业!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署
+!名字!!稀有度!!职业!!分支!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署
 |-
 '''
     table += '\n|-\n'.join([data['text'] for data in sorted(content, key = lambda x: x['sortId'], reverse = True)])
@@ -106,6 +107,7 @@ def get_char_attr(character_table, id_table, rts):
 class CharAttr(Job):
     def _run(self):
         character_table = self.getgd('excel/character_table.json')
+        uniequip_table = self.getgd('excel/uniequip_table.json')
         # with open('character_id.json', 'r', encoding = 'utf-8') as file:
         #     id_table = json.loads(file.read())
         # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
@@ -115,7 +117,7 @@ class CharAttr(Job):
             id_table[row['name']] = { 'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
-        content = get_char_attr(character_table, id_table, rts)
+        content = get_char_attr(character_table, uniequip_table, id_table, rts)
 
         self.wiki.edit(
             title = '用户:Seniorious/attribute',
