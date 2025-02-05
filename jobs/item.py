@@ -171,7 +171,7 @@ class Item(Job):
                 #         new = old.replace(result.group(1), twf)
                 #     else:
                 #         new = old
-                #     if new != old:
+                #     if new != old and citem['name'] != '家具零件':
                 #         # print(new)
                 #         self.wiki.edit(title=citem['name'].rstrip(), text=new)
                 #         print("edit", citem['name'].rstrip())

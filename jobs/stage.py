@@ -1356,24 +1356,20 @@ class Stage(Job):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
         # 从 crisis_info 读
-        # https://weedy.baka.icu/crisis/today/internal
-        with open('crisis_info.json', 'r', encoding='utf-8') as file:
-            stage_table = json.loads(file.read())['info']['mapStageDataMap']
-        # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
-        #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
-        #     stage_detail['stageId'] = stage_key
-        #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
-        for stage_x in stage_table.values():
-            stage_detail = stage_x
+        # https://weedy.prts.wiki/crisis_info.json
+        # with open('crisis_info.json', 'r', encoding='utf-8') as file:
+        #     stage_table = json.loads(file.read())['info']['mapStageDataMap']
+        # # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
+        # #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+        # #     stage_detail['stageId'] = stage_key
+        # #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
+        # for stage_x in stage_table.values():
+        #     stage_detail = stage_x
 
         # 从 weedy 读
-        # session = requests.Session()
-        # stage_list = session.get('https://weedy.baka.icu/crisis/today').json()['stages']
-        # stage_list = [stage_list[0]]
-        # for stage_key in stage_list:
-        #     stage_detail = stage_key
-        #     stage_detail['stageId'] = stage_detail['id']
-        #     stage_detail['levelId'] = 'Obt/rune/' + stage_detail['id']
+        session = requests.Session()
+        stage_list = session.get('https://weedy.prts.wiki/crisis_info.json').json()['info']['mapStageDataMap']
+        for stage_detail in stage_list.values():
 
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
 
@@ -1398,14 +1394,14 @@ class Stage(Job):
                 summary='init',
                 createonly='1'
             )
-            # self.wiki.edit(
-            #     title=stage_page_name,
-            #     text=stage_content,
-            #     summary='init',
-            #     bot=None,
-            #     minor=True,
-            #     createonly='1'
-            # )
+            self.wiki.edit(
+                title=stage_page_name,
+                text=stage_content,
+                summary='init',
+                bot=None,
+                minor=True,
+                createonly='1'
+            )
             # print(stage_content)
             print('Created: {}.'.format(stage_page_name))
 
@@ -1418,6 +1414,8 @@ class Stage(Job):
         for stage_key in roguelike_table['stages']:
             stage_detail = roguelike_table['stages'][stage_key]
             if stage_detail['difficulty'] == 'FOUR_STAR':
+                continue
+            if stage_key == 'ro4_b_9':
                 continue
 
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name'].strip()
