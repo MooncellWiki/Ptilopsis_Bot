@@ -57,6 +57,7 @@ config = {
                 "token_table",
                 "uniequip_table",
                 "zone_table",
+                "building_local_data"
             ]
         },
         "JP": {
