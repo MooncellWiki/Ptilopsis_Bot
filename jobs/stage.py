@@ -1108,7 +1108,7 @@ class Stage(Job):
                 for sid in s_list:
                     cat = ''
                     if stage_table['stages'][sid]['stageType'] == 'ACTIVITY':
-                        result = re.search('^([^_]+)_', sid)
+                        result = re.search('^([^_]+)[_-]', sid)
                         act_id = result.group(1)
                         if act_id in activity_table['basicInfo']:
                             cat = f"（[[{activity_table['basicInfo'][act_id]['name']}]]关卡）"
