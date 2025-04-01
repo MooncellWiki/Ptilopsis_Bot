@@ -79,7 +79,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         Stage(wiki, gameData).run_campaign()  # 剿灭
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
-        # Stage(wiki, gameData).run_id('levels/obt/crisis/v2/level_crisis_v2_03-03.json')
+        # Stage(wiki, gameData).run_id('levels/activities/act6fun')
         # Stage(wiki, gameData).run_rogue_like()
         Charword(wiki, gameData).update()
         

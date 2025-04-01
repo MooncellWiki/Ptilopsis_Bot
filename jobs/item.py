@@ -58,9 +58,11 @@ class Item(Job):
                 continue
             if 'hideInItemGet' in citem and citem['hideInItemGet']:
                 continue
-            if citem['itemId'] in ['act1bossrush_relic_04', 'act13side_prestige_armorless', 'act2bossrush_relic_04', 'act3bossrush_relic_04', 'act4bossrush_relic_04']:
+            if citem['itemId'].endswith('bossrush_relic_04'):
+                 continue
+            if citem['itemId'] in ['act13side_prestige_armorless', 'LINKAGE_TKT_GACHA_10_1701', 'LINKAGE_TKT_GACHA_10_4801']:
                 continue
-            if citem['itemId'] in ['LINKAGE_TKT_GACHA_10_1701', 'LINKAGE_TKT_GACHA_10_4801']:
+            if citem['itemType'] == 'EMOTICON_SET':
                 continue
             if citem['name'].find('的信物') != -1:
                 sort = '信物'

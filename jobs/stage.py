@@ -1034,6 +1034,7 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
 
     return stage_data
 
+
 def get_sandboxV2_data(stage_detail, rts, level_table):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
