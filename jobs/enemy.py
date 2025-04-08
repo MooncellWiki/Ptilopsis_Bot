@@ -88,6 +88,8 @@ class ClassLevel:
         self.maxHP = []
         self.moveSpeed = []
         self.baseAttackTime = []
+        self.epRes = []
+        self.epDamageRes = []
         self.level = []
         # 默认YJ给的数据按序排列
         for class_level_info in reversed(level_info_list):
@@ -97,6 +99,8 @@ class ClassLevel:
             self.maxHP.append(class_level_info['maxHP']['min'])
             self.moveSpeed.append(class_level_info['moveSpeed']['min'])
             self.baseAttackTime.append(class_level_info['attackSpeed']['min'])
+            self.epRes.append(class_level_info['enemyRes']['min'])
+            self.epDamageRes.append(class_level_info['enemyDamageRes']['min'])
             self.level.append(class_level_info['classLevel'])
         self.baseAttackTime = list(reversed(self.baseAttackTime))
 
@@ -121,10 +125,10 @@ class ClassLevel:
         return self.level[len(self.level) - bisect.bisect_right(self.baseAttackTime, target_baseAttackTime)]
 
     def getEnemyDamageRes(self, target_enemyDamageRes):
-        return self.level[max(1, bisect.bisect_right(self.moveSpeed, target_enemyDamageRes))-1]
+        return self.level[max(1, bisect.bisect_right(self.epDamageRes, target_enemyDamageRes))-1]
 
     def getEnemyRes(self, target_enemyRes):
-        return self.level[max(1, bisect.bisect_right(self.moveSpeed, target_enemyRes))-1]
+        return self.level[max(1, bisect.bisect_right(self.epRes, target_enemyRes))-1]
 
 
 class Enemy(Job):
@@ -217,8 +221,8 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['hpRecoveryPerSec'], '生命恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['spRecoveryPerSec'], 'sp恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['massLevel'], '重量等级', 'i')
-                    content_lv += get_value(idx, lv_data['attributes']['epResistance'], '元素抗性', 'i')
-                    content_lv += get_value(idx, lv_data['attributes']['epDamageResistance'], '损伤抵抗', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['epDamageResistance'], '元素抗性', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['epResistance'], '损伤抵抗', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['stunImmune'], '眩晕抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
@@ -257,8 +261,8 @@ class Enemy(Job):
                 content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
                 content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
                 content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
-                content += f'\n|元素抗性={level_standard.getEnemyRes(attribute_data[6])}'
-                content += f'\n|损伤抵抗={level_standard.getEnemyDamageRes(attribute_data[7])}'
+                content += f'\n|元素抗性={level_standard.getEnemyDamageRes(attribute_data[7])}'
+                content += f'\n|损伤抵抗={level_standard.getEnemyRes(attribute_data[6])}'
             if race_tag.__len__() > 0:
                 content += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
             if 'abilityList' in enemy and enemy['abilityList'] != []:

@@ -60,7 +60,7 @@ def parse_collection(collection, item_table, building_data, character_table, ski
         )
     else:
         return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
-            name=item_table['items'][collection['itemId']]['name'].strip(),
+            name=item_table['items'][collection['itemId']]['name'].strip() if collection['itemId'] in item_table['items'] else collection['itemId'],
             count=collection['itemCnt']
         )
 

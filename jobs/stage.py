@@ -107,7 +107,7 @@ def parse_rune(runes):
     runes_text = []
     for rune in runes:
         text = []
-        if rune['difficultyMask'] == 2 or rune['difficultyMask'] == 'FOUR_STAR':  # 突袭
+        if rune['difficultyMask'] == 2 or rune['difficultyMask'] in ['FOUR_STAR', 'SIX_STAR']:  # 突袭
             pass
         elif rune['difficultyMask'] == 1 or rune['difficultyMask'] == 'NORMAL':  # 普通
             text.append('普通难度')
@@ -666,7 +666,9 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
     unlock_cond_list = []
     for unlock_id in stage_detail['unlockCondition']:
         if_tough = ''
-        if stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 'HIGH_DIFFICULTY':
+        if stage_table['stages'][unlock_id['stageId']]['difficulty'] == 'SIX_STAR':
+            if_tough = '险地'
+        elif stage_table['stages'][unlock_id['stageId']]['diffGroup'] == 'TOUGH' and stage_table['stages'][unlock_id['stageId']]['appearanceStyle'] != 'HIGH_DIFFICULTY':
             if_tough = '磨难'
         unlock_cond = '{num}星通关[[{ifTough}{code} {name}]]'.format(
             num={'PASS':2, 'COMPLETE':3}.get(unlock_id['completeState'], unlock_id['completeState']),
@@ -1098,7 +1100,7 @@ class Stage(Job):
 
         stage_code_dict, duplicate_dict = {}, {}
         for s in stage_table['stages'].values():
-            if s['difficulty'] == 'FOUR_STAR' or s['stageType'] == 'GUIDE' or s['diffGroup'] in ['EASY', 'TOUGH']:
+            if s['difficulty'] in ['FOUR_STAR', 'SIX_STAR'] or s['stageType'] == 'GUIDE' or s['diffGroup'] in ['EASY', 'TOUGH']:
                 continue
             if s['code'] not in stage_code_dict:
                 stage_code_dict[s['code'].strip()] = []
@@ -1140,7 +1142,7 @@ class Stage(Job):
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
             if stage_detail['stageType'] not in ['MAIN', 'SUB', 'DAILY', 'ACTIVITY', 'SPECIAL_STORY', 'CLIMB_TOWER'] or stage_detail[
-                'difficulty'] == 'FOUR_STAR' or stage_detail['diffGroup'] in ['EASY']:
+                'difficulty'] in ['FOUR_STAR'] or stage_detail['diffGroup'] in ['EASY']:
                 continue
             stage_detail['name'] = {
                 'act21side_01_t': '新城区大街(德克萨斯)',
@@ -1152,7 +1154,9 @@ class Stage(Job):
                 'act21side_06_t': '新城区大街(丹布朗)'
             }.get(stage_id, stage_detail['name'].strip())
             stage_page_name = stage_detail['code'].strip() + ' ' + stage_detail['name']
-            if stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 'HIGH_DIFFICULTY':
+            if stage_detail['difficulty'] == 'SIX_STAR':
+                stage_page_name = '险地' + stage_page_name
+            elif stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 'HIGH_DIFFICULTY':
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
                 continue
@@ -1227,8 +1231,14 @@ class Stage(Job):
                     summary='消歧义'
                 )
             else:
+                if stage_detail['difficulty'] == 'SIX_STAR':
+                    redirect_title = '险地' + stage_detail['code'].strip()
+                elif stage_detail['diffGroup'] == 'TOUGH' and stage_detail['appearanceStyle'] != 'HIGH_DIFFICULTY':
+                    redirect_title = '磨难' + stage_detail['code'].strip()
+                else:
+                    redirect_title = stage_detail['code'].strip()
                 self.wiki.edit(
-                    title=stage_detail['code'].strip(),
+                    title=redirect_title,
                     text=stage_redirect,
                     summary='init',
                     createonly='1'
