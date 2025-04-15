@@ -36,6 +36,7 @@ if __name__ == '__main__':
     elif '--check-jp' in sys.argv:
         sign1 = gameData.unpacker.check_update('JP')
         sign2 = gameData.unpacker.check_update('US')
+        gameData.unpacker.check_update('KR')
         if not sign1 and not sign2:
             print('No version update. Program exit.')
             exit()
