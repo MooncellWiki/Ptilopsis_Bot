@@ -5,19 +5,19 @@
         "funcVer": "V059"
     },
     "JP": {
-        "resVersion": "",
+        "resVersion": "25-04-02-12-16-33-8dfb56",
         "clientVersion": "28.4.01",
         "funcVer": "V056"
     },
     "US": {
-        "resVersion": "",
+        "resVersion": "25-03-27-13-43-37-411229",
         "clientVersion": "28.4.01",
         "funcVer": "V056"
     },
     "KR": {
-        "resVersion": "23-09-22-06-04-26-0a2738",
-        "clientVersion": "18.9.81",
-        "funcVer": "V036"
+        "resVersion": "25-03-26-20-30-59-d1a05f",
+        "clientVersion": "28.4.01",
+        "funcVer": "V056"
     },
     "TW": {
         "resVersion": "24-02-02-10-38-10-abdc83",
