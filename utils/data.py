@@ -10,8 +10,7 @@ class GameData:
         self.source = source
         self.config = config
         print(f"start with {self.source} mode")
-        if self.source == 'Unpacker':
-            self.unpacker = Unpacker(config)
+        self.unpacker = Unpacker(config)
         self.source_YoStar = 'ArknightsGameData_YoStar'
 
     def get(self, path, region):
