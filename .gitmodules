@@ -4,3 +4,6 @@
 [submodule "ArknightsGameData_YoStar"]
 	path = ArknightsGameData_YoStar
 	url = https://github.com/Kengxxiao/ArknightsGameData_YoStar.git
+[submodule "ArknightsGameData"]
+	path = ArknightsGameData
+	url = https://github.com/Kengxxiao/ArknightsGameData.git

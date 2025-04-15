@@ -25,7 +25,7 @@ if __name__ == '__main__':
         os.system('git submodule update --init --recursive')
         conf_remote = config
         conf_remote['version'] = 'version_remote.json'
-        gameData = GameData(config=conf_remote, source='Unpacker')
+        gameData = GameData(config=conf_remote, source='ArknightsGameData')
     else:
         gameData = GameData(config=config, source='Unpacker')
     if '--check' in sys.argv:

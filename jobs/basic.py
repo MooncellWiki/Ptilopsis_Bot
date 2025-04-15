@@ -984,7 +984,7 @@ def trans_skill_type(skill_type):
         0: '',
         1: '\n|技能类型2=手动触发',
         2: '\n|技能类型2=自动触发',
-        'PASSIVE': '被动',
+        'PASSIVE': '',
         'MANUAL': '\n|技能类型2=手动触发',
         'AUTO': '\n|技能类型2=自动触发',
     }.get(skill_type, '')
