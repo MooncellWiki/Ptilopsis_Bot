@@ -41,8 +41,8 @@ def get_skin_info(char_key, skin_table, drawer):
         if not skin_color.startswith('#') and len(skin_color) == 6:
             skin_color = '#' + skin_color
         basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
-        skin_desc = skin_content['displaySkin']['content']
-        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('<color name=#000000>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+        skin_desc = re.sub(r'<color name=[^>]*>', '', skin_content['displaySkin']['content'])
+        skin_desc = skin_desc.replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
         basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
         skin_counter += 1
     basic_info += '\n<!--'
@@ -408,6 +408,9 @@ def update_outfit_brand(wiki, skin_table, character_table):
         )
         skin_dict[skin_brand]['half_content'] += skin_half_desc
 
+        content_desc = re.sub(r'<color name=[^>]*>', '', skin_info['displaySkin']['content'])
+        content_desc = content_desc.replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+
         skin_detail_desc = skin_format.format(
             anchor = '{{{{锚点|{}}}}}\n'.format(skin_name.replace(' ', '_')) if ' ' in skin_name else '',
             name = skin_char_name,
@@ -415,8 +418,7 @@ def update_outfit_brand(wiki, skin_table, character_table):
             skinNo = char_count[skin_char_id],
             drawerName = ','.join(skin_info['displaySkin']['drawerList']),
             skinGroupName = skin_info['displaySkin']['skinGroupName'].rstrip(),
-            content = skin_info['displaySkin']['content'].replace('<color name=#ffffff>',
-                '').replace('<color name=#000000>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>'),
+            content = content_desc,
             obtainApproach = skin_info['displaySkin']['obtainApproach'],
 
             dialog = skin_info['displaySkin']['dialog'],

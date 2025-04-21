@@ -41,5 +41,7 @@ class RichTextStyles:
         t = re.sub(pattern, self.tran1, s)
         pattern = re.compile('<+\$([^>]*)>')
         t = re.sub(pattern, self.tran2, t)
+        t = re.sub(r'<color=([^>]*)>', r'{{color|\1|', t)
         t = t.replace('</>', '}}')
+        t = t.replace('</color>', '}}')
         return t

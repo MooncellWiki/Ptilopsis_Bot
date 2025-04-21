@@ -106,7 +106,8 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
             skin_color = '#' + skin_color
         basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
         skin_desc = skin_content['displaySkin']['content']
-        skin_desc = skin_desc.replace('<color name=#ffffff>', '').replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
+        skin_desc = re.sub(r'<color name=[^>]*>', '', skin_desc)
+        skin_desc = skin_desc.replace('</color>', '').replace('\r', '').replace('\n', '<br/>')
         basic_info += f"\n|时装{skin_counter}介绍={skin_desc}"
         skin_counter += 1
     basic_info += '\n<!--上方为自动更新部分，您的修改可能会被覆盖-->'
