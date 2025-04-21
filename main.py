@@ -22,12 +22,12 @@ sentry_sdk.init(
 )
 if __name__ == '__main__':
     if '--remote' in sys.argv:
-        os.system('git submodule update --init --recursive')
+        os.system('git submodule update --remote --recursive')
         conf_remote = config
         conf_remote['version'] = 'version_remote.json'
         gameData = GameData(config=conf_remote, source='ArknightsGameData')
     else:
-        gameData = GameData(config=config, source='Unpacker')
+        gameData = GameData(config=config, source='ArknightsGameData')
     if '--check' in sys.argv:
         os.system('git submodule update --remote')
         if not gameData.unpacker.check_update():
