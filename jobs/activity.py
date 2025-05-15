@@ -110,6 +110,8 @@ def update_activity(activity_table, item_table, building_data, character_table, 
         activity_text += '\n==={name}===\n'.format(
             name=activity_table['basicInfo'][act_info]['name'].strip()
         )
+        if idx >= 20:
+            continue
         if idx >= 10:
             activity_text += '<!--\n'
         if act_info in activity_text_dict:
