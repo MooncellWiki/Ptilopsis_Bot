@@ -136,7 +136,7 @@ def get_char_approach(char_detail, id_table):
     return text
 
 
-def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
+def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table, team_table):
     phases_data = '{{属性\n'
 
     blockCnt_2 = -1
@@ -176,6 +176,28 @@ def get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table):
     phases_data += '|部署费用=' + cost_data + '\n'
     phases_data += '|阻挡数=' + block_data + '\n'
     phases_data += '|攻击速度=' + str(char_detail['phases'][0]['attributesKeyFrames'][0]['data']['baseAttackTime']) + 's\n'
+    if 'mainPower' in char_detail and char_detail['mainPower'] is not None:
+        power_list = []
+        for power_value in char_detail['mainPower'].values():
+            if power_value is not None:
+                p_trans = trans_team(power_value, team_table)
+                if p_trans != '' and p_trans != '?':
+                    power_list.append(p_trans)
+        if power_list != []:
+            phases_data += '|所属势力=' + ','.join(power_list) + '\n'
+    if 'subPower' in char_detail and char_detail['subPower'] is not None:
+        sub_power_list_lv0 = []
+        for sub_power_group in char_detail['subPower']:
+            if sub_power_group is None:
+                continue
+            sub_power_list_lv1 = []
+            for sub_power_value in sub_power_group.values():
+                sp_trans = trans_team(sub_power_value, team_table)
+                if sp_trans != '' and sp_trans != '?':
+                    sub_power_list_lv1.append(sp_trans)
+            if sub_power_list_lv1 != []:
+                sub_power_list_lv0.append(','.join(sub_power_list_lv1))
+        phases_data += '|隐藏势力=' + ';;'.join(sub_power_list_lv0) + '\n'
     for phases_num in range(len(char_detail['phases'])):
         if phases_num == 0:
             # if len(char_detail['phases'][phases_num]['attributesKeyFrames']) != 2:
@@ -1185,7 +1207,7 @@ class Basic(Job):
 
             basic_info = get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_table, skin_table, charword_table)
             char_approach = get_char_approach(char_detail, id_table)
-            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
+            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table, team_table)
             range_data = get_range_data(char_detail)
             talent_list = get_talent_list(char_detail, rts)
             potential_list = get_potential_list(char_detail)
@@ -1299,7 +1321,7 @@ class Basic(Job):
             new_text = new_text[:num1] + '==后勤技能==\n' + building_skill + '\n' + new_text[num2:]
 
             # 更新属性
-            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table)
+            phases_data = get_phases_data(char_detail, char_key, uniequip_table, battle_equip_table, team_table)
             num1 = new_text.find('==属性==')
             num2 = new_text.find('==攻击范围==')
             new_text = new_text[:num1] + '==属性==\n' + phases_data + '\n' + new_text[num2:]
