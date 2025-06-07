@@ -31,10 +31,10 @@ class Unpacker:
                 print(f"[{region} UPDATE] New version detected. Start to update.")
                 self.get_update_list(region)
                 self.load_idx(region)
-                self.get_all_ab(region)
-                print('Finish download all AB.')
-                self.unpack_all_data(region)
-                print('Finish decrypt all gamedata.')
+                # self.get_all_ab(region)
+                # print('Finish download all AB.')
+                # self.unpack_all_data(region)
+                # print('Finish decrypt all gamedata.')
                 print(self.config[region]['updateMsg'].format(self.version[region]['clientVersion'],
                                                               self.version[region]['resVersion']))
             else:

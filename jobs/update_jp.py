@@ -98,9 +98,14 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
         # if char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
         if char_detail['profession'] == 'TRAP' or char_detail['profession'] == 'TOKEN':
             continue
+        if char_detail['isNotObtainable'] is True:
+            continue
 
-        origin_text = wiki.read(character_table[char]['name'])
-        new_text = origin_text
+        try:
+            origin_text = wiki.read(character_table[char]['name'])
+            new_text = origin_text
+        except:
+            continue
 
         # update skill name
         if char_detail['skills']:
@@ -113,6 +118,8 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
                                                                                                    'skillId'] in skill_table_en else ''
 
                 num1 = new_text.find('|技能名={}'.format(skill_name))
+                if num1 == -1:
+                    continue
                 num2 = -1
                 for i in range(count):
                     num2 = new_text.find('|技能类型1=', num2 + 1)
@@ -125,6 +132,8 @@ def update_skill_and_name(wiki, character_table, skill_table, character_table_jp
 
         num1 = new_text.find('|干员名={}'.format(char_detail['name']))
         num2 = new_text.find('|干员外文名=')
+        if num1 == -1 or num2 == -1:
+            continue
         new_text = new_text[:num1] + '|干员名={}\n'.format(char_detail['name']) + '|干员名jp={}\n'.format(name_jp) + new_text[num2:]
 
         num1 = new_text.find('{{pathnav2|干员一览}}')
