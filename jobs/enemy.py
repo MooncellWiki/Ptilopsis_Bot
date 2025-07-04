@@ -170,6 +170,7 @@ class Enemy(Job):
         enemy_applyway_dict = {'ALL': '近战 远程', 'RANGED': '远程', 'MELEE': '近战', 'NONE': '不攻击'}
         enemy_damage_dict = {'PHYSIC': '物理', 'MAGIC': '法术', 'NO_DAMAGE': '无', 'HEAL': '治疗'}
         enemy_race_dict = {r['id']: r['raceName'] for r in enemy_handbook_table['raceData'].values()}
+        enemy_sptype_dict = {'INCREASE_WITH_TIME': '自动回复', 'INCREASE_WHEN_ATTACK': '攻击回复', 'INCREASE_WHEN_TAKEN_DAMAGE': '受击回复'}
         level_standard = ClassLevel(enemy_handbook_table['levelInfoList'])
 
         for enemy in enemy_handbook_table['enemyData'].values():
@@ -179,7 +180,7 @@ class Enemy(Job):
 
             enemy['name'] = enemy['name'].strip()
             if enemy['name'] in enemy_list:
-            # if enemy['name'] not in ['凯尔希']:
+            # if enemy['name'] not in ['无餍']:
                 continue
             if enemy['name'] == '-' or enemy['hideInHandbook'] is True:
                 continue
@@ -207,8 +208,23 @@ class Enemy(Job):
                         for t in lv_data['enemyTags']['m_value']:
                             race_tag.add(t)
                     content_lv += f'\n==级别{idx}=='
-                    content_lv += f'\n{{{{敌人信息/level\n|index={idx}'
+                    content_lv += f'\n{{{{敌人信息/levelcontent\n|index={idx}'
+                    content_lv += get_value(idx, lv_data['name'], '名称', 's')
+                    if lv_data['levelType']['m_defined'] is True:
+                        content_lv += f'\n|地位={enemy_level_dict.get(lv_data["levelType"]["m_value"], "其他")}'
+                    elif idx == 0:
+                        content_lv += f'\n|地位=其他'
+                    if lv_data['enemyTags']['m_defined'] is True and lv_data['enemyTags']['m_value'] is not None:
+                        content_lv += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in lv_data['enemyTags']['m_value'])
                     content_lv += get_value(idx, lv_data['description'], '描述', 's')
+                    if lv_data['applyWay']['m_defined'] is True:
+                        content_lv += f'\n|攻击方式={enemy_applyway_dict.get(lv_data["applyWay"]["m_value"], "未知")}'
+                    elif idx == 0:
+                        content_lv += f'\n|攻击方式=未知'
+                    if lv_data['motion']['m_defined'] is True:
+                        content_lv += f'\n|行动方式={enemy_motion_dict.get(lv_data["motion"]["m_value"], "地面")}'
+                    elif idx == 0:
+                        content_lv += f'\n|行动方式=地面'
                     content_lv += get_value(idx, lv_data['lifePointReduce'], '数量', 'i')
                     content_lv += get_value(idx, lv_data['rangeRadius'], '攻击范围半径', 'f')
                     content_lv += get_value(idx, lv_data['attributes']['maxHp'], '最大生命值', 'i')
@@ -221,8 +237,9 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['hpRecoveryPerSec'], '生命恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['spRecoveryPerSec'], 'sp恢复速度', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['massLevel'], '重量等级', 'i')
-                    content_lv += get_value(idx, lv_data['attributes']['epDamageResistance'], '元素抗性', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['epResistance'], '损伤抵抗', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['epDamageResistance'], '元素抗性', 'i')
+                    content_lv += get_value(idx, lv_data['attributes']['tauntLevel'], '基础嘲讽等级', 'i')
                     content_lv += get_value(idx, lv_data['attributes']['stunImmune'], '眩晕抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['silenceImmune'], '沉默抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['sleepImmune'], '沉睡抗性', 'b')
@@ -230,13 +247,24 @@ class Enemy(Job):
                     content_lv += get_value(idx, lv_data['attributes']['levitateImmune'], '浮空抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['disarmedCombatImmune'], '战栗抗性', 'b')
                     content_lv += get_value(idx, lv_data['attributes']['fearedImmune'], '恐惧抗性', 'b')
+                    content_lv += get_value(idx, lv_data['attributes']['palsyImmune'], '麻痹抗性', 'b')
+                    content_lv += get_value(idx, lv_data['attributes']['attractImmune'], '诱导抗性', 'b')
+                    if lv_data['spData'] is not None:
+                        try:
+                            content_sp_data = f"\n|初始技力={lv_data['spData']['initSp']}"
+                            content_sp_data += f"\n|技力上限={lv_data['spData']['maxSp']}"
+                            content_sp_data += f"\n|技力槽回复类型={enemy_sptype_dict.get(lv_data['spData']['spType'], '')}"
+                            content_sp_data += f"\n|技力回复速度={lv_data['spData']['increment']}"
+                            content_lv += content_sp_data
+                        except:
+                            continue
                     if 'talentBlackboard' in lv_data and lv_data['talentBlackboard']:
                         content_lv += '\n|天赋=<!--{}-->'.format(
                             json.dumps(lv_data['talentBlackboard'], indent=4, ensure_ascii=False)
                         )
                     content_lv += '\n}}'
 
-            content = '{{Navigator|敌人一览}}\n{{敌人信息/common'
+            content = '{{Navigator|敌人一览}}\n{{敌人信息/common2'
             content += f'\n|id={enemy["sortId"]}'
             content += f'\n|名称={enemy["name"]}'
             content += f'\n|index={enemy["enemyIndex"]}'
@@ -245,24 +273,24 @@ class Enemy(Job):
             content += f'\n|伤害类型={" ".join(enemy_damage_dict.get(x, "未知") for x in enemy["damageType"])}'
             content += f'\n|攻击方式={enemy_applyway_dict.get(apply_way, "未知")}'
             content += f'\n|行动方式={enemy_motion_dict.get(motion, "地面")}'
-            if enemy['invisibleDetail'] is True:
-                content += f'\n|耐久=?'
-                content += f'\n|攻击力=?'
-                content += f'\n|防御力=?'
-                content += f'\n|移动速度=?'
-                content += f'\n|攻击速度=?'
-                content += f'\n|法术抗性=?'
-                content += f'\n|元素抗性=?'
-                content += f'\n|损伤抵抗=?'
-            else:
-                content += f'\n|耐久={level_standard.getMaxHP(attribute_data[0])}'
-                content += f'\n|攻击力={level_standard.getAttack(attribute_data[1])}'
-                content += f'\n|防御力={level_standard.getDef(attribute_data[2])}'
-                content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
-                content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
-                content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
-                content += f'\n|元素抗性={level_standard.getEnemyDamageRes(attribute_data[7])}'
-                content += f'\n|损伤抵抗={level_standard.getEnemyRes(attribute_data[6])}'
+            # if enemy['invisibleDetail'] is True:
+            #     content += f'\n|耐久=?'
+            #     content += f'\n|攻击力=?'
+            #     content += f'\n|防御力=?'
+            #     content += f'\n|移动速度=?'
+            #     content += f'\n|攻击速度=?'
+            #     content += f'\n|法术抗性=?'
+            #     content += f'\n|元素抗性=?'
+            #     content += f'\n|损伤抵抗=?'
+            # else:
+            #     content += f'\n|耐久={level_standard.getMaxHP(attribute_data[0])}'
+            #     content += f'\n|攻击力={level_standard.getAttack(attribute_data[1])}'
+            #     content += f'\n|防御力={level_standard.getDef(attribute_data[2])}'
+            #     content += f'\n|移动速度={level_standard.getMoveSpeed(attribute_data[4])}'
+            #     content += f'\n|攻击速度={level_standard.getBaseAttackTime(attribute_data[5])}'
+            #     content += f'\n|法术抗性={level_standard.getMagicRes(attribute_data[3])}'
+            #     content += f'\n|元素抗性={level_standard.getEnemyDamageRes(attribute_data[7])}'
+            #     content += f'\n|损伤抵抗={level_standard.getEnemyRes(attribute_data[6])}'
             if race_tag.__len__() > 0:
                 content += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
             if 'abilityList' in enemy and enemy['abilityList'] != []:
