@@ -211,9 +211,9 @@ class Enemy(Job):
                     content_lv += f'\n{{{{敌人信息/levelcontent\n|index={idx}'
                     content_lv += get_value(idx, lv_data['name'], '名称', 's')
                     if lv_data['levelType']['m_defined'] is True:
-                        content_lv += f'\n|地位={enemy_level_dict.get(lv_data["levelType"]["m_value"], "其他")}'
+                        content_lv += f'\n|地位={enemy_level_dict.get(lv_data["levelType"]["m_value"], "普通")}'
                     elif idx == 0:
-                        content_lv += f'\n|地位=其他'
+                        content_lv += f'\n|地位=普通'
                     if lv_data['enemyTags']['m_defined'] is True and lv_data['enemyTags']['m_value'] is not None:
                         content_lv += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in lv_data['enemyTags']['m_value'])
                     content_lv += get_value(idx, lv_data['description'], '描述', 's')
