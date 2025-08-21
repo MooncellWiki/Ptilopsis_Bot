@@ -145,7 +145,7 @@ class Enemy(Job):
                         s = '1'
                 else:
                     if k == 's':
-                        s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
+                        s = rts.compile(v["m_value"]).replace('\n', '<br>') if v["m_value"] is not None else ''
                     elif k == 'i' and v["m_value"] >= 0:
                         s = str(int(v["m_value"]) if v["m_value"] == int(v["m_value"]) else v["m_value"])
                     elif k == 'f' and v["m_value"] >= 0:
@@ -216,7 +216,7 @@ class Enemy(Job):
                         content_lv += f'\n|地位=普通'
                     if lv_data['enemyTags']['m_defined'] is True and lv_data['enemyTags']['m_value'] is not None:
                         content_lv += '\n|种类=' + ','.join(enemy_race_dict.get(r, '未知') for r in lv_data['enemyTags']['m_value'])
-                    content_lv += rts.compile(get_value(idx, lv_data['description'], '描述', 's'))
+                    content_lv += get_value(idx, lv_data['description'], '描述', 's')
                     if lv_data['applyWay']['m_defined'] is True:
                         content_lv += f'\n|攻击方式={enemy_applyway_dict.get(lv_data["applyWay"]["m_value"], "未知")}'
                     elif idx == 0:
