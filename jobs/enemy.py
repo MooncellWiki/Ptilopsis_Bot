@@ -145,7 +145,7 @@ class Enemy(Job):
                         s = '1'
                 else:
                     if k == 's':
-                        s = rts.compile(v["m_value"]).replace('\n', '<br>') if v["m_value"] is not None else ''
+                        s = rts.compile(v["m_value"]) if v["m_value"] is not None else ''
                     elif k == 'i' and v["m_value"] >= 0:
                         s = str(int(v["m_value"]) if v["m_value"] == int(v["m_value"]) else v["m_value"])
                     elif k == 'f' and v["m_value"] >= 0:

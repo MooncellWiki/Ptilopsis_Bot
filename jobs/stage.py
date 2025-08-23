@@ -252,7 +252,7 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
     return rewards_data
 
 
-def analyze_action(actions, normal_hidden_group):
+def analyze_action(actions, normal_hidden_group, notCount_list):
     action_list = [ActionInfo(action) for action in actions]
     pack_dict = {}
     for action in action_list:
@@ -297,6 +297,8 @@ def analyze_action(actions, normal_hidden_group):
 
     # 敌人数量
     for action in filter(num_filter, action_list):
+        if action.key in notCount_list:
+            continue
         if action.random_key is not None:
             if action.random_key not in num_dict['random_group']:
                 num_dict['random_group'][action.random_key] = {'single': [], 'pack': {}}
@@ -328,7 +330,7 @@ def analyze_action(actions, normal_hidden_group):
     return min_time, action_enemy_min, action_enemy_max, fragment_flag
 
 
-def analyze_level_info(level_table):
+def analyze_level_info(level_table, notCount_list):
     level_info = ''
     level_info += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
     level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
@@ -337,10 +339,21 @@ def analyze_level_info(level_table):
     enemy_count = {'min': 0, 'max': 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level_table)
+    notCount_list_level = copy.deepcopy(notCount_list)
+    for enemy in level_table['enemyDbRefs']:
+        if enemy['useDb'] is False:
+            try:
+                if enemy['overwrittenData']['notCountInTotal']['m_defined'] is True:
+                    if enemy['overwrittenData']['notCountInTotal']['m_value'] is True:
+                        if enemy['id'] not in notCount_list_level:
+                            notCount_list_level[enemy['id']] = []
+                        notCount_list_level[enemy['id']].append(enemy['level'])
+            except:
+                continue
     for wave in level_table['waves']:
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
-            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group)
+            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group, notCount_list_level)
             enemy_count['min'] += action_enemy_min
             enemy_count['max'] += action_enemy_max
             if fragment_flag:
@@ -644,7 +657,7 @@ def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
 
 
 def get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data, item_table, level_table,
-                    rts, map_override=''):
+                    notCount_list, rts, map_override=''):
     stage_data = '\n==普通==\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
@@ -692,7 +705,7 @@ def get_normal_data(stage_detail, stage_table, zone_table, character_table, buil
             name_2=zone_table['zones'][stage_detail['zoneId']]['zoneNameSecond']
         )
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_level_info(level_table, notCount_list)
     if stage_detail['description']:
         stage_data += '|关卡描述={desc}\n'.format(
             desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
@@ -791,7 +804,7 @@ def get_4star_data(stage_detail, stage_table, zone_table, character_table, build
 
 
 def get_campaign_data(stage_detail, stage_table, campaign_table, character_table, building_data, item_table,
-                      level_table, rts):
+                      level_table, notCount_list, rts):
     stage_data = '\n==关卡==\n{{剿灭关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
@@ -816,7 +829,7 @@ def get_campaign_data(stage_detail, stage_table, campaign_table, character_table
     else:
         stage_data += '|所属区域=NONE\n'
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_level_info(level_table, notCount_list)
     if stage_detail['description']:
         stage_data += '|关卡描述={desc}\n'.format(
             desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
@@ -847,7 +860,7 @@ def get_campaign_data(stage_detail, stage_table, campaign_table, character_table
     return stage_data
 
 
-def get_crisis_data(stage_detail, level_table, rts):
+def get_crisis_data(stage_detail, level_table, notCount_list, rts):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
@@ -858,7 +871,7 @@ def get_crisis_data(stage_detail, level_table, rts):
     stage_data += '|推荐等级={}\n'.format('—')
     stage_data += '|所属区域={}\n'.format(stage_detail['code'].strip())
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_level_info(level_table, notCount_list)
     if 'description' in stage_detail:
         stage_desc = rts.compile(stage_detail['description'].replace('\\n', '<br/>'))  # crisis_info
     elif 'desc' in stage_detail:
@@ -875,7 +888,7 @@ def get_crisis_data(stage_detail, level_table, rts):
     return stage_data
 
 
-def get_roguelike_data(stage_detail, level_table, rts):
+def get_roguelike_data(stage_detail, level_table, notCount_list, rts):
     stage_data = '\n==普通==\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'].strip())
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
@@ -886,7 +899,7 @@ def get_roguelike_data(stage_detail, level_table, rts):
     stage_data += '|推荐等级={}\n'.format('—')
     stage_data += '|所属区域={}\n'.format('—')
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_level_info(level_table, notCount_list)
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>'))
     )
@@ -941,7 +954,7 @@ def get_roguelike_4star_data(stage_detail, level_table, rts):
     return stage_4star_data
 
 
-def get_memory_data(stage_detail, level_table, rts, character_table, building_data, item_table):
+def get_memory_data(stage_detail, level_table, rts, character_table, building_data, item_table, notCount_list):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format('悖论模拟')
     stage_data += '|关卡名={}\n'.format(stage_detail['name'].strip())
@@ -963,7 +976,7 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
     stage_data += '|推荐等级={}\n'.format('—')
     stage_data += '|所属区域={}\n'.format(stage_detail['zoneId'])
     if stage_detail['levelId']:
-        stage_data += analyze_level_info(level_table)
+        stage_data += analyze_level_info(level_table, notCount_list)
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\n', '<br/>'))
     )
@@ -977,7 +990,7 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
     return stage_data
 
 
-def analyze_xb_level_info(level_table):
+def analyze_xb_level_info(level_table, notCount_list):
     level_info = ''
     level_info += '|部署上限={}\n'.format(level_table['options']['characterLimit'])
     level_info += '|初始COST={}\n'.format(level_table['options']['initialCost'])
@@ -986,10 +999,21 @@ def analyze_xb_level_info(level_table):
     enemy_count = {'min': 0, 'max': 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level_table)
+    notCount_list_level = copy.deepcopy(notCount_list)
+    for enemy in level_table['enemyDbRefs']:
+        if enemy['useDb'] is False:
+            try:
+                if enemy['overwrittenData']['notCountInTotal']['m_defined'] is True:
+                    if enemy['overwrittenData']['notCountInTotal']['m_value'] is True:
+                        if enemy['id'] not in notCount_list_level:
+                            notCount_list_level[enemy['id']] = []
+                        notCount_list_level[enemy['id']].append(enemy['level'])
+            except:
+                continue
     for wave in level_table['waves']:
         min_time += wave['preDelay'] + wave['postDelay']
         for fragment in wave['fragments']:
-            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group)
+            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(fragment['actions'], normal_hidden_group, notCount_list_level)
             enemy_count['min'] += action_enemy_min
             enemy_count['max'] += action_enemy_max
             if fragment_flag:
@@ -1011,14 +1035,14 @@ def analyze_xb_level_info(level_table):
     return level_info
 
 
-def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
+def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data, notCount_list):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
     stage_data += '|关卡名={}\n'.format(stage_detail['name'])
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format('生息演算')
     if stage_detail['levelId']:
-        stage_data += analyze_xb_level_info(level_table)
+        stage_data += analyze_xb_level_info(level_table, notCount_list)
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\n', '<br/>'))
     )
@@ -1037,14 +1061,14 @@ def get_sandbox_data(stage_detail, rts, level_table, reward_data, item_data):
     return stage_data
 
 
-def get_sandboxV2_data(stage_detail, rts, level_table):
+def get_sandboxV2_data(stage_detail, rts, level_table, notCount_list):
     stage_data = '\n{{普通关卡信息\n'
     stage_data += '|关卡代号={}\n'.format(stage_detail['code'])
     stage_data += '|关卡名={}\n'.format(stage_detail['name'])
     stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
     stage_data += '|关卡类型={}\n'.format('生息演算')
     if stage_detail['levelId']:
-        stage_data += analyze_xb_level_info(level_table)
+        stage_data += analyze_xb_level_info(level_table, notCount_list)
     stage_data += '|关卡描述={desc}\n'.format(
         desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>').replace('\n', '<br/>'))
     )
@@ -1125,6 +1149,24 @@ class Stage(Job):
         self.duplicate_dict = duplicate_dict
         # print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
 
+    def _get_list_notCountInTotal(self):
+        enemy_database = self.getgd('levels/enemydata/enemy_database.json')
+        notCount_list = {}
+        try:
+            for enemy in enemy_database['enemies']:
+                for enemy_level in enemy['Value']:
+                    if 'notCountInTotal' in enemy_level['enemyData']:
+                        if enemy_level['enemyData']['notCountInTotal']['m_defined'] is True:
+                            if enemy_level['enemyData']['notCountInTotal']['m_value'] is True:
+                                if enemy['Key'] not in notCount_list:
+                                    notCount_list[enemy['Key']] = []
+                                notCount_list[enemy['Key']].append(enemy_level['level'])
+                        elif enemy['Key'] in notCount_list and enemy_level['level']-1 in notCount_list[enemy['Key']]:
+                            notCount_list[enemy['Key']].append(enemy_level['level'])
+            return notCount_list
+        except:
+            return {}
+
     def _run(self):
         building_data = self.getgd('excel/building_data.json')
         item_table = self.getgd('excel/item_table.json')
@@ -1138,6 +1180,7 @@ class Stage(Job):
         stage_list = self.wiki.category('分类:普通难度关卡')
         new_stage_list = []
         self.check_duplicate()
+        notCount_list = self._get_list_notCountInTotal()
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
@@ -1160,7 +1203,7 @@ class Stage(Job):
                 stage_page_name = '磨难' + stage_page_name
             if stage_page_name in stage_list:
                 continue
-            # if stage_detail['code'] not in ['TR-3', 'IC-P-2']:
+            # if stage_detail['code'] not in ['IG-DF-6']:
             #     continue
 
             map_override = ''
@@ -1179,7 +1222,7 @@ class Stage(Job):
                 level_table = {}
 
             stage_normal_data = get_normal_data(stage_detail, stage_table, zone_table, character_table, building_data,
-                                                item_table, level_table, rts, map_override=map_override)
+                                                item_table, level_table, notCount_list, rts, map_override=map_override)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
             stage_4star_data = get_4star_data(stage_table['stages'][stage_detail['hardStagedId']], stage_table,
                                               zone_table, character_table, building_data, item_table, level_table,
@@ -1284,6 +1327,7 @@ class Stage(Job):
 
         stage_list = self.wiki.category('分类:剿灭关卡')
         new_stage_list = []
+        notCount_list = self._get_list_notCountInTotal()
 
         for stage_id in stage_table['stages']:
             stage_detail = stage_table['stages'][stage_id]
@@ -1303,7 +1347,7 @@ class Stage(Job):
                 level_table = {}
 
             stage_normal_data = get_campaign_data(stage_detail, stage_table, campaign_table, character_table,
-                                                  building_data, item_table, level_table, rts)
+                                                  building_data, item_table, level_table, notCount_list, rts)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
             char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
             rewards = '''\n==作战进度奖励==
@@ -1365,6 +1409,7 @@ class Stage(Job):
 
     def run_crisis(self):
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+        notCount_list = self._get_list_notCountInTotal()
 
         # 从 crisis_info 读
         # https://weedy.prts.wiki/crisis_info.json
@@ -1393,7 +1438,7 @@ class Stage(Job):
             else:
                 level_table = {}
 
-            stage_normal_data = get_crisis_data(stage_detail, level_table, rts)
+            stage_normal_data = get_crisis_data(stage_detail, level_table, notCount_list, rts)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
 
             stage_content = '{{pathnav2|关卡一览}}\n__NOTOC__' + stage_normal_data + stage_enemy_data + '\n==合约详情==\n{{合约详情}}\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:危机合约关卡]]'
@@ -1422,6 +1467,8 @@ class Stage(Job):
         roguelike_table = roguelike_table['details']['rogue_5']
         rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
 
+        notCount_list = self._get_list_notCountInTotal()
+
         for stage_key in roguelike_table['stages']:
             stage_detail = roguelike_table['stages'][stage_key]
             if stage_detail['difficulty'] == 'FOUR_STAR':
@@ -1440,7 +1487,7 @@ class Stage(Job):
             else:
                 level_table = {}
 
-            stage_normal_data = get_roguelike_data(stage_detail, level_table, rts)
+            stage_normal_data = get_roguelike_data(stage_detail, level_table, notCount_list, rts)
             linkedStage = [k for k in roguelike_table['stages'] if
                            roguelike_table['stages'][k]['linkedStageId'] == stage_key]
             if len(linkedStage) >= 1:
@@ -1479,6 +1526,7 @@ class Stage(Job):
 
         stage_list = self.wiki.category('分类:悖论模拟关卡')
         new_stage_list = []
+        notCount_list = self._get_list_notCountInTotal()
 
         for stage_detail in handbook_info_table['handbookStageData'].values():
             stage_page_name = '悖论模拟 {}'.format(stage_detail['name'].strip())
@@ -1497,7 +1545,7 @@ class Stage(Job):
                 level_table = {}
 
             stage_normal_data = get_memory_data(stage_detail, level_table, rts, character_table, building_data,
-                                                item_table)
+                                                item_table, notCount_list)
             stage_enemy_data = self._run_enemy_data(level_table) if stage_detail['levelId'] else ''
             char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId'])
             char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
@@ -1559,6 +1607,7 @@ class Stage(Job):
 
         stage_list = self.wiki.category('分类:生息演算关卡')
         new_stage_list = []
+        notCount_list = self._get_list_notCountInTotal()
 
         # sandbox_stage_list = sandbox_table['sandboxActTables']
         sandbox_stage_list = sandbox_table['detail']['SANDBOX_V2']
@@ -1582,7 +1631,7 @@ class Stage(Job):
                     level_table = {}
 
                 # stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_stage_list[act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
-                stage_normal_data = get_sandboxV2_data(stage_data, rts, level_table)
+                stage_normal_data = get_sandboxV2_data(stage_data, rts, level_table, notCount_list)
                 stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
                 if stage_data['levelId']:
                     char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
@@ -1636,6 +1685,7 @@ class Stage(Job):
 
         stage_list = self.wiki.category('分类:训练场关卡')
         new_stage_list = []
+        notCount_list = self._get_list_notCountInTotal()
 
         for stage_data in story_review_meta_table['trainingCampData']['stageData'].values():
             stage_page_name = f"{stage_data['code']} {stage_data['name'].strip()}"
@@ -1660,7 +1710,7 @@ class Stage(Job):
             stage_content += '|解锁条件={}\n'.format('—')
             stage_content += '|推荐等级={}\n'.format('—')
             stage_content += '|所属区域={}\n'.format('-')
-            stage_content += analyze_level_info(level_table)
+            stage_content += analyze_level_info(level_table, notCount_list)
             stage_content += '|关卡描述={}\n'.format(stage_data['description'])
             stage_content += '|作战消耗={}\n'.format(0)
             stage_content += '|演习消耗=-1\n'
@@ -1704,6 +1754,7 @@ class Stage(Job):
         for s in stage_table['stages'].values():
             if s['levelId'] is not None:
                 stage_id_list.append('levels/' + s['levelId'].lower() + '.json')
+        notCount_list = self._get_list_notCountInTotal()
 
         filelist = []
         base_dir = './Unpacker/zh_CN/gameData/'
@@ -1736,7 +1787,7 @@ class Stage(Job):
             stage_data += '|解锁条件={}\n'.format('—')
             stage_data += '|推荐等级={}\n'.format('—')
             stage_data += '|所属区域={}\n'.format('-')
-            stage_data += analyze_level_info(level_table)
+            stage_data += analyze_level_info(level_table, notCount_list)
             stage_data += '|关卡描述=\n'.format('-')
             stage_data += '|作战消耗={}\n'.format(0)
             stage_data += '|演习消耗=-1\n'
@@ -1769,7 +1820,7 @@ class Stage(Job):
             # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
-    def _run_enemy_data(self, level_table, flag_skip0 = True):
+    def _run_enemy_data(self, level_table, flag_skip0 = False):
         enemy_table = self.getgd('excel/enemy_handbook_table.json')
         enemy_database = self.getgd('levels/enemydata/enemy_database.json')
         return get_enemy_data(level_table, enemy_table['enemyData'], enemy_database, flag_skip0)
