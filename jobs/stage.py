@@ -525,6 +525,12 @@ def analyze_tile(level_table, stage_tile_info):
 
 
 def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
+    def enemyDbRefs_sort(item):
+        if item['id'] in enemy_table:
+            return enemy_table[item['id']]['sortId']
+        else:
+            return 9999999
+
     enemy_data = '\n==敌方情报==\n{{敌方情报\n'
     count = 1
     normal_hidden_group = analyze_normal_hidden_group(level_table)
@@ -583,7 +589,8 @@ def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
             enemy_num_dict[k] = f"{enemy_count_dict[k]['min']}"
         else:
             enemy_num_dict[k] = f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
-    for enemy in level_table['enemyDbRefs']:
+    enemyDbRefs_sorted = sorted(level_table['enemyDbRefs'], key=enemyDbRefs_sort)
+    for enemy in enemyDbRefs_sorted:
         if enemy['id'] not in enemy_num_dict:
             # continue
             enemy_num_dict[enemy['id']] = '0'
