@@ -28,9 +28,10 @@ if __name__ == '__main__':
         gameData = GameData(config=conf_remote, source='ArknightsGameData')
     else:
         gameData = GameData(config=config, source='ArknightsGameData')
+    flag_force = True if '--force' in sys.argv else False
     if '--check' in sys.argv:
         os.system('git submodule update --remote')
-        if not gameData.unpacker.check_update():
+        if not gameData.unpacker.check_update() and not flag_force:
             print('No version update. Program exit.')
             exit()
     elif '--check-jp' in sys.argv:
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         Stage(wiki, gameData).run_memory()  # 悖论模拟
         Stage(wiki, gameData).run_campaign()  # 剿灭
         # Stage(wiki, gameData).run_crisis()  # 需crisis_info
-        # Stage(wiki, gameData).run_id('levels/activities/act6fun')
+        # Stage(wiki, gameData).run_id('levels/obt/recalrune/level_recalrune_01-01.json')
         # Stage(wiki, gameData).run_rogue_like()
         Charword(wiki, gameData).update()
         
