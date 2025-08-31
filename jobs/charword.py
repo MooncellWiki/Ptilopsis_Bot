@@ -50,6 +50,8 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
 
     # 语音路径
     path_list = ['']
+    override_path_list = ['']
+    fallback_flag = ''
     for lang_k, char_lang in filter(lambda x:x[1]['charId'] == char_id, charword_table['voiceLangDict'].items()):
         default_type = lt.get_default_type(char_lang['charId'])
         suffix = ''
@@ -57,9 +59,12 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
             suffix = f"({lang_k})"
             for skin_v in filter(lambda x:x['voiceId'] == lang_k, skin_table['charSkins'].values()):
                 suffix = f"({skin_v['displaySkin']['skinName']})"
+                if skin_v['voiceType'] == 'ILLUST':
+                    fallback_flag = ':1'
                 break
             if lang_k == 'char_311_mudrok#1':
                 suffix = '(摘下头盔时)'
+                fallback_flag = ''
         if char_id == 'char_4067_lolxh':
             suffix = '(猫形态)' if lang_k == 'char_4067_lolxh' else ''
         if suffix in ['(char_1001_amiya2)', '(char_1037_amiya3)']:
@@ -78,7 +83,15 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                 path_list[0] = path
             else:
                 path_list.append(path)
+            if fallback_flag != '':
+                path = f"{char_voice_type}{suffix}{fallback_flag}:{char_voice_path}/{char_id}"
+                if lang == default_type:
+                    override_path_list[0] = path
+                else:
+                    override_path_list.append(path)
     content += ','.join(path_list)
+    if override_path_list.__len__() > 1 or override_path_list[0] != '':
+        content += '\n|覆盖路径=' + ','.join(override_path_list)
 
     # 语音文本
     text_dict = {}
@@ -154,7 +167,8 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                         'text': '',
                         'title': '',
                         'condition': '',
-                        'voiceId': ''
+                        'voiceId': '',
+                        'placeType': ''
                     }
                 # 先处理异客语音皮的厨放，全部优先wiki文本
                 if char_id == 'char_472_pasngr' and suffix2 == '(今昔须臾之梦)':
@@ -188,6 +202,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                 text_dict[text_data['voiceIndex']]['title'] = text_data['voiceTitle'].strip()
                 text_dict[text_data['voiceIndex']]['condition'] = unlock_cond
                 text_dict[text_data['voiceIndex']]['voiceId'] = text_data['voiceId'].strip()
+                text_dict[text_data['voiceIndex']]['placeType'] = text_data['placeType']
                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}{suffix1}{suffix2}|{norm_text(text_data['voiceText'], word_lang)}}}}}"
                 if mode == 'update':
                     result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
@@ -214,11 +229,12 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
 
     # 内容拼合
     for idx, word_piece in text_dict.items():
-        content += '\n\n|标题{id}={title}\n|台词{id}={text}\n|语音{id}={voice}'.format(
+        content += '\n\n|标题{id}={title}\n|台词{id}={text}\n|语音{id}={voice}\n|触发类型{id}={place_type}'.format(
             id=idx,
             title=word_piece['title'],
             text=word_piece['text'],
-            voice=word_piece['voiceId'] + '.wav'
+            voice=word_piece['voiceId'] + '.wav',
+            place_type=word_piece['placeType'],
         )
         if word_piece['condition'] != '':
             content += f"\n|条件{idx}={word_piece['condition']}"

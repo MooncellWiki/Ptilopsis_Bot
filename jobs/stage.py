@@ -1088,6 +1088,24 @@ def get_sandboxV2_data(stage_detail, rts, level_table, notCount_list):
     return stage_data
 
 
+def get_recalRune_data(stage_detail, rts, level_table, notCount_list):
+    stage_data = '\n{{普通关卡信息\n'
+    stage_data += '|关卡代号={}\n'.format(stage_detail['levelCode'])
+    stage_data += '|关卡名={}\n'.format(stage_detail['levelName'])
+    stage_data += '|关卡id={}\n'.format(stage_detail['stageId'])
+    stage_data += '|关卡类型={}\n'.format('全息作战矩阵')
+    if stage_detail['levelId']:
+        stage_data += analyze_level_info(level_table, notCount_list)
+    stage_data += '|关卡描述={desc}\n'.format(
+        desc=rts.compile(stage_detail['levelDesc'].replace('\\n', '<br/>').replace('\n', '<br/>'))
+    )
+    stage_data += '|作战消耗={}\n'.format(0)
+    stage_data += '|演习消耗=-1\n'
+    stage_data += '}}'
+
+    return stage_data
+
+
 class ActionInfo:
     def __init__(self, action):
         if (action['actionType'] == 0 or action['actionType'] == 'SPAWN') and action['key'] != '':
@@ -1748,6 +1766,77 @@ class Stage(Job):
                 minor=True
             )
             # print(''.join(new_stage_list))
+            print('Updated: {}.'.format('首页/新增关卡'))
+
+    def run_recalrune(self):
+        crisis_v2_table = self.getgd('excel/crisis_v2_table.json')
+        recalrune_table = crisis_v2_table['recalRuneData']
+        character_table = self.getgd('excel/character_table.json')
+        skill_table = self.getgd('excel/skill_table.json')
+        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+
+        stage_list = self.wiki.category('分类:全息作战矩阵关卡')
+        new_stage_list = []
+        notCount_list = self._get_list_notCountInTotal()
+
+        for season_info in recalrune_table['seasons'].values():
+            for stage_id, stage_data in season_info['stages'].items():
+                stage_data['levelName'] = stage_data['levelName'].strip()
+                stage_page_name = f"全息{stage_data['levelCode']} {stage_data['levelName'].replace('#', '＃')}"
+                if stage_page_name in stage_list:
+                    continue
+                # if stage_data['levelName'] not in ['#爱国者之死']:
+                #     continue
+
+                if stage_data['levelId']:
+                    try:
+                        level_table = self.getgd('levels/' + stage_data['levelId'].lower() + '.json')
+                    except:
+                        print('Cannot find level data of {}.'.format(stage_page_name))
+                        continue
+                else:
+                    level_table = {}
+
+                stage_normal_data = get_recalRune_data(stage_data, rts, level_table, notCount_list)
+                stage_enemy_data = self._run_enemy_data(level_table) if stage_data['levelId'] else ''
+                if stage_data['levelId']:
+                    char_pre = analyze_char_card_info(level_table, stage_page_name, character_table, skill_table)
+                    char_pre += analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table)
+                else:
+                    char_pre = ''
+                stage_content = '{{pathnav2|关卡一览}}' + f'\n<noinclude>{{{{DISPLAYTITLE:全息{stage_data["levelCode"]} {stage_data["levelName"]}}}}}</noinclude>'
+                stage_content += stage_normal_data + stage_enemy_data + char_pre + '\n==注释与链接==\n<references/>\n{{关卡导航}}'
+                stage_redirect = '#redirect [[{}]]'.format(stage_page_name)
+
+
+                self.wiki.edit(
+                    title=f"全息{stage_data['levelCode']}",
+                    text=stage_redirect,
+                    summary='init',
+                    createonly='1'
+                )
+                self.wiki.edit(
+                    title=stage_page_name,
+                    text=stage_content,
+                    summary='init',
+                    createonly=True,
+                    bot=None,
+                    minor=True
+                )
+                # print(stage_content)
+                print('Created: {}.'.format(stage_page_name))
+
+                new_stage_list.append('\n* [[{}]]'.format(stage_page_name))
+
+        if new_stage_list != []:
+            self.wiki.edit(
+                title='首页/新增关卡',
+                appendtext=''.join(new_stage_list),
+                summary='update',
+                bot=None,
+                minor=True
+            )
+            # print('\n'.join(new_stage_list))
             print('Updated: {}.'.format('首页/新增关卡'))
 
     def run_id(self, path):
