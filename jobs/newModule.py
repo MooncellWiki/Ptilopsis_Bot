@@ -11,7 +11,7 @@ class NewModule(Job):
         for track in module_table['equipTrackDict'].values():
             if len(latest_modules_track) < max_track_limit:
                 latest_modules_tracks.append(track)
-            elif track['timeStamp'] > latest_modules_tracks[max_track_limit-1]['timeStamp']:
+            elif track['timeStamp'] >= latest_modules_tracks[max_track_limit-1]['timeStamp']:
                 latest_modules_tracks.append(track)
                 latest_modules_tracks.pop(0)
         
