@@ -12,6 +12,7 @@ from jobs.item import Item
 from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
+from jobs.newModule import NewModule
 from utils.data import GameData
 from utils.wiki import Wiki
 
@@ -60,6 +61,7 @@ if __name__ == '__main__':
         Skin(wiki, gameData).run()
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
+        NewModule(wiki, gameData).run()
 
         from jobs.activity import Activity
         Activity(wiki, gameData).run()
@@ -111,3 +113,4 @@ if __name__ == '__main__':
         os.system('git add .')
         os.system('git commit -m "remote update"')
         os.system('git push')
+
