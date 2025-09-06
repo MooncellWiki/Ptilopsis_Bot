@@ -7,10 +7,11 @@ class NewModule(Job):
         character_table = self.getgd('excel/character_table.json')
         
         latest_modules_tracks = []
+        max_track_limit = 8
         for track in module_table['equipTrackDict'].values():
-            if len(latest_modules_track) < 8:
+            if len(latest_modules_track) < max_track_limit:
                 latest_modules_tracks.append(track)
-            elif track['timeStamp'] > latest_modules_tracks[3]['timeStamp']:
+            elif track['timeStamp'] > latest_modules_tracks[max_track_limit-1]['timeStamp']:
                 latest_modules_tracks.append(track)
                 latest_modules_tracks.pop(0)
         
