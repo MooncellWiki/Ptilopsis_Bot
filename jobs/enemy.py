@@ -432,6 +432,10 @@ class Enemy(Job):
                 new_data['enemyLink'] += '(敌方)'
             if new_data['enemyIndex'] in override_list2:
                 new_data['enemyLink'] += '(我方)'
+            if new_data['enemyIndex'] == 'DC3':
+                new_data['enemyLink'] += '(DC3)'
+            if new_data['enemyIndex'] == 'HI02':
+                new_data['enemyLink'] += '(HI02)'
             # 种族
             if race_tag.__len__() > 0:
                 new_data['enemyRace'] = ','.join(enemy_race_dict.get(r, '未知') for r in race_tag)
