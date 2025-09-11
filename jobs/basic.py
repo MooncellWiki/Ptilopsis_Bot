@@ -560,7 +560,9 @@ def get_building_skill(building_data, char_key, rts):
                     'control_token_prod_spd2[000]': '以身作则(控制中枢)',
                     'train_spd&profession2[440]': '以身作则(训练室)',
                     'manu_prod_spd&limit&cost[200]': '得心应手(制造站)',
-                    'meet_spd_condChar[000]': '得心应手(会客室)'
+                    'meet_spd_condChar[000]': '得心应手(会客室)',
+                    'control_prod_bd_spd[000]': '丰富工作经验(精英0)',
+                    'control_prod_bd_spd[010]': '丰富工作经验(精英2)'
                 }.get(temp['buffId'], None)
                 if buff_name_extra is not None:
                     buff_name = buff_name_extra + f"\n|{buff_count_text}显示名=" + buff_name

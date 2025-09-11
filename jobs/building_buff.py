@@ -47,7 +47,9 @@ def get_building_buff(building_data, rts):
             'control_token_prod_spd2[000]': '以身作则(控制中枢)',
             'train_spd&profession2[440]': '以身作则(训练室)',
             'manu_prod_spd&limit&cost[200]': '得心应手(制造站)',
-            'meet_spd_condChar[000]': '得心应手(会客室)'
+            'meet_spd_condChar[000]': '得心应手(会客室)',
+            'control_prod_bd_spd[000]': '丰富工作经验(精英0)',
+            'control_prod_bd_spd[010]': '丰富工作经验(精英2)'
         }.get(buff_data['buffId'], buff_name)
         if buff_name not in buff_text[buff_data['roomType']]:
             buff_text[buff_data['roomType']][buff_name] = {
