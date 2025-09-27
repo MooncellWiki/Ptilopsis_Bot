@@ -60,6 +60,8 @@ class Item(Job):
                 continue
             if citem['itemId'].endswith('bossrush_relic_04'):
                  continue
+            if citem['itemId'].startswith('act1vhalfidle_') and citem['itemId'] != 'act1vhalfidle_token_point':
+                 continue
             if citem['itemId'] in ['act13side_prestige_armorless', 'LINKAGE_TKT_GACHA_10_1701', 'LINKAGE_TKT_GACHA_10_4801']:
                 continue
             if citem['itemType'] == 'EMOTICON_SET':
