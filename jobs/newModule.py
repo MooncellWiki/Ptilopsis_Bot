@@ -3,23 +3,19 @@ import time
 
 class NewModule(Job):
     def _run(self):
-        module_table = self.getgd('excel/uniequip_table')
+        module_table = self.getgd('excel/uniequip_table.json')
         character_table = self.getgd('excel/character_table.json')
-        
+
+        cur_ts = int(time.time())
         latest_modules_tracks = []
-        max_track_limit = 8
-        for track in module_table['equipTrackDict'].values():
-            if len(latest_modules_track) < max_track_limit:
+        for track in module_table['equipTrackDict']:
+            if track['timeStamp'] >= cur_ts - 2592000: # 30*24*3600 一个月
                 latest_modules_tracks.append(track)
-            elif track['timeStamp'] >= latest_modules_tracks[max_track_limit-1]['timeStamp']:
-                latest_modules_tracks.append(track)
-                latest_modules_tracks.pop(0)
         
         module_list = []
-        cur_ts = int(time.time())
         for track in latest_modules_tracks:
             for mod in track['trackList']:
-                if mod['type'] != "INITIAL" and mod['archiveShowTimeEnd'] < cur_ts:
+                if mod['type'] != "INITIAL" and (mod['archiveShowTimeEnd'] > cur_ts or mod['archiveShowTimeEnd'] < 0):
                     mod_data = module_table['equipDict'][mod['equipId']]
                     mod_type = mod_data['typeName2']
                     char_name = character_table[mod['charId']]['name']
@@ -35,4 +31,4 @@ class NewModule(Job):
             minor = False
         )
         # print(content)
-        # print('Updated: {}.'.format('用户:Seniorious/term'))
+        print('Updated: {}.'.format('首页/新增模组'))
