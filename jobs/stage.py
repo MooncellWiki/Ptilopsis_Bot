@@ -235,13 +235,15 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
                 name=parse_drop_item(reward, character_table, building_data, item_table),
                 occ_type=parse_occ_type(reward['occPercent'], reward['dropType'], False)
             )
+        if reward['dropType'] not in reward_list:
+            reward_list[reward['dropType']] = []
         reward_list[reward['dropType']].append(reward_item)
     reward_list['ONCE'] = reward_list['COMPLETE'] + reward_list['ONCE']
     reward_list['COMPLETE'] = []
 
     rewards_data = ''
     for drop_type in reward_list:
-        if reward_list[drop_type] != []:
+        if reward_list[drop_type] != [] and parse_drop_type(drop_type) != 'None':
             reward_content = ','.join(reward_list[drop_type])
             rewards_data += '|{drop_type}={content}\n'.format(
                 drop_type=parse_drop_type(drop_type),

@@ -1,12 +1,11 @@
 import bson
 import io
 import json
-import time
 import os
 import zipfile
 import hashlib
 import requests
-import unitypack
+import UnityPy
 import base64
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
@@ -20,6 +19,7 @@ class Unpacker:
         self.version_dir = config['version']
         with open(self.version_dir, 'r') as f:
             self.version = json.load(f)
+        self.region = region
         print(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
         self.manifest_idx = {}
@@ -161,7 +161,7 @@ class Unpacker:
         for ab_info in filter(lambda x: x['name'].startswith(self.config[region]['files']) or x['name'] in self.manifest_idx['bundleToAsset'], hot_update_list['abInfos']):
             try:
                 self.unpack_data(ab_info['name'], region=region)
-            except:
+            except Exception:
                 print(f"Unpack {ab_info['name']} fail. ({self.manifest_idx['bundleToAsset'][ab_info['name']][0]})")
 
     def unpack_data(self, path, region='CN'):
@@ -169,7 +169,7 @@ class Unpacker:
         if not os.path.exists(ab_dir):
             self.get_ab(path=path, region=region)
         with open(ab_dir, 'rb') as f:
-            bundle = unitypack.load(f)
+            bundle = UnityPy.load(f)
             dataArr = []
             path_list = []
             for asset in bundle.assets:
@@ -239,7 +239,7 @@ class Unpacker:
                             with open(full_path, 'w') as dist:
                                 dist.write(file_content)
                                 dists.append(full_path)
-                        except:
+                        except Exception:
                             with open(full_path, 'wb') as dist:
                                 dist.write(script)
                                 dists.append(full_path)
@@ -250,7 +250,7 @@ class Unpacker:
                             with open(full_path, 'w') as dist:
                                 dist.write(file_content)
                                 dists.append(full_path)
-                        except:
+                        except Exception:
                             is_sign = False
                             script = self._CrypticConverter_A(data.script,
                                                               bytes(self.config[region]['chatMask'], encoding='utf-8'), is_sign)

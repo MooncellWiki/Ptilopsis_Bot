@@ -147,7 +147,7 @@ class Wiki:
             'expiry': 'infinite'
         }
         for key in args:
-            if not args[key] is None:
+            if args[key] is not None:
                 if key == 'cascade' and args[key]:
                     post_data[key] = '1'
                 else:
@@ -183,7 +183,7 @@ class Wiki:
             'Content-Disposition': 'form-data; name="data"; filename="%s"' % quote(filename)
         }
         for key in args:
-            if not args[key] is None:
+            if args[key] is not None:
                 upload_data[key] = args[key]
         r = self.session.post(
             self.api_url,
@@ -194,3 +194,15 @@ class Wiki:
             headers=header
         )
         return r
+
+    def ask(self, query: str, api_version: int = 2):
+        data = {
+            "action": "ask",
+            "query": query,
+            "api_version": api_version,
+            "format": "json",
+        }
+        act = self.session.post(url=self.api_url, data=data)
+        act.raise_for_status()
+        act = act.json()
+        return act["query"]

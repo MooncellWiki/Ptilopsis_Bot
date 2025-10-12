@@ -1,31 +1,29 @@
-import json
 import sys
-
 from config import config
-from jobs._temp import Temp
+
+from utils.data import GameData
+from utils.wiki import Wiki
+
+# from jobs._temp import Temp
 # from jobs.basic import Basic
 # from jobs.charword import Charword
-from jobs.route import Route
+# from jobs.route import Route
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.furni import Furni
 # from jobs.weedy import Weedy
-from jobs.enemy import Enemy
-from utils.data import GameData
-from utils.unpacker import Unpacker
-from utils.wiki import Wiki
-
-from jobs.enemy import Enemy
-from jobs.furni import Furni
-from jobs.item import Item
-from jobs.skin import Skin
-from jobs.stage import Stage
+# from jobs.enemy import Enemy
+# from jobs.furni import Furni
+# from jobs.item import Item
+# from jobs.skin import Skin
+# from jobs.stage import Stage
+from jobs.trap import Trap
 
 if __name__ == '__main__':
-    # wiki = Wiki(config['apiUrl'], config['username'], config['password'],
-    #             ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config=config, source='Unpacker')
+    wiki = Wiki(config['apiUrl'], config['username'], config['password'],
+                ('dev' if '-dev' in sys.argv else 'product'))
+    gameData = GameData(config=config, source="ArknightsGameData")
 
     # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding='utf-8') as f:
     #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
@@ -39,7 +37,7 @@ if __name__ == '__main__':
     # print('flag2')
     # Item(wiki, gameData).run()
     # Route(wiki,gameData).run()
-
+    Trap(wiki, gameData).run()
     # up = Unpacker(config)
     # up.get_all_ab()
     # up.unpack_all_data()
