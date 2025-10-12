@@ -15,12 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.8
+    - name: Set up Python 3.12
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.12
     - name: weedy_high
       run: |
-        pip install -r requirements.txt
         python main.py weedy
 

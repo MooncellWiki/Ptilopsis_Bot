@@ -7,3 +7,7 @@
 [submodule "ArknightsGameData"]
 	path = ArknightsGameData
 	url = https://github.com/Kengxxiao/ArknightsGameData.git
+[submodule "torappu"]
+	path = torappu
+	url = https://github.com/GuGuMur/torappu.git
+	branch = master

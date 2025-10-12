@@ -46,3 +46,17 @@ class RichTextStyles:
         t = t.replace('<>', '}}')
         t = t.replace('</color>', '}}')
         return t
+
+class BBKeyReplace:
+    blackboard = {}
+    fit = {"": "{:n}", "0%": "{:.0%}", "0.0%": "{:.1%}"}
+
+    def trans(self, matched):
+        for term in self.blackboard:
+            if term["key"] == matched.group(1):
+                return self.fit[matched.group(2)].format(term["value"])
+        return "0"
+
+    def compile(self, s, BB):
+        self.blackboard = BB
+        return re.sub(r"{([^{}:]+):?([^{}]*)}", self.trans, s)
