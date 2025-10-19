@@ -1083,7 +1083,7 @@ def get_sandboxV2_data(stage_detail, rts, level_table, notCount_list):
     )
     stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
     stage_data += '|特殊地图=<tabber>\n实景地图=\n'
-    stage_data += f"<img alt=\"{stage_detail['code']} {stage_detail['name']} 地图\" class=\"lazyload\" data-src=\"//torappu.prts.wiki/assets/map_preview/{stage_detail['stageId']}.png\" width=\"580\"/>"
+    stage_data += f"<img alt=\"{stage_detail['code']} {stage_detail['name']} 地图\" loading=\"lazy\" src=\"//torappu.prts.wiki/assets/map_preview/{stage_detail['stageId']}.png\" width=\"580\"/>"
     stage_data += '\n|-|\n全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n</tabber>\n'
     stage_data += '}}'
 
