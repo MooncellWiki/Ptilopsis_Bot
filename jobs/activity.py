@@ -11,7 +11,7 @@ table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-a
 
 def parse_reward(reward, item_table, building_data, character_table, skin_table):
     if reward['type'] == 'FURN':
-        return '{{{{关卡报酬|家具=yes|{name}||50px}}}}'.format(
+        return '{{{{关卡报酬|家具=yes|{name}||50}}}}'.format(
             name=building_data['customData']['furnitures'][reward['id']]['name']
         )
     elif reward['type'] == 'CHAR':
@@ -26,12 +26,12 @@ def parse_reward(reward, item_table, building_data, character_table, skin_table)
         for skin_data in skin_list:
             if skin_data['skinId'] == reward['id']:
                 skin_count = skin_list.index(skin_data) + 1
-        return '{{{{皮肤头像|{name}|50px|{no}}}}}'.format(
+        return '{{{{皮肤头像|{name}|50|{no}}}}}'.format(
             name=character_table[skin_table['charSkins'][reward['id']]['charId']]['name'],
             no=skin_count
         )
     else:
-        return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
+        return '{{{{材料消耗|{name}|{count}|50}}}}'.format(
             name=item_table['items'][reward['id']]['name'].strip() if reward['id'] in item_table['items'] else reward['id'],
             count=reward['count']
         )
@@ -39,7 +39,7 @@ def parse_reward(reward, item_table, building_data, character_table, skin_table)
 
 def parse_collection(collection, item_table, building_data, character_table, skin_table):
     if collection['itemType'] == 'FURN':
-        return '{{{{关卡报酬|家具=yes|{name}||50px}}}}'.format(
+        return '{{{{关卡报酬|家具=yes|{name}||50}}}}'.format(
             name=building_data['customData']['furnitures'][collection['itemId']]['name']
         )
     elif collection['itemType'] == 'CHAR':
@@ -54,12 +54,12 @@ def parse_collection(collection, item_table, building_data, character_table, ski
         for skin_data in skin_list:
             if skin_data['skinId'] == collection['itemId']:
                 skin_count = skin_list.index(skin_data) + 1
-        return '{{{{皮肤头像|{name}|50px|{no}}}}}'.format(
+        return '{{{{皮肤头像|{name}|50|{no}}}}}'.format(
             name=character_table[skin_table['charSkins'][collection['itemId']]['charId']]['name'],
             no=skin_count
         )
     else:
-        return '{{{{材料消耗|{name}|{count}|50px}}}}'.format(
+        return '{{{{材料消耗|{name}|{count}|50}}}}'.format(
             name=item_table['items'][collection['itemId']]['name'].strip() if collection['itemId'] in item_table['items'] else collection['itemId'],
             count=collection['itemCnt']
         )
@@ -135,7 +135,7 @@ def update_activity(activity_table, item_table, building_data, character_table, 
                 if item_count % 4 == 0:
                     item_list += '\n|-'
                 item_list += '\n|{point}\n|{item}'.format(
-                    point='{{{{材料消耗|{name}|{count}|50px}}}}'.format(
+                    point='{{{{材料消耗|{name}|{count}|50}}}}'.format(
                         name=item_table['items'][collection['pointId']]['name'].strip(),
                         count=collection['pointCnt']
                     ),
@@ -165,14 +165,14 @@ def update_activity(activity_table, item_table, building_data, character_table, 
             order_max = 0
             for milestone in activity_table['activity']['TYPE_ACT4D0'][act_info]['mileStoneItemList']:
                 order_max = max(milestone['orderId'], order_max)
-                milestone_list[milestone['orderId']] = '\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50px}}}}\n|{item}'.format(
+                milestone_list[milestone['orderId']] = '\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50}}}}\n|{item}'.format(
                     name=milestone_name,
                     tokenNum=milestone['tokenNum'],
                     item=parse_reward(milestone['item'], item_table, building_data, character_table, skin_table)
                 )
             for milestone in activity_table['activity']['TYPE_ACT4D0'][act_info]['mileStoneStoryList']:
                 order_max = max(milestone['orderId'], order_max)
-                milestone_list[milestone['orderId']] = '\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50px}}}}\n|{desc}'.format(
+                milestone_list[milestone['orderId']] = '\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50}}}}\n|{desc}'.format(
                     name=milestone_name,
                     tokenNum=milestone['tokenNum'],
                     desc=milestone['desc']
