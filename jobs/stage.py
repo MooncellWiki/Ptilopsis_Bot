@@ -1508,7 +1508,10 @@ class Stage(Job):
 
             if stage_detail['levelId']:
                 try:
-                    level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
+                    if stage_detail['levelReplaceIds'] and len(stage_detail['levelReplaceIds']) >= 1:
+                        level_table = self.getgd('levels/' + stage_detail['levelReplaceIds'][0].lower() + '.json')
+                    else:
+                        level_table = self.getgd('levels/' + stage_detail['levelId'].lower() + '.json')
                 except:
                     print('Cannot find level data of {}.'.format(stage_page_name))
                     continue

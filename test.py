@@ -27,9 +27,6 @@ if __name__ == '__main__':
     #             ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config=config, source='Unpacker')
 
-    # with open('/Users/Josiah/Desktop/Arknight/PRTS_bot/UnpackerData/levels/obt/rune/level_rune_04-01.json', 'r', encoding='utf-8') as f:
-    #     print(Stage(wiki, gameData)._run_enemy_data(json.loads(f.read())))
-
     # Stage(wiki, gameData).run()
     # Enemy(wiki, gameData).run()
     # Enemy(wiki, gameData).update_data()
