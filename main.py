@@ -13,6 +13,7 @@ from jobs.sidebar import Sidebar
 from jobs.skin import Skin
 from jobs.stage import Stage
 from jobs.newModule import NewModule
+from jobs.trap import Trap
 from utils.data import GameData
 from utils.wiki import Wiki
 
@@ -62,6 +63,7 @@ if __name__ == '__main__':
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
         NewModule(wiki, gameData).run()
+        Trap(wiki, gameData).run()
 
         from jobs.activity import Activity
         Activity(wiki, gameData).run()

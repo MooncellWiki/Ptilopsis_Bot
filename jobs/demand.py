@@ -122,7 +122,7 @@ class Demand(Job):
         character_table = self.getgd('excel/character_table.json')
         item_table = self.getgd('excel/item_table.json')
         char_patch_table = self.getgd('excel/char_patch_table.json')
-        id_csv, id_table = self.wiki.read('干员一览/干员id‎‎'), {}
+        id_csv, id_table = self.wiki.read("干员一览/干员id"), {}
         reader = csv.DictReader(io.StringIO(id_csv))
         for row in reader: 
             id_table[row['name']] = {'id': int(row['sortId']), 'approach': row['approach'], 'date': row['date']}        

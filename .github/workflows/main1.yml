@@ -18,13 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 3.8
+    - name: Set up Python 3.12
       uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: 3.12
     - name: update-cn
       run: |
-        pip install -r requirements.txt
         git config --global user.email "1054329447@qq.com"
         git config --global user.name "Seniorious0"
         python main.py --check --remote new regular special
