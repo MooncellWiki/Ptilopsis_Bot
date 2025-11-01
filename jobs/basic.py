@@ -458,10 +458,14 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
     if token_key_list.__len__() == 0:
         return ''
     for token_key in token_key_list:
+        if token_key not in character_table:
+            continue
         token_info += '\n{{{{参阅|{token_name}|该持有者的召唤物}}}}'.format(
             token_name=character_table[token_key]['name']
         )
     for token_key in token_key_list:
+        if token_key not in character_table:
+            continue
         token_detail = character_table[token_key]
         token_page = '==召唤物信息==\n{{{{召唤物信息\n|中文名称={name_cn}\n|外文名称={appellation}\n|持有者={owner}\n|使用条件=—'.format(
             name_cn = token_detail['name'],
@@ -522,7 +526,7 @@ def get_token_info(wiki, char_detail, update_token_page, character_table, skill_
                     print(f"召唤物{token_detail['name']}技能解析出错")
         if id_count > 0:
             token_page += skill_list
-        token_page += '\n==召唤物模型==\n{{SpineId|id={spineId}}}'.format(spineId=token_key)
+        token_page += '\n==召唤物模型==\n{{{{SpineId|id={spineId}}}}}'.format(spineId=token_key)
 
         if update_token_page == True:
             wiki.edit(
@@ -1171,7 +1175,7 @@ content = '''{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 
 
 class Basic(Job):
-    def run(self):
+    def _run(self):
         character_table = self.getgd('excel/character_table.json')
         uniequip_table = self.getgd('excel/uniequip_table.json')
         battle_equip_table = self.getgd('excel/battle_equip_table.json')

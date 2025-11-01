@@ -108,15 +108,34 @@ class Wiki:
 
     @retry(stop_max_attempt_number=3)
     def category(self, category):
+        CM_LIMIT = 1000
+        cat_page_list = list()
         res = self.session.post(self.api_url, data={
             'format': 'json',
             'action': 'query',
             'list': 'categorymembers',
             'cmtitle': category,
-            'cmlimit': 3000
+            'cmlimit': CM_LIMIT,
+            'cmprop': 'ids|title|sortkey'
         })
         ret = res.json()['query']['categorymembers']
-        return [page['title'] for page in ret]
+        cat_page_list.extend(page['title'] for page in ret)
+
+        while len(ret) >= CM_LIMIT:
+            cmprefix = ret[-1]['sortkey']
+            res = self.session.post(self.api_url, data={
+                'format': 'json',
+                'action': 'query',
+                'list': 'categorymembers',
+                'cmtitle': category,
+                'cmlimit': CM_LIMIT,
+                'cmstarthexsortkey': cmprefix,
+                'cmprop': 'ids|title|sortkey'
+            })
+            ret = res.json()['query']['categorymembers']
+            cat_page_list.pop() # 两次查询的头尾会重复，移除其中一个
+            cat_page_list.extend(page['title'] for page in ret)
+        return cat_page_list
 
     @retry(stop_max_attempt_number=3)
     def protect(self, title=None, pageid=None, protections=None, reason=None, cascade=None):

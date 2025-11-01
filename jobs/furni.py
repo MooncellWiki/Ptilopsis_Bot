@@ -301,7 +301,7 @@ def create_themes(wiki, building_data, shop_client_table):
         print('Updated: {}.'.format('首页/新增主题'))
 
 
-duplicate_list = ['松软沙发', '玻璃花瓶', '几何纹地毯', '吊顶灯']
+duplicate_list = ['松软沙发', '玻璃花瓶', '几何纹地毯', '吊顶灯', '布艺吊灯']
 
 
 class Furni(Job):
