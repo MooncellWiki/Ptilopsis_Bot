@@ -4,7 +4,8 @@ svgHeadTemplate = '<svg xmlns="http://www.w3.org/2000/svg" ' \
                   'xmlns:xlink="http://www.w3.org/1999/xlink" ' \
                   'viewBox="{} {} {} {}" ' \
                   'style="vertical-align:top;width:{}px;height:{}px;' \
-                  'width:<!--{{$width}}-->!important;height:<!--{{$height}}-->!important">'
+                  'width:<!--{{$width|default:""|regex_replace:"/(script|<script)/":""}}-->!important;' \
+                  'height:<!--{{$height|default:""|regex_replace:"/(script|<script)/":""}}-->!important">'
 svgDefStr = '<defs>' \
             '<rect id="1" fill="#27a6f3" width="22" height="22"/>' \
             '<rect id="2" fill="none" stroke="gray" stroke-width="2" width="20" height="20"/>' \
