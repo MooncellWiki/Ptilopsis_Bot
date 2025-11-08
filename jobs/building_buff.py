@@ -50,6 +50,8 @@ def get_building_buff(building_data, rts):
             'meet_spd_condChar[000]': '得心应手(会客室)',
             'control_prod_bd_spd[000]': '丰富工作经验(精英0)',
             'control_prod_bd_spd[010]': '丰富工作经验(精英2)',
+            'power_rec_spd[008]': '澎湃紊流(精英0)',
+            'power_rec_spd[009]': '澎湃紊流(精英2)',
             'meet_spd[1020]': '线索搜集·β(行箸)'
         }.get(buff_data['buffId'], buff_name)
         if buff_name not in buff_text[buff_data['roomType']]:
