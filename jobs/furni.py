@@ -81,7 +81,9 @@ def create_furni(wiki, building_data, item_table):
     for furni in building_data['customData']['furnitures']:
         furni_data = building_data['customData']['furnitures'][furni]
         furni_data['name'] = furni_data['name'].strip()
-        if furni_data['name'] in furni_list or furni_data['name'] in ['taptap街机', 'bilibili地毯']:
+        if furni_data['name'] in ['taptap街机', 'bilibili地毯']:
+            continue
+        if furni_data['name'] in furni_list and furni_data['name'] not in duplicate_list:
             continue
         if furni_data['canBeDestroy'] == True:
             furni_destroy = '{{{{材料消耗|{name}|{number}}}}}'.format(
@@ -137,6 +139,7 @@ def create_furni(wiki, building_data, item_table):
         wiki.edit(
             title=page_name,
             text=furni_info,
+            createonly=True,
             summary='init'
         )
         # print(furni_info)
@@ -301,7 +304,7 @@ def create_themes(wiki, building_data, shop_client_table):
         print('Updated: {}.'.format('首页/新增主题'))
 
 
-duplicate_list = ['松软沙发', '玻璃花瓶', '几何纹地毯', '吊顶灯', '布艺吊灯']
+duplicate_list = []
 
 
 class Furni(Job):
@@ -310,9 +313,9 @@ class Furni(Job):
         item_table = self.getgd('excel/item_table.json')
         shop_client_table = self.getgd('excel/shop_client_table.json')
 
+        self.check_duplicate()
         create_themes(self.wiki, building_data, shop_client_table)
         create_furni(self.wiki, building_data, item_table)
-        self.check_duplicate()
 
     def update(self):
         building_data = self.getgd('excel/building_data.json')
@@ -330,5 +333,5 @@ class Furni(Job):
                 furni_dict[furni['name']] = []
             furni_dict[furni['name']].append(furni['id'])
         for name, f_list in furni_dict.items():
-            if len(f_list) > 1 and name not in duplicate_list:
-                print(f'新重名家具：{name}.')
+            if len(f_list) > 1:
+                duplicate_list.append(name)
