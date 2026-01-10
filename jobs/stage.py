@@ -914,6 +914,9 @@ def get_roguelike_data(stage_detail, level_table, notCount_list, rts):
     )
     stage_data += '|作战消耗={}\n'.format(0)
     stage_data += '|演习消耗=-1\n'
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '}}'
 
     return stage_data
@@ -994,6 +997,9 @@ def get_memory_data(stage_detail, level_table, rts, character_table, building_da
     reward_item = ['{}:三星获得'.format(parse_drop_item(r, character_table, building_data, item_table)) for r in
                    stage_detail['rewardItem']]
     stage_data += '|首次掉落=' + ','.join(reward_item) + '\n'
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '}}'
 
     return stage_data
@@ -1082,6 +1088,9 @@ def get_sandboxV2_data(stage_detail, rts, level_table, notCount_list):
         desc=rts.compile(stage_detail['description'].replace('\\n', '<br/>').replace('\n', '<br/>'))
     )
     stage_data += '|action消耗={}\n'.format(stage_detail['actionCost'])
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '|特殊地图=<tabber>\n实景地图=\n'
     stage_data += f"<img alt=\"{stage_detail['code']} {stage_detail['name']} 地图\" loading=\"lazy\" src=\"//torappu.prts.wiki/assets/map_preview/{stage_detail['stageId']}.png\" width=\"580\"/>"
     stage_data += '\n|-|\n全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n</tabber>\n'
@@ -1103,6 +1112,9 @@ def get_recalRune_data(stage_detail, rts, level_table, notCount_list):
     )
     stage_data += '|作战消耗={}\n'.format(0)
     stage_data += '|演习消耗=-1\n'
+    if stage_detail['levelId']:
+        if 'tags' in level_table['mapData'] and level_table['mapData']['tags'] != None:
+            stage_data += '|地形tag={}\n'.format(','.join(level_table['mapData']['tags']))
     stage_data += '}}'
 
     return stage_data
