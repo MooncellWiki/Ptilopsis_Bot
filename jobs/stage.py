@@ -1178,7 +1178,7 @@ class Stage(Job):
                         act_id = result.group(1)
                         if act_id in activity_table['basicInfo']:
                             cat = f"（[[{activity_table['basicInfo'][act_id]['name']}]]关卡）"
-                    cat = cat.replace('促融共竞#', '促融共竞/0')
+                    cat = cat.replace('#', '/0')
                     page_name = '\n*<big>\'\'\'[[{} {}]]\'\'\'{}</big>'.format(
                         stage_table['stages'][sid]['code'].strip(),
                         stage_table['stages'][sid]['name'].strip(),
