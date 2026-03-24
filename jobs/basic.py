@@ -56,11 +56,17 @@ def get_basic_info(char_detail, char_key, id_table, rts, uniequip_table, team_ta
     basic_info += f"\n|位置={trans_position(char_detail['position'])}"
     basic_info += f"\n|标签={' '.join(char_detail['tagList'])}"
     # 画师
+    drawer, drawer_append= '', ''
     try:
-        drawer = ','.join(skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
+        for skin_p, skin_k in skin_table['buildinEvolveMap'][char_key].items():
+            drawer_temp = ','.join(skin_table['charSkins'][skin_k]['displaySkin']['drawerList'])
+            if drawer == '':
+                drawer = drawer_temp
+            elif drawer != drawer_temp:
+                drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
     except:
-        drawer = ''
-    basic_info += f"\n|画师={drawer}"
+        pass
+    basic_info += f"\n|画师={drawer}" + drawer_append
     # 声优
     try:
         cv_dict = charword_table['voiceLangDict'][char_key]['dict']
@@ -1367,7 +1373,7 @@ class Basic(Job):
             # 更新干员cv
             num1 = new_text.find('\n|画师=')
             num2 = new_text.find('\n|精英0介绍=')
-            cv, drawer = '', '\n|画师='
+            cv, drawer = '', ''
             try:
                 cv_dict = charword_table['voiceLangDict'][char_key]['dict']
                 lang_dict = {k: v['name'] for k, v in charword_table['voiceLangTypeDict'].items()}
@@ -1383,10 +1389,16 @@ class Basic(Job):
             except:
                 cv += '\n|日文配音='
             try:
-                drawer += ','.join(
-                    skin_table['charSkins'][skin_table['buildinEvolveMap'][char_key]['0']]['displaySkin']['drawerList'])
+                drawer_append = ''
+                for skin_p, skin_k in skin_table['buildinEvolveMap'][char_key].items():
+                    drawer_temp = ','.join(skin_table['charSkins'][skin_k]['displaySkin']['drawerList'])
+                    if drawer == '':
+                        drawer = drawer_temp
+                    elif drawer != drawer_temp:
+                        drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
+                drawer = '\n|画师=' + drawer + drawer_append
             except:
-                drawer += ''
+                drawer = '\n|画师='
             new_text = new_text[:num1] + drawer + cv + new_text[num2:]
 
             if new_text != origin_text:
