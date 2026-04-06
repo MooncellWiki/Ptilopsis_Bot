@@ -172,17 +172,17 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                     }
                 # 先处理异客语音皮的厨放，全部优先wiki文本
                 if char_id == 'char_472_pasngr' and suffix2 == '(今昔须臾之梦)':
-                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
+                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=([\s\S]+?)\|语音"), old_words)
                     exists_flag = dict(list({'中文': {'flag': True, 'wiki_key':'中文(今昔须臾之梦)'}}.items()) + list(exists_flag.items()))
                     for other_lang in exists_flag:
                         if exists_flag[other_lang]['flag'] is True:
                             if result1:
                                 other_lang_re = exists_flag[other_lang]['wiki_key'].replace(')', '\)').replace('(', '\(')
-                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|([\s\S]*?)}}}}{{{{"), result1.group(1))
                                 if result2 is None:
-                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
+                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|([\s\S]*?)}}}}$"), result1.group(1))
                                 if result2:
-                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1) + '}}'
+                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1).strip() + '}}'
                                     continue
                         if other_lang in other_lang_words and other_lang_words[other_lang] is not None and text_id in other_lang_words[other_lang]:
                             text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|{norm_text(other_lang_words[other_lang][text_id]['voiceText'], other_lang)}}}}}"
@@ -205,7 +205,7 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                 text_dict[text_data['voiceIndex']]['placeType'] = text_data['placeType']
                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{word_lang}{suffix1}{suffix2}|{norm_text(text_data['voiceText'], word_lang)}}}}}"
                 if mode == 'update':
-                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=(.+?)\n"), old_words)
+                    result1 = re.search(re.compile(f"\|台词{text_data['voiceIndex']}=([\s\S]+?)\|语音"), old_words)
                     for other_lang in exists_flag:
                         if suffix1 == '-方言' and other_lang != '繁体中文':
                             continue
@@ -216,11 +216,11 @@ def charword_data(char_id, char_name, lt, skin_table, charword_table, char_words
                         if exists_flag[other_lang]['flag'] is True:
                             if result1:
                                 other_lang_re = exists_flag[other_lang]['wiki_key'].replace(')','\)').replace('(','\(')
-                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}{{{{"), result1.group(1))
+                                result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|([\s\S]*?)}}}}{{{{"), result1.group(1))
                                 if result2 is None:
-                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|(.*?)}}}}$"), result1.group(1))
+                                    result2 = re.search(re.compile(f"{{{{VoiceData/word\|{other_lang_re}\|([\s\S]*?)}}}}$"), result1.group(1))
                                 if result2:
-                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1) + '}}'
+                                    text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|" + result2.group(1).strip() + '}}'
                             else:
                                 text_dict[text_data['voiceIndex']]['text'] += f"{{{{VoiceData/word|{other_lang}{suffix1}{suffix2}|}}}}"
                 else:
