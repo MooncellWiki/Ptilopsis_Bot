@@ -676,15 +676,17 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
             continue
         equip_info = uniequip_table['equipDict'][equip]
         if equip_info['type'] == 'INITIAL':
-            template = '\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes\n|分支={subProf}\n|基础信息={bInfo}\n}}}}'
+            template = '\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes\n|分支={subProf}\n|模组图标={equipIcon}\n|类型图标={typeIcon}\n|基础信息={bInfo}\n}}}}'
             content.append(template.format(
                 name = equip_info['uniEquipName'].strip(),
                 subProf = uniequip_table['subProfDict'][char_detail['subProfessionId']]['subProfessionName'],
+                equipIcon = equip_info['uniEquipIcon'],
+                typeIcon = equip_info['typeIcon'],
                 bInfo = equip_info['uniEquipDesc'].strip().replace('\n', '<br>')
             ))
         else:
             template = '\n==={name}===\n<section begin=专属模组 />\n{{{{模组\n|名称={name}\n|类型={type}' \
-                       '{typeColor}{params}{trait}{talent}{missions}{unlockCond}{itemCost}' \
+                       '{typeColor}{equipIcon}{typeIcon}{params}{trait}{talent}{missions}{unlockCond}{itemCost}' \
                        '\n|基础信息={bInfo}\n}}}}\n<section end=专属模组 />'
             if equip_info['equipShiningColor'] != 'grey':
                 type_color = f"\n|类型颜色={equip_info['equipShiningColor']}"
@@ -768,10 +770,14 @@ def get_battle_equip(char_detail, char_key, battle_equip_table, uniequip_table, 
                             idx = '' if idx == 0 else str(idx + 1),
                             item = ' '.join(item_temp)
                         )
+            equip_icon = f"\n|模组图标={equip_info['uniEquipIcon']}"
+            type_icon = f"\n|类型图标={equip_info['typeIcon']}"
             content.append(template.format(
                 name = equip_info['uniEquipName'].strip(),
                 type = f"{equip_info['typeName1']}-{equip_info['typeName2']}",
                 typeColor = type_color,
+                equipIcon = equip_icon,
+                typeIcon = type_icon,
                 params = params,
                 trait = trait,
                 talent = talent,
