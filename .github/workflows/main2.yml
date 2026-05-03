@@ -1,27 +1,19 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
 name: main-jp
 
-on: 
-  # push:
-  #   branches: [ master ]
-  # schedule:
-  #   - cron: '30 6 * * *'
+on:
   workflow_dispatch:
 
 jobs:
   push:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
+    - uses: actions/checkout@v6
+
+    - name: Setup Python environment
+      uses: ./.github/actions/setup-python
+
     - name: update-jp
       run: |
-        pip install -r requirements.txt
         git config --global user.email "1054329447@qq.com"
         git config --global user.name "Seniorious0"
-        python main.py --check-jp --remote jp
+        uv run python main.py --check-jp --remote jp

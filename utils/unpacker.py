@@ -5,8 +5,6 @@ import os
 import zipfile
 import hashlib
 import requests
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
 from retrying import retry
 
 
@@ -190,19 +188,3 @@ class Unpacker:
             return False
         else:
             return True
-
-    @staticmethod
-    def _CrypticConverter_A(data, key, is_sign=True):
-        if is_sign:
-            data = data[128:]
-        iv = key[16:]
-        key = key[0:16]
-        cipher = AES.new(iv=iv, key=key, mode=AES.MODE_CBC)
-        # decrypted = bytearray(unpad(cipher.decrypt(data), 16, 'pkcs7')[16:])
-        # for i in range(16):
-        #     decrypted[i] ^= iv[i]
-        decrypted = bytearray(cipher.decrypt(data)[16:])
-        for i in range(16):
-            decrypted[i] ^= iv[i]
-        decrypted = unpad(decrypted, 16, "pkcs7")
-        return decrypted
