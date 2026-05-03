@@ -1,31 +1,26 @@
-import json
-import sys
-
 from config import config
-from jobs._temp import Temp
+
 # from jobs.basic import Basic
 # from jobs.charword import Charword
-from jobs.route import Route
 # from jobs.sidebar import Sidebar
 # from jobs.skin import Skin
 # from jobs.stage import Stage
 # from jobs.furni import Furni
 # from jobs.weedy import Weedy
-from jobs.enemy import Enemy
 from utils.data import GameData
-from utils.unpacker import Unpacker
-from utils.wiki import Wiki
+# from utils.wiki import Wiki
+# from jobs._temp import Temp
+# from jobs.enemy import Enemy
+# from jobs.route import Route
+# from jobs.furni import Furni
+# from jobs.item import Item
+# from jobs.skin import Skin
+# from jobs.stage import Stage
 
-from jobs.enemy import Enemy
-from jobs.furni import Furni
-from jobs.item import Item
-from jobs.skin import Skin
-from jobs.stage import Stage
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     # wiki = Wiki(config['apiUrl'], config['username'], config['password'],
     #             ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config=config, source='Unpacker')
+    gameData = GameData(config=config, source="Unpacker")
 
     # Stage(wiki, gameData).run()
     # Enemy(wiki, gameData).run()

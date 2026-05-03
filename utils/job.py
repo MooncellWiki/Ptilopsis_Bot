@@ -9,7 +9,7 @@ class Job:
         except Exception as e:
             print(e)
 
-    def getgd(self, path, region='CN'):
+    def getgd(self, path, region="CN"):
         """
         :param path:
         :param region: 服务器: CN,US,JP,KR,TW
@@ -17,7 +17,7 @@ class Job:
         """
         return self.gamedata.get(path, region)
 
-    def getgd_txt(self, path, region='CN'):
+    def getgd_txt(self, path, region="CN"):
         """
         :param path:
         :param region: 服务器: CN,US,JP,KR,TW

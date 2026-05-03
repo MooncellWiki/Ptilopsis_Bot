@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 import json
-import traceback
-import time
 from urllib.parse import quote
 
 import requests
@@ -9,37 +6,59 @@ from retrying import retry
 
 
 class Wiki:
-    def __init__(self, api_url, username, password, mode='product'):
+    def __init__(self, api_url, username, password, mode="product"):
         self.api_url = api_url
         self.mode = mode
         session = requests.Session()
         # 添加高峰期登陆的验证cookie
-        cookies = requests.utils.cookiejar_from_dict({'damedane': 'yjnmsl'}, cookiejar=None, overwrite=True)
+        cookies = requests.utils.cookiejar_from_dict(
+            {"damedane": "yjnmsl"}, cookiejar=None, overwrite=True
+        )
         session.cookies = cookies
-        
-        lgtoken = session.get(api_url, params={
-            'format': 'json',
-            'action': 'query',
-            'meta': 'tokens',
-            'type': 'login'
-        })
+
+        lgtoken = session.get(
+            api_url,
+            params={
+                "format": "json",
+                "action": "query",
+                "meta": "tokens",
+                "type": "login",
+            },
+        )
         lgtoken.raise_for_status()
-        res = session.post(api_url, data={
-            'format': 'json',
-            'action': 'login',
-            'lgname': username,
-            'lgpassword': password,
-            'lgtoken': lgtoken.json()['query']['tokens']['logintoken']
-        })
-        if res.json()['login']['result'] != 'Success':
-            raise RuntimeError(res.json()['login']['reason'])
+        res = session.post(
+            api_url,
+            data={
+                "format": "json",
+                "action": "login",
+                "lgname": username,
+                "lgpassword": password,
+                "lgtoken": lgtoken.json()["query"]["tokens"]["logintoken"],
+            },
+        )
+        if res.json()["login"]["result"] != "Success":
+            raise RuntimeError(res.json()["login"]["reason"])
         self.session = session
 
     @retry(stop_max_attempt_number=3)
-    def edit(self, title=None, pageid=None, section=None, sectiontitle=None, text=None, summary=None, minor=None,
-             bot=True,
-             createonly=None, nocreate=None, prependtext=None,
-             appendtext=None, redirect=None, contentformat=None, contentmodel=None):
+    def edit(
+        self,
+        title=None,
+        pageid=None,
+        section=None,
+        sectiontitle=None,
+        text=None,
+        summary=None,
+        minor=None,
+        bot=True,
+        createonly=None,
+        nocreate=None,
+        prependtext=None,
+        appendtext=None,
+        redirect=None,
+        contentformat=None,
+        contentmodel=None,
+    ):
         """
         :param title: 要编辑的页面标题。不能与pageid一起使用。
         :param pageid:要编辑的页面的页面 ID。不能与title一起使用。
@@ -64,25 +83,28 @@ class Wiki:
         :return:post response
         """
         args = locals().copy()
-        args.pop('self')
-        if self.mode != 'product':
-            print('\n' + str(args) + '\n')
+        args.pop("self")
+        if self.mode != "product":
+            print("\n" + str(args) + "\n")
             return
-        boolargs = {'minor', 'createonly', 'nocreate', 'redirect', 'bot'}
-        token = self.session.get(self.api_url, params={
-            'format': 'json',
-            'action': 'query',
-            'meta': 'tokens',
-        })
+        boolargs = {"minor", "createonly", "nocreate", "redirect", "bot"}
+        token = self.session.get(
+            self.api_url,
+            params={
+                "format": "json",
+                "action": "query",
+                "meta": "tokens",
+            },
+        )
         post_data = {
-            'format': 'json',
-            'action': 'edit',
-            'token': token.json()['query']['tokens']['csrftoken'],
+            "format": "json",
+            "action": "edit",
+            "token": token.json()["query"]["tokens"]["csrftoken"],
         }
         for key in args:
             if args[key] is not None:
                 if key in boolargs and args[key]:
-                    post_data[key] = '1'
+                    post_data[key] = "1"
                 else:
                     post_data[key] = args[key]
         # time.sleep(1)
@@ -94,13 +116,17 @@ class Wiki:
         :param title: 名称空间:页面名
         :return: wikitext
         """
-        res = self.session.post(self.api_url, data={
-            'format': 'json',
-            'action': 'query',
-            'titles': title,
-            'prop': 'revisions', 'rvprop': 'content'
-        })
-        ret = json.loads(res.text)['query']['pages']
+        res = self.session.post(
+            self.api_url,
+            data={
+                "format": "json",
+                "action": "query",
+                "titles": title,
+                "prop": "revisions",
+                "rvprop": "content",
+            },
+        )
+        ret = json.loads(res.text)["query"]["pages"]
         for k in ret:
             ret = ret[k]
             break
@@ -110,35 +136,43 @@ class Wiki:
     def category(self, category):
         CM_LIMIT = 1000
         cat_page_list = list()
-        res = self.session.post(self.api_url, data={
-            'format': 'json',
-            'action': 'query',
-            'list': 'categorymembers',
-            'cmtitle': category,
-            'cmlimit': CM_LIMIT,
-            'cmprop': 'ids|title|sortkey'
-        })
-        ret = res.json()['query']['categorymembers']
-        cat_page_list.extend(page['title'] for page in ret)
+        res = self.session.post(
+            self.api_url,
+            data={
+                "format": "json",
+                "action": "query",
+                "list": "categorymembers",
+                "cmtitle": category,
+                "cmlimit": CM_LIMIT,
+                "cmprop": "ids|title|sortkey",
+            },
+        )
+        ret = res.json()["query"]["categorymembers"]
+        cat_page_list.extend(page["title"] for page in ret)
 
         while len(ret) >= CM_LIMIT:
-            cmprefix = ret[-1]['sortkey']
-            res = self.session.post(self.api_url, data={
-                'format': 'json',
-                'action': 'query',
-                'list': 'categorymembers',
-                'cmtitle': category,
-                'cmlimit': CM_LIMIT,
-                'cmstarthexsortkey': cmprefix,
-                'cmprop': 'ids|title|sortkey'
-            })
-            ret = res.json()['query']['categorymembers']
-            cat_page_list.pop() # 两次查询的头尾会重复，移除其中一个
-            cat_page_list.extend(page['title'] for page in ret)
+            cmprefix = ret[-1]["sortkey"]
+            res = self.session.post(
+                self.api_url,
+                data={
+                    "format": "json",
+                    "action": "query",
+                    "list": "categorymembers",
+                    "cmtitle": category,
+                    "cmlimit": CM_LIMIT,
+                    "cmstarthexsortkey": cmprefix,
+                    "cmprop": "ids|title|sortkey",
+                },
+            )
+            ret = res.json()["query"]["categorymembers"]
+            cat_page_list.pop()  # 两次查询的头尾会重复，移除其中一个
+            cat_page_list.extend(page["title"] for page in ret)
         return cat_page_list
 
     @retry(stop_max_attempt_number=3)
-    def protect(self, title=None, pageid=None, protections=None, reason=None, cascade=None):
+    def protect(
+        self, title=None, pageid=None, protections=None, reason=None, cascade=None
+    ):
         """
         :param title:要（解除）保护的页面标题。不能与pageid一起使用。
         :param pageid:要（解除）保护的页面ID。不能与title一起使用。
@@ -150,25 +184,28 @@ class Wiki:
         :return:
         """
         args = locals().copy()
-        args.pop('self')
-        if self.mode != 'product':
-            print('\n' + '\n' + str(args) + '\n')
+        args.pop("self")
+        if self.mode != "product":
+            print("\n" + "\n" + str(args) + "\n")
             return
-        token = self.session.get(self.api_url, params={
-            'format': 'json',
-            'action': 'query',
-            'meta': 'tokens',
-        })
+        token = self.session.get(
+            self.api_url,
+            params={
+                "format": "json",
+                "action": "query",
+                "meta": "tokens",
+            },
+        )
         post_data = {
-            'format': 'json',
-            'action': 'protect',
-            'token': token.json()['query']['tokens']['csrftoken'],
-            'expiry': 'infinite'
+            "format": "json",
+            "action": "protect",
+            "token": token.json()["query"]["tokens"]["csrftoken"],
+            "expiry": "infinite",
         }
         for key in args:
-            if not args[key] is None:
-                if key == 'cascade' and args[key]:
-                    post_data[key] = '1'
+            if args[key] is not None:
+                if key == "cascade" and args[key]:
+                    post_data[key] = "1"
                 else:
                     post_data[key] = args[key]
         return self.session.post(self.api_url, data=post_data)
@@ -183,33 +220,33 @@ class Wiki:
         :return:
         """
         args = locals().copy()
-        args.pop('self')
+        args.pop("self")
         token = self.session.get(
             self.api_url,
             params={
-                'format': 'json',
-                'action': 'query',
-                'meta': 'tokens',
-            })
+                "format": "json",
+                "action": "query",
+                "meta": "tokens",
+            },
+        )
         upload_data = {
-            'format': 'json',
-            'action': 'upload',
-            'filename': filename,
-            'ignorewarnings': '1',
-            'token': token.json()['query']['tokens']['csrftoken'],
+            "format": "json",
+            "action": "upload",
+            "filename": filename,
+            "ignorewarnings": "1",
+            "token": token.json()["query"]["tokens"]["csrftoken"],
         }
         header = {
-            'Content-Disposition': 'form-data; name="data"; filename="%s"' % quote(filename)
+            "Content-Disposition": 'form-data; name="data"; filename="%s"'
+            % quote(filename)
         }
         for key in args:
-            if not args[key] is None:
+            if args[key] is not None:
                 upload_data[key] = args[key]
         r = self.session.post(
             self.api_url,
             data=upload_data,
-            files={
-                'file': (quote(filename), open(filepath, 'rb'))
-            },
-            headers=header
+            files={"file": (quote(filename), open(filepath, "rb"))},
+            headers=header,
         )
         return r

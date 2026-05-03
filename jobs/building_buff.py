@@ -1,7 +1,6 @@
 from utils.job import Job
 from utils.richTextStyles import RichTextStyles
 
-
 # def special_buff(buff_name, description):
 #     if buff_name == '坚毅随和':
 #         description = description.replace('额外恢复心情}}', '额外恢复心情}}{{color|#F49800|（心情每小时恢复+0.15）}}')
@@ -15,13 +14,13 @@ from utils.richTextStyles import RichTextStyles
 
 
 def get_building_buff(building_data, rts):
-    buff_format = '''{{{{后勤技能信息/store
+    buff_format = """{{{{后勤技能信息/store
 |技能名={name}
 |房间={room}
 |技能图标={icon}
 |技能描述={description}
-}}}}'''
-    room_format = '''=={roomName}==
+}}}}"""
+    room_format = """=={roomName}==
 {{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
 ! colspan="4" | {roomName}
 |-
@@ -31,71 +30,82 @@ def get_building_buff(building_data, rts):
 ! width="350px" |持有干员
 |-
 {buffInfoAll}
-|}}'''
+|}}"""
     buff_text = {}
-    for room in building_data['rooms']:
+    for room in building_data["rooms"]:
         buff_text[room] = {}
 
-    for buff in building_data['buffs']:
-        buff_data = building_data['buffs'][buff]
-        buff_name = buff_data['buffName']
+    for buff in building_data["buffs"]:
+        buff_data = building_data["buffs"][buff]
+        buff_name = buff_data["buffName"]
         buff_name = {
-            'control_dorm_rec[000]': '领袖(控制中枢)',
-            'dorm_rec_all[013]': '领袖(宿舍)',
-            'train_spd_doubleProf[100]': '红龙之血(精英0)',
-            'train_spd_doubleProf[110]': '红龙之血(精英2)',
-            'control_token_prod_spd2[000]': '以身作则(控制中枢)',
-            'train_spd&profession2[440]': '以身作则(训练室)',
-            'manu_prod_spd&limit&cost[200]': '得心应手(制造站)',
-            'meet_spd_condChar[000]': '得心应手(会客室)',
-            'control_prod_bd_spd[000]': '丰富工作经验(精英0)',
-            'control_prod_bd_spd[010]': '丰富工作经验(精英2)',
-            'power_rec_spd[008]': '澎湃紊流(精英0)',
-            'power_rec_spd[009]': '澎湃紊流(精英1)',
-            'meet_spd[1020]': '线索搜集·β(行箸)'
-        }.get(buff_data['buffId'], buff_name)
-        if buff_name not in buff_text[buff_data['roomType']]:
-            buff_text[buff_data['roomType']][buff_name] = {
-                'sortId': buff_data['sortId'],
-                'text': buff_format.format(
-                    name = buff_name,
-                    room = building_data['rooms'][buff_data['roomType']]['name'],
-                    icon = buff_data['skillIcon'],
+            "control_dorm_rec[000]": "领袖(控制中枢)",
+            "dorm_rec_all[013]": "领袖(宿舍)",
+            "train_spd_doubleProf[100]": "红龙之血(精英0)",
+            "train_spd_doubleProf[110]": "红龙之血(精英2)",
+            "control_token_prod_spd2[000]": "以身作则(控制中枢)",
+            "train_spd&profession2[440]": "以身作则(训练室)",
+            "manu_prod_spd&limit&cost[200]": "得心应手(制造站)",
+            "meet_spd_condChar[000]": "得心应手(会客室)",
+            "control_prod_bd_spd[000]": "丰富工作经验(精英0)",
+            "control_prod_bd_spd[010]": "丰富工作经验(精英2)",
+            "power_rec_spd[008]": "澎湃紊流(精英0)",
+            "power_rec_spd[009]": "澎湃紊流(精英1)",
+            "meet_spd[1020]": "线索搜集·β(行箸)",
+        }.get(buff_data["buffId"], buff_name)
+        if buff_name not in buff_text[buff_data["roomType"]]:
+            buff_text[buff_data["roomType"]][buff_name] = {
+                "sortId": buff_data["sortId"],
+                "text": buff_format.format(
+                    name=buff_name,
+                    room=building_data["rooms"][buff_data["roomType"]]["name"],
+                    icon=buff_data["skillIcon"],
                     # description = special_buff(buff_name, rts.compile(buff_data['description']))
-                    description = rts.compile(buff_data['description'])
-                )
+                    description=rts.compile(buff_data["description"]),
+                ),
             }
 
-    content = ''
+    content = ""
     for room_id in buff_text:
         if buff_text[room_id] != {}:
-            content += room_format.format(
-                roomName = building_data['rooms'][room_id]['name'],
-                buffInfoAll = '\n|-\n'.join([buff_data['text'] for buff_data in
-                    sorted(buff_text[room_id].values(), key = lambda x: x['sortId'], reverse = True)])
-            ) + '\n'
+            content += (
+                room_format.format(
+                    roomName=building_data["rooms"][room_id]["name"],
+                    buffInfoAll="\n|-\n".join(
+                        [
+                            buff_data["text"]
+                            for buff_data in sorted(
+                                buff_text[room_id].values(),
+                                key=lambda x: x["sortId"],
+                                reverse=True,
+                            )
+                        ]
+                    ),
+                )
+                + "\n"
+            )
     return content
 
 
 class BuildingBuff(Job):
     def _run(self):
-        building_data = self.getgd('excel/building_data.json')
-        rts = RichTextStyles(self.getgd('excel/gamedata_const.json'))
+        building_data = self.getgd("excel/building_data.json")
+        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
-        origin_text = self.wiki.read('后勤技能一览/store')
-        flag = origin_text.find('==控制中枢==')
+        origin_text = self.wiki.read("后勤技能一览/store")
+        flag = origin_text.find("==控制中枢==")
         head = origin_text[:flag].rstrip()
-        content = head + '\n' + get_building_buff(building_data, rts).rstrip()
+        content = head + "\n" + get_building_buff(building_data, rts).rstrip()
 
         if content != origin_text:
             self.wiki.edit(
-                title = '后勤技能一览/store',
-                text = content,
-                summary = 'update',
-                bot = None,
-                minor = True
+                title="后勤技能一览/store",
+                text=content,
+                summary="update",
+                bot=None,
+                minor=True,
             )
             # print(content)
-            print('Updated: {}.'.format('后勤技能一览/store'))
+            print("Updated: {}.".format("后勤技能一览/store"))
         else:
-            print('Same: {}.'.format('后勤技能一览/store'))
+            print("Same: {}.".format("后勤技能一览/store"))

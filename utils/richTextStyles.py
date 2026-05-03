@@ -8,12 +8,14 @@ class RichTextStyles:
     termDescriptionDict = {}
 
     def __init__(self, gamedata_const):
-        self.richTextStyles_t = gamedata_const['richTextStyles']
-        self.termDescriptionDict_t = gamedata_const['termDescriptionDict']
+        self.richTextStyles_t = gamedata_const["richTextStyles"]
+        self.termDescriptionDict_t = gamedata_const["termDescriptionDict"]
         for s in self.richTextStyles_t:
             temp = self.richTextStyles_t[s]
-            if temp.find('</color>') != -1:
-                self.richTextStyles[s] = temp.replace('<color=', "{{color|").replace('>{0}</color>', '|')
+            if temp.find("</color>") != -1:
+                self.richTextStyles[s] = temp.replace("<color=", "{{color|").replace(
+                    ">{0}</color>", "|"
+                )
         for k in self.termDescriptionDict_t:
             temp2 = self.termDescriptionDict_t[k]
             self.termDescriptionDict[k] = f"{{{{术语|{temp2['termId']}|"
@@ -25,24 +27,24 @@ class RichTextStyles:
         elif code in self.termDescriptionDict:
             return self.termDescriptionDict[code]
         else:
-            return '{{'
+            return "{{"
 
     def tran2(self, matched):
         code = matched.group(1)
         if code in self.termDescriptionDict:
             return self.termDescriptionDict[code]
         else:
-            return '{{'
+            return "{{"
 
     def compile(self, s):
         if s is None:
-            return ''
-        pattern = re.compile('<+@([^>]*)>')
+            return ""
+        pattern = re.compile("<+@([^>]*)>")
         t = re.sub(pattern, self.tran1, s)
-        pattern = re.compile('<+\$([^>]*)>')
+        pattern = re.compile(r"<+\$([^>]*)>")
         t = re.sub(pattern, self.tran2, t)
-        t = re.sub(r'<color=([^>]*)>', r'{{color|\1|', t)
-        t = t.replace('</>', '}}')
-        t = t.replace('<>', '}}')
-        t = t.replace('</color>', '}}')
+        t = re.sub(r"<color=([^>]*)>", r"{{color|\1|", t)
+        t = t.replace("</>", "}}")
+        t = t.replace("<>", "}}")
+        t = t.replace("</color>", "}}")
         return t

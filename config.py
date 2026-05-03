@@ -1,8 +1,8 @@
 config = {
-    'apiUrl': 'https://prts.wiki/api.php',
-    'username': 'botPtilopsis',
-    'password': 'BotPtilopsis@rjtlstjhiof6kmgdg7krjjofr6hlnlk9',
-    'version': 'version_local.json',
+    "apiUrl": "https://prts.wiki/api.php",
+    "username": "botPtilopsis",
+    "password": "BotPtilopsis@rjtlstjhiof6kmgdg7krjjofr6hlnlk9",
+    "version": "version_local.json",
     "serverList": {
         "CN": {
             "folder": "zh_CN",
@@ -57,8 +57,8 @@ config = {
                 "token_table",
                 "uniequip_table",
                 "zone_table",
-                "building_local_data"
-            ]
+                "building_local_data",
+            ],
         },
         "JP": {
             "folder": "ja_JP",
@@ -66,7 +66,7 @@ config = {
             "updateMsg": "[JP UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-jp-static-online.yo-star.com/assetbundle/official/Android/",
             "configUrl": "https://ark-jp-static-online.yo-star.com/assetbundle/official/",
-            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
         },
         "US": {
             "folder": "en_US",
@@ -74,7 +74,7 @@ config = {
             "updateMsg": "[US UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-us-static-online.yo-star.com/assetbundle/official/Android/",
             "configUrl": "https://ark-us-static-online.yo-star.com/assetbundle/official/",
-            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
         },
         "KR": {
             "folder": "ko_KR",
@@ -82,7 +82,7 @@ config = {
             "updateMsg": "[KR UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/Android/",
             "configUrl": "https://ark-kr-static-online-1300509597.yo-star.com/assetbundle/official/",
-            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
         },
         "TW": {
             "folder": "zh_TW",
@@ -90,11 +90,11 @@ config = {
             "updateMsg": "[TW UPDATE] Client:{0} Data:{1}",
             "resUrl": "https://akcdn.imtxwy.com/assetbundle/official/Android/",
             "configUrl": "https://ak-conf.txwy.tw/config/prod/official/",
-            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl"
-        }
+            "chatMask": "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
+        },
     },
     "chatMaskList": [
-        'UITpAi82pHAWwnzqHRMCwPonJLIB3WCl',
-        '8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ'
-    ]
+        "UITpAi82pHAWwnzqHRMCwPonJLIB3WCl",
+        "8OjXUSNSi8yXC0u98mNWvh7MRLGhyEuQ",
+    ],
 }

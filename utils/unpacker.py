@@ -1,9 +1,9 @@
+import hashlib
 import io
 import json
-import time
 import os
 import zipfile
-import hashlib
+
 import requests
 from retrying import retry
 
@@ -15,7 +15,7 @@ class Unpacker:
         }
         self.config = config["serverList"]
         self.version_dir = config["version"]
-        with open(self.version_dir, "r") as f:
+        with open(self.version_dir) as f:
             self.version = json.load(f)
         print(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
@@ -51,7 +51,7 @@ class Unpacker:
 
     @retry(stop_max_attempt_number=3)
     def get_version(self, region="CN"):
-        with open(self.version_dir, "r") as f:
+        with open(self.version_dir) as f:
             version = json.load(f)
         # version
         url = self.config[region]["configUrl"] + "Android/version"
@@ -116,7 +116,7 @@ class Unpacker:
         os.system(
             f"{os.path.join('.', 'flatc')} -o {fbs_path} --no-warnings --json --strict-json --natural-utf8 --defaults-json --raw-binary ./ResourceManifest.fbs -- {fbs_path}/ResourceManifest.bytes"
         )
-        with open(f"{fbs_path}/ResourceManifest.json", mode="r", encoding="utf-8") as f:
+        with open(f"{fbs_path}/ResourceManifest.json", encoding="utf-8") as f:
             jsons = json.loads(f.read())
         gamedata_idx = {"bundleToAsset": {}, "assetToBundle": {}}
         for asset in jsons["assetToBundleList"]:
