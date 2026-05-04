@@ -61,7 +61,7 @@ version_remote.json        # 通过 --remote 拉取时使用的版本记录
 - `flatc`（FlatBuffers 编译器，运行时位于仓库根目录调用）
 
 ```bash
-git clone --recurse-submodules https://github.com/<owner>/Ptilopsis_Bot.git
+git clone --recurse-submodules https://github.com/MooncellWiki/Ptilopsis_Bot.git
 cd Ptilopsis_Bot
 uv sync --locked
 ```
@@ -74,10 +74,10 @@ git submodule update --init --recursive
 
 ## 运行
 
-`uv sync` 后会注册 `ptil` 命令（等价于 `python -m ptilopsis`）：
+`uv sync` 后会注册 `ptil` 命令
 
 ```bash
-uv run ptil [flags] [modes ...]
+ptil [flags] [modes ...]
 ```
 
 ### 标志位（flags）
@@ -107,16 +107,16 @@ uv run ptil [flags] [modes ...]
 
 ```bash
 # 仅检查 CN 服并执行常规更新
-uv run ptil --check regular
+ptil --check regular
 
 # 通过远程数据仓库拉取最新数据，跑完 new + regular + special 并提交
-uv run ptil --check --remote new regular special
+ptil --check --remote new regular special
 
 # 检查并更新 JP 服
-uv run ptil --check-jp --remote jp
+ptil --check-jp --remote jp
 
 # 预览模式：不真正提交到 Wiki
-uv run ptil --dev regular
+ptil --dev regular
 ```
 
 ## GitHub Actions
@@ -131,7 +131,7 @@ uv run ptil --dev regular
 
 ## 开发
 
-代码风格由 [Ruff](https://github.com/astral-sh/ruff) 强制（line-length 88，目标 Python 3.13）：
+使用 [Ruff](https://github.com/astral-sh/ruff)
 
 ```bash
 uv run ruff check .
