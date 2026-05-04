@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.15.0,<1"]
+dev = ["ruff>=0.15.0,<1", "pre-commit>=4.0.0,<5"]
 
 [tool.ruff]
 line-length = 88
@@ -22,43 +22,49 @@ line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
-    "F",
-    "W",
-    "E",
-    "I",
-    "UP",
-    "ASYNC",
-    "C4",
-    "T10",
-    "T20",
-    "PYI",
-    "Q",
-    "TC",
-    "TID",
-    "DTZ",
-    "RUF",
+    "F",     # pyflakes
+    "W",     # pycodestyle warnings
+    "E",     # pycodestyle errors
+    "I",     # isort
+    "UP",    # pyupgrade
+    "ASYNC", # flake8-async
+    "C4",    # flake8-comprehensions
+    "T10",   # flake8-debugger
+    "T20",   # flake8-print
+    "PYI",   # flake8-pyi
+    "Q",     # flake8-quotes
+    "TC",    # flake8-type-checking
+    "TID",   # flake8-tidy-imports
+    "DTZ",   # flake8-datetimez
+    "RUF",   # Ruff-specific rules
 ]
 ignore = [
-    "E402",
-    "UP037",
-    "RUF001",
-    "RUF002",
-    "RUF003",
+    "E402",   # module-import-not-at-top-of-file
+    "UP037",  # quoted-annotation
+    "RUF001", # ambiguous-unicode-character-string
+    "RUF002", # ambiguous-unicode-character-docstring
+    "RUF003", # ambiguous-unicode-character-comment
 ]
 
 [tool.ruff.lint.isort]
 known-first-party = ["utils", "jobs"]
 
-[tool.ruff.lint.extend-per-file-ignores]
-"./jobs/*" = ["T201"]
-"./main.py" = ["T201"]
-
 [tool.ruff.lint.pyupgrade]
 keep-runtime-typing = true
 
-[tool.hatch.build.targets.wheel]
-packages = ["utils", "jobs"]
+[tool.pyright]
+extraPaths = ["./"]
+pythonVersion = "3.13"
+pythonPlatform = "All"
+executionEnvironments = [{ root = "./" }]
+
+typeCheckingMode = "standard"
+disableBytesTypePromotions = true
+
+[tool.uv.build-backend]
+module-name = "ptilopsis"
+module-root = ""
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.8.4,<0.9.0"]
+build-backend = "uv_build"

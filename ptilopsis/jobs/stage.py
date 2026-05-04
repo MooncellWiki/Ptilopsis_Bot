@@ -2345,7 +2345,7 @@ class Stage(Job):
         notCount_list = self._get_list_notCountInTotal()
 
         filelist = []
-        base_dir = "./ArknightsGameData/zh_CN/gameData/"
+        base_dir = "./thirdparty/ArknightsGameData/zh_CN/gameData/"
 
         def get_files(curr_path):
             if ".DS_Store" in curr_path:

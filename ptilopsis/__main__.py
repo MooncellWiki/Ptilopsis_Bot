@@ -26,9 +26,9 @@ if __name__ == "__main__":
         os.system("git submodule update --init --remote --recursive")
         conf_remote = config
         conf_remote["version"] = "version_remote.json"
-        gameData = GameData(config=conf_remote, source="ArknightsGameData")
+        gameData = GameData(config=conf_remote, source="thirdparty/ArknightsGameData")
     else:
-        gameData = GameData(config=config, source="ArknightsGameData")
+        gameData = GameData(config=config, source="thirdparty/ArknightsGameData")
     flag_force = True if "--force" in sys.argv else False
     if "--check" in sys.argv:
         os.system("git submodule update --remote")
