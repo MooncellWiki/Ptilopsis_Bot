@@ -4,16 +4,25 @@ import click
 import sentry_sdk
 
 from ptilopsis.config import config
+from ptilopsis.jobs.activity import Activity
 from ptilopsis.jobs.basic import Basic
 from ptilopsis.jobs.building_buff import BuildingBuff
+from ptilopsis.jobs.char_attr import CharAttr
 from ptilopsis.jobs.charword import Charword
 from ptilopsis.jobs.enemy import Enemy
 from ptilopsis.jobs.furni import Furni
 from ptilopsis.jobs.item import Item
+from ptilopsis.jobs.medal import Medal
+from ptilopsis.jobs.mission import Mission
 from ptilopsis.jobs.newModule import NewModule
 from ptilopsis.jobs.sidebar import Sidebar
 from ptilopsis.jobs.skin import Skin
 from ptilopsis.jobs.stage import Stage
+from ptilopsis.jobs.story_review import StoryReview
+from ptilopsis.jobs.term import Term
+from ptilopsis.jobs.update_jp import UpdateJp
+from ptilopsis.jobs.weedy import Weedy
+from ptilopsis.log import logger
 from ptilopsis.utils.data import GameData
 from ptilopsis.utils.wiki import Wiki
 
@@ -80,14 +89,14 @@ def main(
     if check_mode == "cn":
         os.system("git submodule update --remote")
         if not gameData.unpacker.check_update() and not force:
-            click.echo("No version update. Program exit.")
+            logger.info("No version update. Program exit.")
             return
     elif check_mode == "jp":
         sign1 = gameData.unpacker.check_update("JP")
         sign2 = gameData.unpacker.check_update("US")
         gameData.unpacker.check_update("KR")
         if not sign1 and not sign2:
-            click.echo("No version update. Program exit.")
+            logger.info("No version update. Program exit.")
             return
     elif check_mode == "global":
         gameData.unpacker.check_all_update()
@@ -114,24 +123,11 @@ def main(
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
         NewModule(wiki, gameData).run()
-
-        from ptilopsis.jobs.activity import Activity
-
         Activity(wiki, gameData).run()
-        from ptilopsis.jobs.mission import Mission
-
         Mission(wiki, gameData).run()
-        from ptilopsis.jobs.char_attr import CharAttr
-
         CharAttr(wiki, gameData).run()
-        from ptilopsis.jobs.medal import Medal
-
         Medal(wiki, gameData).run()
-        from ptilopsis.jobs.story_review import StoryReview
-
         StoryReview(wiki, gameData).run()
-        from ptilopsis.jobs.term import Term
-
         Term(wiki, gameData).run()
 
     if "special" in modes:
@@ -160,13 +156,9 @@ def main(
 
     if "jp" in modes:
         Charword(wiki, gameData).update()
-        from ptilopsis.jobs.update_jp import UpdateJp
-
         UpdateJp(wiki, gameData).run()
 
     if "weedy" in modes:
-        from ptilopsis.jobs.weedy import Weedy
-
         Weedy(wiki, gameData).run()
 
     if remote:

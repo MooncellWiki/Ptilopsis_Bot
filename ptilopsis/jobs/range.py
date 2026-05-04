@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 svgHeadTemplate = (
@@ -59,8 +60,8 @@ def skill_range(wiki, raneg_table):
         wiki.edit(
             title="Widget:Range/" + rangeId, text=Str, summary="init", createonly="1"
         )
-        # print(Str)
-        print("Updated: {}.".format("Widget:Range/" + rangeId))
+        # logger.info(Str)
+        logger.info("Updated: {}.".format("Widget:Range/" + rangeId))
 
 
 class Range(Job):

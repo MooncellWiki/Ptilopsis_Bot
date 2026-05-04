@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytz
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -149,7 +150,7 @@ def update_mission(mission_table, item_table, rts):
                 or reward_dict[reward_desc["groupId"]]["end_time"]
                 != reward_desc["endTime"]
             ):
-                print(reward_id, "time not match!")
+                logger.info(reward_id, "time not match!")
         reward_content = ""
         if reward_desc["rewards"]:
             for reward in reward_desc["rewards"]:
@@ -229,5 +230,5 @@ class Mission(Job):
         content = update_mission(mission_table, item_table, rts)
 
         self.wiki.edit(title="用户:Seniorious/missions", text=content, summary="update")
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/missions"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/missions"))

@@ -1,5 +1,6 @@
 import time
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -36,5 +37,5 @@ class NewModule(Job):
             bot=None,
             minor=False,
         )
-        # print(content)
-        print("Updated: {}.".format("首页/新增模组"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("首页/新增模组"))

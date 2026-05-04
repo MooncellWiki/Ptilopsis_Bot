@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -11,7 +12,7 @@ def parse_item(item, character_table, building_data, item_table):
             item_table["items"][item["id"]]["name"].rstrip(), item["count"]
         )
     else:
-        print("Unknown reward item {}.".format(item["id"]))
+        logger.info("Unknown reward item {}.".format(item["id"]))
 
 
 def update_story_review(
@@ -84,7 +85,7 @@ def update_story_review(
         elif story_review_table[event]["actType"] == "NONE":
             continue
         else:
-            print(
+            logger.info(
                 "Unknown actType {} for {}".format(
                     story_review_table[event]["actType"],
                     story_review_table[event]["name"],
@@ -104,7 +105,7 @@ def update_story_review(
                         .replace("\n", "<br/>")
                     )
                 except:
-                    print("路径名错误：", "story/[uc]" + story["storyInfo"] + ".txt")
+                    logger.info("路径名错误：", "story/[uc]" + story["storyInfo"] + ".txt")
                     story_info = "{{color|red|剧情简介文件路径错误}}"
             else:
                 story_info = ""
@@ -150,5 +151,5 @@ class StoryReview(Job):
         self.wiki.edit(
             title="用户:Seniorious/情报处理室", text=content, summary="update"
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/情报处理室"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/情报处理室"))

@@ -1,6 +1,7 @@
 import csv
 import io
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -77,7 +78,7 @@ def get_char_attr(character_table, uniequip_table, id_table, rts):
                         "attributeModifiers"
                     ][0]["value"]
                 else:
-                    print(
+                    logger.info(
                         "Error! Char {name} attributeType {num} don't know!".format(
                             name=char_detail["name"], num=attributeType
                         )
@@ -156,5 +157,5 @@ class CharAttr(Job):
         self.wiki.edit(
             title="用户:Seniorious/attribute", text=content, summary="update"
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/attribute"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/attribute"))

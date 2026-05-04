@@ -2,6 +2,7 @@ import csv
 import io
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -289,7 +290,7 @@ def get_phases_data(
     for phases_num in range(len(char_detail["phases"])):
         if phases_num == 0:
             # if len(char_detail['phases'][phases_num]['attributesKeyFrames']) != 2:
-            #     print('error')
+            #     logger.info('error')
             #     break
             phases_data += (
                 "|精英0_1级_生命上限="
@@ -362,7 +363,7 @@ def get_phases_data(
             )
         else:
             # if len(char_detail['phases'][phases_num]['attributesKeyFrames']) != 2:
-            #     print('error')
+            #     logger.info('error')
             #     break
             phases_data += (
                 "|精英"
@@ -426,9 +427,9 @@ def get_phases_data(
 
     # for favorKey in char_detail['favorKeyFrames'][0]['data']:
     #     if char_detail['favorKeyFrames'][0]['data'][favorKey] != 0 and char_detail['favorKeyFrames'][0]['data'][favorKey] != False:
-    #         print(char_detail['name'] + ' -- 0 :  ' +  favorKey)
+    #         logger.info(char_detail['name'] + ' -- 0 :  ' +  favorKey)
     #     if char_detail['favorKeyFrames'][1]['data'][favorKey] != 0 and char_detail['favorKeyFrames'][1]['data'][favorKey] != False:
-    #         print(char_detail['name'] + ' -- 1 :  ' +  favorKey)
+    #         logger.info(char_detail['name'] + ' -- 1 :  ' +  favorKey)
 
     potential_rank_data = []
     potential_rank_type = []
@@ -518,14 +519,14 @@ def get_phases_data(
             # elif attributeType not in [4, 21, 7]:
             #     potential_rank_data.append('')
             #     potential_rank_type.append('')
-            #     print('Error! Char {name} attributeType {num} dont know!'.format(
+            #     logger.info('Error! Char {name} attributeType {num} dont know!'.format(
             #         name = char_detail['name'],
             #         num = attributeType
             #     ))
             else:
                 potential_rank_data.append("")
                 potential_rank_type.append("")
-                print(
+                logger.info(
                     "Error! Char {name} attributeType {num} dont know!".format(
                         name=char_detail["name"], num=attributeType
                     )
@@ -659,7 +660,7 @@ def get_potential_list(char_detail):
 
 def get_skill_text(skill_table, skill_id, rts):
     if skill_id not in skill_table:
-        print(f"skillId {skill_id} not found")
+        logger.info(f"skillId {skill_id} not found")
         return ""
     skill_data = skill_table[skill_id]
     skill_text = "{{{{技能\n|技能名={skill_name}\n|技能类型1={type1}{type2}".format(
@@ -673,7 +674,7 @@ def get_skill_text(skill_table, skill_id, rts):
         )
         for i in skill_data["levels"]:
             if i["rangeId"] != skill_data["levels"][0]["rangeId"]:
-                print("技能 {} 范围随等级变化".format(skill_data["levels"][0]["name"]))
+                logger.info("技能 {} 范围随等级变化".format(skill_data["levels"][0]["name"]))
                 break
     for idx, level_data in enumerate(skill_data["levels"]):
         skill_dic = {}
@@ -746,7 +747,7 @@ def get_skill_list(char_detail, skill_table, rts):
                 )
             except:
                 skill_list += ""
-                print(f"{char_detail['name']}技能{skill_id + 1}解析出错")
+                logger.info(f"{char_detail['name']}技能{skill_id + 1}解析出错")
     else:
         skill_list = "\n该干员没有技能"
     return skill_list
@@ -792,7 +793,7 @@ def get_token_info(
                 token_detail["phases"][phases_num]["rangeId"]
                 != token_detail["phases"][0]["rangeId"]
             ):
-                print("召唤物{} rangeId changes.".format(token_detail["name"]))
+                logger.info("召唤物{} rangeId changes.".format(token_detail["name"]))
                 break
         for phases_num in range(len(token_detail["phases"])):
             token_page += "\n|精英{num}_1级_生命上限={hp}\n|精英{num}_1级_攻击={atk}\n|精英{num}_1级_防御={defence}\n|精英{num}_1级_法术抗性={magicResistance}".format(
@@ -867,7 +868,7 @@ def get_token_info(
                     )
                 except:
                     skill_list += ""
-                    print(f"召唤物{token_detail['name']}技能解析出错")
+                    logger.info(f"召唤物{token_detail['name']}技能解析出错")
         if id_count > 0:
             token_page += skill_list
         token_page += f"\n==召唤物模型==\n{{{{SpineId|id={token_key}}}}}"
@@ -881,8 +882,8 @@ def get_token_info(
                 summary="init",
                 createonly="1",
             )
-        # print(token_page)
-        print("Created: {}.".format(token_detail["name"]))
+        # logger.info(token_page)
+        logger.info("Created: {}.".format(token_detail["name"]))
     return token_info
 
 
@@ -1404,7 +1405,7 @@ def get_handbook_avg(char_detail, stories_table, char_key, medal_table):
             elif p["unlockType"] == "FAVOR":
                 favor = p["unlockParam1"]
             else:
-                print(
+                logger.info(
                     "Unknown handbook_avg unLock condition for {}.".format(
                         char_detail["name"]
                     )
@@ -1458,7 +1459,7 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table, rts):
         len(stage_info["unlockParam"]) != 1
         or stage_info["unlockParam"][0]["unlockType"] != "AWAKE"
     ):
-        print(
+        logger.info(
             "Unknown handbook_stage unLock condition for {}.".format(
                 char_detail["name"]
             )
@@ -1473,7 +1474,7 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table, rts):
         reward_count = r["count"]
         reward += f"\n|报酬内容{idx}={reward_name}\n|报酬数量{idx}={reward_count}"
     if len(stage_info["rewardItem"]) > 1:
-        print("Too many handbook_stage rewardItem for {}.".format(char_detail["name"]))
+        logger.info("Too many handbook_stage rewardItem for {}.".format(char_detail["name"]))
     desc = rts.compile(stage_info["description"]).replace("#FFFFFF", "#000000")
     return template.format(
         stage_name=stage_info["name"],
@@ -1532,7 +1533,7 @@ def trans_profession(profession):
 #             'logo_sargon': '萨尔贡',
 #         }[display_logo]
 #     except:
-#         print('出现未知logo: {}.'.format(display_logo))
+#         logger.info('出现未知logo: {}.'.format(display_logo))
 #         return '未知logo'
 
 
@@ -1626,7 +1627,7 @@ def replace_key(text):
 #     result = re.search(pattern1, text)
 #     if result:
 #         text = result.group(1) + '信赖至' + str(num) + '%' + result.group(2)
-#         # print(result.groups())
+#         # logger.info(result.groups())
 #     return text
 
 
@@ -1747,7 +1748,7 @@ class Basic(Job):
                 # if char_detail['name'] not in ['Pith(卫戍协议)']:
                 continue
             if char_detail["name"] not in id_table:
-                print("Unknown Character: {} {}.".format(char_key, char_detail["name"]))
+                logger.info("Unknown Character: {} {}.".format(char_key, char_detail["name"]))
                 # continue
 
             basic_info = get_basic_info(
@@ -1855,8 +1856,8 @@ class Basic(Job):
                     summary="init",
                     createonly=True,
                 )
-            # print(fin)
-            print("Created: {}.".format(char_detail["name"]))
+            # logger.info(fin)
+            logger.info("Created: {}.".format(char_detail["name"]))
 
         return flag_new_char
 
@@ -2006,10 +2007,10 @@ class Basic(Job):
                 self.wiki.edit(
                     title=char_detail["name"], text=new_text, summary="update"
                 )
-                # print(new_text)
-                print("Updated: {}.".format(char_detail["name"]))
+                # logger.info(new_text)
+                logger.info("Updated: {}.".format(char_detail["name"]))
             else:
-                print("Same: {}.".format(char_detail["name"]))
+                logger.info("Same: {}.".format(char_detail["name"]))
 
             # 本地diff对比
             # f_wiki = open('old.txt', 'w')
@@ -2076,7 +2077,7 @@ class Basic(Job):
                         text=new_text,
                         summary="更新干员密录&悖论模拟",
                     )
-                    # print(new_text)
-                    print("Updated: {}.".format(char_detail["name"]))
+                    # logger.info(new_text)
+                    logger.info("Updated: {}.".format(char_detail["name"]))
                 else:
-                    print("Same: {}.".format(char_detail["name"]))
+                    logger.info("Same: {}.".format(char_detail["name"]))

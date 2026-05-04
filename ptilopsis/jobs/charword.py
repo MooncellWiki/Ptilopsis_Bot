@@ -1,6 +1,7 @@
 import os
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -290,7 +291,7 @@ def charword_data(
                     )
                 else:
                     unlock_cond = text_data["lockDescription"].strip()
-                    print("new voice unlock type for", text_data["charWordId"])
+                    logger.info("new voice unlock type for", text_data["charWordId"])
                 text_dict[text_data["voiceIndex"]]["title"] = text_data[
                     "voiceTitle"
                 ].strip()
@@ -407,8 +408,8 @@ def create_charword(wiki, char_list, skin_table, charword_table):
             minor=True,
             createonly=True,
         )
-        # print(content)
-        print("Created: {}.".format(char_name + "/语音记录"))
+        # logger.info(content)
+        logger.info("Created: {}.".format(char_name + "/语音记录"))
 
 
 def update_charword(
@@ -454,10 +455,10 @@ def update_charword(
                 bot=None,
                 minor=True,
             )
-            # print(content)
-            print("Updated: {}.".format(char_name + "/语音记录"))
+            # logger.info(content)
+            logger.info("Updated: {}.".format(char_name + "/语音记录"))
         else:
-            print("Same: {}.".format(char_name + "/语音记录"))
+            logger.info("Same: {}.".format(char_name + "/语音记录"))
 
 
 class Charword(Job):

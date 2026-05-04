@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -66,10 +67,10 @@ def update_furni(wiki, building_data, item_table):
 
         if origin_text != new_text:
             wiki.edit(title=page_name, text=new_text, summary="update")
-            # print(new_text)
-            print(f"Update: {page_name}.")
+            # logger.info(new_text)
+            logger.info(f"Update: {page_name}.")
         else:
-            print(f"Same: {page_name}.")
+            logger.info(f"Same: {page_name}.")
 
 
 def create_furni(wiki, building_data, item_table):
@@ -163,8 +164,8 @@ def create_furni(wiki, building_data, item_table):
             page_name = furni_data["name"]
 
         wiki.edit(title=page_name, text=furni_info, createonly=True, summary="init")
-        # print(furni_info)
-        print(f"Created: {page_name}.")
+        # logger.info(furni_info)
+        logger.info(f"Created: {page_name}.")
 
     if individual_furni != []:
         wiki.edit(
@@ -174,8 +175,8 @@ def create_furni(wiki, building_data, item_table):
             bot=None,
             minor=True,
         )
-        # print(''.join(individual_furni))
-        print("Updated: {}.".format("首页/新增单件"))
+        # logger.info(''.join(individual_furni))
+        logger.info("Updated: {}.".format("首页/新增单件"))
 
 
 def create_themes(wiki, building_data, shop_client_table):
@@ -324,8 +325,8 @@ def create_themes(wiki, building_data, shop_client_table):
             bot=None,
             minor=True,
         )
-        # print(themesContent)
-        print("Created: {}.".format(themesData["name"]))
+        # logger.info(themesContent)
+        logger.info("Created: {}.".format(themesData["name"]))
 
     if new_theme != []:
         wiki.edit(
@@ -335,8 +336,8 @@ def create_themes(wiki, building_data, shop_client_table):
             bot=None,
             minor=True,
         )
-        # print(' '.join(new_theme))
-        print("Updated: {}.".format("首页/新增主题"))
+        # logger.info(' '.join(new_theme))
+        logger.info("Updated: {}.".format("首页/新增主题"))
 
 
 duplicate_list = []

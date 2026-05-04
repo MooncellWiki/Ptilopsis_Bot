@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -12,7 +13,7 @@ def parse_item(item, character_table, building_data, item_table):
             item_table["items"][item["id"]]["name"].rstrip(), item["count"]
         )
     else:
-        print("Unknown reward item {}.".format(item["id"]))
+        logger.info("Unknown reward item {}.".format(item["id"]))
 
 
 def update_medal(medal_table, character_table, building_data, item_table, rts):
@@ -162,5 +163,5 @@ class Medal(Job):
             bot=None,
             minor=True,
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/medal"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/medal"))

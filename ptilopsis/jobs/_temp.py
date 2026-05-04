@@ -2,6 +2,7 @@ import csv
 import io
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -29,31 +30,31 @@ class Temp(Job):
                     index=enemy_datum["enemyIndex"],
                 )
             else:
-                print(enemy_datum["name"], "页面未建立.")
+                logger.info(enemy_datum["name"], "页面未建立.")
                 continue
 
             n1 = old_text.find("{{敌人信息/common")
             n2 = old_text.find("|地位级别")
 
             if n1 == -1 or n2 == -1:
-                print(enemy_datum["name"], "not find.")
+                logger.info(enemy_datum["name"], "not find.")
                 continue
 
             new_text = old_text[:n1] + replace_text + old_text[n2:]
             if new_text != old_text:
-                print(enemy_datum["name"], "Different.")
+                logger.info(enemy_datum["name"], "Different.")
                 old_id = re.search(r"\|id=([0-9]*)\n", old_text).group(1)
                 new_id = re.search(r"\|id=([0-9]*)\n", new_text).group(1)
-                print(f"old: {old_id}  new: {new_id}")
-                # print(new_text)
+                logger.info(f"old: {old_id}  new: {new_id}")
+                # logger.info(new_text)
 
                 # self.wiki.edit(
                 #     title=enemy_datum['name'],
                 #     text=new_text,
                 #     summary='修正sortId'
                 # )
-                # # print(content)
-                # print('Updated: {}.'.format(enemy_datum['name']))
+                # # logger.info(content)
+                # logger.info('Updated: {}.'.format(enemy_datum['name']))
 
     def add_stage_drop(self):
         stage_table = self.getgd("excel/stage_table.json")
@@ -93,13 +94,13 @@ class Temp(Job):
                             text=content,
                             summary="添加模板:关卡材料掉落",
                         )
-                        # print(content)
-                        print(f"添加: {stage_name}.")
+                        # logger.info(content)
+                        logger.info(f"添加: {stage_name}.")
                     else:
-                        print("已有:", stage_name)
+                        logger.info("已有:", stage_name)
                 else:
                     if content.find("==材料掉落==\n{{关卡材料掉落}}") == -1:
-                        print("无需添加:", stage_name)
+                        logger.info("无需添加:", stage_name)
                     else:
                         content = content.replace(
                             "==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==",
@@ -114,10 +115,10 @@ class Temp(Job):
                             text=content,
                             summary="删去模板:关卡材料掉落",
                         )
-                        # print(content)
-                        print("删去多余:", stage_name)
+                        # logger.info(content)
+                        logger.info("删去多余:", stage_name)
             else:
-                print("No stage id found:", stage_name)
+                logger.info("No stage id found:", stage_name)
                 for sid in roguelike_table["stages"]:
                     if (
                         roguelike_table["stages"][sid]["code"]
@@ -133,11 +134,11 @@ class Temp(Job):
                             text=content,
                             summary="添加肉鸽关卡stageId",
                         )
-                        # print(content)
-                        print("添加肉鸽关卡stageId:", stage_name)
+                        # logger.info(content)
+                        logger.info("添加肉鸽关卡stageId:", stage_name)
                         break
                 if content.find("==材料掉落==\n{{关卡材料掉落}}") == -1:
-                    print("无需添加:", stage_name)
+                    logger.info("无需添加:", stage_name)
                 else:
                     content = content.replace(
                         "==材料掉落==\n{{关卡材料掉落}}\n==注释与链接==",
@@ -150,8 +151,8 @@ class Temp(Job):
                     self.wiki.edit(
                         title=stage_name, text=content, summary="删去模板:关卡材料掉落"
                     )
-                    # print(content)
-                    print("删去多余:", stage_name)
+                    # logger.info(content)
+                    logger.info("删去多余:", stage_name)
 
     def test_yinyang(self):
         stage_table = self.getgd("excel/stage_table.json")
@@ -176,7 +177,7 @@ class Temp(Job):
                         "levels/" + stage_detail["levelId"] + ".json"
                     )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 continue
@@ -196,19 +197,19 @@ class Temp(Job):
             #     else:
             #         return False
             #
-            # print(stage_page_name)
+            # logger.info(stage_page_name)
             # flag = False
             # for tile in level_table['mapData']['tiles']:
             #     if 'yinyang' in tile['tileKey'] and tile['tileKey'] != 'tile_yinyang_switch':
             #         flag = True
             #         if not tile_diff(tile['blackboard']):
-            #             print('Warning:', stage_page_name, tile['blackboard'])
+            #             logger.info('Warning:', stage_page_name, tile['blackboard'])
             # if not flag:
-            #     print(stage_page_name, '无晦明')
+            #     logger.info(stage_page_name, '无晦明')
 
             for tile in level_table["mapData"]["tiles"]:
                 if tile["effects"] is not None:
-                    print(
+                    logger.info(
                         stage_page_name,
                         stage_detail["stageId"],
                         tile["tileKey"],
@@ -224,4 +225,4 @@ class Temp(Job):
                 "approach": row["approach"],
                 "date": row["date"],
             }
-        print(id_table)
+        logger.info(id_table)

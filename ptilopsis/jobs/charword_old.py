@@ -1,5 +1,6 @@
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -25,7 +26,7 @@ def concat_id(voice_data, char_name, flag_CN, text_jp=""):
     elif voice_data["unlockType"] == "FAVOR":
         # if voice_data['lockDescription'] != '提升信赖以查看更多信息':
         #     unlock_cond = voice_data['lockDescription'].rstrip()
-        #     print('new voice favor unlock description for', voice_data['charWordId'])
+        #     logger.info('new voice favor unlock description for', voice_data['charWordId'])
         # else:
         unlock_cond = "提升信赖至{}%以查看".format(
             voice_data["unlockParam"][0]["valueInt"]
@@ -45,7 +46,7 @@ def concat_id(voice_data, char_name, flag_CN, text_jp=""):
             id=voice_data["voiceIndex"],
             unlock_cond=voice_data["lockDescription"].rstrip(),
         )
-        print("new voice unlock type for", voice_data["charWordId"])
+        logger.info("new voice unlock type for", voice_data["charWordId"])
     return text
 
 
@@ -106,8 +107,8 @@ def create_charword(wiki, char_list, charword_table, voice_lang_dict):
             bot=None,
             minor=True,
         )
-        # print(content)
-        print("Created: {}.".format(char_name + "/语音记录"))
+        # logger.info(content)
+        logger.info("Created: {}.".format(char_name + "/语音记录"))
 
 
 def update_charword(wiki, char_list, charword_table, voice_lang_dict):
@@ -140,7 +141,7 @@ def update_charword(wiki, char_list, charword_table, voice_lang_dict):
                     k, file_name, charword_table, flag_CN, text_jp_dict=d, title=title
                 )
             else:
-                print(char_name, "no wordkey found.")
+                logger.info(char_name, "no wordkey found.")
                 new_text += get_charword_data(k, file_name, charword_table, flag_CN)
             new_text += "\n"
 
@@ -152,10 +153,10 @@ def update_charword(wiki, char_list, charword_table, voice_lang_dict):
 
         if origin_text != new_text:
             wiki.edit(title=char_name + "/语音记录", text=new_text, summary="update")
-            # print(new_text)
-            print("Update: {}.".format(char_name + "/语音记录"))
+            # logger.info(new_text)
+            logger.info("Update: {}.".format(char_name + "/语音记录"))
         else:
-            print("Same: {}.".format(char_name + "/语音记录"))
+            logger.info("Same: {}.".format(char_name + "/语音记录"))
 
 
 def update_charword_jp(
@@ -227,10 +228,10 @@ def update_charword_jp(
                 text=new_text,
                 summary="update",
             )
-            # print(new_text)
-            print("Update: {}.".format(char_name + "/语音记录"))
+            # logger.info(new_text)
+            logger.info("Update: {}.".format(char_name + "/语音记录"))
         else:
-            print("Same: {}.".format(char_name + "/语音记录"))
+            logger.info("Same: {}.".format(char_name + "/语音记录"))
 
 
 def char_filter(char_tuple):
@@ -294,7 +295,7 @@ class Charword(Job):
         char_list, char_list_en = [], []
         for char_id in character_table_jp:
             if char_id not in character_table:
-                print(f"Character {char_id} not find.")
+                logger.info(f"Character {char_id} not find.")
                 continue
             if (
                 character_table[char_id]["profession"] == "TRAP"

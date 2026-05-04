@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -105,7 +106,7 @@ class BuildingBuff(Job):
                 bot=None,
                 minor=True,
             )
-            # print(content)
-            print("Updated: {}.".format("后勤技能一览/store"))
+            # logger.info(content)
+            logger.info("Updated: {}.".format("后勤技能一览/store"))
         else:
-            print("Same: {}.".format("后勤技能一览/store"))
+            logger.info("Same: {}.".format("后勤技能一览/store"))

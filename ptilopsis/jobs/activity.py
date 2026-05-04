@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytz
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -113,7 +114,7 @@ def update_activity(
             or activity_table["basicInfo"][mission["id"]]["rewardEndTime"]
             != mission["endTs"]
         ):
-            print(mission["id"], "time not match!")
+            logger.info(mission["id"], "time not match!")
         start_time = datetime.fromtimestamp(
             activity_table["basicInfo"][mission["id"]]["startTime"],
             pytz.timezone("Asia/Shanghai"),
@@ -133,7 +134,7 @@ def update_activity(
         )
         for mission_id in mission["missionIds"]:
             if activity_dict[mission_id]["missionGroup"] != mission["id"]:
-                print(mission_id, "group not match!")
+                logger.info(mission_id, "group not match!")
             activity_text_dict[mission["id"]] += "\n|-\n|{desc}\n|{reward}".format(
                 desc=rts.compile(activity_dict[mission_id]["description"]).replace(
                     "\n", "<br/>"
@@ -280,5 +281,5 @@ class Activity(Job):
         self.wiki.edit(
             title="用户:Seniorious/activities", text=content, summary="update"
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/activities"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/activities"))

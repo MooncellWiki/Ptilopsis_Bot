@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 import requests
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -26,7 +27,7 @@ def update_yellow(wiki):
 
     session = requests.Session()
     good_list = session.get("https://weedy.baka.icu/shop/high").json()["goodList"]
-    # print(good_list)
+    # logger.info(good_list)
 
     content = template.format(
         star6=good_list[0]["displayName"],
@@ -49,12 +50,12 @@ def update_yellow(wiki):
         ).strftime("%Y-%m-%d %H:%M"),
     )
 
-    print(
+    logger.info(
         f"当期6星: {good_list[0]['displayName']}    当期5星: {good_list[1]['displayName']}"
     )
     wiki.edit(title="高级凭证区", text=content, summary="update")
-    # print(content)
-    print("Updated: {}.".format("高级凭证区"))
+    # logger.info(content)
+    logger.info("Updated: {}.".format("高级凭证区"))
 
 
 def update_rune(wiki):
@@ -144,8 +145,8 @@ def update_rune(wiki):
         )
 
     wiki.edit(title="用户:Seniorious/daily-rune", text=content, summary="update")
-    # print(content)
-    print("Updated: {}.".format("用户:Seniorious/daily-rune"))
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/daily-rune"))
 
 
 class Weedy(Job):

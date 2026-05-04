@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -112,5 +113,5 @@ class Formula(Job):
         self.wiki.edit(
             title="用户:Seniorious/workshopFormulas", text=content, summary="update"
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/workshopFormulas"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/workshopFormulas"))

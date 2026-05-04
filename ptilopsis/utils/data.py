@@ -1,6 +1,7 @@
 import json
 import os
 
+from ptilopsis.log import logger
 from ptilopsis.utils.unpacker import Unpacker
 
 
@@ -9,7 +10,7 @@ class GameData:
         self.data = {}
         self.source = source
         self.config = config
-        print(f"start with {self.source} mode")
+        logger.info(f"start with {self.source} mode")
         self.unpacker = Unpacker(config)
         self.source_YoStar = "thirdparty/ArknightsGameData_YoStar"
 

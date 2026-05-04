@@ -1,6 +1,7 @@
 import csv
 import io
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 mat_dic = {}
@@ -159,10 +160,10 @@ def update_mat_demand(wiki, character_table, item_table):
                 text=new_text,
                 summary="update",
             )
-            # print(new_text)
-            print("Update: {}.".format(item_table["items"][material]["name"].strip()))
+            # logger.info(new_text)
+            logger.info("Update: {}.".format(item_table["items"][material]["name"].strip()))
         # else:
-        #     print('Same: {}.'.format(item_table['items'][material]['name'].strip()))
+        #     logger.info('Same: {}.'.format(item_table['items'][material]['name'].strip()))
 
 
 class Demand(Job):

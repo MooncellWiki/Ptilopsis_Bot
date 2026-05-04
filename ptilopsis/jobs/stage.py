@@ -5,6 +5,7 @@ import re
 
 import requests
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -174,7 +175,7 @@ def parse_drop_item(drop_item, character_table, building_data, item_table):
         ]:
             return item_table["items"][drop_item["id"]]["name"].strip()
         else:
-            print("Unknown drop item {}".format(drop_item["id"]))
+            logger.info("Unknown drop item {}".format(drop_item["id"]))
             return item_table["items"][drop_item["id"]]["name"].strip()
     except:
         return "物品{}".format(drop_item["id"])
@@ -276,7 +277,7 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
             reward_content = ",".join(reward_list[drop_type])
             rewards_data += f"|{parse_drop_type(drop_type)}={reward_content}\n"
             if drop_type == 2 or drop_type == "NORMAL":
-                print("\t—— " + reward_content)
+                logger.info("\t—— " + reward_content)
     return rewards_data
 
 
@@ -289,7 +290,7 @@ def analyze_action(actions, normal_hidden_group, notCount_list):
                 action.random_pack in pack_dict
                 and pack_dict[action.random_pack] != action.random_key
             ):
-                print(
+                logger.info(
                     f"Error: randomSpawnGroupPackKey duplicate! ({action.random_key} - {action.random_pack})"
                 )
             pack_dict[action.random_pack] = action.random_key
@@ -468,7 +469,7 @@ def analyze_normal_hidden_group(level_table):
                         if d["key"] == "key":
                             normal_hidden_group.append(d["valueStr"])
         except:
-            print("hiddenGroup解析出错.")
+            logger.info("hiddenGroup解析出错.")
     return normal_hidden_group
 
 
@@ -539,7 +540,7 @@ def analyze_char_card_info(
 |{fp_desc}{memory_desc}
 |}}"""
     except:
-        print(stage_page_name, "characterCards error.")
+        logger.info(stage_page_name, "characterCards error.")
 
     return char_pre
 
@@ -599,7 +600,7 @@ def analyze_char_insert_info(
 |{fp_desc}
 |}}"""
     except:
-        print(stage_page_name, "characterInsts error.")
+        logger.info(stage_page_name, "characterInsts error.")
 
     return char_pre
 
@@ -1187,7 +1188,7 @@ def get_memory_data(
         elif p["unlockType"] == 2 or p["unlockType"] == "FAVOR":
             unlock_cond += "提升信赖至{}".format(p["unlockParam1"])
         else:
-            print("Unknown unlockType", p["unlockType"])
+            logger.info("Unknown unlockType", p["unlockType"])
     unlock_cond = (
         "干员'''[[{}]]'''".format(character_table[stage_detail["charId"]]["name"])
         + unlock_cond
@@ -1390,7 +1391,7 @@ class ActionInfo:
             if self.random_pack in pack_dict:
                 self.random_key = pack_dict[self.random_pack]
             else:
-                print(f"Error: cannot find random_key for pack {self.random_pack}")
+                logger.info(f"Error: cannot find random_key for pack {self.random_pack}")
 
 
 class Stage(Job):
@@ -1432,7 +1433,7 @@ class Stage(Job):
                     if page_name not in duplicate_dict[code]:
                         duplicate_dict[code] += page_name
         self.duplicate_dict = duplicate_dict
-        # print(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
+        # logger.info(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
 
     def _get_list_notCountInTotal(self):
         enemy_database = self.getgd("levels/enemydata/enemy_database.json")
@@ -1541,7 +1542,7 @@ class Stage(Job):
                             "levels/" + stage_detail["levelId"].lower() + ".json"
                         )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -1625,14 +1626,14 @@ class Stage(Job):
             # if result1 and result2:
             #     stage_content = old.replace(result1.group(1), result2.group(1))
             #     if stage_content != old:
-            #         print(f'{stage_page_name} differenet. update.')
+            #         logger.info(f'{stage_page_name} differenet. update.')
             #         self.wiki.edit(
             #             title=stage_page_name,
             #             text=stage_content,
             #             summary='update'
             #         )
             #     else:
-            #         print(f'{stage_page_name} same.')
+            #         logger.info(f'{stage_page_name} same.')
             # else:
             #     continue
 
@@ -1672,8 +1673,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
             new_stage_list.append(f"* [[{stage_page_name}]]")
 
@@ -1685,8 +1686,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_campaign(self):
         building_data = self.getgd("excel/building_data.json")
@@ -1717,7 +1718,7 @@ class Stage(Job):
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -1791,8 +1792,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
             new_stage_list.append(f"* [[{stage_page_name}]]")
 
@@ -1804,8 +1805,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_crisis(self):
         rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
@@ -1838,7 +1839,7 @@ class Stage(Job):
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -1872,8 +1873,8 @@ class Stage(Job):
                 minor=True,
                 createonly="1",
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
     def run_rogue_like(self):
         # roguelike_table = self.getgd('excel/roguelike_table.json')
@@ -1910,7 +1911,7 @@ class Stage(Job):
                             "levels/" + stage_detail["levelId"].lower() + ".json"
                         )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -1956,8 +1957,8 @@ class Stage(Job):
                 minor=True,
                 createonly="1",
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
     def run_memory(self):
         building_data = self.getgd("excel/building_data.json")
@@ -1984,7 +1985,7 @@ class Stage(Job):
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -2050,8 +2051,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
             new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
@@ -2063,8 +2064,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_sandbox(self):
         # sandbox_table = self.getgd('excel/sandbox_table.json')
@@ -2097,7 +2098,7 @@ class Stage(Job):
                             "levels/" + stage_data["levelId"].lower() + ".json"
                         )
                     except:
-                        print(f"Cannot find level data of {stage_page_name}.")
+                        logger.info(f"Cannot find level data of {stage_page_name}.")
                         continue
                 else:
                     level_table = {}
@@ -2148,8 +2149,8 @@ class Stage(Job):
                     bot=None,
                     minor=True,
                 )
-                # print(stage_content)
-                print(f"Created: {stage_page_name}.")
+                # logger.info(stage_content)
+                logger.info(f"Created: {stage_page_name}.")
 
                 new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
@@ -2161,8 +2162,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_mechanism(self):
         story_review_meta_table = self.getgd("excel/story_review_meta_table.json")
@@ -2186,7 +2187,7 @@ class Stage(Job):
                         "levels/" + stage_data["levelId"].lower() + ".json"
                     )
                 except:
-                    print(f"Cannot find level data of {stage_page_name}.")
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
@@ -2228,8 +2229,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print(stage_content)
-            print(f"Created: {stage_page_name}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
             new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
         if new_stage_list != []:
@@ -2240,8 +2241,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print(''.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info(''.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_recalrune(self):
         crisis_v2_table = self.getgd("excel/crisis_v2_table.json")
@@ -2269,7 +2270,7 @@ class Stage(Job):
                             "levels/" + stage_data["levelId"].lower() + ".json"
                         )
                     except:
-                        print(f"Cannot find level data of {stage_page_name}.")
+                        logger.info(f"Cannot find level data of {stage_page_name}.")
                         continue
                 else:
                     level_table = {}
@@ -2315,8 +2316,8 @@ class Stage(Job):
                     bot=None,
                     minor=True,
                 )
-                # print(stage_content)
-                print(f"Created: {stage_page_name}.")
+                # logger.info(stage_content)
+                logger.info(f"Created: {stage_page_name}.")
 
                 new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
@@ -2328,8 +2329,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def run_id(self, path):
         # if self.gamedata._source() != 'Unpacker':
@@ -2362,7 +2363,7 @@ class Stage(Job):
         for file in filelist:
             stage_id = os.path.splitext(os.path.split(file)[1])[0]
             if file.lower() in stage_id_list:
-                print(stage_id, "already in stage_table. Pass.")
+                logger.info(stage_id, "already in stage_table. Pass.")
                 continue
             level_table = self.getgd(file.lower())
 
@@ -2399,8 +2400,8 @@ class Stage(Job):
             self.wiki.edit(
                 title=stage_id, text=stage_content, summary="init", bot=None, minor=True
             )
-            # print(stage_content)
-            print(f"Created: {stage_id}.")
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_id}.")
             new_stage_list.append(f"\n* [[{stage_id}]]")
 
         if new_stage_list != []:
@@ -2411,8 +2412,8 @@ class Stage(Job):
                 bot=None,
                 minor=True,
             )
-            # print('\n'.join(new_stage_list))
-            print("Updated: {}.".format("首页/新增关卡"))
+            # logger.info('\n'.join(new_stage_list))
+            logger.info("Updated: {}.".format("首页/新增关卡"))
 
     def _run_enemy_data(self, level_table, flag_skip0=False):
         enemy_table = self.getgd("excel/enemy_handbook_table.json")

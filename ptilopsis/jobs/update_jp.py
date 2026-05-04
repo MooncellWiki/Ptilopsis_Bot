@@ -1,5 +1,6 @@
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -97,15 +98,15 @@ def update_charword_jp(
 
         # edit wiki
         if origin_text != new_text:
-            # print(new_text)
+            # logger.info(new_text)
             wiki.edit(
                 title=char_detail["name"] + "/语音记录",
                 text=new_text,
                 summary="update",
             )
-            print("Update: {}.".format(char_detail["name"] + "/语音记录"))
+            logger.info("Update: {}.".format(char_detail["name"] + "/语音记录"))
         else:
-            print("Same: {}.".format(char_detail["name"] + "/语音记录"))
+            logger.info("Same: {}.".format(char_detail["name"] + "/语音记录"))
 
 
 def update_skill_and_name(
@@ -187,15 +188,15 @@ def update_skill_and_name(
 
         # edit wiki
         if origin_text != new_text:
-            # print(new_text)
+            # logger.info(new_text)
             wiki.edit(
                 title=char_detail["name"],
                 text=new_text,
                 summary="update",
             )
-            print("Update: {}.".format(char_detail["name"]))
+            logger.info("Update: {}.".format(char_detail["name"]))
         else:
-            print("Same: {}.".format(char_detail["name"]))
+            logger.info("Same: {}.".format(char_detail["name"]))
 
         if char_detail["name"] != name_jp:
             redirect_text = "#redirect [[{}]]".format(char_detail["name"])
@@ -251,15 +252,15 @@ def update_furni_info(wiki, building_data, building_data_jp, building_data_en):
 
         # edit wiki
         if origin_text != new_text:
-            # print(new_text)
+            # logger.info(new_text)
             wiki.edit(
                 title=page_name,
                 text=new_text,
                 summary="update",
             )
-            print(f"Update: {page_name}.")
+            logger.info(f"Update: {page_name}.")
         else:
-            print(f"Same: {page_name}.")
+            logger.info(f"Same: {page_name}.")
 
 
 class UpdateJp(Job):

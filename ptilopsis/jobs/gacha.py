@@ -2,6 +2,7 @@ import json
 
 import requests
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -47,13 +48,13 @@ def get_gacha_list(wiki):
     a = {"国服寻访": [], "国际服寻访": []}
 
     page_list = wiki.category("分类:国服寻访")
-    # print(page_list)
+    # logger.info(page_list)
     for page in page_list:
         text = wiki.read(page)
         a["国服寻访"].append({"name": page, "text": text})
 
     page_list = wiki.category("分类:国际服寻访")
-    # print(page_list)
+    # logger.info(page_list)
     for page in page_list:
         text = wiki.read(page)
         a["国际服寻访"].append({"name": page, "text": text})
@@ -68,10 +69,10 @@ def update_gacha_list(wiki):
 
     for page in content["国服寻访"]:
         wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
-        # print(page['text'])
+        # logger.info(page['text'])
     for page in content["国际服寻访"]:
         wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
-        # print(page['text'])
+        # logger.info(page['text'])
 
 
 class Gacha(Job):
@@ -87,9 +88,9 @@ class Gacha(Job):
             "detail"
         ]
 
-        print("request success.")
+        logger.info("request success.")
         content = get_gacha_mainpage(character_table, gacha_data, rts)
 
         self.wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/test"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/test"))

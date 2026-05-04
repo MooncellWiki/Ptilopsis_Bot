@@ -1,3 +1,6 @@
+from ptilopsis.log import logger
+
+
 class Job:
     def __init__(self, wiki, gamedata):
         self.wiki = wiki
@@ -6,8 +9,8 @@ class Job:
     def run(self):
         try:
             self._run()
-        except Exception as e:
-            print(e)
+        except Exception:
+            logger.exception("job run failed")
 
     def getgd(self, path, region="CN"):
         """

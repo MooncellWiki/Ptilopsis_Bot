@@ -1,6 +1,7 @@
 import copy
 import os
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -10,9 +11,9 @@ def format_time(time):
 
 def parse_checkpoint(checkpoint):
     if checkpoint["randomizeReachOffset"] == True:
-        print("randomizeReachOffset = True")
+        logger.info("randomizeReachOffset = True")
     if checkpoint["reachDistance"] != 0.0:
-        print("reachDistance =", checkpoint["reachDistance"])
+        logger.info("reachDistance =", checkpoint["reachDistance"])
 
     if checkpoint["reachOffset"]["x"] == 0.0:
         x_pos = "{}".format(checkpoint["position"]["col"])
@@ -61,35 +62,35 @@ def parse_motionMode(motionMode):
             1: "FLY",
         }[motionMode]
     except:
-        # print('Unexpected motionMode {}.'.format(motionMode))
+        # logger.info('Unexpected motionMode {}.'.format(motionMode))
         # return 'E_NUM' if motionMode == 2 else 'UNKNOWN'
-        print("Unexpected motionMode.")
+        logger.info("Unexpected motionMode.")
         return "E_NUM"
 
 
 def parse_actionType(action_count, key, actionType):
     if not isinstance(actionType, int):
-        print(f"No.{action_count} {key} actionType: {actionType}")
+        logger.info(f"No.{action_count} {key} actionType: {actionType}")
     if actionType == 0:
         pass
     elif actionType == 1:
-        print("No.{} {} actionType: {}".format(action_count, key, "PREVIEW_CURSOR"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "PREVIEW_CURSOR"))
     elif actionType == 2:
-        print("No.{} {} actionType: {}".format(action_count, key, "STORY"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "STORY"))
     elif actionType == 3:
-        print("No.{} {} actionType: {}".format(action_count, key, "TUTORIAL"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "TUTORIAL"))
     elif actionType == 4:
-        print("No.{} {} actionType: {}".format(action_count, key, "PLAY_BGM"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "PLAY_BGM"))
     elif actionType == 5:
-        print("No.{} {} actionType: {}".format(action_count, key, "DISPLAY_ENEMY_INFO"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "DISPLAY_ENEMY_INFO"))
     elif actionType == 6:
-        print(
+        logger.info(
             "No.{} {} actionType: {}".format(action_count, key, "ACTIVATE_PREDEFINED")
         )
     elif actionType == 7:
-        print("No.{} {} actionType: {}".format(action_count, key, "E_NUM"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "E_NUM"))
     else:
-        print("No.{} {} actionType: {}".format(action_count, key, "UNKNOWN"))
+        logger.info("No.{} {} actionType: {}".format(action_count, key, "UNKNOWN"))
 
 
 def parse_checkPointType(checkpoint_type, time, x, y):
@@ -114,15 +115,15 @@ def get_routes(level_routes):
     #     route_id += 1
     #     if route == None:
     #         continue
-    #     print('%d: ' % route_id)
-    #     print('motionMode:', parse_motionMode(route['motionMode']))
+    #     logger.info('%d: ' % route_id)
+    #     logger.info('motionMode:', parse_motionMode(route['motionMode']))
     #     if route['allowDiagonalMove'] == False:
-    #         print('ADM = False')
+    #         logger.info('ADM = False')
     #     if route['visitEveryTileCenter'] == True:
-    #         print('VETC = True')
+    #         logger.info('VETC = True')
     #     if route['visitEveryNodeCenter'] == True:
-    #         print('VENC = True')
-    #     print(parse_route(route))
+    #         logger.info('VENC = True')
+    #     logger.info(parse_route(route))
 
 
 def get_waves(level_waves):
@@ -131,12 +132,12 @@ def get_waves(level_waves):
     spawn_group = {}
     for wave in level_waves:
         wave_count += 1
-        # print('wave {} name: {}'.format(wave_count, wave['name']))
+        # logger.info('wave {} name: {}'.format(wave_count, wave['name']))
         min_time += wave["preDelay"]
         fragment_count = -1
         for fragment in wave["fragments"]:
             fragment_count += 1
-            # print('fragment {} name: {}'.format(fragment_count, fragment['name']))
+            # logger.info('fragment {} name: {}'.format(fragment_count, fragment['name']))
             min_time += fragment["preDelay"]
             # min_time += max([action['preDelay'] + (action['count']-1) * action['interval'] + int(action['autoPreviewRoute'])*1.5 for action in fragment['actions']])
             min_time += max(
@@ -152,22 +153,22 @@ def get_waves(level_waves):
                 action_count += 1
                 # parse_actionType(action_count, action['key'], action['actionType'])
                 # if action['managedByScheduler'] == False:
-                #     print('No.{} {} managedByScheduler = False.'.format(action_count, action['key']))
+                #     logger.info('No.{} {} managedByScheduler = False.'.format(action_count, action['key']))
                 # if action['blockFragment'] == True:
-                #     print('No.{} {} blockFragment = True.'.format(action_count, action['key']))
+                #     logger.info('No.{} {} blockFragment = True.'.format(action_count, action['key']))
                 # if action['autoPreviewRoute'] == False:
-                #     print('No.{} {} autoPreviewRoute = False.'.format(action_count, action['key']))
+                #     logger.info('No.{} {} autoPreviewRoute = False.'.format(action_count, action['key']))
                 # if action['isUnharmfulAndAlwaysCountAsKilled'] == True:
-                #     print('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
+                #     logger.info('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
                 # if 'hiddenGroup' in action and action['hiddenGroup'] != None:
-                #     print('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['hiddenGroup']))
+                #     logger.info('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['hiddenGroup']))
                 # if action['actionType'] != 0 and 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
                 #     if action['weight'] - action['weightValue'] != 0.0:
-                #     print('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
+                #     logger.info('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
             # min_time += 0.3
         min_time += wave["postDelay"]
         # min_time += 0.5
-    print(format_time(min_time))
+    logger.info(format_time(min_time))
 
 
 def count_enemy(level_waves):
@@ -246,13 +247,13 @@ def count_enemy(level_waves):
         min_time += wave["postDelay"]
         min_time_low += wave["postDelay"]
     if e_low + e_num != e_high + e_num:
-        print(f"num: {e_low + e_num}~{e_high + e_num}")
+        logger.info(f"num: {e_low + e_num}~{e_high + e_num}")
     else:
-        print(f"num: {e_low + e_num}")
+        logger.info(f"num: {e_low + e_num}")
     if min_time_low != min_time_high:
-        print(f"time: {format_time(min_time_low)}~{format_time(min_time_high)}")
+        logger.info(f"time: {format_time(min_time_low)}~{format_time(min_time_high)}")
     else:
-        print(f"time: {format_time(min_time_low)}")
+        logger.info(f"time: {format_time(min_time_low)}")
 
 
 def get_waves_table(level_waves, routes, enemy_table):
@@ -354,12 +355,12 @@ class Route(Job):
             # for stage in roguelike_table['stages']:
             #     levelId = roguelike_table['stages'][stage]['levelId']
             #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-            #         print('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
+            #         logger.info('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
             #         level_table = self.getgd('levels/' + levelId + '.json')
             #         count_enemy(level_table['waves'])
 
             self.wiki.edit(
                 title="用户:Seniorious/route", text=wave_table, summary="update"
             )
-            # print(wave_table)
-            print("Updated: {}.".format("用户:Seniorious/route"))
+            # logger.info(wave_table)
+            logger.info("Updated: {}.".format("用户:Seniorious/route"))

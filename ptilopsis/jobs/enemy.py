@@ -2,6 +2,7 @@ import bisect
 import json
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -238,7 +239,7 @@ class Enemy(Job):
                 enemy_data = enemy_database["enemies"][enemy_db_index[enemy["enemyId"]]]
                 for idx, d in enumerate(enemy_data["Value"]):
                     if d["level"] != idx:
-                        print(f"enemy {enemy['name']} database order error.")
+                        logger.info(f"enemy {enemy['name']} database order error.")
                         continue
                     lv_data = d["enemyData"]
                     for idx_a, k in enumerate(
@@ -493,9 +494,9 @@ class Enemy(Job):
                 protections="edit=autoconfirmed|move=sysop",
                 reason="protect",
             )
-            # print(content)
-            # print(json.dumps(spine_content, indent=4, ensure_ascii=False))
-            print("Created: {}.".format(enemy["name"]))
+            # logger.info(content)
+            # logger.info(json.dumps(spine_content, indent=4, ensure_ascii=False))
+            logger.info("Created: {}.".format(enemy["name"]))
 
     def update_data(self):
         enemy_handbook_table = self.getgd("excel/enemy_handbook_table.json")
@@ -545,7 +546,7 @@ class Enemy(Job):
                 enemy_data = enemy_database["enemies"][enemy_db_index[enemy["enemyId"]]]
                 for idx, d in enumerate(enemy_data["Value"]):
                     if d["level"] != idx:
-                        print(f"enemy {enemy_data['name']} database order error.")
+                        logger.info(f"enemy {enemy_data['name']} database order error.")
                         continue
                     lv_data = d["enemyData"]
                     for idx_a, k in enumerate(
@@ -639,8 +640,8 @@ class Enemy(Job):
             text=json.dumps(new_enemy_table, ensure_ascii=False),
             summary="update",
         )
-        # print(json.dumps(new_enemy_table, ensure_ascii = False))
-        print("Updated: {}.".format("敌人一览/数据"))
+        # logger.info(json.dumps(new_enemy_table, ensure_ascii = False))
+        logger.info("Updated: {}.".format("敌人一览/数据"))
 
     def update_summary(self):
         enemy_handbook_table = self.getgd("excel/enemy_handbook_table.json")
@@ -700,7 +701,7 @@ class Enemy(Job):
                 enemy_data = enemy_database["enemies"][enemy_db_index[enemy["enemyId"]]]
                 for idx, d in enumerate(enemy_data["Value"]):
                     if d["level"] != idx:
-                        print(f"enemy {enemy['name']} database order error.")
+                        logger.info(f"enemy {enemy['name']} database order error.")
                         continue
                     lv_data = d["enemyData"]
                     lv_idx = new_page.find(f"==级别{idx}==")
@@ -725,5 +726,5 @@ class Enemy(Job):
                     text=new_page,
                     summary="更新抗性",
                 )
-                # print(new_page)
-                print("Updated: {}.".format(enemy["name"]))
+                # logger.info(new_page)
+                logger.info("Updated: {}.".format(enemy["name"]))

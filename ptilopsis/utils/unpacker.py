@@ -7,6 +7,8 @@ import zipfile
 import requests
 from retrying import retry
 
+from ptilopsis.log import logger
+
 
 class Unpacker:
     def __init__(self, config, region="CN"):
@@ -17,7 +19,7 @@ class Unpacker:
         self.version_dir = config["version"]
         with open(self.version_dir) as f:
             self.version = json.load(f)
-        print(f"[{region} VERSION]: {self.version[region]['resVersion']}")
+        logger.info(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
         self.manifest_idx = {}
 
@@ -25,19 +27,19 @@ class Unpacker:
         local_version = self.version[region]["resVersion"]
         if local_version != self.get_version(region):
             if region == "CN":
-                print(f"[{region} UPDATE] New version detected. Start to update.")
+                logger.info(f"[{region} UPDATE] New version detected. Start to update.")
                 self.get_update_list(region)
                 self.load_idx(region)
                 # self.get_all_ab(region)
-                # print('Finish download all AB.')
-                print(
+                # logger.info('Finish download all AB.')
+                logger.info(
                     self.config[region]["updateMsg"].format(
                         self.version[region]["clientVersion"],
                         self.version[region]["resVersion"],
                     )
                 )
             else:
-                print(f"[{region} UPDATE] New version detected.")
+                logger.info(f"[{region} UPDATE] New version detected.")
             return True
         return False
 
@@ -45,7 +47,7 @@ class Unpacker:
         flag = False
         for r in self.config:
             if r != "CN":
-                print(f"Start to check {r} server.")
+                logger.info(f"Start to check {r} server.")
                 flag ^= self.check_update(region=r)
         return flag
 
@@ -64,7 +66,7 @@ class Unpacker:
         ret2 = requests.get(url, headers=self.ua).json()
         ret2 = json.loads(ret2["content"])
         if ret2["funcVer"] != version[region]["funcVer"]:
-            print(f"{region} server network config update to {ret2['funcVer']}.")
+            logger.info(f"{region} server network config update to {ret2['funcVer']}.")
         version[region]["funcVer"] = ret2["funcVer"]
 
         self.version = version
@@ -174,7 +176,7 @@ class Unpacker:
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(
             f"./Unpacker/{self.config[region]['folder']}/ab/"
         )
-        print(f"download: {path}")
+        logger.info(f"download: {path}")
 
     def compare_ab_md5(self, md5, path, region="CN"):
         ab_dir = os.path.join(f"./Unpacker/{self.config[region]['folder']}/ab", path)

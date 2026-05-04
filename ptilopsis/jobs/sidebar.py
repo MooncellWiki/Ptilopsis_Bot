@@ -2,6 +2,7 @@ import csv
 import io
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -31,8 +32,8 @@ def update_menusidebar(wiki, old_num, id_table, character_table):
         bot=None,
         minor=True,
     )
-    # print(new_text)
-    print("Update: {}.".format("MediaWiki:MenuSidebar"))
+    # logger.info(new_text)
+    logger.info("Update: {}.".format("MediaWiki:MenuSidebar"))
 
 
 def update_mainpage(wiki, old_num, id_table):
@@ -50,8 +51,8 @@ def update_mainpage(wiki, old_num, id_table):
     fin = fin2[:num1] + content + fin2[num2:]
 
     wiki.edit(title="首页", text=fin, summary="update")
-    print(fin)
-    print("Update: {}.".format("首页"))
+    logger.info(fin)
+    logger.info("Update: {}.".format("首页"))
 
 
 def update_gameinfo(wiki, old_num, id_table, character_table):
@@ -74,8 +75,8 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
         bot=None,
         minor=True,
     )
-    # print(new_text)
-    print("Update: {}.".format("PRTS:Gameinfo/国服/干员一览"))
+    # logger.info(new_text)
+    logger.info("Update: {}.".format("PRTS:Gameinfo/国服/干员一览"))
 
 
 class Sidebar(Job):

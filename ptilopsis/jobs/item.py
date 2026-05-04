@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -99,7 +100,7 @@ class Item(Job):
                     else:
                         sort = "其他道具"
                     if int(item) == 73:
-                        print()
+                        logger.info("")
                 except Exception:
                     sort = "其他道具"
             if item_table["items"][item]["obtainApproach"]:
@@ -232,7 +233,7 @@ class Item(Job):
                             )
                         twf = twf + tstr + "}}"
                     else:
-                        print("error")
+                        logger.info("error")
                 if tmf:
                     tbasic_info = tbasic_info + "==制造站==\n" + tmf + "\n"
                 if twf:
@@ -248,13 +249,13 @@ class Item(Job):
                 #     else:
                 #         new = old
                 #     if new != old and citem['name'] != '家具零件':
-                #         # print(new)
+                #         # logger.info(new)
                 #         self.wiki.edit(title=citem['name'].rstrip(), text=new)
-                #         print("edit", citem['name'].rstrip())
+                #         logger.info("edit", citem['name'].rstrip())
                 #     else:
-                #         print(citem['name'].rstrip(), 'same')
+                #         logger.info(citem['name'].rstrip(), 'same')
             fin = "{{Navigator|道具一览}}\n" + tbasic_info + "\n{{道具导航}}"
-            # print(fin)
+            # logger.info(fin)
             try:
                 self.wiki.edit(
                     title=citem["name"].rstrip(),
@@ -263,4 +264,4 @@ class Item(Job):
                     createonly=True,
                 )
             except:
-                print("Fail editing Page:", citem["name"])
+                logger.info("Fail editing Page:", citem["name"])

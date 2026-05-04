@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -24,5 +25,5 @@ class Term(Job):
             bot=None,
             minor=True,
         )
-        # print(content)
-        print("Updated: {}.".format("用户:Seniorious/term"))
+        # logger.info(content)
+        logger.info("Updated: {}.".format("用户:Seniorious/term"))

@@ -1,3 +1,4 @@
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -10,5 +11,5 @@ class Sample(Job):
         content = ""
 
         self.wiki.edit(title="", text=content, summary="update")
-        # print(content)
-        print("Updated: {}.".format(""))
+        # logger.info(content)
+        logger.info("Updated: {}.".format(""))

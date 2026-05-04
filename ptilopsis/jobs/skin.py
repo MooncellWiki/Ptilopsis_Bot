@@ -1,5 +1,6 @@
 import re
 
+from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 
 
@@ -119,10 +120,10 @@ def update_skin(wiki, character_table, skin_table, skin_list):
                 bot=None,
                 minor=True,
             )
-            # print(new_text)
-            print(f"Updated: {skin_char_name}.")
+            # logger.info(new_text)
+            logger.info(f"Updated: {skin_char_name}.")
         else:
-            print(f"Same: {skin_char_name}.")
+            logger.info(f"Same: {skin_char_name}.")
 
     if skin_data != [] and skin_list != None:
         wiki.edit(
@@ -132,8 +133,8 @@ def update_skin(wiki, character_table, skin_table, skin_list):
             bot=None,
             minor=True,
         )
-        # print(','.join(skin_data))
-        print("Updated: {}.".format("首页/亮点干员/新增皮肤/数据"))
+        # logger.info(','.join(skin_data))
+        logger.info("Updated: {}.".format("首页/亮点干员/新增皮肤/数据"))
 
 
 # def update_randomFig(wiki, character_table, skin_table):
@@ -167,8 +168,8 @@ def update_skin(wiki, character_table, skin_table, skin_list):
 #         text = fin,
 #         summary = 'update'
 #     )
-#     # print(fin)
-#     print('Updated: {}.'.format('模板:随机干员立绘'))
+#     # logger.info(fin)
+#     logger.info('Updated: {}.'.format('模板:随机干员立绘'))
 
 
 # def update_skin_handbook(wiki, character_table, skin_table):
@@ -252,8 +253,8 @@ def update_skin(wiki, character_table, skin_table, skin_list):
 #         text = handbook,
 #         summary = 'update'
 #     )
-#     # print(handbook)
-#     print('Updated: {}.'.format('用户:Seniorious/skins'))
+#     # logger.info(handbook)
+#     logger.info('Updated: {}.'.format('用户:Seniorious/skins'))
 
 
 def update_outfit_gallery(wiki, skin_table, character_table):
@@ -337,7 +338,7 @@ def update_outfit_gallery(wiki, skin_table, character_table):
             )
             while sort_key in skin_dict[order]["content"]:
                 sort_key += 0.1
-                print("时装回廊 sort_key 重复")
+                logger.info("时装回廊 sort_key 重复")
             skin_dict[order]["content"][sort_key] = (skin_char_id, skin_half_desc)
             # if skin_key != "char_123_fang@winter#1":
             #     skin_dict[order]['content'][skin_info['displaySkin']['sortId']] = (skin_char_id, skin_half_desc)
@@ -363,8 +364,8 @@ def update_outfit_gallery(wiki, skin_table, character_table):
     )
 
     wiki.edit(title="模板:时装回廊", text=fin, summary="update")
-    # print(fin)
-    print("Updated: {}.".format("模板:时装回廊"))
+    # logger.info(fin)
+    logger.info("Updated: {}.".format("模板:时装回廊"))
 
 
 def update_outfit_brand(wiki, skin_table, character_table):
@@ -539,9 +540,9 @@ def update_outfit_brand(wiki, skin_table, character_table):
                             result3, result2.group(1).rstrip()
                         )
                     else:
-                        print(skin_name, "获取方式 未匹配")
+                        logger.info(skin_name, "获取方式 未匹配")
                 else:
-                    print(skin_name, "detail 未匹配")
+                    logger.info(skin_name, "detail 未匹配")
                 detail += origin_detail
             flag_new = False
         except:
@@ -567,11 +568,11 @@ def update_outfit_brand(wiki, skin_table, character_table):
                 text=content,
                 summary="init" if flag_new else "update",
             )
-            # print(content)
+            # logger.info(content)
             if flag_new:
-                print("Created: {}.".format("时装回廊/" + brand))
+                logger.info("Created: {}.".format("时装回廊/" + brand))
             else:
-                print("Updated: {}.".format("时装回廊/" + brand))
+                logger.info("Updated: {}.".format("时装回廊/" + brand))
 
 
 def update_logo_link(wiki, skin_table):
@@ -591,7 +592,7 @@ def update_logo_link(wiki, skin_table):
                 summary="redirect skin logo",
                 createonly=True,
             )
-            # print(link_title, content)
+            # logger.info(link_title, content)
 
 
 class Skin(Job):
@@ -632,7 +633,7 @@ class Skin(Job):
             k = f"{cid_list[skin_char_key]} {skin_info['displaySkin']['skinName'].strip()}"
             if k not in old_skin:
                 skin_list.append(cid_list[skin_char_key])
-                print(f"新时装：{k}")
+                logger.info(f"新时装：{k}")
         # skin_list = ['阿米娅(近卫)']
         if skin_list is not None:
             update_skin(self.wiki, character_table, skin_table, skin_list)

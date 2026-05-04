@@ -4,6 +4,8 @@ from urllib.parse import quote
 import requests
 from retrying import retry
 
+from ptilopsis.log import logger
+
 
 class Wiki:
     def __init__(self, api_url, username, password, mode="product"):
@@ -85,7 +87,7 @@ class Wiki:
         args = locals().copy()
         args.pop("self")
         if self.mode != "product":
-            print("\n" + str(args) + "\n")
+            logger.info("\n" + str(args) + "\n")
             return
         boolargs = {"minor", "createonly", "nocreate", "redirect", "bot"}
         token = self.session.get(
@@ -186,7 +188,7 @@ class Wiki:
         args = locals().copy()
         args.pop("self")
         if self.mode != "product":
-            print("\n" + "\n" + str(args) + "\n")
+            logger.info("\n" + "\n" + str(args) + "\n")
             return
         token = self.session.get(
             self.api_url,
