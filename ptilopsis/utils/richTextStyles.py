@@ -2,14 +2,11 @@ import re
 
 
 class RichTextStyles:
-    richTextStyles_t = {}
-    termDescriptionDict_t = {}
-    richTextStyles = {}
-    termDescriptionDict = {}
-
     def __init__(self, gamedata_const):
-        self.richTextStyles_t = gamedata_const["richTextStyles"]
-        self.termDescriptionDict_t = gamedata_const["termDescriptionDict"]
+        self.richTextStyles_t: dict = gamedata_const["richTextStyles"]
+        self.termDescriptionDict_t: dict = gamedata_const["termDescriptionDict"]
+        self.richTextStyles: dict = {}
+        self.termDescriptionDict: dict = {}
         for s in self.richTextStyles_t:
             temp = self.richTextStyles_t[s]
             if temp.find("</color>") != -1:

@@ -8,6 +8,7 @@ from ptilopsis.config import config
 # from ptilopsis.jobs.furni import Furni
 # from ptilopsis.jobs.weedy import Weedy
 from ptilopsis.utils.data import GameData
+
 # from ptilopsis.utils.wiki import Wiki
 # from ptilopsis.jobs._temp import Temp
 # from ptilopsis.jobs.enemy import Enemy

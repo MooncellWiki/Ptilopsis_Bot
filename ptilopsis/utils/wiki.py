@@ -137,7 +137,7 @@ class Wiki:
     @retry(stop_max_attempt_number=3)
     def category(self, category):
         CM_LIMIT = 1000
-        cat_page_list = list()
+        cat_page_list = []
         res = self.session.post(
             self.api_url,
             data={
@@ -239,8 +239,7 @@ class Wiki:
             "token": token.json()["query"]["tokens"]["csrftoken"],
         }
         header = {
-            "Content-Disposition": 'form-data; name="data"; filename="%s"'
-            % quote(filename)
+            "Content-Disposition": f'form-data; name="data"; filename="{quote(filename)}"'
         }
         for key in args:
             if args[key] is not None:

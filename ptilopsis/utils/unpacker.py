@@ -83,9 +83,7 @@ class Unpacker:
         dir = os.path.join(
             "Unpacker", self.config[region]["folder"], "hot_update_list.json"
         )
-        url = "{}assets/{}/hot_update_list.json".format(
-            self.config[region]["resUrl"], res_version
-        )
+        url = f"{self.config[region]['resUrl']}assets/{res_version}/hot_update_list.json"
         ret = requests.get(url, headers=self.ua).json()
         with open(dir, "w") as f:
             json.dump(ret, f, indent=4)
@@ -96,10 +94,9 @@ class Unpacker:
         if "manifestName" not in self.hot_update_list[region]:
             return
         idx_path = self.hot_update_list[region]["manifestName"]
-        url = "{0}assets/{1}/{2}.dat".format(
-            self.config[region]["resUrl"],
-            self.version[region]["resVersion"],
-            idx_path[:-4],
+        url = (
+            f"{self.config[region]['resUrl']}assets/"
+            f"{self.version[region]['resVersion']}/{idx_path[:-4]}.dat"
         )
         r = requests.get(url, headers=self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(
@@ -166,11 +163,9 @@ class Unpacker:
         res_version = self.version[region]["resVersion"]
         dir = os.path.dirname(path)
         no_postfix = os.path.splitext(os.path.split(path)[-1])[0]
-        url = "{0}assets/{1}/{2}_{3}.dat".format(
-            self.config[region]["resUrl"],
-            res_version,
-            dir.replace("/", "_"),
-            no_postfix.replace("#", "__"),
+        url = (
+            f"{self.config[region]['resUrl']}assets/{res_version}/"
+            f"{dir.replace('/', '_')}_{no_postfix.replace('#', '__')}.dat"
         )
         r = requests.get(url, headers=self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(
