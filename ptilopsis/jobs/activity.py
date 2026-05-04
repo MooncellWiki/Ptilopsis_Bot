@@ -2,8 +2,8 @@ from datetime import datetime
 
 import pytz
 
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:800px;"'
 

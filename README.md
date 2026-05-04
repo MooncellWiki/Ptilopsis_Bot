@@ -74,13 +74,11 @@ git submodule update --init --recursive
 
 ## 运行
 
-入口为 `ptilopsis` 包：
+`uv sync` 后会注册 `ptil` 命令（等价于 `python -m ptilopsis`）：
 
 ```bash
-uv run python -m ptilopsis [flags] [modes ...]
+uv run ptil [flags] [modes ...]
 ```
-
-> GitHub Actions 工作流目前以 `uv run python main.py ...` 调用，重构期间如直接运行模块需用 `-m ptilopsis`。
 
 ### 标志位（flags）
 
@@ -91,7 +89,8 @@ uv run python -m ptilopsis [flags] [modes ...]
 | `--check-global` | 检查所有海外服版本后退出 |
 | `--remote` | 使用 `ArknightsGameData` 仓库作为数据源，自动 `git submodule update --remote` 并在结束后提交推送 |
 | `--force` | 即便没有新版本也强制运行 |
-| `-dev` | Wiki 客户端进入预览模式，仅打印将要提交的内容，不实际写入 |
+| `--dev` | Wiki 客户端进入预览模式，仅打印将要提交的内容，不实际写入 |
+| `-h`, `--help` | 显示完整帮助 |
 
 ### 任务模式（modes，可组合）
 
@@ -108,26 +107,26 @@ uv run python -m ptilopsis [flags] [modes ...]
 
 ```bash
 # 仅检查 CN 服并执行常规更新
-uv run python -m ptilopsis --check regular
+uv run ptil --check regular
 
 # 通过远程数据仓库拉取最新数据，跑完 new + regular + special 并提交
-uv run python -m ptilopsis --check --remote new regular special
+uv run ptil --check --remote new regular special
 
 # 检查并更新 JP 服
-uv run python -m ptilopsis --check-jp --remote jp
+uv run ptil --check-jp --remote jp
 
 # 预览模式：不真正提交到 Wiki
-uv run python -m ptilopsis -dev regular
+uv run ptil --dev regular
 ```
 
 ## GitHub Actions
 
 | Workflow | 触发 | 命令 |
 | --- | --- | --- |
-| `main-cn` | `workflow_dispatch` | `python main.py --check --remote new regular special` |
+| `main-cn` | `workflow_dispatch` | `ptil --check --remote new regular special` |
 | `main-cn-force` | `workflow_dispatch` | 同上，附 `--force` |
-| `main-jp` | `workflow_dispatch` | `python main.py --check-jp --remote jp` |
-| `weedy` | `workflow_dispatch` | `python main.py weedy` |
+| `main-jp` | `workflow_dispatch` | `ptil --check-jp --remote jp` |
+| `weedy` | `workflow_dispatch` | `ptil weedy` |
 | `ruff` | `push: master` / PR | Ruff lint |
 
 ## 开发

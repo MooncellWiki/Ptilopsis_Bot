@@ -1,4 +1,4 @@
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 svgHeadTemplate = (
     '<svg xmlns="http://www.w3.org/2000/svg" '

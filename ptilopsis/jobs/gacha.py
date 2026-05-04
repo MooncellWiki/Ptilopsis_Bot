@@ -2,8 +2,8 @@ import json
 
 import requests
 
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
 def get_gacha_mainpage(character_table, gacha_data, rts):

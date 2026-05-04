@@ -1,4 +1,4 @@
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def parse_item(item, character_table, building_data, item_table):

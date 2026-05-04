@@ -1,7 +1,7 @@
 import json
 import os
 
-from utils.unpacker import Unpacker
+from ptilopsis.utils.unpacker import Unpacker
 
 
 class GameData:

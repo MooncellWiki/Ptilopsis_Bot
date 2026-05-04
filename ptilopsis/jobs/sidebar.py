@@ -2,7 +2,7 @@ import csv
 import io
 import re
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def update_menusidebar(wiki, old_num, id_table, character_table):

@@ -1,7 +1,7 @@
 import copy
 import os
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def format_time(time):

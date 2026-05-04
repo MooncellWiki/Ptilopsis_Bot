@@ -1,6 +1,6 @@
 import time
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 class NewModule(Job):

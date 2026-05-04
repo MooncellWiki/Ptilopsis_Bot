@@ -1,4 +1,4 @@
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def update_furni(wiki, building_data, item_table):

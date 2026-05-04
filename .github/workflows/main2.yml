@@ -16,4 +16,4 @@ jobs:
       run: |
         git config --global user.email "1054329447@qq.com"
         git config --global user.name "Seniorious0"
-        uv run python main.py --check-jp --remote jp
+        uv run ptil --check-jp --remote jp

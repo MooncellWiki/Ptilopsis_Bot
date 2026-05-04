@@ -1,7 +1,7 @@
 import csv
 import io
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 mat_dic = {}
 

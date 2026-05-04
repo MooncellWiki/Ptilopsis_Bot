@@ -1,4 +1,4 @@
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def find(j, name, p):

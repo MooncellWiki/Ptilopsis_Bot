@@ -1,5 +1,5 @@
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 # def special_buff(buff_name, description):
 #     if buff_name == '坚毅随和':

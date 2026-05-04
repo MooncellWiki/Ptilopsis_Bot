@@ -1,4 +1,4 @@
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def get_workshop_formulas(building_data, item_table, stage_table):

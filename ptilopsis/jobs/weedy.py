@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 import requests
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def update_yellow(wiki):

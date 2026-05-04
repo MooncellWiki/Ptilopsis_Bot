@@ -13,4 +13,4 @@ jobs:
       uses: ./.github/actions/setup-python
 
     - name: weedy_high
-      run: uv run python main.py weedy
+      run: uv run ptil weedy

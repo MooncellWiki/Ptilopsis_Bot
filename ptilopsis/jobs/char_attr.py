@@ -1,8 +1,8 @@
 import csv
 import io
 
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
 def trans_profession(profession):

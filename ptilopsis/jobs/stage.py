@@ -5,8 +5,8 @@ import re
 
 import requests
 
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
 def parse_stage_type(stage_type):

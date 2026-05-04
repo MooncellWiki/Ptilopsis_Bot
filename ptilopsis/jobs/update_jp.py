@@ -1,6 +1,6 @@
 import re
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def get_charword_data_jp(char_id, char_name, charword_table, charword_table_jp):

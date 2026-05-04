@@ -1,6 +1,6 @@
 import re
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def get_skin_info(char_key, skin_table, drawer):

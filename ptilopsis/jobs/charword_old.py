@@ -1,6 +1,6 @@
 import re
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 def norm_text(t):

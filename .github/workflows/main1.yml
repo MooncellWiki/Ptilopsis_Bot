@@ -16,4 +16,4 @@ jobs:
       run: |
         git config --global user.email "1054329447@qq.com"
         git config --global user.name "Seniorious0"
-        uv run python main.py --check --remote new regular special
+        uv run ptil --check --remote new regular special

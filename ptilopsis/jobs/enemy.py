@@ -2,8 +2,8 @@ import bisect
 import json
 import re
 
-from utils.job import Job
-from utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import Job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
 class RtsHtml:

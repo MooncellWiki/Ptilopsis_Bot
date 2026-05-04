@@ -1,7 +1,7 @@
 import os
 import re
 
-from utils.job import Job
+from ptilopsis.utils.job import Job
 
 
 class LangType:
