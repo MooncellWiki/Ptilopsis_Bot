@@ -11,6 +11,8 @@ on:
   #   branches: [ master ]
   # schedule:
   #   - cron: '0 8 * * *'
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -25,6 +27,6 @@ jobs:
     - name: update-cn
       run: |
         pip install -r requirements.txt
-        git config --global user.email "1054329447@qq.com"
-        git config --global user.name "Seniorious0"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         python main.py --check --remote new regular special

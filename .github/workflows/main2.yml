@@ -22,6 +22,6 @@ jobs:
     - name: update-jp
       run: |
         pip install -r requirements.txt
-        git config --global user.email "1054329447@qq.com"
-        git config --global user.name "Seniorious0"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         python main.py --check-jp --remote jp
