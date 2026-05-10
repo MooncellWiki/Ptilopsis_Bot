@@ -1,9 +1,12 @@
 [submodule "OpenArknightsFBS"]
 	path = OpenArknightsFBS
 	url = https://github.com/MooncellWiki/OpenArknightsFBS.git
+	shallow = true
 [submodule "ArknightsGameData_YoStar"]
 	path = ArknightsGameData_YoStar
 	url = https://github.com/Kengxxiao/ArknightsGameData_YoStar.git
+	shallow = true
 [submodule "ArknightsGameData"]
 	path = ArknightsGameData
 	url = https://github.com/Kengxxiao/ArknightsGameData.git
+	shallow = true
