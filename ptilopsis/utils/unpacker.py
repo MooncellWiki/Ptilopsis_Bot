@@ -29,7 +29,7 @@ class Unpacker:
             if region == "CN":
                 logger.info(f"[{region} UPDATE] New version detected. Start to update.")
                 self.get_update_list(region)
-                self.load_idx(region)
+                # self.load_idx(region)
                 # self.get_all_ab(region)
                 # logger.info('Finish download all AB.')
                 logger.info(
