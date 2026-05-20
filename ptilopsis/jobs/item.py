@@ -103,7 +103,35 @@ class Item(Job):
                         logger.info("")
                 except Exception:
                     sort = "其他道具"
-            if item_table["items"][item]["obtainApproach"]:
+            # 收集制造站/加工站配方信息
+            recipe_approaches = []
+            if citem.get("buildingProductList"):
+                for d in citem["buildingProductList"]:
+                    room_type = d["roomType"]
+                    if room_type == "MANUFACTURE":
+                        recipe_approaches.append("制造站")
+                    elif room_type == "WORKSHOP":
+                        recipe_approaches.append("加工站")
+                # 去重保持顺序
+                seen = set()
+                unique_approaches = []
+                for a in recipe_approaches:
+                    if a not in seen:
+                        seen.add(a)
+                        unique_approaches.append(a)
+                recipe_approaches = unique_approaches
+
+            original_obtain = citem.get("obtainApproach", "") or ""
+            if recipe_approaches:
+                recipe_str = "、".join(recipe_approaches)
+                if original_obtain:
+                    obtainApproach = original_obtain + "、" + recipe_str
+                else:
+                    obtainApproach = recipe_str
+            else:
+                obtainApproach = original_obtain
+
+            if obtainApproach:
                 tbasic_info = basic_info4.format(
                     name=citem["name"].strip(),
                     itemId=citem["itemId"],
@@ -112,7 +140,7 @@ class Item(Job):
                     if citem["description"] is not None
                     else "",
                     usage=citem["usage"] if citem["usage"] is not None else "",
-                    obtainApproach=citem["obtainApproach"],
+                    obtainApproach=obtainApproach,
                     rarity=trans_rarity(citem["rarity"]),
                     id=citem["sortId"],
                     sort=sort,
