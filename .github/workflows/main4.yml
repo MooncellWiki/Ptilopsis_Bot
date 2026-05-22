@@ -14,7 +14,6 @@ jobs:
 
     - name: update-cn-force
       run: |
-        pip install -r requirements.txt
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        python main.py --check --remote --force new regular special
+        uv run ptil --check --remote --force new regular special
