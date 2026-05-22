@@ -623,8 +623,8 @@ class Skin(Job):
                 and skin_info["tmplId"] == "char_1001_amiya2"
             ):
                 skin_char_key = "char_1001_amiya2"
-            if (
-                skin_info["charId"] == "char_1037_amiya3"
+            elif (
+                skin_info["charId"] == "char_002_amiya"
                 and skin_info["tmplId"] == "char_1037_amiya3"
             ):
                 skin_char_key = "char_1037_amiya3"
