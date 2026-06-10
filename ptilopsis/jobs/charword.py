@@ -49,6 +49,7 @@ def norm_text(t, lang=None):
     result = result.replace("Dr. {@nickname}", f"{{{{DrName|前缀=Dr.{add}}}}}")
     result = result.replace("{@nickname}", f"{{{{DrName{add}}}}}")
     result = result.replace("~~~", "<nowiki>~~~</nowiki>")
+    result = result.replace("[[", "<nowiki>[[").replace("]]", "]]</nowiki>")
     return result.strip()
 
 

@@ -123,6 +123,7 @@ def main(
         Furni(wiki, gameData).run()
         Item(wiki, gameData).run()
         NewModule(wiki, gameData).run()
+
         Activity(wiki, gameData).run()
         Mission(wiki, gameData).run()
         CharAttr(wiki, gameData).run()

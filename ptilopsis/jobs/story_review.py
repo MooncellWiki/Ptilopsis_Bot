@@ -68,20 +68,23 @@ def update_story_review(
                 name=story_review_table[event]["name"]
             )
         elif story_review_table[event]["actType"] == "MAIN_STORY":
-            if story_review_table[event]["id"] == "main_15":
-                story_review_table[event]["id"] = "permanent_main_1_zone1"
-            event_table += main_table_title.format(
-                name1=zone_table["zones"][story_review_table[event]["id"]][
-                    "zoneNameFirst"
-                ]
-                + " "
-                + zone_table["zones"][story_review_table[event]["id"]][
-                    "zoneNameSecond"
-                ],
-                name2=zone_table["zones"][story_review_table[event]["id"]][
-                    "zoneNameFirst"
-                ],
-            )
+            try:
+                if story_review_table[event]["id"] not in zone_table["zones"]:
+                    story_review_table[event]["id"] = zone_table["mainlineZoneIdList"][int(story_review_table[event]["id"][5:])]
+                event_table += main_table_title.format(
+                    name1=zone_table["zones"][story_review_table[event]["id"]][
+                        "zoneNameFirst"
+                    ]
+                    + " "
+                    + zone_table["zones"][story_review_table[event]["id"]][
+                        "zoneNameSecond"
+                    ],
+                    name2=zone_table["zones"][story_review_table[event]["id"]][
+                        "zoneNameFirst"
+                    ],
+                )
+            except:
+                continue
         elif story_review_table[event]["actType"] == "NONE":
             continue
         else:
