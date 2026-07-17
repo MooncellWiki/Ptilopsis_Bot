@@ -1879,7 +1879,7 @@ class Stage(Job):
     def run_rogue_like(self):
         # roguelike_table = self.getgd('excel/roguelike_table.json')
         roguelike_table = self.getgd("excel/roguelike_topic_table.json")
-        roguelike_table = roguelike_table["details"]["rogue_5"]
+        roguelike_table = roguelike_table["details"]["rogue_6"]
         rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
         notCount_list = self._get_list_notCountInTotal()
