@@ -786,7 +786,7 @@ def get_token_info(
             owner=char_detail["name"],
         )
         token_page += "\n|部署位置="
-        token_page += {"MELEE": "近战位", "RANGED": "远程位", "ALL": "近战/远程位"}[
+        token_page += {"MELEE": "近战位", "RANGED": "远程位", "ALL": "全部位"}[
             token_detail["position"]
         ]
         token_page += "\n|攻击范围={rangeId}".format(
