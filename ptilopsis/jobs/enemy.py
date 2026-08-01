@@ -363,10 +363,7 @@ class Enemy(Job):
                         idx, lv_data["attributes"]["levitateImmune"], "浮空抗性", "b"
                     )
                     content_lv += get_value(
-                        idx,
-                        lv_data["attributes"]["disarmedCombatImmune"],
-                        "战栗抗性",
-                        "b",
+                        idx, lv_data["attributes"]["disarmedCombatImmune"], "战栗抗性", "b"
                     )
                     content_lv += get_value(
                         idx, lv_data["attributes"]["fearedImmune"], "恐惧抗性", "b"
@@ -376,6 +373,12 @@ class Enemy(Job):
                     )
                     content_lv += get_value(
                         idx, lv_data["attributes"]["attractImmune"], "诱导抗性", "b"
+                    )
+                    content_lv += get_value(
+                        idx, lv_data["attributes"]["teleportImmune"], "传送抗性", "b"
+                    )
+                    content_lv += get_value(
+                        idx, lv_data["attributes"]["groundBoundImmune"], "缚地抗性", "b"
                     )
                     if lv_data["spData"] is not None:
                         try:
