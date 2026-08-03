@@ -161,7 +161,9 @@ def update_mat_demand(wiki, character_table, item_table):
                 summary="update",
             )
             # logger.info(new_text)
-            logger.info("Update: {}.".format(item_table["items"][material]["name"].strip()))
+            logger.info(
+                "Update: {}.".format(item_table["items"][material]["name"].strip())
+            )
         # else:
         #     logger.info('Same: {}.'.format(item_table['items'][material]['name'].strip()))
 

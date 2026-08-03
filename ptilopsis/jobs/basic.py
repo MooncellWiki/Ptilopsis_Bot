@@ -592,19 +592,19 @@ def get_range_data(char_detail):
 def get_talent_list(char_detail, rts):
     if char_detail["talents"] == None:
         return "该干员没有天赋"
-    id_char_list = ['一','二','三']
+    id_char_list = ["一", "二", "三"]
     talent_list = "{{天赋列表\n"
     for talent_id in range(len(char_detail["talents"])):
         talent_table = char_detail["talents"][talent_id]["candidates"]
-        talent_num = ''
+        talent_num = ""
         for talent_table_id in range(len(talent_table)):
             if (
                 talent_table[talent_table_id]["isHideTalent"] is True
                 or talent_table[talent_table_id]["description"] is None
             ):
                 continue
-            if talent_num == '':
-                talent_num = id_char_list.pop(0) if id_char_list.__len__() > 0 else 'X'
+            if talent_num == "":
+                talent_num = id_char_list.pop(0) if id_char_list.__len__() > 0 else "X"
             talent_description = rts.compile(
                 talent_table[talent_table_id]["description"]
             ).replace("\\n", "<br/>")
@@ -678,7 +678,9 @@ def get_skill_text(skill_table, skill_id, rts):
         )
         for i in skill_data["levels"]:
             if i["rangeId"] != skill_data["levels"][0]["rangeId"]:
-                logger.info("技能 {} 范围随等级变化".format(skill_data["levels"][0]["name"]))
+                logger.info(
+                    "技能 {} 范围随等级变化".format(skill_data["levels"][0]["name"])
+                )
                 break
     for idx, level_data in enumerate(skill_data["levels"]):
         skill_dic = {}
@@ -1478,7 +1480,9 @@ def get_handbook_stage(char_detail, char_key, stories_table, item_table, rts):
         reward_count = r["count"]
         reward += f"\n|报酬内容{idx}={reward_name}\n|报酬数量{idx}={reward_count}"
     if len(stage_info["rewardItem"]) > 1:
-        logger.info("Too many handbook_stage rewardItem for {}.".format(char_detail["name"]))
+        logger.info(
+            "Too many handbook_stage rewardItem for {}.".format(char_detail["name"])
+        )
     desc = rts.compile(stage_info["description"]).replace("#FFFFFF", "#000000")
     return template.format(
         stage_name=stage_info["name"],
@@ -1497,7 +1501,7 @@ def trans_id(id):
         1: "一",
         2: "二",
         3: "三",
-    }.get(id, 'X')
+    }.get(id, "X")
 
 
 def trans_profession(profession):
@@ -1752,7 +1756,9 @@ class Basic(Job):
             if char_detail["name"] in char_list:
                 continue
             if char_detail["name"] not in id_table:
-                logger.info("Unknown Character: {} {}.".format(char_key, char_detail["name"]))
+                logger.info(
+                    "Unknown Character: {} {}.".format(char_key, char_detail["name"])
+                )
                 # continue
 
             basic_info = get_basic_info(

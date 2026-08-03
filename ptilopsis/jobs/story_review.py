@@ -70,7 +70,9 @@ def update_story_review(
         elif story_review_table[event]["actType"] == "MAIN_STORY":
             try:
                 if story_review_table[event]["id"] not in zone_table["zones"]:
-                    story_review_table[event]["id"] = zone_table["mainlineZoneIdList"][int(story_review_table[event]["id"][5:])]
+                    story_review_table[event]["id"] = zone_table["mainlineZoneIdList"][
+                        int(story_review_table[event]["id"][5:])
+                    ]
                 event_table += main_table_title.format(
                     name1=zone_table["zones"][story_review_table[event]["id"]][
                         "zoneNameFirst"
@@ -108,7 +110,9 @@ def update_story_review(
                         .replace("\n", "<br/>")
                     )
                 except:
-                    logger.info("路径名错误：", "story/[uc]" + story["storyInfo"] + ".txt")
+                    logger.info(
+                        "路径名错误：", "story/[uc]" + story["storyInfo"] + ".txt"
+                    )
                     story_info = "{{color|red|剧情简介文件路径错误}}"
             else:
                 story_info = ""

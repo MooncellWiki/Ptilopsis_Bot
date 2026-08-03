@@ -83,7 +83,9 @@ class Unpacker:
         dir = os.path.join(
             "Unpacker", self.config[region]["folder"], "hot_update_list.json"
         )
-        url = f"{self.config[region]['resUrl']}assets/{res_version}/hot_update_list.json"
+        url = (
+            f"{self.config[region]['resUrl']}assets/{res_version}/hot_update_list.json"
+        )
         ret = requests.get(url, headers=self.ua).json()
         with open(dir, "w") as f:
             json.dump(ret, f, indent=4)

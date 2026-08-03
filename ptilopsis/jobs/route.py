@@ -74,7 +74,9 @@ def parse_actionType(action_count, key, actionType):
     if actionType == 0:
         pass
     elif actionType == 1:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "PREVIEW_CURSOR"))
+        logger.info(
+            "No.{} {} actionType: {}".format(action_count, key, "PREVIEW_CURSOR")
+        )
     elif actionType == 2:
         logger.info("No.{} {} actionType: {}".format(action_count, key, "STORY"))
     elif actionType == 3:
@@ -82,7 +84,9 @@ def parse_actionType(action_count, key, actionType):
     elif actionType == 4:
         logger.info("No.{} {} actionType: {}".format(action_count, key, "PLAY_BGM"))
     elif actionType == 5:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "DISPLAY_ENEMY_INFO"))
+        logger.info(
+            "No.{} {} actionType: {}".format(action_count, key, "DISPLAY_ENEMY_INFO")
+        )
     elif actionType == 6:
         logger.info(
             "No.{} {} actionType: {}".format(action_count, key, "ACTIVATE_PREDEFINED")

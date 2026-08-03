@@ -1391,7 +1391,9 @@ class ActionInfo:
             if self.random_pack in pack_dict:
                 self.random_key = pack_dict[self.random_pack]
             else:
-                logger.info(f"Error: cannot find random_key for pack {self.random_pack}")
+                logger.info(
+                    f"Error: cannot find random_key for pack {self.random_pack}"
+                )
 
 
 class Stage(Job):

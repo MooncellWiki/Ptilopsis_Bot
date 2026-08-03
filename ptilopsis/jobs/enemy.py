@@ -363,7 +363,10 @@ class Enemy(Job):
                         idx, lv_data["attributes"]["levitateImmune"], "浮空抗性", "b"
                     )
                     content_lv += get_value(
-                        idx, lv_data["attributes"]["disarmedCombatImmune"], "战栗抗性", "b"
+                        idx,
+                        lv_data["attributes"]["disarmedCombatImmune"],
+                        "战栗抗性",
+                        "b",
                     )
                     content_lv += get_value(
                         idx, lv_data["attributes"]["fearedImmune"], "恐惧抗性", "b"
