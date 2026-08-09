@@ -1,5 +1,3 @@
-from typing import Any
-
 from jinja2 import Environment, PackageLoader, StrictUndefined
 
 wikitext_environment = Environment(
@@ -19,5 +17,5 @@ wikitext_environment = Environment(
 )
 
 
-def render_wikitext(template_name: str, **context: Any) -> str:
+def render_wikitext(template_name: str, **context: object) -> str:
     return wikitext_environment.get_template(template_name).render(**context)
