@@ -71,7 +71,7 @@ def build_rewards(
     item_table: dict,
 ) -> list[RewardView]:
     rewards = []
-    for reward_group in medal.reward_groups:
+    for reward_group in medal.medal_reward_group:
         for item in reward_group.item_list:
             reward = parse_reward_item(item, character_table, building_data, item_table)
             if reward is not None:
@@ -112,9 +112,9 @@ def resolve_medal_references(
     # 保证镀层方式不依赖奖章在数据中的先后顺序
     for medal_id, raw in raw_medals.items():
         view = views[medal_id]
-        if view.get_method == "" and raw.pre_medal_ids:
+        if view.get_method == "" and raw.pre_medal_id_list:
             view.get_method = (
-                f"获得{len(raw.pre_medal_ids)}枚前置蚀刻章"
+                f"获得{len(raw.pre_medal_id_list)}枚前置蚀刻章"
                 "（即本套组除此蚀刻章外的所有蚀刻章）"
             )
     for medal_id, raw in raw_medals.items():
@@ -130,7 +130,7 @@ def build_sections(
     sections = []
     for type_key, type_data in medal_table.medal_type_data.items():
         for medal_group in type_data.group_data:
-            for medal_id in medal_group.medal_ids:
+            for medal_id in medal_group.medal_id:
                 views[medal_id].group = medal_group.group_name
 
         standalone = []
@@ -144,7 +144,7 @@ def build_sections(
         groups = []
         # 页面上套组按数据中的倒序排列(新套组在前)
         for medal_group in reversed(type_data.group_data):
-            medals = [views[medal_id] for medal_id in medal_group.medal_ids]
+            medals = [views[medal_id] for medal_id in medal_group.medal_id]
             groups.append(
                 GroupView(
                     name=medal_group.group_name.replace("蚀刻章套组", ""),

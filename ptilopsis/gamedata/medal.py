@@ -2,7 +2,8 @@
 
 from enum import IntEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
 
 class MedalRarity(IntEnum):
@@ -19,6 +20,8 @@ class MedalRarity(IntEnum):
 class ItemBundle(BaseModel):
     """clz_Torappu_ItemBundle"""
 
+    model_config = ConfigDict(alias_generator=to_camel)
+
     id: str
     count: int
     # enum__Torappu_ItemType 的成员名;枚举项近百个且随版本新增,不做强校验
@@ -28,42 +31,52 @@ class ItemBundle(BaseModel):
 class MedalRewardGroupData(BaseModel):
     """clz_Torappu_MedalRewardGroupData"""
 
-    item_list: list[ItemBundle] = Field(alias="itemList")
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    item_list: list[ItemBundle]
 
 
 class MedalPerData(BaseModel):
     """clz_Torappu_MedalPerData"""
 
-    medal_id: str = Field(alias="medalId")
-    medal_name: str = Field(alias="medalName")
-    medal_type: str = Field(alias="medalType")
-    pre_medal_ids: list[str] = Field(alias="preMedalIdList")
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    medal_id: str
+    medal_name: str
+    medal_type: str
+    pre_medal_id_list: list[str] | None
     # MedalRarity 的成员名;为兼容未来新增稀有度保留原始字符串,不做强校验
     rarity: str
-    get_method: str | None = Field(alias="getMethod")
+    get_method: str | None
     description: str | None
-    advanced_medal: str | None = Field(alias="advancedMedal")
-    origin_medal: str | None = Field(alias="originMedal")
-    reward_groups: list[MedalRewardGroupData] = Field(alias="medalRewardGroup")
+    advanced_medal: str | None
+    origin_medal: str | None
+    medal_reward_group: list[MedalRewardGroupData]
 
 
 class MedalGroupData(BaseModel):
     """clz_Torappu_MedalGroupData"""
 
-    group_name: str = Field(alias="groupName")
-    group_desc: str = Field(alias="groupDesc")
-    medal_ids: list[str] = Field(alias="medalId")
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    group_name: str
+    group_desc: str
+    medal_id: list[str]
 
 
 class MedalTypeData(BaseModel):
     """clz_Torappu_MedalTypeData"""
 
-    medal_name: str = Field(alias="medalName")
-    group_data: list[MedalGroupData] = Field(alias="groupData")
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    medal_name: str
+    group_data: list[MedalGroupData]
 
 
 class MedalData(BaseModel):
     """clz_Torappu_MedalData,medal_table.json 的根对象。"""
 
-    medal_list: list[MedalPerData] = Field(alias="medalList")
-    medal_type_data: dict[str, MedalTypeData] = Field(alias="medalTypeData")
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    medal_list: list[MedalPerData]
+    medal_type_data: dict[str, MedalTypeData]
