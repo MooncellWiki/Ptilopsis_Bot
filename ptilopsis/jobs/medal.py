@@ -1,147 +1,187 @@
+from collections.abc import Callable
+
+from pydantic import BaseModel
+
+from ptilopsis.gamedata.medal import (
+    ItemBundle,
+    MedalData,
+    MedalPerData,
+    MedalRarity,
+)
 from ptilopsis.log import logger
+from ptilopsis.rendering import render_wikitext
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
+# 模板渲染视图,字段与 templates/wikitext/medal/ 下的模板一一对应
 
-def parse_item(item, character_table, building_data, item_table):
-    if item["type"] == "CHAR":
-        return character_table[item["id"]]["name"]
-    elif item["type"] == "FURN":
-        return building_data["customData"]["furnitures"][item["id"]]["name"]
-    elif item["id"] in item_table["items"]:
-        return "{{{{材料消耗|{}|{}}}}}".format(
-            item_table["items"][item["id"]]["name"].rstrip(), item["count"]
-        )
+
+class RewardView(BaseModel):
+    name: str
+    # 有数量的物品渲染为 {{材料消耗}},无数量(干员/家具)直接显示名称
+    count: int | None = None
+
+
+class MedalView(BaseModel):
+    name: str
+    rarity: int | str
+    description: str
+    get_method: str
+    has_advanced: bool
+    rewards: list[RewardView]
+    # group 与 advance_method 依赖其他奖章/套组的数据,
+    # 分别由 build_sections 与 resolve_medal_references 回填
+    group: str = ""
+    advance_method: str = ""
+
+
+class GroupView(BaseModel):
+    name: str
+    title: str
+    description: str
+    medals: list[MedalView]
+    plated: bool
+
+
+class SectionView(BaseModel):
+    name: str
+    standalone: list[MedalView]
+    groups: list[GroupView]
+
+
+def parse_reward_item(
+    item: ItemBundle, character_table: dict, building_data: dict, item_table: dict
+) -> RewardView | None:
+    if item.type == "CHAR":
+        return RewardView(name=character_table[item.id]["name"])
+    if item.type == "FURN":
+        furnitures = building_data["customData"]["furnitures"]
+        return RewardView(name=furnitures[item.id]["name"])
+    if item.id in item_table["items"]:
+        item_name = item_table["items"][item.id]["name"]
+        return RewardView(name=item_name.rstrip(), count=item.count)
+    logger.info(f"Unknown reward item {item.id}.")
+    return None
+
+
+def build_rewards(
+    medal: MedalPerData,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+) -> list[RewardView]:
+    rewards = []
+    for reward_group in medal.medal_reward_group:
+        for item in reward_group.item_list:
+            reward = parse_reward_item(item, character_table, building_data, item_table)
+            if reward is not None:
+                rewards.append(reward)
+    return rewards
+
+
+def build_medal(
+    medal: MedalPerData,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+    compile_rich_text: Callable[[str], str],
+) -> MedalView:
+    description = ""
+    if medal.description is not None:
+        description = compile_rich_text(medal.description.replace("\n", "<br/>"))
+
+    if medal.rarity in MedalRarity.__members__:
+        rarity = MedalRarity[medal.rarity].value
     else:
-        logger.info("Unknown reward item {}.".format(item["id"]))
+        rarity = medal.rarity
+
+    return MedalView(
+        name=medal.medal_name,
+        rarity=rarity,
+        description=description,
+        get_method=medal.get_method or "",
+        has_advanced=bool(medal.advanced_medal),
+        rewards=build_rewards(medal, character_table, building_data, item_table),
+    )
 
 
-def update_medal(medal_table, character_table, building_data, item_table, rts):
-    medal_template = """{{{{蚀刻章
-{group}|名称={name}
-|稀有度={rarity}
-|描述={desc}
-|获得方式={getMethod}{advanceMethod}{reward}
-}}}}"""
-
-    medal_dict = {}
-    for medal_type in medal_table["medalTypeData"]:
-        medal_dict[medal_type] = {}
-    for medal in medal_table["medalList"]:
-        reward_list = " ".join(
-            [
-                " ".join(
-                    [
-                        parse_item(item, character_table, building_data, item_table)
-                        for item in item_group["itemList"]
-                    ]
-                )
-                for item_group in medal["medalRewardGroup"]
-            ]
-        )
-        if reward_list != "":
-            reward_list = "\n|奖励=" + reward_list
-        medal_rarity = {"T1": 0, "T1D5": 1, "T2": 2, "T2D5": 3, "T3": 4, "T3D5": 5}.get(
-            medal["rarity"], medal["rarity"]
-        )
-        medal_dict[medal["medalType"]][medal["medalId"]] = {
-            "group": "",
-            "name": medal["medalName"],
-            "rarity": medal_rarity,
-            "desc": rts.compile(medal["description"].replace("\n", "<br/>"))
-            if medal["description"] != None
-            else "",
-            "getMethod": medal["getMethod"] if medal["getMethod"] != None else "",
-            "advancedMedal": medal["advancedMedal"]
-            if medal["advancedMedal"] != None
-            else "",
-            "originMedal": medal["originMedal"] if medal["originMedal"] != None else "",
-            "reward": reward_list,
-            "preMedalIdList": medal["preMedalIdList"],
-        }
-    for medal_type in medal_dict:
-        for medal_key in medal_dict[medal_type]:
-            medal = medal_dict[medal_type][medal_key]
-            if medal["advancedMedal"] != "":
-                medal_dict[medal_type][medal_key]["advancedMedal"] = (
-                    "\n|镀层方式={}".format(
-                        medal_dict[medal_type][medal["advancedMedal"]]["getMethod"]
-                    )
-                )
-            if medal["getMethod"] == "" and medal["preMedalIdList"] != []:
-                medal_dict[medal_type][medal_key]["getMethod"] = (
-                    "获得{}枚前置蚀刻章（即本套组除此蚀刻章外的所有蚀刻章）".format(
-                        len(medal["preMedalIdList"])
-                    )
-                )
-    for medal_type in medal_table["medalTypeData"]:
-        for medal_group in medal_table["medalTypeData"][medal_type]["groupData"]:
-            for medal_key in medal_group["medalId"]:
-                medal_dict[medal_type][medal_key]["group"] = "|套组={}\n".format(
-                    medal_group["groupName"]
-                )
-    content = ""
-    for medal_type in medal_table["medalTypeData"]:
-        content += "=={}==\n".format(
-            medal_table["medalTypeData"][medal_type]["medalName"]
-        )
-        for medal_key in medal_dict[medal_type]:
-            if (
-                medal_dict[medal_type][medal_key]["group"] == ""
-                and medal_dict[medal_type][medal_key]["originMedal"] == ""
-            ):
-                content += (
-                    medal_template.format(
-                        group=medal_dict[medal_type][medal_key]["group"],
-                        name=medal_dict[medal_type][medal_key]["name"],
-                        rarity=medal_dict[medal_type][medal_key]["rarity"],
-                        desc=medal_dict[medal_type][medal_key]["desc"],
-                        getMethod=medal_dict[medal_type][medal_key]["getMethod"],
-                        advanceMethod=medal_dict[medal_type][medal_key][
-                            "advancedMedal"
-                        ],
-                        reward=medal_dict[medal_type][medal_key]["reward"],
-                    )
-                    + "\n"
-                )
-        for medal_group in reversed(
-            medal_table["medalTypeData"][medal_type]["groupData"]
-        ):
-            group_content, advance_flag = "", ""
-            for medal_key in medal_group["medalId"]:
-                group_content += (
-                    medal_template.format(
-                        group=medal_dict[medal_type][medal_key]["group"],
-                        name=medal_dict[medal_type][medal_key]["name"],
-                        rarity=medal_dict[medal_type][medal_key]["rarity"],
-                        desc=medal_dict[medal_type][medal_key]["desc"],
-                        getMethod=medal_dict[medal_type][medal_key]["getMethod"],
-                        advanceMethod=medal_dict[medal_type][medal_key][
-                            "advancedMedal"
-                        ],
-                        reward=medal_dict[medal_type][medal_key]["reward"],
-                    )
-                    + "\n"
-                )
-                if medal_dict[medal_type][medal_key]["advancedMedal"] != "":
-                    advance_flag = "\n|镀层=1"
-            content += """==={title_name}===
-{{{{蚀刻章/套组预览
-|名称={name}{advance}
-|标题名称={title_name}
-|标题背景=
-|介绍={desc}
-|内容=
-{group_content}}}}}
-""".format(
-                name=medal_group["groupName"].replace("蚀刻章套组", ""),
-                advance=advance_flag,
-                title_name=medal_group["groupName"],
-                desc=medal_group["groupDesc"].replace("\n", "<br/>"),
-                group_content=group_content,
+def resolve_medal_references(
+    raw_medals: dict[str, MedalPerData], views: dict[str, MedalView]
+) -> None:
+    # 先补全由前置奖章数量生成的获得方式,再回填镀层方式,
+    # 保证镀层方式不依赖奖章在数据中的先后顺序
+    for medal_id, raw in raw_medals.items():
+        view = views[medal_id]
+        if view.get_method == "" and raw.pre_medal_id_list:
+            view.get_method = (
+                f"获得{len(raw.pre_medal_id_list)}枚前置蚀刻章"
+                "（即本套组除此蚀刻章外的所有蚀刻章）"
             )
+    for medal_id, raw in raw_medals.items():
+        if raw.advanced_medal:
+            views[medal_id].advance_method = views[raw.advanced_medal].get_method
 
-    return content
+
+def build_sections(
+    medal_table: MedalData,
+    raw_medals: dict[str, MedalPerData],
+    views: dict[str, MedalView],
+) -> list[SectionView]:
+    sections = []
+    for type_key, type_data in medal_table.medal_type_data.items():
+        for medal_group in type_data.group_data:
+            for medal_id in medal_group.medal_id:
+                views[medal_id].group = medal_group.group_name
+
+        standalone = []
+        for medal_id, raw in raw_medals.items():
+            if raw.medal_type != type_key:
+                continue
+            view = views[medal_id]
+            if view.group == "" and not raw.origin_medal:
+                standalone.append(view)
+
+        groups = []
+        # 页面上套组按数据中的倒序排列(新套组在前)
+        for medal_group in reversed(type_data.group_data):
+            medals = [views[medal_id] for medal_id in medal_group.medal_id]
+            groups.append(
+                GroupView(
+                    name=medal_group.group_name.replace("蚀刻章套组", ""),
+                    title=medal_group.group_name,
+                    description=medal_group.group_desc.replace("\n", "<br/>"),
+                    medals=medals,
+                    plated=any(medal.has_advanced for medal in medals),
+                )
+            )
+        sections.append(
+            SectionView(
+                name=type_data.medal_name,
+                standalone=standalone,
+                groups=groups,
+            )
+        )
+    return sections
+
+
+def update_medal(
+    medal_table: dict,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+    compile_rich_text: Callable[[str], str],
+) -> str:
+    table = MedalData.model_validate(medal_table)
+    raw_medals = {medal.medal_id: medal for medal in table.medal_list}
+    views = {
+        medal_id: build_medal(
+            raw, character_table, building_data, item_table, compile_rich_text
+        )
+        for medal_id, raw in raw_medals.items()
+    }
+    resolve_medal_references(raw_medals, views)
+    sections = build_sections(table, raw_medals, views)
+    return render_wikitext("medal/page.wiki.jinja2", sections=sections)
 
 
 class Medal(Job):
@@ -153,7 +193,7 @@ class Medal(Job):
         rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
         content = update_medal(
-            medal_table, character_table, building_data, item_table, rts
+            medal_table, character_table, building_data, item_table, rts.compile
         )
 
         self.wiki.edit(

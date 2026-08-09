@@ -1,0 +1,69 @@
+<# 约定:
+   - 行内宏(render_reward / render_rewards):输出不含换行,
+     宏体内"内容行之后的块标签"用 <%- 吃掉上一行的行尾换行。
+   - 块级宏(render_medal / render_group / render_section):输出自带行尾换行,
+     调用处写 << ... ->> 吃掉模板源里的换行,避免输出多出空行。 #>
+
+<# 单个奖励:有数量的物品渲染为 {{材料消耗}},无数量的(干员/家具)直接显示名称 #>
+<% macro render_reward(reward) %>
+<% if reward.count is none %>
+<< reward.name >>
+<%- else %>
+{{材料消耗|<< reward.name >>|<< reward.count >>}}
+<%- endif %>
+<% endmacro %>
+
+<# 奖励列表,以空格分隔 #>
+<% macro render_rewards(rewards) %>
+<% for reward in rewards %>
+<% if not loop.first %> <% endif %><< render_reward(reward) >>
+<%- endfor %>
+<% endmacro %>
+
+<# 单个蚀刻章的 {{蚀刻章}} 模板 #>
+<% macro render_medal(medal) %>
+{{蚀刻章
+<% if medal.group %>
+|套组=<< medal.group >>
+<% endif %>
+|名称=<< medal.name >>
+|稀有度=<< medal.rarity >>
+|描述=<< medal.description >>
+|获得方式=<< medal.get_method >>
+<% if medal.has_advanced %>
+|镀层方式=<< medal.advance_method >>
+<% endif %>
+<% if medal.rewards %>
+|奖励=<< render_rewards(medal.rewards) >>
+<% endif %>
+}}
+<% endmacro %>
+
+<# 套组预览:{{蚀刻章/套组预览}},内容为套组内全部奖章 #>
+<% macro render_group(group) %>
+===<< group.title >>===
+{{蚀刻章/套组预览
+|名称=<< group.name >>
+<% if group.plated %>
+|镀层=1
+<% endif %>
+|标题名称=<< group.title >>
+|标题背景=
+|介绍=<< group.description >>
+|内容=
+<% for medal in group.medals %>
+<< render_medal(medal) ->>
+<% endfor %>
+}}
+<% endmacro %>
+
+<# 分区:二级标题 + 独立奖章 + 套组预览(新套组在前) #>
+<% macro render_section(section) %>
+==<< section.name >>==
+<% for medal in section.standalone %>
+<< render_medal(medal) ->>
+<% endfor %>
+<% for group in section.groups %>
+<< render_group(group) ->>
+<% endfor %>
+<% endmacro %>
