@@ -1,3 +1,5 @@
+<% macro render_reward(reward) %><% if reward.count is none %><< reward.name >><% else %>{{材料消耗|<< reward.name >>|<< reward.count >>}}<% endif %><% endmacro %>
+<% macro render_rewards(rewards) %><% for reward in rewards %><% if not loop.first %> <% endif %><< render_reward(reward) >><% endfor %><% endmacro %>
 <% macro render_medal(medal) %>
 {{蚀刻章
 <% if medal.group %>
@@ -10,7 +12,7 @@
 <% if medal.has_advanced %>
 |镀层方式=<< medal.advance_method >>
 <% endif %>
-<% if medal.reward %>
-|奖励=<< medal.reward >>
+<% if medal.rewards %>
+|奖励=<< render_rewards(medal.rewards) >>
 <% endif %>
 }}<% endmacro %>
