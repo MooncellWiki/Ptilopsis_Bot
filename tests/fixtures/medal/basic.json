@@ -1,0 +1,110 @@
+{
+  "medal_table": {
+    "medalTypeData": {
+      "ACTIVITY": {
+        "medalName": "活动蚀刻章",
+        "groupData": [
+          {
+            "groupName": "测试蚀刻章套组",
+            "groupDesc": "第一行\n第二行",
+            "medalId": ["medal_base", "medal_plated", "medal_prerequisite"]
+          }
+        ]
+      },
+      "OTHER": {
+        "medalName": "其他蚀刻章",
+        "groupData": []
+      }
+    },
+    "medalList": [
+      {
+        "medalId": "medal_solo",
+        "medalType": "ACTIVITY",
+        "medalName": "独立奖章",
+        "rarity": "T1",
+        "description": "独立\n描述",
+        "getMethod": "完成独立任务",
+        "advancedMedal": null,
+        "originMedal": null,
+        "preMedalIdList": [],
+        "medalRewardGroup": [
+          {
+            "itemList": [
+              {"type": "MATERIAL", "id": "item_lmd", "count": 100},
+              {"type": "CHAR", "id": "char_test", "count": 1}
+            ]
+          }
+        ]
+      },
+      {
+        "medalId": "medal_base",
+        "medalType": "ACTIVITY",
+        "medalName": "基础奖章",
+        "rarity": "T2",
+        "description": "基础奖章描述",
+        "getMethod": "完成基础条件",
+        "advancedMedal": "medal_plated",
+        "originMedal": null,
+        "preMedalIdList": [],
+        "medalRewardGroup": []
+      },
+      {
+        "medalId": "medal_plated",
+        "medalType": "ACTIVITY",
+        "medalName": "镀层奖章",
+        "rarity": "T2D5",
+        "description": null,
+        "getMethod": "完成镀层条件",
+        "advancedMedal": null,
+        "originMedal": "medal_base",
+        "preMedalIdList": [],
+        "medalRewardGroup": [
+          {
+            "itemList": [
+              {"type": "FURN", "id": "furn_test", "count": 1}
+            ]
+          }
+        ]
+      },
+      {
+        "medalId": "medal_prerequisite",
+        "medalType": "ACTIVITY",
+        "medalName": "前置奖章",
+        "rarity": "T3",
+        "description": "",
+        "getMethod": null,
+        "advancedMedal": null,
+        "originMedal": null,
+        "preMedalIdList": ["medal_base", "medal_plated"],
+        "medalRewardGroup": []
+      },
+      {
+        "medalId": "medal_other",
+        "medalType": "OTHER",
+        "medalName": "其他奖章",
+        "rarity": "CUSTOM",
+        "description": "其他描述",
+        "getMethod": null,
+        "advancedMedal": null,
+        "originMedal": null,
+        "preMedalIdList": [],
+        "medalRewardGroup": []
+      }
+    ]
+  },
+  "character_table": {
+    "char_test": {"name": "测试干员"}
+  },
+  "building_data": {
+    "customData": {
+      "furnitures": {
+        "furn_test": {"name": "测试家具"}
+      }
+    }
+  },
+  "item_table": {
+    "items": {
+      "item_lmd": {"name": "龙门币 "}
+    }
+  }
+}
