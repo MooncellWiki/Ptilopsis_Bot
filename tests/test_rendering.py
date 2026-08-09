@@ -6,7 +6,8 @@ from ptilopsis.rendering import wikitext_environment
 
 def test_wikitext_delimiters_do_not_conflict_with_mediawiki() -> None:
     template = wikitext_environment.from_string(
-        "<% if enabled %>{{材料消耗|<< name >>|1}}<% endif %>\n{{#widget:VoiceTable}}"
+        "<% if enabled %>\n{{材料消耗|<< name >>|1}}\n<% endif %>\n"
+        "{{#widget:VoiceTable}}"
     )
 
     assert template.render(enabled=True, name="固源岩") == (

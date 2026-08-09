@@ -1,0 +1,51 @@
+{
+  "medal_table": {
+    "medalTypeData": {
+      "ACTIVITY": {
+        "medalName": "活动蚀刻章",
+        "groupData": [
+          {
+            "groupName": "空镀层蚀刻章套组",
+            "groupDesc": "镀层奖章获得方式为空的套组",
+            "medalId": ["medal_base", "medal_plated"]
+          }
+        ]
+      }
+    },
+    "medalList": [
+      {
+        "medalId": "medal_base",
+        "medalType": "ACTIVITY",
+        "medalName": "基础奖章",
+        "rarity": "T2",
+        "description": "基础奖章描述",
+        "getMethod": "完成基础条件",
+        "advancedMedal": "medal_plated",
+        "originMedal": null,
+        "preMedalIdList": [],
+        "medalRewardGroup": []
+      },
+      {
+        "medalId": "medal_plated",
+        "medalType": "ACTIVITY",
+        "medalName": "镀层奖章",
+        "rarity": "T2D5",
+        "description": "镀层描述",
+        "getMethod": null,
+        "advancedMedal": null,
+        "originMedal": "medal_base",
+        "preMedalIdList": [],
+        "medalRewardGroup": []
+      }
+    ]
+  },
+  "character_table": {},
+  "building_data": {
+    "customData": {
+      "furnitures": {}
+    }
+  },
+  "item_table": {
+    "items": {}
+  }
+}

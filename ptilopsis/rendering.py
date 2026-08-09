@@ -13,8 +13,9 @@ wikitext_environment = Environment(
     comment_start_string="<#",
     comment_end_string="#>",
     keep_trailing_newline=True,
-    trim_blocks=False,
-    lstrip_blocks=False,
+    # 块标签独占一行时不产生多余空白,模板里无需手写 -%> 控制符
+    trim_blocks=True,
+    lstrip_blocks=True,
 )
 
 

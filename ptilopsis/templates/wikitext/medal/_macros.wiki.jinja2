@@ -1,11 +1,16 @@
-<% macro render_medal(medal) -%>
+<% macro render_medal(medal) %>
 {{蚀刻章
-<% if medal.group %>|套组=<< medal.group >>
-<% endif %>|名称=<< medal.name >>
+<% if medal.group %>
+|套组=<< medal.group >>
+<% endif %>
+|名称=<< medal.name >>
 |稀有度=<< medal.rarity >>
 |描述=<< medal.description >>
 |获得方式=<< medal.get_method >>
-<% if medal.advance_method %>|镀层方式=<< medal.advance_method >>
-<% endif %><% if medal.reward %>|奖励=<< medal.reward >>
-<% endif %>}}
-<%- endmacro %>
+<% if medal.has_advanced %>
+|镀层方式=<< medal.advance_method >>
+<% endif %>
+<% if medal.reward %>
+|奖励=<< medal.reward >>
+<% endif %>
+}}<% endmacro %>

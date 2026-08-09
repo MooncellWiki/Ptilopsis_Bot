@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from ptilopsis.jobs.medal import update_medal
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "medal"
@@ -12,8 +14,9 @@ class StubRichTextStyles:
         return f"[RTS]{text}"
 
 
-def test_medal_rendering_matches_golden() -> None:
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
+@pytest.mark.parametrize("case", ["basic", "plated_null_get_method"])
+def test_medal_rendering_matches_golden(case: str) -> None:
+    fixture = json.loads((FIXTURE_DIR / f"{case}.json").read_text(encoding="utf-8"))
 
     actual = update_medal(
         fixture["medal_table"],
@@ -22,6 +25,6 @@ def test_medal_rendering_matches_golden() -> None:
         fixture["item_table"],
         StubRichTextStyles(),
     )
-    expected = (GOLDEN_DIR / "basic.wiki").read_text(encoding="utf-8")
+    expected = (GOLDEN_DIR / f"{case}.wiki").read_text(encoding="utf-8")
 
     assert actual == expected

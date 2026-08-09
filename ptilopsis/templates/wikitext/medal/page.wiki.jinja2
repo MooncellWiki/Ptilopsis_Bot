@@ -1,21 +1,23 @@
-<% from "medal/_macros.wiki.jinja2" import render_medal -%>
-<% for section in sections -%>
+<% from "medal/_macros.wiki.jinja2" import render_medal %>
+<% for section in sections %>
 ==<< section.name >>==
-<% for medal in section.standalone -%>
+<% for medal in section.standalone %>
 << render_medal(medal) >>
-<% endfor -%>
-<% for group in section.groups -%>
+<% endfor %>
+<% for group in section.groups %>
 ===<< group.title >>===
 {{蚀刻章/套组预览
 |名称=<< group.name >>
-<% if group.plated %>|镀层=1
-<% endif %>|标题名称=<< group.title >>
+<% if group.plated %>
+|镀层=1
+<% endif %>
+|标题名称=<< group.title >>
 |标题背景=
 |介绍=<< group.description >>
 |内容=
-<% for medal in group.medals -%>
+<% for medal in group.medals %>
 << render_medal(medal) >>
-<% endfor -%>
+<% endfor %>
 }}
-<% endfor -%>
-<% endfor -%>
+<% endfor %>
+<% endfor %>

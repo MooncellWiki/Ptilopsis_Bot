@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  pytest:
+    name: Pytest
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pytest-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-python
+
+      - name: Run Pytest
+        run: uv run pytest
