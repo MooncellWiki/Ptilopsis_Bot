@@ -33,3 +33,21 @@
 <% endif %>
 }}
 <%- endmacro %>
+
+<# 套组预览:{{蚀刻章/套组预览}},内容为套组内全部奖章 #>
+<% macro render_group(group) %>
+===<< group.title >>===
+{{蚀刻章/套组预览
+|名称=<< group.name >>
+<% if group.plated %>
+|镀层=1
+<% endif %>
+|标题名称=<< group.title >>
+|标题背景=
+|介绍=<< group.description >>
+|内容=
+<% for medal in group.medals %>
+<< render_medal(medal) >>
+<% endfor %>
+}}
+<%- endmacro %>
