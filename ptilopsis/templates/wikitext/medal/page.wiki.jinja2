@@ -1,12 +1,4 @@
-<% from "medal/_macros.wiki.jinja2" import render_group, render_medal %>
+<% from "medal/_macros.wiki.jinja2" import render_section %>
 <% for section in sections %>
-==<< section.name >>==
-<# 不属于任何套组的独立奖章 #>
-<% for medal in section.standalone %>
-<< render_medal(medal) >>
-<% endfor %>
-<# 套组预览,新套组在前 #>
-<% for group in section.groups %>
-<< render_group(group) >>
-<% endfor %>
+<< render_section(section) ->>
 <% endfor %>
