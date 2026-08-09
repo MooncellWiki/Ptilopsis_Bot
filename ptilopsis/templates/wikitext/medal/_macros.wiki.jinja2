@@ -1,5 +1,21 @@
-<% macro render_reward(reward) %><% if reward.count is none %><< reward.name >><% else %>{{材料消耗|<< reward.name >>|<< reward.count >>}}<% endif %><% endmacro %>
-<% macro render_rewards(rewards) %><% for reward in rewards %><% if not loop.first %> <% endif %><< render_reward(reward) >><% endfor %><% endmacro %>
+<# 单个奖励:有数量的物品渲染为 {{材料消耗}},无数量的(干员/家具)直接显示名称。
+   奖励需要拼在同一行内,因此内容行之后的块标签用 <%- 吃掉上一行的行尾换行。 #>
+<% macro render_reward(reward) %>
+<% if reward.count is none %>
+<< reward.name >>
+<%- else %>
+{{材料消耗|<< reward.name >>|<< reward.count >>}}
+<%- endif %>
+<% endmacro %>
+
+<# 奖励列表,以空格分隔,输出不含换行 #>
+<% macro render_rewards(rewards) %>
+<% for reward in rewards %>
+<% if not loop.first %> <% endif %><< render_reward(reward) >>
+<%- endfor %>
+<% endmacro %>
+
+<# 单个蚀刻章的 {{蚀刻章}} 模板 #>
 <% macro render_medal(medal) %>
 {{蚀刻章
 <% if medal.group %>
@@ -15,4 +31,5 @@
 <% if medal.rewards %>
 |奖励=<< render_rewards(medal.rewards) >>
 <% endif %>
-}}<% endmacro %>
+}}
+<%- endmacro %>

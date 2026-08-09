@@ -1,9 +1,11 @@
 <% from "medal/_macros.wiki.jinja2" import render_medal %>
 <% for section in sections %>
 ==<< section.name >>==
+<# 不属于任何套组的独立奖章 #>
 <% for medal in section.standalone %>
 << render_medal(medal) >>
 <% endfor %>
+<# 套组预览,新套组在前 #>
 <% for group in section.groups %>
 ===<< group.title >>===
 {{蚀刻章/套组预览
@@ -17,7 +19,7 @@
 |内容=
 <% for medal in group.medals %>
 << render_medal(medal) >>
-<% endfor %>
+<% endfor %><# 套组内奖章循环结束 #>
 }}
-<% endfor %>
-<% endfor %>
+<% endfor %><# 套组循环结束 #>
+<% endfor %><# 分区循环结束 #>
