@@ -2,12 +2,222 @@ import copy
 import json
 import os
 import re
+from collections.abc import Callable
 
 import requests
+from pydantic import BaseModel
 
+from ptilopsis.gamedata.stage import (
+    StageData,
+    StageDataDisplayDetailRewards,
+    StageTable,
+)
 from ptilopsis.log import logger
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.wikitext import WikiTemplate, inline_template
+
+# 渲染视图,字段与页面上的 wiki 模板参数一一对应
+
+
+class DropView(BaseModel):
+    name: str
+    furniture: bool = False
+    occurrence: str = ""
+
+
+class RewardGroupView(BaseModel):
+    label: str
+    drops: list[DropView]
+
+
+class LevelInfoView(BaseModel):
+    character_limit: int
+    initial_cost: int
+    max_cost: int
+    max_life_point: int
+    enemy_count: str
+    map_size: str
+    time_label: str
+    time: str
+
+
+class BlackboardView(BaseModel):
+    key: str
+    value: int | float
+    value_str: str | None
+
+
+class TileEffectView(BaseModel):
+    name: str
+    blackboards: list[list[BlackboardView]]
+
+
+class BasicStageView(BaseModel):
+    heading: str | None = None
+    code: str
+    name: str
+    stage_id: str
+    map_override: str = ""
+    stage_type: str
+    subtype: str | None = None
+    boss: bool = False
+    difficulty: str | None = None
+    battle_stage: bool | None = None
+    unlock_condition: str | None = None
+    recommended_level: str | None = None
+    zone: str | None = None
+    level: LevelInfoView | None = None
+    description: str | None = None
+    ap_cost: int | None = None
+    practice_cost: int | None = None
+    resource_overview: list[str] | None = None
+    action_cost: int | None = None
+    power_cost: int | None = None
+    rewards: list[RewardGroupView] = []
+    tile_effects: list[TileEffectView] = []
+    terrain_tags: list[str] | None = None
+    sandbox_map: "SandboxMapView | None" = None
+
+
+class SandboxMapView(BaseModel):
+    mode: str
+    code: str = ""
+    name: str = ""
+    stage_id: str = ""
+
+
+class AssaultStageView(BaseModel):
+    heading: str
+    code: str
+    name: str
+    stage_type: str
+    subtype: str | None = None
+    difficulty: str
+    unlock_condition: str
+    recommended_level: str | None = None
+    zone: str
+    character_limit: int
+    initial_cost: int
+    max_cost: int
+    description: str
+    ap_cost: int
+    practice_cost: int
+    rewards: list[RewardGroupView] = []
+    intelligence: list[str] = []
+
+
+class CampaignStageView(BaseModel):
+    code: str
+    name: str
+    stage_id: str
+    commission: bool
+    stage_type: str
+    difficulty: str
+    unlock_condition: str
+    zone: str
+    level: LevelInfoView | None = None
+    description: str
+    ap_cost: int
+    rewards: list[RewardGroupView] = []
+    ap_returns: list[str] = []
+    diamond_rewards: list[str] = []
+    terrain_tags: list[str] | None = None
+
+
+class EnemyOverrideView(BaseModel):
+    label: str
+    value: str | int | float
+
+
+class EnemyView(BaseModel):
+    index: int
+    name: str
+    count: str
+    level: int
+    display_name: str | None = None
+    count_lower: str | None = None
+    note: str | None = None
+    overrides: list[EnemyOverrideView] = []
+
+
+class SquadUnitView(BaseModel):
+    name: str
+    simulation: bool = False
+    phase: int | str = ""
+    level: int | str = ""
+    skill_name: str = ""
+    main_skill_level: int | str = ""
+    potential: int | None = None
+
+
+class SquadSectionView(BaseModel):
+    title: str
+    units: list[SquadUnitView]
+    note: str
+
+
+class CampaignProgressItemView(BaseModel):
+    name: str
+    count: int
+
+
+class CampaignProgressRowView(BaseModel):
+    kill_count: int
+    items: list[CampaignProgressItemView]
+    break_fee_add: int
+
+
+class CampaignProgressView(BaseModel):
+    rows: list[CampaignProgressRowView]
+
+
+class NormalPageView(BaseModel):
+    normal: BasicStageView
+    assault: AssaultStageView | None = None
+    enemies: list[EnemyView] | None = None
+    squads: list[SquadSectionView] = []
+    material_drop: bool = False
+
+
+class CampaignPageView(BaseModel):
+    stage: CampaignStageView
+    enemies: list[EnemyView] | None = None
+    squads: list[SquadSectionView] = []
+    progress: CampaignProgressView
+
+
+class RoguelikePageView(BaseModel):
+    normal: BasicStageView
+    assault: AssaultStageView | None = None
+    enemies: list[EnemyView] | None = None
+
+
+class BasicPageView(BaseModel):
+    stage: BasicStageView
+    enemies: list[EnemyView] | None = None
+    squads: list[SquadSectionView] = []
+
+
+class RecalRunePageView(BasicPageView):
+    display_title: str
+
+
+class DisambiguationLinkView(BaseModel):
+    page_name: str
+    activity_name: str | None = None
+
+
+def _stage_data(value: dict | StageData) -> StageData:
+    if isinstance(value, StageData):
+        return value
+    return StageData.model_validate(value)
+
+
+def _stage_table(value: dict | StageTable) -> StageTable:
+    if isinstance(value, StageTable):
+        return value
+    return StageTable.model_validate(value)
 
 
 def parse_stage_type(stage_type):
@@ -109,8 +319,8 @@ def parse_rune_profession(professionMask):
     return "和".join(p_text) + "干员"
 
 
-def parse_rune(runes):
-    runes_text = []
+def build_rune_lines(runes: list[dict]) -> list[str]:
+    rune_lines = []
     for rune in runes:
         text = []
         if rune["difficultyMask"] == 2 or rune["difficultyMask"] in [
@@ -146,21 +356,36 @@ def parse_rune(runes):
         blackboard = []
         for i in rune["blackboard"]:
             text2 = "{}: {}".format(i["key"], i["value"])
-            if i["valueStr"] != None:
+            if i["valueStr"] is not None:
                 text2 += " ({})".format(i["valueStr"])
             blackboard.append(text2)
 
-        runes_text.append(" ".join(text) + ": " + ", ".join(blackboard) + "\n")
-    return "".join(runes_text)
+        rune_lines.append(" ".join(text) + ": " + ", ".join(blackboard))
+    return rune_lines
 
 
-def parse_drop_item(drop_item, character_table, building_data, item_table):
+def parse_drop_item(
+    drop_item: dict | StageDataDisplayDetailRewards,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+) -> str:
+    item_type = (
+        drop_item.type
+        if isinstance(drop_item, StageDataDisplayDetailRewards)
+        else drop_item["type"]
+    )
+    item_id = (
+        drop_item.id
+        if isinstance(drop_item, StageDataDisplayDetailRewards)
+        else drop_item["id"]
+    )
     try:
-        if drop_item["type"] == "CHAR":
-            return character_table[drop_item["id"]]["name"]
-        elif drop_item["type"] == "FURN":
-            return building_data["customData"]["furnitures"][drop_item["id"]]["name"]
-        elif drop_item["type"] in [
+        if item_type == "CHAR":
+            return character_table[item_id]["name"]
+        if item_type == "FURN":
+            return building_data["customData"]["furnitures"][item_id]["name"]
+        if item_type in [
             "MATERIAL",
             "CARD_EXP",
             "TKT_RECRUIT",
@@ -173,67 +398,43 @@ def parse_drop_item(drop_item, character_table, building_data, item_table):
             "LGG_SHD",
             "HGG_SHD",
         ]:
-            return item_table["items"][drop_item["id"]]["name"].strip()
-        else:
-            logger.info("Unknown drop item {}".format(drop_item["id"]))
-            return item_table["items"][drop_item["id"]]["name"].strip()
-    except:
-        return "物品{}".format(drop_item["id"])
+            return item_table["items"][item_id]["name"].strip()
+        logger.info(f"Unknown drop item {item_id}")
+        return item_table["items"][item_id]["name"].strip()
+    except (AttributeError, KeyError, TypeError):
+        return f"物品{item_id}"
 
 
-def parse_overwritten_data(overwritten_data, count):
-    return_data = ""
-    if overwritten_data["name"]["m_defined"] == True:
-        return_data += "|敌人{count}显示名={value}\n".format(
-            count=count, value=overwritten_data["name"]["m_value"]
-        )
-    if overwritten_data["attributes"]["maxHp"]["m_defined"] == True:
-        return_data += "|敌人{count}生命值={value}\n".format(
-            count=count, value=overwritten_data["attributes"]["maxHp"]["m_value"]
-        )
-    if overwritten_data["attributes"]["atk"]["m_defined"] == True:
-        return_data += "|敌人{count}攻击力={value}\n".format(
-            count=count, value=overwritten_data["attributes"]["atk"]["m_value"]
-        )
-    if overwritten_data["attributes"]["def"]["m_defined"] == True:
-        return_data += "|敌人{count}防御力={value}\n".format(
-            count=count, value=overwritten_data["attributes"]["def"]["m_value"]
-        )
-    if overwritten_data["attributes"]["magicResistance"]["m_defined"] == True:
-        return_data += "|敌人{count}法术抗性={value}\n".format(
-            count=count,
-            value=overwritten_data["attributes"]["magicResistance"]["m_value"],
-        )
-    if overwritten_data["attributes"]["baseAttackTime"]["m_defined"] == True:
-        return_data += "|敌人{count}攻击间隔={value}\n".format(
-            count=count,
-            value=overwritten_data["attributes"]["baseAttackTime"]["m_value"],
-        )
-    if overwritten_data["attributes"]["massLevel"]["m_defined"] == True:
-        return_data += "|敌人{count}重量等级={value}\n".format(
-            count=count, value=overwritten_data["attributes"]["massLevel"]["m_value"]
-        )
-    if overwritten_data["attributes"]["moveSpeed"]["m_defined"] == True:
-        return_data += "|敌人{count}移动速度={value}\n".format(
-            count=count, value=overwritten_data["attributes"]["moveSpeed"]["m_value"]
-        )
-    if overwritten_data["attributes"]["hpRecoveryPerSec"]["m_defined"] == True:
-        return_data += "|敌人{count}生命恢复速度={value}\n".format(
-            count=count,
-            value=overwritten_data["attributes"]["hpRecoveryPerSec"]["m_value"],
-        )
-    if overwritten_data["rangeRadius"]["m_defined"] == True:
-        return_data += "|敌人{count}攻击范围半径={value}\n".format(
-            count=count, value=overwritten_data["rangeRadius"]["m_value"]
-        )
-    if overwritten_data["lifePointReduce"]["m_defined"] == True:
-        return_data += "|敌人{count}目标价值={value}\n".format(
-            count=count, value=overwritten_data["lifePointReduce"]["m_value"]
-        )
-    return return_data
+def build_enemy_overrides(overwritten_data: dict) -> list[EnemyOverrideView]:
+    fields = [
+        (("name",), "显示名"),
+        (("attributes", "maxHp"), "生命值"),
+        (("attributes", "atk"), "攻击力"),
+        (("attributes", "def"), "防御力"),
+        (("attributes", "magicResistance"), "法术抗性"),
+        (("attributes", "baseAttackTime"), "攻击间隔"),
+        (("attributes", "massLevel"), "重量等级"),
+        (("attributes", "moveSpeed"), "移动速度"),
+        (("attributes", "hpRecoveryPerSec"), "生命恢复速度"),
+        (("rangeRadius",), "攻击范围半径"),
+        (("lifePointReduce",), "目标价值"),
+    ]
+    overrides = []
+    for path, label in fields:
+        value = overwritten_data
+        for key in path:
+            value = value[key]
+        if value["m_defined"]:
+            overrides.append(EnemyOverrideView(label=label, value=value["m_value"]))
+    return overrides
 
 
-def analyze_rewards(rewards, character_table, building_data, item_table):
+def build_reward_groups(
+    rewards: list[dict] | list[StageDataDisplayDetailRewards],
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+) -> list[RewardGroupView]:
     reward_list = {
         "NONE": [],
         "ONCE": [],
@@ -248,37 +449,38 @@ def analyze_rewards(rewards, character_table, building_data, item_table):
         "OVERRIDE_DROP": [],
         "ITEM_RETURN": [],
     }
-    for reward in rewards:
-        if reward["type"] == "FURN":
-            reward_item = ":家具=yes:1={name}{occ_type}".format(
-                name=parse_drop_item(
-                    reward, character_table, building_data, item_table
-                ),
-                occ_type=parse_occ_type(reward["occPercent"], reward["dropType"], True),
-            )
-        else:
-            reward_item = "{name}{occ_type}".format(
-                name=parse_drop_item(
-                    reward, character_table, building_data, item_table
-                ),
-                occ_type=parse_occ_type(
-                    reward["occPercent"], reward["dropType"], False
-                ),
-            )
-        if reward["dropType"] not in reward_list:
-            reward_list[reward["dropType"]] = []
-        reward_list[reward["dropType"]].append(reward_item)
+    for raw_reward in rewards:
+        reward = (
+            raw_reward
+            if isinstance(raw_reward, StageDataDisplayDetailRewards)
+            else StageDataDisplayDetailRewards.model_validate(raw_reward)
+        )
+        furniture = reward.type == "FURN"
+        occurrence = parse_occ_type(reward.occ_percent, reward.drop_type, furniture)
+        occurrence_prefix = ":2=" if furniture else ":"
+        if occurrence.startswith(occurrence_prefix):
+            occurrence = occurrence.removeprefix(occurrence_prefix)
+        drop = DropView(
+            name=parse_drop_item(reward, character_table, building_data, item_table),
+            furniture=furniture,
+            occurrence=occurrence,
+        )
+        if reward.drop_type not in reward_list:
+            reward_list[reward.drop_type] = []
+        reward_list[reward.drop_type].append(drop)
     reward_list["ONCE"] = reward_list["COMPLETE"] + reward_list["ONCE"]
     reward_list["COMPLETE"] = []
 
-    rewards_data = ""
+    groups = []
     for drop_type in reward_list:
-        if reward_list[drop_type] != [] and parse_drop_type(drop_type) != "None":
-            reward_content = ",".join(reward_list[drop_type])
-            rewards_data += f"|{parse_drop_type(drop_type)}={reward_content}\n"
+        label = parse_drop_type(drop_type)
+        drops = reward_list[drop_type]
+        if drops and label != "None":
+            group = RewardGroupView(label=label, drops=drops)
+            groups.append(group)
             if drop_type == 2 or drop_type == "NORMAL":
-                logger.info("\t—— " + reward_content)
-    return rewards_data
+                logger.info("\t—— " + render_reward_group(group))
+    return groups
 
 
 def analyze_action(actions, normal_hidden_group, notCount_list):
@@ -291,20 +493,23 @@ def analyze_action(actions, normal_hidden_group, notCount_list):
                 and pack_dict[action.random_pack] != action.random_key
             ):
                 logger.info(
-                    f"Error: randomSpawnGroupPackKey duplicate! ({action.random_key} - {action.random_pack})"
+                    "Error: randomSpawnGroupPackKey duplicate! "
+                    f"({action.random_key} - {action.random_pack})"
                 )
             pack_dict[action.random_pack] = action.random_key
     for action in action_list:
         action.update_pack(pack_dict)
     min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
     fragment_flag = False
-    time_filter = lambda x: (
-        x.hidden_group == None or x.hidden_group in normal_hidden_group
-    )
-    num_filter = lambda x: (
-        (x.key is not None or x.random_key is not None)
-        and (x.hidden_group == None or x.hidden_group in normal_hidden_group)
-    )
+
+    def time_filter(action):
+        return action.hidden_group is None or action.hidden_group in normal_hidden_group
+
+    def num_filter(action):
+        return (action.key is not None or action.random_key is not None) and (
+            action.hidden_group is None or action.hidden_group in normal_hidden_group
+        )
+
     time_dict = {"fix_time": -1.0, "random_group": {}}
     num_dict = {"base_num": 0, "random_group": {}}
     # 最短用时
@@ -411,31 +616,28 @@ def analyze_action(actions, normal_hidden_group, notCount_list):
     return min_time, action_enemy_min, action_enemy_max, fragment_flag
 
 
-def analyze_level_info(level_table, notCount_list):
-    level_info = ""
-    level_info += "|部署上限={}\n".format(level_table["options"]["characterLimit"])
-    level_info += "|初始COST={}\n".format(level_table["options"]["initialCost"])
-    level_info += "|COST上限={}\n".format(level_table["options"]["maxCost"])
-    level_info += "|目标点耐久={}\n".format(level_table["options"]["maxLifePoint"])
+def build_level_info(
+    level_table: dict, not_count_list: dict, *, use_countdown: bool = False
+) -> LevelInfoView:
     enemy_count = {"min": 0, "max": 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level_table)
-    notCount_list_level = copy.deepcopy(notCount_list)
+    not_count_list_level = copy.deepcopy(not_count_list)
     for enemy in level_table["enemyDbRefs"]:
         if enemy["useDb"] is False:
             try:
                 if enemy["overwrittenData"]["notCountInTotal"]["m_defined"] is True:
                     if enemy["overwrittenData"]["notCountInTotal"]["m_value"] is True:
-                        if enemy["id"] not in notCount_list_level:
-                            notCount_list_level[enemy["id"]] = []
-                        notCount_list_level[enemy["id"]].append(enemy["level"])
-            except:
+                        if enemy["id"] not in not_count_list_level:
+                            not_count_list_level[enemy["id"]] = []
+                        not_count_list_level[enemy["id"]].append(enemy["level"])
+            except (KeyError, TypeError):
                 continue
     for wave in level_table["waves"]:
         min_time += wave["preDelay"] + wave["postDelay"]
         for fragment in wave["fragments"]:
             time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(
-                fragment["actions"], normal_hidden_group, notCount_list_level
+                fragment["actions"], normal_hidden_group, not_count_list_level
             )
             enemy_count["min"] += action_enemy_min
             enemy_count["max"] += action_enemy_max
@@ -443,18 +645,34 @@ def analyze_level_info(level_table, notCount_list):
                 min_time += fragment["preDelay"]
                 min_time += time
     if enemy_count["min"] == enemy_count["max"]:
-        level_info += "|敌人数量={}\n".format(enemy_count["min"])
+        enemy_count_text = str(enemy_count["min"])
     else:
-        level_info += "|敌人数量={}~{}\n".format(enemy_count["min"], enemy_count["max"])
-    level_info += "|地图大小={}×{}\n".format(
-        level_table["mapData"]["map"][0].__len__(),
-        level_table["mapData"]["map"].__len__(),
+        enemy_count_text = f"{enemy_count['min']}~{enemy_count['max']}"
+
+    if use_countdown and level_table["options"]["maxPlayTime"] > 0:
+        max_play_time = level_table["options"]["maxPlayTime"]
+        time_label = "倒计时"
+        time_text = f"{int(max_play_time / 60)}分{int(max_play_time % 60)}秒"
+    elif abs(min_time - int(min_time)) < 0.0001:
+        time_label = "最短用时"
+        time_text = f"{int(min_time / 60)}分{int(min_time % 60)}秒"
+    else:
+        time_label = "最短用时"
+        time_text = f"{int(min_time / 60)}分{min_time % 60:.1f}秒"
+
+    return LevelInfoView(
+        character_limit=level_table["options"]["characterLimit"],
+        initial_cost=level_table["options"]["initialCost"],
+        max_cost=level_table["options"]["maxCost"],
+        max_life_point=level_table["options"]["maxLifePoint"],
+        enemy_count=enemy_count_text,
+        map_size=(
+            f"{len(level_table['mapData']['map'][0])}×"
+            f"{len(level_table['mapData']['map'])}"
+        ),
+        time_label=time_label,
+        time=time_text,
     )
-    if abs(min_time - int(min_time)) < 0.0001:
-        level_info += f"|最短用时={int(min_time / 60)}分{int(min_time % 60)}秒\n"
-    else:
-        level_info += f"|最短用时={int(min_time / 60)}分{min_time % 60:.1f}秒\n"
-    return level_info
 
 
 def analyze_normal_hidden_group(level_table):
@@ -468,29 +686,30 @@ def analyze_normal_hidden_group(level_table):
                     for d in rune["blackboard"]:
                         if d["key"] == "key":
                             normal_hidden_group.append(d["valueStr"])
-        except:
+        except Exception:
             logger.info("hiddenGroup解析出错.")
     return normal_hidden_group
 
 
-def analyze_char_card_info(
+def build_char_card_info(
     level_table, stage_page_name, character_table, skill_table, stage_charId=None
-):
-    char_pre, memory_desc = "", ""
+) -> SquadSectionView | None:
+    units = []
+    memory_desc = ""
     favor_point, fp_set = [], set()
     try:
         if (
-            level_table["predefines"] == None
+            level_table["predefines"] is None
             or "characterCards" not in level_table["predefines"]
         ):
-            return ""
+            return None
         for char_card in level_table["predefines"]["characterCards"]:
             char_card_name = character_table[char_card["inst"]["characterKey"]]["name"]
             if (
                 stage_charId is not None
                 and char_card["inst"]["characterKey"] == stage_charId
             ):
-                char_pre += f"{{{{悖论模拟对象|{char_card_name}}}}}"
+                units.append(SquadUnitView(name=char_card_name, simulation=True))
                 memory_desc = "模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准"
                 continue
             if char_card["skillIndex"] != -1:
@@ -501,25 +720,29 @@ def analyze_char_card_info(
                 ]["levels"][0]["name"]
             else:
                 skill_name = ""
-            char_pre += "{{{{编队单位|{}|{}|{}|{}|{}".format(
-                char_card_name,
-                {"PHASE_0": 0, "PHASE_1": 1, "PHASE_2": 2, "PHASE_3": 3}.get(
-                    char_card["inst"]["phase"], char_card["inst"]["phase"]
-                ),
-                char_card["inst"]["level"],
-                skill_name,
-                char_card["mainSkillLvl"],
+            potential_rank = char_card["inst"]["potentialRank"]
+            units.append(
+                SquadUnitView(
+                    name=char_card_name,
+                    phase={
+                        "PHASE_0": 0,
+                        "PHASE_1": 1,
+                        "PHASE_2": 2,
+                        "PHASE_3": 3,
+                    }.get(char_card["inst"]["phase"], char_card["inst"]["phase"]),
+                    level=char_card["inst"]["level"],
+                    skill_name=skill_name,
+                    main_skill_level=char_card["mainSkillLvl"],
+                    potential=potential_rank + 1 if potential_rank != 0 else None,
+                )
             )
-            if char_card["inst"]["potentialRank"] != 0:
-                char_pre += "||{}".format(char_card["inst"]["potentialRank"] + 1)
-            char_pre += "}}"
             this_p = min(200, char_card["inst"]["favorPoint"] * 2)
             fp_set.add(this_p)
             favor_point.append(f"{char_card_name}信赖值为{this_p}%")
-        if char_pre != "":
-            if favor_point != [] and memory_desc != "":
+        if units:
+            if favor_point and memory_desc:
                 memory_desc = "<br>" + memory_desc
-            if fp_set.__len__() == 1 and favor_point.__len__() > 1:
+            if len(fp_set) == 1 and len(favor_point) > 1:
                 if stage_charId is not None:
                     fp_desc = (
                         f"本关卡除模拟对象干员外的随队干员信赖值都为{fp_set.pop()}%"
@@ -528,34 +751,25 @@ def analyze_char_card_info(
                     fp_desc = f"本关卡随队干员信赖值都为{fp_set.pop()}%"
             else:
                 fp_desc = "，".join(favor_point)
-            char_pre = f"""
-==固定编队==
-{{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
-!style="background-color:#0098DC;color:#FFFFFF"|固定编队
-|-
-|{char_pre}
-|-
-!备注
-|-
-|{fp_desc}{memory_desc}
-|}}"""
-    except:
-        logger.info(stage_page_name, "characterCards error.")
-
-    return char_pre
+            return SquadSectionView(
+                title="固定编队", units=units, note=fp_desc + memory_desc
+            )
+    except (IndexError, KeyError, TypeError):
+        logger.info(f"{stage_page_name}: characterCards error.")
+    return None
 
 
-def analyze_char_insert_info(
+def build_char_insert_info(
     level_table, stage_page_name, character_table, skill_table
-):
-    char_pre = ""
+) -> SquadSectionView | None:
+    units = []
     favor_point, fp_set = [], set()
     try:
         if (
-            level_table["predefines"] == None
+            level_table["predefines"] is None
             or "characterInsts" not in level_table["predefines"]
         ):
-            return ""
+            return None
         for char_insert in level_table["predefines"]["characterInsts"]:
             char_insert_name = character_table[char_insert["inst"]["characterKey"]][
                 "name"
@@ -568,86 +782,125 @@ def analyze_char_insert_info(
                 ]["levels"][0]["name"]
             else:
                 skill_name = ""
-            char_pre += "{{{{编队单位|{}|{}|{}|{}|{}".format(
-                char_insert_name,
-                {"PHASE_0": 0, "PHASE_1": 1, "PHASE_2": 2, "PHASE_3": 3}.get(
-                    char_insert["inst"]["phase"], char_insert["inst"]["phase"]
-                ),
-                char_insert["inst"]["level"],
-                skill_name,
-                char_insert["mainSkillLvl"],
+            potential_rank = char_insert["inst"]["potentialRank"]
+            units.append(
+                SquadUnitView(
+                    name=char_insert_name,
+                    phase={
+                        "PHASE_0": 0,
+                        "PHASE_1": 1,
+                        "PHASE_2": 2,
+                        "PHASE_3": 3,
+                    }.get(
+                        char_insert["inst"]["phase"],
+                        char_insert["inst"]["phase"],
+                    ),
+                    level=char_insert["inst"]["level"],
+                    skill_name=skill_name,
+                    main_skill_level=char_insert["mainSkillLvl"],
+                    potential=potential_rank + 1 if potential_rank != 0 else None,
+                )
             )
-            if char_insert["inst"]["potentialRank"] != 0:
-                char_pre += "||{}".format(char_insert["inst"]["potentialRank"] + 1)
-            char_pre += "}}"
             this_p = min(200, char_insert["inst"]["favorPoint"] * 2)
             fp_set.add(this_p)
             favor_point.append(f"{char_insert_name}信赖值为{this_p}%")
-        if char_pre != "":
-            if fp_set.__len__() == 1 and favor_point.__len__() > 1:
+        if units:
+            if len(fp_set) == 1 and len(favor_point) > 1:
                 fp_desc = f"本关卡已部署干员信赖值都为{fp_set.pop()}%"
             else:
                 fp_desc = "，".join(favor_point)
-            char_pre = f"""
-==已部署干员==
-{{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
-!style="background-color:#0098DC;color:#FFFFFF"|已部署干员
-|-
-|{char_pre}
-|-
-!备注
-|-
-|{fp_desc}
-|}}"""
-    except:
-        logger.info(stage_page_name, "characterInsts error.")
-
-    return char_pre
+            return SquadSectionView(title="已部署干员", units=units, note=fp_desc)
+    except (IndexError, KeyError, TypeError):
+        logger.info(f"{stage_page_name}: characterInsts error.")
+    return None
 
 
-def analyze_tile(level_table, stage_tile_info):
+def build_squad_sections(
+    level_table: dict,
+    stage_page_name: str,
+    character_table: dict,
+    skill_table: dict,
+    *,
+    stage_char_id: str | None = None,
+    include_inserted: bool = True,
+) -> list[SquadSectionView]:
+    sections = []
+    fixed = build_char_card_info(
+        level_table,
+        stage_page_name,
+        character_table,
+        skill_table,
+        stage_charId=stage_char_id,
+    )
+    if fixed is not None:
+        sections.append(fixed)
+    if include_inserted:
+        inserted = build_char_insert_info(
+            level_table, stage_page_name, character_table, skill_table
+        )
+        if inserted is not None:
+            sections.append(inserted)
+    return sections
+
+
+def build_tile_effects(
+    level_table: dict, stage_tile_info: dict
+) -> list[TileEffectView]:
     try:
         tiles = level_table["mapData"]["tiles"]
-        if tiles == [] or tiles == None:
-            return ""
-    except:
-        return ""
+        if not tiles:
+            return []
+    except (KeyError, TypeError):
+        return []
     tile_blackboard_dict = {}
-    for tile in filter(
-        lambda x: x["blackboard"] is not None and x["blackboard"] != [], tiles
-    ):
+    for tile in filter(lambda x: x["blackboard"], tiles):
         if tile["tileKey"] not in tile_blackboard_dict:
             tile_blackboard_dict[tile["tileKey"]] = []
         if tile["blackboard"] not in tile_blackboard_dict[tile["tileKey"]]:
             tile_blackboard_dict[tile["tileKey"]].append(tile["blackboard"])
     if tile_blackboard_dict == {}:
-        return ""
-    content = "|特殊地形效果=<!--"
-    for tile in tile_blackboard_dict:
-        if tile in stage_tile_info:
-            content += "\n" + stage_tile_info[tile]["name"] + ":"
+        return []
+
+    effects = []
+    for tile_key, blackboards in tile_blackboard_dict.items():
+        tile_info = stage_tile_info.get(tile_key)
+        if hasattr(tile_info, "name"):
+            tile_name = tile_info.name
+        elif tile_info is not None:
+            tile_name = tile_info["name"]
         else:
-            content += "\n" + tile + ":"
-        for b in tile_blackboard_dict[tile]:
-            content += "\n\t"
-            for k in b:
-                content += f"{k['key']} {k['value']}"
-                if k["valueStr"] is not None:
-                    content += f" {k['valueStr']}"
-                content += ", "
-    content += "\n-->\n"
-    return content
+            tile_name = tile_key
+        effects.append(
+            TileEffectView(
+                name=tile_name,
+                blackboards=[
+                    [
+                        BlackboardView(
+                            key=item["key"],
+                            value=item["value"],
+                            value_str=item["valueStr"],
+                        )
+                        for item in blackboard
+                    ]
+                    for blackboard in blackboards
+                ],
+            )
+        )
+    return effects
 
 
-def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
+def build_enemies(
+    level_table: dict,
+    enemy_table: dict,
+    enemy_database: dict,
+    flag_skip0: bool,
+) -> list[EnemyView]:
     def enemyDbRefs_sort(item):
         if item["id"] in enemy_table:
             return enemy_table[item["id"]]["sortId"]
         else:
             return 9999999
 
-    enemy_data = "\n==敌方情报==\n{{敌方情报\n"
-    count = 1
     normal_hidden_group = analyze_normal_hidden_group(level_table)
     enemy_count_dict = {}
     for wave in level_table["waves"]:
@@ -667,7 +920,7 @@ def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
             actions_count = {"fixed": copy.deepcopy(actions_count_type), "random": {}}
             for action in action_list:
                 if (action.key is not None or action.random_key is not None) and (
-                    action.hidden_group == None
+                    action.hidden_group is None
                     or action.hidden_group in normal_hidden_group
                 ):
                     if action.random_key is not None:
@@ -735,35 +988,31 @@ def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
             enemy_num_dict[k] = (
                 f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
             )
-    enemyDbRefs_sorted = sorted(level_table["enemyDbRefs"], key=enemyDbRefs_sort)
-    for enemy in enemyDbRefs_sorted:
+    enemy_db_refs_sorted = sorted(level_table["enemyDbRefs"], key=enemyDbRefs_sort)
+    enemies = []
+    for enemy in enemy_db_refs_sorted:
         if enemy["id"] not in enemy_num_dict:
-            # continue
             enemy_num_dict[enemy["id"]] = "0"
-        if flag_skip0 == True and enemy_num_dict[enemy["id"]] == "0":
+        if flag_skip0 and enemy_num_dict[enemy["id"]] == "0":
             continue
-        if enemy["useDb"] == False:
-            enemy_data += "|敌人{count}={name}\n".format(
-                count=count, name=enemy["overwrittenData"]["name"]["m_value"]
-            )
-            if "," in enemy_num_dict[enemy["id"]]:
-                num_list = enemy_num_dict[enemy["id"]].split(",")
-                enemy_data += f"|敌人{count}数量={num_list[1]}\n|敌人{count}数量下限={num_list[0]}\n"
-            else:
-                enemy_data += "|敌人{count}数量={enemy_num}\n".format(
-                    count=count, enemy_num=enemy_num_dict[enemy["id"]]
-                )
-            enemy_data += "|敌人{count}级别={level}\n".format(
-                count=count, level=enemy["level"]
-            )
-            enemy_data += f"|敌人{count}备注=需人工复查！\n"
+        count_text = enemy_num_dict[enemy["id"]]
+        if "," in count_text:
+            count_lower, count_upper = count_text.split(",")
+        else:
+            count_lower, count_upper = None, count_text
+
+        display_name = None
+        note = None
+        overrides = []
+        if not enemy["useDb"]:
+            enemy_name = enemy["overwrittenData"]["name"]["m_value"]
+            note = "需人工复查！"
         else:
             if enemy["id"] in enemy_table:
                 enemy_name = enemy_table[enemy["id"]]["name"]
                 if enemy_name in ["W", "泥岩", "多萝西", "弑君者"]:
-                    enemy_data += f"|敌人{count}={enemy_name}(敌方)\n|敌人{count}显示名={enemy_name}\n"
-                else:
-                    enemy_data += f"|敌人{count}={enemy_name}\n"
+                    display_name = enemy_name
+                    enemy_name += "(敌方)"
             else:
                 enemy_name = ""
                 for enemy_content in enemy_database["enemies"]:
@@ -771,166 +1020,159 @@ def get_enemy_data(level_table, enemy_table, enemy_database, flag_skip0):
                         enemy_name = enemy_content["Value"][0]["enemyData"]["name"][
                             "m_value"
                         ]
-                enemy_data += f"|敌人{count}={enemy_name}\n"
-            if "," in enemy_num_dict[enemy["id"]]:
-                num_list = enemy_num_dict[enemy["id"]].split(",")
-                enemy_data += f"|敌人{count}数量={num_list[1]}\n|敌人{count}数量下限={num_list[0]}\n"
-            else:
-                enemy_data += "|敌人{count}数量={enemy_num}\n".format(
-                    count=count, enemy_num=enemy_num_dict[enemy["id"]]
-                )
-            enemy_data += "|敌人{count}级别={level}\n".format(
-                count=count, level=enemy["level"]
+            if enemy["overwrittenData"] is not None:
+                overrides = build_enemy_overrides(enemy["overwrittenData"])
+
+        enemies.append(
+            EnemyView(
+                index=len(enemies) + 1,
+                name=enemy_name,
+                display_name=display_name,
+                count=count_upper,
+                count_lower=count_lower,
+                level=enemy["level"],
+                note=note,
+                overrides=overrides,
             )
-            if enemy["overwrittenData"] != None:
-                enemy_data += parse_overwritten_data(enemy["overwrittenData"], count)
-        count += 1
-    enemy_data += "}}"
-    return enemy_data
+        )
+    return enemies
 
 
-def get_normal_data(
-    stage_detail,
-    stage_table,
-    zone_table,
-    character_table,
-    building_data,
-    item_table,
-    level_table,
-    notCount_list,
-    rts,
-    map_override="",
-):
-    stage_data = "\n==普通==\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    if map_override != "":
-        stage_data += f"|地图预览override={map_override}\n"
-    stage_data += "|关卡类型={}\n".format(parse_stage_type(stage_detail["stageType"]))
-    if stage_detail["hilightMark"] == True:
-        stage_data += "|子类型=难关\n"
-    elif stage_detail["appearanceStyle"] == "HIGH_DIFFICULTY":
-        stage_data += "|子类型=绝境\n"
-    elif stage_detail["appearanceStyle"] == "MIST_OPS":
-        stage_data += "|子类型=迷雾\n"
-    if stage_detail["bossMark"] == True:
-        stage_data += "|领袖标志=Yes\n"
-    stage_data += "|关卡难度={}\n".format(stage_detail["difficulty"])
-    if stage_detail["levelId"] == None:
-        stage_data += "|战斗关卡=false\n"
-    unlock_cond_list = []
-    for unlock_id in stage_detail["unlockCondition"]:
+def format_zone(zone_table: dict, zone_id: str) -> str:
+    """拼接所属区域名。
+
+    zone_table 里有 62 个区域(guide_1、camp_zone_* 等)两个名字字段都是 null,
+    此处刻意保留旧行为输出字面量 None,而不是让参数从 wikitext 里消失 ——
+    MediaWiki 模板对「参数缺失」和「参数为 None」的处理并不相同。
+    """
+    zone_data = zone_table["zones"][zone_id]
+    if zone_data["zoneNameFirst"]:
+        return f"{zone_data['zoneNameFirst']} {zone_data['zoneNameSecond']}"
+    return f"{zone_data['zoneNameSecond']}"
+
+
+def build_normal_stage(
+    stage_detail: dict | StageData,
+    stage_table: dict | StageTable,
+    zone_table: dict,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+    level_table: dict,
+    not_count_list: dict,
+    compile_rich_text: Callable[[str], str],
+    map_override: str = "",
+) -> BasicStageView:
+    stage = _stage_data(stage_detail)
+    table = _stage_table(stage_table)
+
+    subtype = None
+    if stage.hilight_mark:
+        subtype = "难关"
+    elif stage.appearance_style == "HIGH_DIFFICULTY":
+        subtype = "绝境"
+    elif stage.appearance_style == "MIST_OPS":
+        subtype = "迷雾"
+
+    unlock_conditions = []
+    for unlock in stage.unlock_condition:
+        previous_stage = table.stages[unlock.stage_id]
         if_tough = ""
-        if stage_table["stages"][unlock_id["stageId"]]["difficulty"] == "SIX_STAR":
+        if previous_stage.difficulty == "SIX_STAR":
             if_tough = "险地"
         elif (
-            stage_table["stages"][unlock_id["stageId"]]["diffGroup"] == "TOUGH"
-            and stage_table["stages"][unlock_id["stageId"]]["appearanceStyle"]
-            != "HIGH_DIFFICULTY"
+            previous_stage.diff_group == "TOUGH"
+            and previous_stage.appearance_style != "HIGH_DIFFICULTY"
         ):
             if_tough = "磨难"
-        unlock_cond = "{num}星通关[[{ifTough}{code} {name}]]".format(
-            num={"PASS": 2, "COMPLETE": 3}.get(
-                unlock_id["completeState"], unlock_id["completeState"]
-            ),
-            ifTough=if_tough,
-            code=stage_table["stages"][unlock_id["stageId"]]["code"],
-            name=stage_table["stages"][unlock_id["stageId"]]["name"],
+        rank = {"PASS": 2, "COMPLETE": 3}.get(
+            unlock.complete_state, unlock.complete_state
         )
-        unlock_cond_list.append(unlock_cond)
-    stage_data += "|解锁条件={}\n".format(", ".join(unlock_cond_list))
-    if stage_detail["dangerLevel"] == "" or stage_detail["dangerLevel"] is None:
-        stage_data += "|推荐等级=-\n"
-    else:
-        stage_data += "|推荐等级={}\n".format(stage_detail["dangerLevel"])
-    if zone_table["zones"][stage_detail["zoneId"]]["zoneNameFirst"]:
-        stage_data += "|所属区域={name_1} {name_2}\n".format(
-            name_1=zone_table["zones"][stage_detail["zoneId"]]["zoneNameFirst"],
-            name_2=zone_table["zones"][stage_detail["zoneId"]]["zoneNameSecond"],
+        unlock_conditions.append(
+            f"{rank}星通关[[{if_tough}{previous_stage.code} {previous_stage.name}]]"
         )
-    else:
-        stage_data += "|所属区域={name_2}\n".format(
-            name_2=zone_table["zones"][stage_detail["zoneId"]]["zoneNameSecond"]
-        )
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
-    if stage_detail["description"]:
-        stage_data += "|关卡描述={desc}\n".format(
-            desc=rts.compile(stage_detail["description"].replace("\\n", "<br/>"))
-        )
-    else:
-        stage_data += "|关卡描述=\n"
-    stage_data += "|作战消耗={}\n".format(stage_detail["apCost"])
-    if stage_detail["canPractice"] == True:
-        stage_data += "|演习消耗={}\n".format(stage_detail["practiceTicketCost"])
-    else:
-        stage_data += "|演习消耗=-1\n"
-    if stage_detail["stageDropInfo"]["displayDetailRewards"]:
-        stage_data += analyze_rewards(
-            stage_detail["stageDropInfo"]["displayDetailRewards"],
+
+    zone = format_zone(zone_table, stage.zone_id)
+
+    description = ""
+    if stage.description:
+        description = compile_rich_text(stage.description.replace("\\n", "<br/>"))
+
+    rewards = []
+    if stage.stage_drop_info.display_detail_rewards:
+        rewards = build_reward_groups(
+            stage.stage_drop_info.display_detail_rewards,
             character_table,
             building_data,
             item_table,
         )
-    if stage_detail["levelId"]:
-        stage_data += analyze_tile(level_table, stage_table["tileInfo"])
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "}}"
 
-    return stage_data
+    tile_effects = []
+    terrain_tags = None
+    if stage.level_id:
+        tile_effects = build_tile_effects(level_table, table.tile_info)
+        if "tags" in level_table["mapData"]:
+            terrain_tags = level_table["mapData"]["tags"]
 
-
-def get_4star_data(
-    stage_detail,
-    stage_table,
-    zone_table,
-    character_table,
-    building_data,
-    item_table,
-    level_table,
-    rts,
-):
-    stage_4star_data = "\n==突袭==\n{{突袭关卡信息\n"
-    stage_4star_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_4star_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_4star_data += "|关卡类型={}\n".format(
-        parse_stage_type(stage_detail["stageType"])
+    view = BasicStageView(
+        heading="普通",
+        code=(stage.code or "").strip(),
+        name=(stage.name or "").strip(),
+        stage_id=stage.stage_id,
+        map_override=map_override,
+        stage_type=parse_stage_type(stage.stage_type),
+        subtype=subtype,
+        boss=stage.boss_mark,
+        difficulty=stage.difficulty,
+        battle_stage=bool(stage.level_id),
+        unlock_condition=", ".join(unlock_conditions),
+        recommended_level=stage.danger_level or "-",
+        zone=zone,
+        level=(
+            build_level_info(level_table, not_count_list) if stage.level_id else None
+        ),
+        description=description,
+        ap_cost=stage.ap_cost,
+        practice_cost=stage.practice_ticket_cost if stage.can_practice else -1,
+        rewards=rewards,
+        tile_effects=tile_effects,
+        terrain_tags=terrain_tags,
     )
-    stage_4star_data += "|关卡难度={}\n".format(stage_detail["difficulty"])
-    unlock_cond_list = []
-    for unlock_id in stage_detail["unlockCondition"]:
-        if stage_table["stages"][unlock_id["stageId"]]["code"] != stage_detail["code"]:
-            unlock_cond = "{num}星通关[[{code} {name}]]".format(
-                num={"PASS": 2, "COMPLETE": 3}.get(
-                    unlock_id["completeState"], unlock_id["completeState"]
-                ),
-                code=stage_table["stages"][unlock_id["stageId"]]["code"],
-                name=stage_table["stages"][unlock_id["stageId"]]["name"],
+    return view
+
+
+def build_4star_stage(
+    stage_detail: dict | StageData,
+    stage_table: dict | StageTable,
+    zone_table: dict,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+    level_table: dict,
+    compile_rich_text: Callable[[str], str],
+) -> AssaultStageView:
+    stage = _stage_data(stage_detail)
+    table = _stage_table(stage_table)
+
+    unlock_conditions = []
+    for unlock in stage.unlock_condition:
+        previous_stage = table.stages[unlock.stage_id]
+        rank = {"PASS": 2, "COMPLETE": 3}.get(
+            unlock.complete_state, unlock.complete_state
+        )
+        if previous_stage.code != stage.code:
+            unlock_condition = (
+                f"{rank}星通关[[{previous_stage.code} {previous_stage.name}]]"
             )
         else:
-            unlock_cond = "{num}星通关[[#普通|{code} {name}]]普通难度".format(
-                num={"PASS": 2, "COMPLETE": 3}.get(
-                    unlock_id["completeState"], unlock_id["completeState"]
-                ),
-                code=stage_table["stages"][unlock_id["stageId"]]["code"],
-                name=stage_table["stages"][unlock_id["stageId"]]["name"],
+            unlock_condition = (
+                f"{rank}星通关[[#普通|{previous_stage.code} "
+                f"{previous_stage.name}]]普通难度"
             )
-        unlock_cond_list.append(unlock_cond)
-    stage_4star_data += "|解锁条件={}\n".format(", ".join(unlock_cond_list))
-    stage_4star_data += "|推荐等级={}\n".format(stage_detail["dangerLevel"])
-    if zone_table["zones"][stage_detail["zoneId"]]["zoneNameFirst"]:
-        stage_4star_data += "|所属区域={name_1} {name_2}\n".format(
-            name_1=zone_table["zones"][stage_detail["zoneId"]]["zoneNameFirst"],
-            name_2=zone_table["zones"][stage_detail["zoneId"]]["zoneNameSecond"],
-        )
-    else:
-        stage_4star_data += "|所属区域={name_2}\n".format(
-            name_2=zone_table["zones"][stage_detail["zoneId"]]["zoneNameSecond"]
-        )
+        unlock_conditions.append(unlock_condition)
+
+    zone = format_zone(zone_table, stage.zone_id)
+
     climit = 0
     ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
     for rune in level_table["runes"]:
@@ -940,191 +1182,212 @@ def get_4star_data(
             ebuff["flag"] = 1
             for i in rune["blackboard"]:
                 ebuff[i["key"]] = i["value"]
-    stage_4star_data += "|部署上限={}\n".format(
-        level_table["options"]["characterLimit"] + climit
-    )
-    stage_4star_data += "|初始COST={}\n".format(level_table["options"]["initialCost"])
-    stage_4star_data += "|COST上限={}\n".format(level_table["options"]["maxCost"])
-    stage_4star_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(stage_detail["description"].replace("\\n", "<br/>"))
-    )
-    stage_4star_data += "|作战消耗={}\n".format(stage_detail["apCost"])
-    if stage_detail["canPractice"] == True:
-        stage_4star_data += "|演习消耗={}\n".format(stage_detail["practiceTicketCost"])
-    else:
-        stage_4star_data += "|演习消耗=-1\n"
-    if stage_detail["stageDropInfo"]["displayDetailRewards"]:
-        stage_4star_data += analyze_rewards(
-            stage_detail["stageDropInfo"]["displayDetailRewards"],
+
+    rewards = []
+    if stage.stage_drop_info.display_detail_rewards:
+        rewards = build_reward_groups(
+            stage.stage_drop_info.display_detail_rewards,
             character_table,
             building_data,
             item_table,
         )
-    stage_4star_data += "<!--|情报=\n"
+
+    intelligence = []
     if ebuff["flag"] == 1:
         ebuff_desc = []
         if ebuff["atk"] != 1.0:
-            ebuff_desc.append("攻击力提升至{0:.0%}".format(ebuff["atk"]))
+            ebuff_desc.append("攻击力提升至{:.0%}".format(ebuff["atk"]))
         if ebuff["def"] != 1.0:
-            ebuff_desc.append("防御力提升至{0:.0%}".format(ebuff["def"]))
+            ebuff_desc.append("防御力提升至{:.0%}".format(ebuff["def"]))
         if ebuff["max_hp"] != 1.0:
-            ebuff_desc.append("生命值提升至{0:.0%}".format(ebuff["max_hp"]))
-        if ebuff_desc != []:
-            stage_4star_data += "敌方单位的" + "，".join(ebuff_desc) + "\n"
+            ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
+        if ebuff_desc:
+            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
         else:
-            stage_4star_data += "敌方单位无变化\n"
-    stage_4star_data += parse_rune(level_table["runes"])
-    stage_4star_data += "-->\n}}"
+            intelligence.append("敌方单位无变化")
+    intelligence.extend(build_rune_lines(level_table["runes"]))
 
-    return stage_4star_data
+    view = AssaultStageView(
+        heading="突袭",
+        code=(stage.code or "").strip(),
+        name=(stage.name or "").strip(),
+        stage_type=parse_stage_type(stage.stage_type),
+        difficulty=stage.difficulty,
+        unlock_condition=", ".join(unlock_conditions),
+        recommended_level=str(stage.danger_level),
+        zone=zone,
+        character_limit=level_table["options"]["characterLimit"] + climit,
+        initial_cost=level_table["options"]["initialCost"],
+        max_cost=level_table["options"]["maxCost"],
+        description=compile_rich_text(
+            (stage.description or "").replace("\\n", "<br/>")
+        ),
+        ap_cost=stage.ap_cost,
+        practice_cost=stage.practice_ticket_cost if stage.can_practice else -1,
+        rewards=rewards,
+        intelligence=intelligence,
+    )
+    return view
 
 
-def get_campaign_data(
-    stage_detail,
-    stage_table,
-    campaign_table,
-    character_table,
-    building_data,
-    item_table,
-    level_table,
-    notCount_list,
-    rts,
-):
-    stage_data = "\n==关卡==\n{{剿灭关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    if "_r_" in stage_detail["stageId"]:
-        stage_data += "|剿灭委托=true\n"
-    stage_data += "|关卡类型={}\n".format(parse_stage_type(stage_detail["stageType"]))
-    stage_data += "|关卡难度={}\n".format(stage_detail["difficulty"])
-    unlock_cond_list = []
-    for unlock_id in stage_detail["unlockCondition"]:
-        unlock_cond = "{num}星通关[[{code} {name}]]".format(
-            num={"PASS": 2, "COMPLETE": 3}.get(
-                unlock_id["completeState"], unlock_id["completeState"]
-            ),
-            code=stage_table["stages"][unlock_id["stageId"]]["code"],
-            name=stage_table["stages"][unlock_id["stageId"]]["name"],
+def build_campaign_stage(
+    stage_detail: dict | StageData,
+    stage_table: dict | StageTable,
+    campaign_table: dict,
+    character_table: dict,
+    building_data: dict,
+    item_table: dict,
+    level_table: dict,
+    not_count_list: dict,
+    compile_rich_text: Callable[[str], str],
+) -> CampaignStageView:
+    stage = _stage_data(stage_detail)
+    table = _stage_table(stage_table)
+
+    unlock_conditions = []
+    for unlock in stage.unlock_condition:
+        previous_stage = table.stages[unlock.stage_id]
+        rank = {"PASS": 2, "COMPLETE": 3}.get(
+            unlock.complete_state, unlock.complete_state
         )
-        unlock_cond_list.append(unlock_cond)
-    stage_data += "|解锁条件={}\n".format(", ".join(unlock_cond_list))
-    if stage_detail["zoneId"] in campaign_table["campaignZones"]:
-        stage_data += "|所属区域={name}\n".format(
-            name=campaign_table["campaignZones"][stage_detail["zoneId"]]["name"]
+        unlock_conditions.append(
+            f"{rank}星通关[[{previous_stage.code} {previous_stage.name}]]"
         )
+
+    if stage.zone_id in campaign_table["campaignZones"]:
+        zone = campaign_table["campaignZones"][stage.zone_id]["name"]
     else:
-        stage_data += "|所属区域=NONE\n"
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
-    if stage_detail["description"]:
-        stage_data += "|关卡描述={desc}\n".format(
-            desc=rts.compile(stage_detail["description"].replace("\\n", "<br/>"))
-        )
-    else:
-        stage_data += "|关卡描述=\n"
-    stage_data += "|作战消耗={}\n".format(stage_detail["apCost"])
-    campaign_detail = campaign_table["campaigns"][stage_detail["stageId"]]
+        zone = "NONE"
+
+    description = ""
+    if stage.description:
+        description = compile_rich_text(stage.description.replace("\\n", "<br/>"))
+
+    campaign_detail = campaign_table["campaigns"][stage.stage_id]
     if campaign_detail["dropGains"]["PERMANENT"]["gainLadders"] != []:
         gain_flag = "PERMANENT"
     else:
         gain_flag = "ROTATE"
+
+    rewards = []
     if campaign_detail["dropGains"][gain_flag]["displayDetailRewards"]:
-        stage_data += analyze_rewards(
+        rewards = build_reward_groups(
             campaign_detail["dropGains"][gain_flag]["displayDetailRewards"],
             character_table,
             building_data,
             item_table,
         )
-    for idx, ladder in enumerate(
-        campaign_detail["dropGains"][gain_flag]["gainLadders"], start=1
-    ):
-        stage_data += "|理智返还{}=+{}\n".format(idx, ladder["apFailReturn"])
-    for idx, ladder in enumerate(
-        campaign_detail["dropGains"][gain_flag]["gainLadders"], start=1
-    ):
+
+    gain_ladders = campaign_detail["dropGains"][gain_flag]["gainLadders"]
+    ap_returns = [f"+{ladder['apFailReturn']}" for ladder in gain_ladders]
+    diamond_rewards = []
+    for ladder in gain_ladders:
         if ladder["displayDiamondShdNum"] == 0:
-            stage_data += "|合成玉获得{}=+{}\n".format(
-                idx, ladder["displayDiamondShdNum"]
-            )
+            diamond_rewards.append(f"+{ladder['displayDiamondShdNum']}")
         else:
-            stage_data += "|合成玉获得{}=+约{}\n".format(
-                idx, ladder["displayDiamondShdNum"]
-            )
-    if stage_detail["levelId"]:
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "}}"
+            diamond_rewards.append(f"+约{ladder['displayDiamondShdNum']}")
 
-    return stage_data
+    terrain_tags = None
+    if stage.level_id and "tags" in level_table["mapData"]:
+        terrain_tags = level_table["mapData"]["tags"]
+
+    view = CampaignStageView(
+        code=(stage.code or "").strip(),
+        name=(stage.name or "").strip(),
+        stage_id=stage.stage_id,
+        commission="_r_" in stage.stage_id,
+        stage_type=parse_stage_type(stage.stage_type),
+        difficulty=stage.difficulty,
+        unlock_condition=", ".join(unlock_conditions),
+        zone=zone,
+        level=(
+            build_level_info(level_table, not_count_list) if stage.level_id else None
+        ),
+        description=description,
+        ap_cost=stage.ap_cost,
+        rewards=rewards,
+        ap_returns=ap_returns,
+        diamond_rewards=diamond_rewards,
+        terrain_tags=terrain_tags,
+    )
+    return view
 
 
-def get_crisis_data(stage_detail, level_table, notCount_list, rts):
-    stage_data = "\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    stage_data += "|关卡类型={}\n".format("活动")
-    stage_data += "|关卡难度={}\n".format("NORMAL")
-    stage_data += "|解锁条件={}\n".format("—")
-    stage_data += "|推荐等级={}\n".format("—")
-    stage_data += "|所属区域={}\n".format(stage_detail["code"].strip())
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
+def build_crisis_stage(
+    stage_detail: dict,
+    level_table: dict,
+    not_count_list: dict,
+    compile_rich_text: Callable[[str], str],
+) -> BasicStageView:
     if "description" in stage_detail:
-        stage_desc = rts.compile(
+        stage_desc = compile_rich_text(
             stage_detail["description"].replace("\\n", "<br/>")
-        )  # crisis_info
+        )
     elif "desc" in stage_detail:
-        stage_desc = rts.compile(stage_detail["desc"].replace("\\n", "<br/>"))  # weedy
+        stage_desc = compile_rich_text(stage_detail["desc"].replace("\\n", "<br/>"))
     else:
         stage_desc = ""
-    stage_data += f"|关卡描述={stage_desc}\n"
-    stage_data += f"|作战消耗={0}\n"
-    stage_data += "|演习消耗=-1\n"
-    stage_data += "}}"
 
-    return stage_data
-
-
-def get_roguelike_data(stage_detail, level_table, notCount_list, rts):
-    stage_data = "\n==普通==\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_data += "|关卡id={}\n".format(stage_detail["id"])
-    stage_data += "|关卡类型={}\n".format("活动")
-    stage_data += "|关卡难度={}\n".format("NORMAL")
-    stage_data += "|解锁条件={}\n".format("—")
-    stage_data += "|推荐等级={}\n".format("—")
-    stage_data += "|所属区域={}\n".format("—")
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
-    stage_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(stage_detail["description"].replace("\\n", "<br/>"))
+    view = BasicStageView(
+        code=stage_detail["code"].strip(),
+        name=stage_detail["name"].strip(),
+        stage_id=stage_detail["stageId"],
+        stage_type="活动",
+        difficulty="NORMAL",
+        unlock_condition="—",
+        recommended_level="—",
+        zone=stage_detail["code"].strip(),
+        level=(
+            build_level_info(level_table, not_count_list)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=stage_desc,
+        ap_cost=0,
+        practice_cost=-1,
     )
-    stage_data += f"|作战消耗={0}\n"
-    stage_data += "|演习消耗=-1\n"
-    if stage_detail["levelId"]:
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "}}"
-
-    return stage_data
+    return view
 
 
-def get_roguelike_4star_data(stage_detail, level_table, rts):
-    stage_4star_data = "\n==紧急作战==\n{{突袭关卡信息\n"
-    stage_4star_data += "|关卡代号={}\n".format(stage_detail["code"].strip())
-    stage_4star_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_4star_data += "|关卡类型={}\n".format("活动")
-    stage_4star_data += "|子类型={}\n".format("紧急作战")
-    stage_4star_data += "|关卡难度={}\n".format("FOUR_STAR")
-    stage_4star_data += "|解锁条件={}\n".format("-")
-    stage_4star_data += "|所属区域={}\n".format("-")
+def build_roguelike_stage(
+    stage_detail: dict,
+    level_table: dict,
+    not_count_list: dict,
+    compile_rich_text: Callable[[str], str],
+) -> BasicStageView:
+    terrain_tags = None
+    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
+        terrain_tags = level_table["mapData"]["tags"]
+    view = BasicStageView(
+        heading="普通",
+        code=stage_detail["code"].strip(),
+        name=stage_detail["name"].strip(),
+        stage_id=stage_detail["id"],
+        stage_type="活动",
+        difficulty="NORMAL",
+        unlock_condition="—",
+        recommended_level="—",
+        zone="—",
+        level=(
+            build_level_info(level_table, not_count_list)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=compile_rich_text(
+            stage_detail["description"].replace("\\n", "<br/>")
+        ),
+        ap_cost=0,
+        practice_cost=-1,
+        terrain_tags=terrain_tags,
+    )
+    return view
+
+
+def build_roguelike_4star_stage(
+    stage_detail: dict,
+    level_table: dict,
+    compile_rich_text: Callable[[str], str],
+) -> AssaultStageView:
     climit = 0
     ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
     for rune in level_table["runes"]:
@@ -1134,49 +1397,52 @@ def get_roguelike_4star_data(stage_detail, level_table, rts):
             ebuff["flag"] = 1
             for i in rune["blackboard"]:
                 ebuff[i["key"]] = i["value"]
-    stage_4star_data += "|部署上限={}\n".format(
-        level_table["options"]["characterLimit"] + climit
-    )
-    stage_4star_data += "|初始COST={}\n".format(level_table["options"]["initialCost"])
-    stage_4star_data += "|COST上限={}\n".format(level_table["options"]["maxCost"])
-    stage_4star_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(stage_detail["eliteDesc"].replace("\\n", "<br/>"))
-    )
-    stage_4star_data += f"|作战消耗={0}\n"
-    stage_4star_data += "|演习消耗=-1\n"
-    stage_4star_data += "<!--|情报=\n"
+
+    intelligence = []
     if ebuff["flag"] == 1:
         ebuff_desc = []
         if ebuff["atk"] != 1.0:
-            ebuff_desc.append("攻击力提升至{0:.0%}".format(ebuff["atk"]))
+            ebuff_desc.append("攻击力提升至{:.0%}".format(ebuff["atk"]))
         if ebuff["def"] != 1.0:
-            ebuff_desc.append("防御力提升至{0:.0%}".format(ebuff["def"]))
+            ebuff_desc.append("防御力提升至{:.0%}".format(ebuff["def"]))
         if ebuff["max_hp"] != 1.0:
-            ebuff_desc.append("生命值提升至{0:.0%}".format(ebuff["max_hp"]))
-        if ebuff_desc != []:
-            stage_4star_data += "敌方单位的" + "，".join(ebuff_desc) + "\n"
+            ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
+        if ebuff_desc:
+            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
         else:
-            stage_4star_data += "敌方单位无变化\n"
-    stage_4star_data += "-->\n}}"
+            intelligence.append("敌方单位无变化")
 
-    return stage_4star_data
+    view = AssaultStageView(
+        heading="紧急作战",
+        code=stage_detail["code"].strip(),
+        name=stage_detail["name"].strip(),
+        stage_type="活动",
+        subtype="紧急作战",
+        difficulty="FOUR_STAR",
+        unlock_condition="-",
+        zone="-",
+        character_limit=level_table["options"]["characterLimit"] + climit,
+        initial_cost=level_table["options"]["initialCost"],
+        max_cost=level_table["options"]["maxCost"],
+        description=compile_rich_text(
+            stage_detail["eliteDesc"].replace("\\n", "<br/>")
+        ),
+        ap_cost=0,
+        practice_cost=-1,
+        intelligence=intelligence,
+    )
+    return view
 
 
-def get_memory_data(
+def build_memory_stage(
     stage_detail,
     level_table,
-    rts,
+    compile_rich_text,
     character_table,
     building_data,
     item_table,
     notCount_list,
-):
-    stage_data = "\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format("悖论模拟")
-    stage_data += "|关卡名={}\n".format(stage_detail["name"].strip())
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    stage_data += "|关卡类型={}\n".format("悖论模拟")
-    stage_data += "|关卡难度={}\n".format("NORMAL")
+) -> BasicStageView:
     unlock_cond = ""
     for p in stage_detail["unlockParam"]:
         if unlock_cond != "":
@@ -1193,161 +1459,486 @@ def get_memory_data(
         "干员'''[[{}]]'''".format(character_table[stage_detail["charId"]]["name"])
         + unlock_cond
     )
-    stage_data += f"|解锁条件={unlock_cond}\n"
-    stage_data += "|推荐等级={}\n".format("—")
-    stage_data += "|所属区域={}\n".format(stage_detail["zoneId"])
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
-    stage_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(stage_detail["description"].replace("\n", "<br/>"))
-    )
-    stage_data += f"|作战消耗={0}\n"
-    stage_data += "|演习消耗=-1\n"
-    reward_item = [
-        f"{parse_drop_item(r, character_table, building_data, item_table)}:三星获得"
+
+    reward_items = [
+        DropView(
+            name=parse_drop_item(r, character_table, building_data, item_table),
+            occurrence="三星获得",
+        )
         for r in stage_detail["rewardItem"]
     ]
-    stage_data += "|首次掉落=" + ",".join(reward_item) + "\n"
-    if stage_detail["levelId"]:
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "}}"
-
-    return stage_data
-
-
-def analyze_xb_level_info(level_table, notCount_list):
-    level_info = ""
-    level_info += "|部署上限={}\n".format(level_table["options"]["characterLimit"])
-    level_info += "|初始COST={}\n".format(level_table["options"]["initialCost"])
-    level_info += "|COST上限={}\n".format(level_table["options"]["maxCost"])
-    level_info += "|目标点耐久={}\n".format(level_table["options"]["maxLifePoint"])
-    enemy_count = {"min": 0, "max": 0}
-    min_time = 0.0
-    normal_hidden_group = analyze_normal_hidden_group(level_table)
-    notCount_list_level = copy.deepcopy(notCount_list)
-    for enemy in level_table["enemyDbRefs"]:
-        if enemy["useDb"] is False:
-            try:
-                if enemy["overwrittenData"]["notCountInTotal"]["m_defined"] is True:
-                    if enemy["overwrittenData"]["notCountInTotal"]["m_value"] is True:
-                        if enemy["id"] not in notCount_list_level:
-                            notCount_list_level[enemy["id"]] = []
-                        notCount_list_level[enemy["id"]].append(enemy["level"])
-            except:
-                continue
-    for wave in level_table["waves"]:
-        min_time += wave["preDelay"] + wave["postDelay"]
-        for fragment in wave["fragments"]:
-            time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(
-                fragment["actions"], normal_hidden_group, notCount_list_level
-            )
-            enemy_count["min"] += action_enemy_min
-            enemy_count["max"] += action_enemy_max
-            if fragment_flag:
-                min_time += fragment["preDelay"]
-                min_time += time
-    if enemy_count["min"] == enemy_count["max"]:
-        level_info += "|敌人数量={}\n".format(enemy_count["min"])
-    else:
-        level_info += "|敌人数量={}~{}\n".format(enemy_count["min"], enemy_count["max"])
-    level_info += "|地图大小={}×{}\n".format(
-        level_table["mapData"]["map"][0].__len__(),
-        level_table["mapData"]["map"].__len__(),
+    terrain_tags = None
+    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
+        terrain_tags = level_table["mapData"]["tags"]
+    view = BasicStageView(
+        code="悖论模拟",
+        name=stage_detail["name"].strip(),
+        stage_id=stage_detail["stageId"],
+        stage_type="悖论模拟",
+        difficulty="NORMAL",
+        unlock_condition=unlock_cond,
+        recommended_level="—",
+        zone=stage_detail["zoneId"],
+        level=(
+            build_level_info(level_table, notCount_list)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=compile_rich_text(
+            stage_detail["description"].replace("\n", "<br/>")
+        ),
+        ap_cost=0,
+        practice_cost=-1,
+        rewards=[RewardGroupView(label="首次掉落", drops=reward_items)],
+        terrain_tags=terrain_tags,
     )
-    if level_table["options"]["maxPlayTime"] > 0:
-        mptime = level_table["options"]["maxPlayTime"]
-        level_info += f"|倒计时={int(mptime / 60)}分{int(mptime % 60)}秒\n"
-    else:
-        if abs(min_time - int(min_time)) < 0.0001:
-            level_info += f"|最短用时={int(min_time / 60)}分{int(min_time % 60)}秒\n"
-        else:
-            level_info += f"|最短用时={int(min_time / 60)}分{min_time % 60:.1f}秒\n"
-    return level_info
+    return view
 
 
-def get_sandbox_data(
-    stage_detail, rts, level_table, reward_data, item_data, notCount_list
-):
-    stage_data = "\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"])
-    stage_data += "|关卡名={}\n".format(stage_detail["name"])
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    stage_data += "|关卡类型={}\n".format("生息演算")
-    if stage_detail["levelId"]:
-        stage_data += analyze_xb_level_info(level_table, notCount_list)
-    stage_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(stage_detail["description"].replace("\n", "<br/>"))
-    )
-    rewards = []
+def build_sandbox_stage(
+    stage_detail,
+    compile_rich_text,
+    level_table,
+    reward_data,
+    item_data,
+    notCount_list,
+) -> BasicStageView:
+    resources = []
     for k in reward_data:
         if stage_detail["stageId"] in reward_data[k]:
             for r in reward_data[k][stage_detail["stageId"]]["rewardList"]:
                 if item_data[r["rewardItem"]]["itemType"] != "PLACEHOLDER":
-                    rewards.append(
-                        f"{{{{资源概览|{item_data[r['rewardItem']]['itemName'].strip()}}}}}"
-                    )
-    stage_data += "|资源概览={}\n".format("".join(rewards))
-    stage_data += "|action消耗={}\n".format(stage_detail["actionCost"])
-    stage_data += "|power消耗={}\n".format(stage_detail["powerCost"])
-    stage_data += "|特殊地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n"
-    stage_data += "}}"
+                    resources.append(item_data[r["rewardItem"]]["itemName"].strip())
+    view = BasicStageView(
+        code=stage_detail["code"],
+        name=stage_detail["name"],
+        stage_id=stage_detail["stageId"],
+        stage_type="生息演算",
+        level=(
+            build_level_info(level_table, notCount_list, use_countdown=True)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=compile_rich_text(
+            stage_detail["description"].replace("\n", "<br/>")
+        ),
+        resource_overview=resources,
+        action_cost=stage_detail["actionCost"],
+        power_cost=stage_detail["powerCost"],
+        sandbox_map=SandboxMapView(mode="widget"),
+    )
+    return view
 
-    return stage_data
 
-
-def get_sandboxV2_data(stage_detail, rts, level_table, notCount_list):
-    stage_data = "\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["code"])
-    stage_data += "|关卡名={}\n".format(stage_detail["name"])
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    stage_data += "|关卡类型={}\n".format("生息演算")
-    if stage_detail["levelId"]:
-        stage_data += analyze_xb_level_info(level_table, notCount_list)
-    stage_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(
+def build_sandbox_v2_stage(
+    stage_detail: dict,
+    compile_rich_text: Callable[[str], str],
+    level_table: dict,
+    not_count_list: dict,
+) -> BasicStageView:
+    terrain_tags = None
+    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
+        terrain_tags = level_table["mapData"]["tags"]
+    view = BasicStageView(
+        code=stage_detail["code"],
+        name=stage_detail["name"],
+        stage_id=stage_detail["stageId"],
+        stage_type="生息演算",
+        level=(
+            build_level_info(level_table, not_count_list, use_countdown=True)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=compile_rich_text(
             stage_detail["description"].replace("\\n", "<br/>").replace("\n", "<br/>")
-        )
+        ),
+        action_cost=stage_detail["actionCost"],
+        terrain_tags=terrain_tags,
+        sandbox_map=SandboxMapView(
+            mode="tabber",
+            code=stage_detail["code"],
+            name=stage_detail["name"],
+            stage_id=stage_detail["stageId"],
+        ),
     )
-    stage_data += "|action消耗={}\n".format(stage_detail["actionCost"])
-    if stage_detail["levelId"]:
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "|特殊地图=<tabber>\n实景地图=\n"
-    stage_data += f'<img alt="{stage_detail["code"]} {stage_detail["name"]} 地图" loading="lazy" src="//torappu.prts.wiki/assets/map_preview/{stage_detail["stageId"]}.png" width="580"/>'
-    stage_data += "\n|-|\n全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n</tabber>\n"
-    stage_data += "}}"
-
-    return stage_data
+    return view
 
 
-def get_recalRune_data(stage_detail, rts, level_table, notCount_list):
-    stage_data = "\n{{普通关卡信息\n"
-    stage_data += "|关卡代号={}\n".format(stage_detail["levelCode"])
-    stage_data += "|关卡名={}\n".format(stage_detail["levelName"])
-    stage_data += "|关卡id={}\n".format(stage_detail["stageId"])
-    stage_data += "|关卡类型={}\n".format("全息作战矩阵")
-    if stage_detail["levelId"]:
-        stage_data += analyze_level_info(level_table, notCount_list)
-    stage_data += "|关卡描述={desc}\n".format(
-        desc=rts.compile(
+def build_recal_rune_stage(
+    stage_detail: dict,
+    compile_rich_text: Callable[[str], str],
+    level_table: dict,
+    not_count_list: dict,
+) -> BasicStageView:
+    terrain_tags = None
+    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
+        terrain_tags = level_table["mapData"]["tags"]
+    view = BasicStageView(
+        code=stage_detail["levelCode"],
+        name=stage_detail["levelName"],
+        stage_id=stage_detail["stageId"],
+        stage_type="全息作战矩阵",
+        level=(
+            build_level_info(level_table, not_count_list)
+            if stage_detail["levelId"]
+            else None
+        ),
+        description=compile_rich_text(
             stage_detail["levelDesc"].replace("\\n", "<br/>").replace("\n", "<br/>")
-        )
+        ),
+        ap_cost=0,
+        practice_cost=-1,
+        terrain_tags=terrain_tags,
     )
-    stage_data += f"|作战消耗={0}\n"
-    stage_data += "|演习消耗=-1\n"
-    if stage_detail["levelId"]:
-        if "tags" in level_table["mapData"] and level_table["mapData"]["tags"] != None:
-            stage_data += "|地形tag={}\n".format(
-                ",".join(level_table["mapData"]["tags"])
-            )
-    stage_data += "}}"
+    return view
 
-    return stage_data
+
+# --- 渲染:把视图序列化成 wikitext。纯参数表的模板用 WikiTemplate,
+#     带自由文本/wikitable 的部分(固定编队表格、剿灭进度表、特殊地形注释、
+#     各页面骨架)直接拼字符串。 ---
+
+
+def render_drop(drop: DropView) -> str:
+    # 家具的参数位置与普通物品不同: :家具=yes:1=名称[:2=概率]
+    if drop.furniture:
+        text = f":家具=yes:1={drop.name}"
+        if drop.occurrence:
+            text += f":2={drop.occurrence}"
+        return text
+    text = drop.name
+    if drop.occurrence:
+        text += f":{drop.occurrence}"
+    return text
+
+
+def render_reward_group(group: RewardGroupView) -> str:
+    return ",".join(render_drop(drop) for drop in group.drops)
+
+
+def add_level_info(template: WikiTemplate, level: LevelInfoView) -> None:
+    # 用量标签是动态键名(最短用时/倒计时),声明式方案表达不了,直接拼 dict
+    template.add_all(
+        {
+            "部署上限": level.character_limit,
+            "初始COST": level.initial_cost,
+            "COST上限": level.max_cost,
+            "目标点耐久": level.max_life_point,
+            "敌人数量": level.enemy_count,
+            "地图大小": level.map_size,
+            level.time_label: level.time,
+        }
+    )
+
+
+def render_blackboard(blackboard: list[BlackboardView]) -> str:
+    # 一组黑板键值,以制表符起首、逗号空格结尾,占据独立的一行
+    parts = []
+    for item in blackboard:
+        part = f"{item.key} {item.value}"
+        if item.value_str is not None:
+            part += f" {item.value_str}"
+        parts.append(part)
+    return "\t" + ", ".join(parts) + ", "
+
+
+def render_tile(tile: TileEffectView) -> str:
+    lines = [f"{tile.name}:"]
+    lines.extend(render_blackboard(b) for b in tile.blackboards)
+    return "\n".join(lines)
+
+
+def render_tile_effects(tiles: list[TileEffectView]) -> str:
+    # 特殊地形黑板数据包在 HTML 注释里,仅作为编辑者复查的参考
+    body = "\n".join(render_tile(tile) for tile in tiles)
+    return f"<!--\n{body}\n-->"
+
+
+def render_basic_stage(stage: BasicStageView) -> str:
+    blocks = []
+    if stage.heading is not None:
+        blocks.append(f"=={stage.heading}==")
+    template = WikiTemplate("普通关卡信息")
+    template.add("关卡代号", stage.code)
+    template.add("关卡名", stage.name)
+    template.add("关卡id", stage.stage_id)
+    template.add_optional("地图预览override", stage.map_override)
+    template.add("关卡类型", stage.stage_type)
+    template.add_optional("子类型", stage.subtype)
+    if stage.boss:
+        template.add("领袖标志", "Yes")
+    template.add_optional("关卡难度", stage.difficulty)
+    # 仅 False 时输出;None / True 都不输出
+    if stage.battle_stage is False:
+        template.add("战斗关卡", "false")
+    template.add_optional("解锁条件", stage.unlock_condition)
+    template.add_optional("推荐等级", stage.recommended_level)
+    template.add_optional("所属区域", stage.zone)
+    if stage.level is not None:
+        add_level_info(template, stage.level)
+    template.add_optional("关卡描述", stage.description)
+    template.add_optional("作战消耗", stage.ap_cost)
+    template.add_optional("演习消耗", stage.practice_cost)
+    if stage.resource_overview is not None:
+        template.add(
+            "资源概览",
+            "".join(inline_template("资源概览", r) for r in stage.resource_overview),
+        )
+    template.add_optional("action消耗", stage.action_cost)
+    template.add_optional("power消耗", stage.power_cost)
+    for reward in stage.rewards:
+        template.add(reward.label, render_reward_group(reward))
+    if stage.tile_effects:
+        template.add("特殊地形效果", render_tile_effects(stage.tile_effects))
+    if stage.terrain_tags is not None:
+        template.add("地形tag", ",".join(stage.terrain_tags))
+    if stage.sandbox_map is not None:
+        if stage.sandbox_map.mode == "widget":
+            template.add(
+                "特殊地图",
+                "{{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}",
+            )
+        elif stage.sandbox_map.mode == "tabber":
+            template.add(
+                "特殊地图",
+                "<tabber>\n"
+                "实景地图=\n"
+                f'<img alt="{stage.sandbox_map.code} {stage.sandbox_map.name} 地图" '
+                'loading="lazy" '
+                f'src="//torappu.prts.wiki/assets/map_preview/'
+                f'{stage.sandbox_map.stage_id}.png" width="580"/>\n'
+                "|-|\n"
+                "全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n"
+                "</tabber>",
+            )
+    blocks.append(str(template))
+    return "\n".join(blocks)
+
+
+def render_assault_stage(stage: AssaultStageView) -> str:
+    template = WikiTemplate("突袭关卡信息")
+    template.add("关卡代号", stage.code)
+    template.add("关卡名", stage.name)
+    template.add("关卡类型", stage.stage_type)
+    template.add_optional("子类型", stage.subtype)
+    template.add("关卡难度", stage.difficulty)
+    template.add("解锁条件", stage.unlock_condition)
+    template.add_optional("推荐等级", stage.recommended_level)
+    template.add("所属区域", stage.zone)
+    template.add_all(
+        {
+            "部署上限": stage.character_limit,
+            "初始COST": stage.initial_cost,
+            "COST上限": stage.max_cost,
+        }
+    )
+    template.add("关卡描述", stage.description)
+    template.add_all({"作战消耗": stage.ap_cost, "演习消耗": stage.practice_cost})
+    for reward in stage.rewards:
+        template.add(reward.label, render_reward_group(reward))
+    # 情报保留在注释中,供编辑者复查
+    intelligence = "\n".join(stage.intelligence)
+    template.add_raw(f"<!--|情报=\n{intelligence}\n-->")
+    return f"=={stage.heading}==\n{template}"
+
+
+def render_campaign_stage(stage: CampaignStageView) -> str:
+    template = WikiTemplate("剿灭关卡信息")
+    template.add("关卡代号", stage.code)
+    template.add("关卡名", stage.name)
+    template.add("关卡id", stage.stage_id)
+    if stage.commission:
+        template.add("剿灭委托", "true")
+    template.add("关卡类型", stage.stage_type)
+    template.add("关卡难度", stage.difficulty)
+    template.add("解锁条件", stage.unlock_condition)
+    template.add("所属区域", stage.zone)
+    if stage.level is not None:
+        add_level_info(template, stage.level)
+    template.add("关卡描述", stage.description)
+    template.add("作战消耗", stage.ap_cost)
+    for reward in stage.rewards:
+        template.add(reward.label, render_reward_group(reward))
+    for index, value in enumerate(stage.ap_returns, 1):
+        template.add(f"理智返还{index}", value)
+    for index, value in enumerate(stage.diamond_rewards, 1):
+        template.add(f"合成玉获得{index}", value)
+    if stage.terrain_tags is not None:
+        template.add("地形tag", ",".join(stage.terrain_tags))
+    return f"==关卡==\n{template}"
+
+
+def add_enemy_params(template: WikiTemplate, enemy: EnemyView) -> None:
+    # 敌人参数键名带序号,显式拼出比再加一层抽象更清楚
+    index = enemy.index
+    template.add(f"敌人{index}", enemy.name)
+    if enemy.display_name is not None:
+        template.add(f"敌人{index}显示名", enemy.display_name)
+    template.add(f"敌人{index}数量", enemy.count)
+    if enemy.count_lower is not None:
+        template.add(f"敌人{index}数量下限", enemy.count_lower)
+    template.add(f"敌人{index}级别", enemy.level)
+    if enemy.note is not None:
+        template.add(f"敌人{index}备注", enemy.note)
+    for override in enemy.overrides:
+        template.add(f"敌人{index}{override.label}", override.value)
+
+
+def render_enemies(enemies: list[EnemyView]) -> str:
+    template = WikiTemplate("敌方情报")
+    for enemy in enemies:
+        add_enemy_params(template, enemy)
+    return f"==敌方情报==\n{template}"
+
+
+def render_squad_unit(unit: SquadUnitView) -> str:
+    if unit.simulation:
+        return inline_template("悖论模拟对象", unit.name)
+    args = [unit.name, unit.phase, unit.level, unit.skill_name, unit.main_skill_level]
+    if unit.potential is not None:
+        # 潜能是第 6 个位置参数,前面补一个空位(第 5 位留空)
+        args += ["", unit.potential]
+    return inline_template("编队单位", *args)
+
+
+def render_squad(section: SquadSectionView) -> str:
+    units = "".join(render_squad_unit(unit) for unit in section.units)
+    return (
+        f"=={section.title}==\n"
+        '{| class="wikitable hlist logo mw-collapsed mw-collapsible" '
+        'style="text-align:center; width:567px; white-space:normal;"\n'
+        f'!style="background-color:#0098DC;color:#FFFFFF"|{section.title}\n'
+        f"|-\n"
+        f"|{units}\n"
+        f"|-\n"
+        f"!备注\n"
+        f"|-\n"
+        f"|{section.note}\n"
+        f"|}}"
+    )
+
+
+def render_squads(squads: list[SquadSectionView]) -> str:
+    return "\n".join(render_squad(section) for section in squads)
+
+
+def render_progress_items(items: list[CampaignProgressItemView]) -> str:
+    parts = [inline_template("材料消耗", item.name, item.count) for item in items]
+    return " ".join(parts)
+
+
+def render_progress_row(row: CampaignProgressRowView) -> str:
+    text = f"|-\n|{row.kill_count}||{render_progress_items(row.items)}"
+    if row.break_fee_add:
+        text += f" {inline_template('材料消耗', '合成玉', 'i+')}(+{row.break_fee_add})"
+    return text + "\n"
+
+
+def render_campaign_progress(progress: CampaignProgressView) -> str:
+    rows = "".join(render_progress_row(row) for row in progress.rows)
+    return (
+        "==作战进度奖励==\n"
+        '{| class="wikitable mw-collapsible mw-collapsed" '
+        'style="text-align:center;width:600px;"\n'
+        '!style="width:200px;color:white;font-weight:bold;'
+        'background-color:#575757;"|击溃人数\n'
+        '!style="width:400px;color:white;font-weight:bold;'
+        'background-color:#575757;"|奖励\n'
+        f"{rows}"
+        "|}"
+    )
+
+
+# --- 页面骨架:各 page 模板,把上面的片段按页面布局组合。 ---
+
+
+def render_normal_page(page: NormalPageView) -> str:
+    blocks = ["{{pathnav2|关卡一览}}", render_basic_stage(page.normal)]
+    if page.assault is not None:
+        blocks.append(render_assault_stage(page.assault))
+    if page.enemies is not None:
+        blocks.append(render_enemies(page.enemies))
+    if page.squads:
+        blocks.append(render_squads(page.squads))
+    if page.material_drop:
+        blocks.append("==材料掉落==\n{{关卡材料掉落}}")
+    blocks.append("==注释与链接==\n<references/>\n{{关卡导航}}")
+    return "\n".join(blocks)
+
+
+def render_campaign_page(page: CampaignPageView) -> str:
+    blocks = ["{{pathnav2|关卡一览}}", render_campaign_stage(page.stage)]
+    if page.enemies is not None:
+        blocks.append(render_enemies(page.enemies))
+    if page.squads:
+        blocks.append(render_squads(page.squads))
+    blocks.append(render_campaign_progress(page.progress))
+    blocks.append("==注释与链接==\n<references/>\n{{关卡导航}}")
+    return "\n".join(blocks)
+
+
+def render_basic_page(
+    page: BasicPageView,
+    *,
+    notoc: bool = False,
+    extra_sections: list[str] | None = None,
+    categories: list[str] | None = None,
+) -> str:
+    """危机合约/悖论模拟/生息演算/训练场/全息作战矩阵/id 页面共用。
+
+    带 __NOTOC__ 的页面(crisis/memory/sandbox/mechanism/id)把 notoc 置 True。
+    extra_sections 插在敌方情报与固定编队之后、注释与链接之前(如危机合约的合约详情),
+    categories 追加在 {{关卡导航}} 之后(如分类:危机合约关卡)。
+    """
+    blocks = ["{{pathnav2|关卡一览}}"]
+    if notoc:
+        blocks.append("__NOTOC__")
+    blocks.append(render_basic_stage(page.stage))
+    if page.enemies is not None:
+        blocks.append(render_enemies(page.enemies))
+    if page.squads:
+        blocks.append(render_squads(page.squads))
+    if extra_sections:
+        blocks.extend(extra_sections)
+    blocks.append("==注释与链接==\n<references/>\n{{关卡导航}}")
+    if categories:
+        blocks.extend(categories)
+    return "\n".join(blocks)
+
+
+def render_roguelike_page(page: RoguelikePageView) -> str:
+    blocks = ["{{pathnav2|关卡一览}}", render_basic_stage(page.normal)]
+    if page.assault is not None:
+        blocks.append(render_assault_stage(page.assault))
+    if page.enemies is not None:
+        blocks.append(render_enemies(page.enemies))
+    blocks.append("==注释与链接==\n<references/>\n{{关卡导航}}")
+    blocks.append("[[分类:集成战略关卡]]")
+    return "\n".join(blocks)
+
+
+def render_recal_rune_page(page: RecalRunePageView) -> str:
+    blocks = [
+        "{{pathnav2|关卡一览}}",
+        f"<noinclude>{{{{DISPLAYTITLE:{page.display_title}}}}}</noinclude>",
+    ]
+    blocks.append(render_basic_stage(page.stage))
+    if page.enemies is not None:
+        blocks.append(render_enemies(page.enemies))
+    if page.squads:
+        blocks.append(render_squads(page.squads))
+    blocks.append("==注释与链接==\n<references/>\n{{关卡导航}}")
+    return "\n".join(blocks)
+
+
+def render_disambiguation(links: list[DisambiguationLinkView]) -> str:
+    lines = ["{{消歧义页}}", "<big><big>你要找的结果可能如下：</big></big>"]
+    for link in links:
+        line = f"*<big>'''[[{link.page_name}]]'''"
+        if link.activity_name is not None:
+            line += f"（[[{link.activity_name}]]关卡）"
+        line += "</big>"
+        lines.append(line)
+    return "\n".join(lines)
 
 
 class ActionInfo:
@@ -1416,24 +2007,31 @@ class Stage(Job):
             stage_code_dict[s["code"].strip()].append(s["stageId"])
         for code, s_list in stage_code_dict.items():
             if len(s_list) > 1:
-                duplicate_dict[code] = (
-                    "{{消歧义页}}\n<big><big>你要找的结果可能如下：</big></big>"
-                )
+                links = []
+                seen_links = set()
                 for sid in s_list:
-                    cat = ""
+                    activity_name = None
                     if stage_table["stages"][sid]["stageType"] == "ACTIVITY":
                         result = re.search("^([^_]+)[_-]", sid)
                         act_id = result.group(1)
                         if act_id in activity_table["basicInfo"]:
-                            cat = f"（[[{activity_table['basicInfo'][act_id]['name']}]]关卡）"
-                    cat = cat.replace("#", "/0")
-                    page_name = "\n*<big>'''[[{} {}]]'''{}</big>".format(
+                            activity_name = activity_table["basicInfo"][act_id][
+                                "name"
+                            ].replace("#", "/0")
+                    page_name = "{} {}".format(
                         stage_table["stages"][sid]["code"].strip(),
                         stage_table["stages"][sid]["name"].strip(),
-                        cat,
                     )
-                    if page_name not in duplicate_dict[code]:
-                        duplicate_dict[code] += page_name
+                    link_key = (page_name, activity_name)
+                    if link_key not in seen_links:
+                        links.append(
+                            DisambiguationLinkView(
+                                page_name=page_name,
+                                activity_name=activity_name,
+                            )
+                        )
+                        seen_links.add(link_key)
+                duplicate_dict[code] = render_disambiguation(links)
         self.duplicate_dict = duplicate_dict
         # logger.info(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
 
@@ -1461,7 +2059,7 @@ class Stage(Job):
                         ):
                             notCount_list[enemy["Key"]].append(enemy_level["level"])
             return notCount_list
-        except:
+        except Exception:
             return {}
 
     def _run(self):
@@ -1470,6 +2068,7 @@ class Stage(Job):
         character_table = self.getgd("excel/character_table.json")
         skill_table = self.getgd("excel/skill_table.json")
         stage_table = self.getgd("excel/stage_table.json")
+        typed_stage_table = StageTable.model_validate(stage_table)
         zone_table = self.getgd("excel/zone_table.json")
         redirect_table = self.getgd("battle/battle_misc_table.json")
         rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
@@ -1506,6 +2105,8 @@ class Stage(Job):
                 "act21side_05_t": "后巷(拉普兰德2)",
                 "act21side_06_t": "新城区大街(丹布朗)",
             }.get(stage_id, stage_detail["name"].strip())
+            typed_stage_table.stages[stage_id].name = stage_detail["name"]
+            typed_stage = StageData.model_validate(stage_detail)
             stage_page_name = stage_detail["code"].strip() + " " + stage_detail["name"]
             if stage_detail["difficulty"] == "SIX_STAR":
                 stage_page_name = "险地" + stage_page_name
@@ -1543,73 +2144,62 @@ class Stage(Job):
                         level_table = self.getgd(
                             "levels/" + stage_detail["levelId"].lower() + ".json"
                         )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_normal_data = get_normal_data(
-                stage_detail,
-                stage_table,
+            normal_stage = build_normal_stage(
+                typed_stage,
+                typed_stage_table,
                 zone_table,
                 character_table,
                 building_data,
                 item_table,
                 level_table,
                 notCount_list,
-                rts,
+                rts.compile,
                 map_override=map_override,
             )
-            stage_enemy_data = (
-                self._run_enemy_data(level_table) if stage_detail["levelId"] else ""
+            enemies = (
+                self._build_enemy_views(level_table)
+                if stage_detail["levelId"]
+                else None
             )
-            stage_4star_data = (
-                get_4star_data(
-                    stage_table["stages"][stage_detail["hardStagedId"]],
-                    stage_table,
+            assault_stage = (
+                build_4star_stage(
+                    typed_stage_table.stages[typed_stage.hard_staged_id],
+                    typed_stage_table,
                     zone_table,
                     character_table,
                     building_data,
                     item_table,
                     level_table,
-                    rts,
+                    rts.compile,
                 )
                 if stage_detail["hardStagedId"]
-                else ""
+                else None
             )
-            if (
-                len(
-                    list(
-                        filter(
-                            lambda x: x["dropType"] in [2, 3, 4],
-                            stage_detail["stageDropInfo"]["displayDetailRewards"],
-                        )
-                    )
-                )
-                > 0
-            ):
-                stage_drop = "\n==材料掉落==\n{{关卡材料掉落}}"
-            else:
-                stage_drop = ""
+            has_material_drop = any(
+                reward["dropType"] in [2, 3, 4]
+                for reward in stage_detail["stageDropInfo"]["displayDetailRewards"]
+            )
             if stage_detail["levelId"]:
-                char_pre = analyze_char_card_info(
-                    level_table, stage_page_name, character_table, skill_table
-                )
-                char_pre += analyze_char_insert_info(
+                squads = build_squad_sections(
                     level_table, stage_page_name, character_table, skill_table
                 )
             else:
-                char_pre = ""
+                squads = []
 
-            stage_content = (
-                "{{pathnav2|关卡一览}}"
-                + stage_normal_data
-                + stage_4star_data
-                + stage_enemy_data
-                + char_pre
-                + stage_drop
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+            stage_content = render_normal_page(
+                NormalPageView(
+                    normal=normal_stage,
+                    assault=assault_stage,
+                    enemies=enemies,
+                    squads=squads,
+                    material_drop=has_material_drop,
+                )
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
 
@@ -1697,6 +2287,7 @@ class Stage(Job):
         character_table = self.getgd("excel/character_table.json")
         skill_table = self.getgd("excel/skill_table.json")
         stage_table = self.getgd("excel/stage_table.json")
+        typed_stage_table = StageTable.model_validate(stage_table)
         campaign_table = self.getgd("excel/campaign_table.json")
         rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
@@ -1719,59 +2310,65 @@ class Stage(Job):
                     level_table = self.getgd(
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_normal_data = get_campaign_data(
-                stage_detail,
-                stage_table,
+            campaign_stage = build_campaign_stage(
+                typed_stage_table.stages[stage_id],
+                typed_stage_table,
                 campaign_table,
                 character_table,
                 building_data,
                 item_table,
                 level_table,
                 notCount_list,
-                rts,
+                rts.compile,
             )
-            stage_enemy_data = (
-                self._run_enemy_data(level_table) if stage_detail["levelId"] else ""
+            enemies = (
+                self._build_enemy_views(level_table)
+                if stage_detail["levelId"]
+                else None
             )
-            char_pre = analyze_char_card_info(
-                level_table, stage_page_name, character_table, skill_table
+            squads = build_squad_sections(
+                level_table,
+                stage_page_name,
+                character_table,
+                skill_table,
+                include_inserted=False,
             )
-            rewards = """\n==作战进度奖励==
-{| class="wikitable mw-collapsible mw-collapsed" style="text-align:center;width:600px;"
-!style="width:200px;color:white;font-weight:bold;background-color:#575757;"|击溃人数
-!style="width:400px;color:white;font-weight:bold;background-color:#575757;"|奖励"""
+            progress_rows = []
             for r in campaign_table["campaigns"][stage_detail["stageId"]][
                 "breakLadders"
             ]:
-                items = " ".join(
-                    [
-                        "{{{{材料消耗|{}|{}}}}}".format(
-                            parse_drop_item(
-                                rw, character_table, building_data, item_table
-                            ),
-                            rw["count"],
-                        )
-                        for rw in r["rewards"]
-                    ]
+                progress_rows.append(
+                    CampaignProgressRowView(
+                        kill_count=r["killCnt"],
+                        items=[
+                            CampaignProgressItemView(
+                                name=parse_drop_item(
+                                    reward,
+                                    character_table,
+                                    building_data,
+                                    item_table,
+                                ),
+                                count=reward["count"],
+                            )
+                            for reward in r["rewards"]
+                        ],
+                        break_fee_add=r["breakFeeAdd"],
+                    )
                 )
-                rewards += "\n|-\n|{}||{}".format(r["killCnt"], items)
-                if r["breakFeeAdd"] != 0:
-                    rewards += " {{材料消耗|合成玉|i+}}(+" + str(r["breakFeeAdd"]) + ")"
-            rewards += "\n|}"
 
-            stage_content = (
-                "{{pathnav2|关卡一览}}"
-                + stage_normal_data
-                + stage_enemy_data
-                + char_pre
-                + rewards
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+            stage_content = render_campaign_page(
+                CampaignPageView(
+                    stage=campaign_stage,
+                    enemies=enemies,
+                    squads=squads,
+                    progress=CampaignProgressView(rows=progress_rows),
+                )
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
 
@@ -1840,24 +2437,26 @@ class Stage(Job):
                     level_table = self.getgd(
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_normal_data = get_crisis_data(
-                stage_detail, level_table, notCount_list, rts
+            crisis_stage = build_crisis_stage(
+                stage_detail, level_table, notCount_list, rts.compile
             )
-            stage_enemy_data = (
-                self._run_enemy_data(level_table) if stage_detail["levelId"] else ""
+            enemies = (
+                self._build_enemy_views(level_table)
+                if stage_detail["levelId"]
+                else None
             )
 
-            stage_content = (
-                "{{pathnav2|关卡一览}}\n__NOTOC__"
-                + stage_normal_data
-                + stage_enemy_data
-                + "\n==合约详情==\n{{合约详情}}\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:危机合约关卡]]"
+            stage_content = render_basic_page(
+                BasicPageView(stage=crisis_stage, enemies=enemies),
+                notoc=True,
+                extra_sections=["==合约详情==\n{{合约详情}}"],
+                categories=["[[分类:危机合约关卡]]"],
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
 
@@ -1912,14 +2511,14 @@ class Stage(Job):
                         level_table = self.getgd(
                             "levels/" + stage_detail["levelId"].lower() + ".json"
                         )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_normal_data = get_roguelike_data(
-                stage_detail, level_table, notCount_list, rts
+            normal_stage = build_roguelike_stage(
+                stage_detail, level_table, notCount_list, rts.compile
             )
             linkedStage = [
                 k
@@ -1927,21 +2526,25 @@ class Stage(Job):
                 if roguelike_table["stages"][k]["linkedStageId"] == stage_key
             ]
             if len(linkedStage) >= 1:
-                stage_4star_data = get_roguelike_4star_data(
-                    roguelike_table["stages"][linkedStage[0]], level_table, rts
+                assault_stage = build_roguelike_4star_stage(
+                    roguelike_table["stages"][linkedStage[0]],
+                    level_table,
+                    rts.compile,
                 )
             else:
-                stage_4star_data = ""
-            stage_enemy_data = (
-                self._run_enemy_data(level_table) if stage_detail["levelId"] else ""
+                assault_stage = None
+            enemies = (
+                self._build_enemy_views(level_table)
+                if stage_detail["levelId"]
+                else None
             )
 
-            stage_content = (
-                "{{pathnav2|关卡一览}}"
-                + stage_normal_data
-                + stage_4star_data
-                + stage_enemy_data
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}\n[[分类:集成战略关卡]]"
+            stage_content = render_roguelike_page(
+                RoguelikePageView(
+                    normal=normal_stage,
+                    assault=assault_stage,
+                    enemies=enemies,
+                )
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
 
@@ -1978,66 +2581,48 @@ class Stage(Job):
             stage_page_name = "悖论模拟 {}".format(stage_detail["name"].strip())
             if stage_page_name in stage_list:
                 continue
-            # if stage_page_name not in ['悖论模拟 书写悲痛', '悖论模拟 御护', '悖论模拟 高效除虫', '悖论模拟 射术传承']:
-            #     continue
-
             if stage_detail["levelId"]:
                 try:
                     level_table = self.getgd(
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_normal_data = get_memory_data(
+            memory_stage = build_memory_stage(
                 stage_detail,
                 level_table,
-                rts,
+                rts.compile,
                 character_table,
                 building_data,
                 item_table,
                 notCount_list,
             )
-            stage_enemy_data = (
-                self._run_enemy_data(level_table) if stage_detail["levelId"] else ""
+            enemies = (
+                self._build_enemy_views(level_table)
+                if stage_detail["levelId"]
+                else None
             )
-            char_pre = analyze_char_card_info(
+            squads = build_squad_sections(
                 level_table,
                 stage_page_name,
                 character_table,
                 skill_table,
-                stage_charId=stage_detail["charId"],
-            )
-            char_pre += analyze_char_insert_info(
-                level_table, stage_page_name, character_table, skill_table
+                stage_char_id=stage_detail["charId"],
             )
 
-            stage_content = (
-                "{{pathnav2|关卡一览}}\n__NOTOC__"
-                + stage_normal_data
-                + stage_enemy_data
-                + char_pre
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+            stage_content = render_basic_page(
+                BasicPageView(
+                    stage=memory_stage,
+                    enemies=enemies,
+                    squads=squads,
+                ),
+                notoc=True,
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
-
-            # old = self.wiki.read(stage_page_name)
-            # stage_content = old
-            # result = re.search('(\n==固定编队==\n[\s\S]*?)\n==', stage_content)
-            # if result:
-            #     stage_content = stage_content.replace(result.group(1), analyze_char_card_info(level_table, stage_page_name, character_table, skill_table, stage_charId = stage_detail['charId']))
-            # else:
-            #     pass
-            # result2 = re.search('(\n==已部署干员==\n[\s\S]*?)\n==', stage_content)
-            # if result2:
-            #     stage_content = stage_content.replace(result2.group(1), analyze_char_insert_info(level_table, stage_page_name, character_table, skill_table))
-            # else:
-            #     pass
-            # if stage_content == old:
-            #     continue
 
             self.wiki.edit(
                 title=stage_detail["name"].strip(),
@@ -2099,34 +2684,33 @@ class Stage(Job):
                         level_table = self.getgd(
                             "levels/" + stage_data["levelId"].lower() + ".json"
                         )
-                    except:
+                    except Exception:
                         logger.info(f"Cannot find level data of {stage_page_name}.")
                         continue
                 else:
                     level_table = {}
 
-                # stage_normal_data = get_sandbox_data(stage_data, rts, level_table, sandbox_stage_list[act_key]['rewardConfigDatas'], sandbox_table['itemDatas'])
-                stage_normal_data = get_sandboxV2_data(
-                    stage_data, rts, level_table, notCount_list
+                sandbox_stage = build_sandbox_v2_stage(
+                    stage_data, rts.compile, level_table, notCount_list
                 )
-                stage_enemy_data = (
-                    self._run_enemy_data(level_table) if stage_data["levelId"] else ""
+                enemies = (
+                    self._build_enemy_views(level_table)
+                    if stage_data["levelId"]
+                    else None
                 )
                 if stage_data["levelId"]:
-                    char_pre = analyze_char_card_info(
-                        level_table, stage_page_name, character_table, skill_table
-                    )
-                    char_pre += analyze_char_insert_info(
+                    squads = build_squad_sections(
                         level_table, stage_page_name, character_table, skill_table
                     )
                 else:
-                    char_pre = ""
-                stage_content = (
-                    "{{pathnav2|关卡一览}}"
-                    + stage_normal_data
-                    + stage_enemy_data
-                    + char_pre
-                    + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+                    squads = []
+                stage_content = render_basic_page(
+                    BasicPageView(
+                        stage=sandbox_stage,
+                        enemies=enemies,
+                        squads=squads,
+                    ),
+                    notoc=True,
                 )
 
                 # old = self.wiki.read(stage_page_name)
@@ -2172,7 +2756,6 @@ class Stage(Job):
         character_table = self.getgd("excel/character_table.json")
         skill_table = self.getgd("excel/skill_table.json")
 
-        stage_list = self.wiki.category("分类:训练场关卡")
         new_stage_list = []
         notCount_list = self._get_list_notCountInTotal()
 
@@ -2188,40 +2771,38 @@ class Stage(Job):
                     level_table = self.getgd(
                         "levels/" + stage_data["levelId"].lower() + ".json"
                     )
-                except:
+                except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
             else:
                 level_table = {}
 
-            stage_content = "\n{{普通关卡信息\n"
-            stage_content += "|关卡代号={}\n".format(stage_data["code"])
-            stage_content += "|关卡名={}\n".format(stage_data["name"].strip())
-            stage_content += "|关卡id={}\n".format(stage_data["stageId"])
-            stage_content += "|关卡类型={}\n".format("训练场")
-            stage_content += "|关卡难度={}\n".format("NORMAL")
-            stage_content += "|解锁条件={}\n".format("—")
-            stage_content += "|推荐等级={}\n".format("—")
-            stage_content += "|所属区域={}\n".format("-")
-            stage_content += analyze_level_info(level_table, notCount_list)
-            stage_content += "|关卡描述={}\n".format(stage_data["description"])
-            stage_content += f"|作战消耗={0}\n"
-            stage_content += "|演习消耗=-1\n"
-            stage_content += "}}"
+            mechanism_stage = BasicStageView(
+                code=stage_data["code"],
+                name=stage_data["name"].strip(),
+                stage_id=stage_data["stageId"],
+                stage_type="训练场",
+                difficulty="NORMAL",
+                unlock_condition="—",
+                recommended_level="—",
+                zone="-",
+                level=build_level_info(level_table, notCount_list),
+                description=stage_data["description"],
+                ap_cost=0,
+                practice_cost=-1,
+            )
 
-            stage_enemy_data = self._run_enemy_data(level_table)
-            char_pre = analyze_char_card_info(
+            enemies = self._build_enemy_views(level_table)
+            squads = build_squad_sections(
                 level_table, stage_page_name, character_table, skill_table
             )
-            char_pre += analyze_char_insert_info(
-                level_table, stage_page_name, character_table, skill_table
-            )
-            stage_content = (
-                "{{pathnav2|关卡一览}}\n__NOTOC__"
-                + stage_content
-                + stage_enemy_data
-                + char_pre
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+            stage_content = render_basic_page(
+                BasicPageView(
+                    stage=mechanism_stage,
+                    enemies=enemies,
+                    squads=squads,
+                ),
+                notoc=True,
             )
 
             self.wiki.edit(
@@ -2260,7 +2841,10 @@ class Stage(Job):
         for season_info in recalrune_table["seasons"].values():
             for stage_id, stage_data in season_info["stages"].items():
                 stage_data["levelName"] = stage_data["levelName"].strip()
-                stage_page_name = f"全息{stage_data['levelCode']} {stage_data['levelName'].replace('#', '＃')}"
+                stage_page_name = (
+                    f"全息{stage_data['levelCode']} "
+                    f"{stage_data['levelName'].replace('#', '＃')}"
+                )
                 if stage_page_name in stage_list:
                     continue
                 # if stage_data['levelName'] not in ['#爱国者之死']:
@@ -2271,36 +2855,35 @@ class Stage(Job):
                         level_table = self.getgd(
                             "levels/" + stage_data["levelId"].lower() + ".json"
                         )
-                    except:
+                    except Exception:
                         logger.info(f"Cannot find level data of {stage_page_name}.")
                         continue
                 else:
                     level_table = {}
 
-                stage_normal_data = get_recalRune_data(
-                    stage_data, rts, level_table, notCount_list
+                recal_rune_stage = build_recal_rune_stage(
+                    stage_data, rts.compile, level_table, notCount_list
                 )
-                stage_enemy_data = (
-                    self._run_enemy_data(level_table) if stage_data["levelId"] else ""
+                enemies = (
+                    self._build_enemy_views(level_table)
+                    if stage_data["levelId"]
+                    else None
                 )
                 if stage_data["levelId"]:
-                    char_pre = analyze_char_card_info(
-                        level_table, stage_page_name, character_table, skill_table
-                    )
-                    char_pre += analyze_char_insert_info(
+                    squads = build_squad_sections(
                         level_table, stage_page_name, character_table, skill_table
                     )
                 else:
-                    char_pre = ""
-                stage_content = (
-                    "{{pathnav2|关卡一览}}"
-                    + f"\n<noinclude>{{{{DISPLAYTITLE:全息{stage_data['levelCode']} {stage_data['levelName']}}}}}</noinclude>"
-                )
-                stage_content += (
-                    stage_normal_data
-                    + stage_enemy_data
-                    + char_pre
-                    + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+                    squads = []
+                stage_content = render_recal_rune_page(
+                    RecalRunePageView(
+                        stage=recal_rune_stage,
+                        enemies=enemies,
+                        squads=squads,
+                        display_title=(
+                            f"全息{stage_data['levelCode']} {stage_data['levelName']}"
+                        ),
+                    )
                 )
                 stage_redirect = f"#redirect [[{stage_page_name}]]"
 
@@ -2369,34 +2952,32 @@ class Stage(Job):
                 continue
             level_table = self.getgd(file.lower())
 
-            stage_data = "\n{{普通关卡信息\n"
-            stage_data += "|关卡代号={}\n".format("—")
-            stage_data += f"|关卡名={stage_id}\n"
-            stage_data += "|关卡id={}\n".format(stage_id.replace("level_", ""))
-            stage_data += "|关卡类型={}\n".format("活动")
-            stage_data += "|关卡难度={}\n".format("NORMAL")
-            stage_data += "|解锁条件={}\n".format("—")
-            stage_data += "|推荐等级={}\n".format("—")
-            stage_data += "|所属区域={}\n".format("-")
-            stage_data += analyze_level_info(level_table, notCount_list)
-            stage_data += "|关卡描述=\n"
-            stage_data += f"|作战消耗={0}\n"
-            stage_data += "|演习消耗=-1\n"
-            stage_data += "}}"
+            unknown_stage = BasicStageView(
+                code="—",
+                name=stage_id,
+                stage_id=stage_id.replace("level_", ""),
+                stage_type="活动",
+                difficulty="NORMAL",
+                unlock_condition="—",
+                recommended_level="—",
+                zone="-",
+                level=build_level_info(level_table, notCount_list),
+                description="",
+                ap_cost=0,
+                practice_cost=-1,
+            )
 
-            stage_enemy_data = self._run_enemy_data(level_table)
-            char_pre = analyze_char_card_info(
+            enemies = self._build_enemy_views(level_table)
+            squads = build_squad_sections(
                 level_table, stage_id, character_table, skill_table
             )
-            char_pre += analyze_char_insert_info(
-                level_table, stage_id, character_table, skill_table
-            )
-            stage_content = (
-                "{{pathnav2|关卡一览}}\n__NOTOC__"
-                + stage_data
-                + stage_enemy_data
-                + char_pre
-                + "\n==注释与链接==\n<references/>\n{{关卡导航}}"
+            stage_content = render_basic_page(
+                BasicPageView(
+                    stage=unknown_stage,
+                    enemies=enemies,
+                    squads=squads,
+                ),
+                notoc=True,
             )
 
             self.wiki.edit(
@@ -2417,9 +2998,9 @@ class Stage(Job):
             # logger.info('\n'.join(new_stage_list))
             logger.info("Updated: {}.".format("首页/新增关卡"))
 
-    def _run_enemy_data(self, level_table, flag_skip0=False):
+    def _build_enemy_views(self, level_table, flag_skip0=False):
         enemy_table = self.getgd("excel/enemy_handbook_table.json")
         enemy_database = self.getgd("levels/enemydata/enemy_database.json")
-        return get_enemy_data(
+        return build_enemies(
             level_table, enemy_table["enemyData"], enemy_database, flag_skip0
         )

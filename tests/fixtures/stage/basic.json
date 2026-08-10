@@ -1,0 +1,272 @@
+{
+  "stage_table": {
+    "stages": {
+      "pre": {
+        "stageType": "MAIN",
+        "difficulty": "NORMAL",
+        "diffGroup": "TOUGH",
+        "unlockCondition": [],
+        "stageId": "pre",
+        "levelId": null,
+        "zoneId": "zone_1",
+        "code": "P-1",
+        "name": "前置",
+        "description": null,
+        "hardStagedId": null,
+        "dangerLevel": null,
+        "canPractice": false,
+        "apCost": 0,
+        "practiceTicketCost": 0,
+        "hilightMark": false,
+        "bossMark": false,
+        "appearanceStyle": "MAIN_NORMAL",
+        "stageDropInfo": {"displayDetailRewards": []}
+      },
+      "normal": {
+        "stageType": "MAIN",
+        "difficulty": "NORMAL",
+        "diffGroup": "NORMAL",
+        "unlockCondition": [
+          {"stageId": "pre", "completeState": "COMPLETE"}
+        ],
+        "stageId": "normal",
+        "levelId": "Obt/Test/level_normal",
+        "zoneId": "zone_1",
+        "code": "T-1",
+        "name": "测试关卡",
+        "description": "第一行\\n第二行",
+        "hardStagedId": "hard",
+        "dangerLevel": "LV.20",
+        "canPractice": true,
+        "apCost": 9,
+        "practiceTicketCost": 1,
+        "hilightMark": true,
+        "bossMark": true,
+        "appearanceStyle": "MAIN_NORMAL",
+        "stageDropInfo": {
+          "displayDetailRewards": [
+            {
+              "occPercent": "ALWAYS",
+              "type": "MATERIAL",
+              "id": "rock",
+              "dropType": "COMPLETE"
+            },
+            {
+              "occPercent": "ALWAYS",
+              "type": "FURN",
+              "id": "furn_1",
+              "dropType": "ONCE"
+            },
+            {
+              "occPercent": "ALMOST",
+              "type": "MATERIAL",
+              "id": "rock",
+              "dropType": "NORMAL"
+            },
+            {
+              "occPercent": "ALWAYS",
+              "type": "CHAR",
+              "id": "char_1",
+              "dropType": "ADDITIONAL"
+            }
+          ]
+        }
+      },
+      "hard": {
+        "stageType": "MAIN",
+        "difficulty": "FOUR_STAR",
+        "diffGroup": "NORMAL",
+        "unlockCondition": [
+          {"stageId": "normal", "completeState": "COMPLETE"}
+        ],
+        "stageId": "hard",
+        "levelId": "Obt/Test/level_normal",
+        "zoneId": "zone_1",
+        "code": "T-1",
+        "name": "测试关卡",
+        "description": "附加条件\\n敌人强化",
+        "hardStagedId": null,
+        "dangerLevel": null,
+        "canPractice": true,
+        "apCost": 9,
+        "practiceTicketCost": 3,
+        "hilightMark": false,
+        "bossMark": false,
+        "appearanceStyle": "HIGH_DIFFICULTY",
+        "stageDropInfo": {
+          "displayDetailRewards": [
+            {
+              "occPercent": "ALWAYS",
+              "type": "MATERIAL",
+              "id": "rock",
+              "dropType": "COMPLETE"
+            }
+          ]
+        }
+      }
+    },
+    "tileInfo": {
+      "tile_test": {"name": "测试地形"}
+    }
+  },
+  "zone_table": {
+    "zones": {
+      "zone_1": {
+        "zoneNameFirst": "测试区域",
+        "zoneNameSecond": "第一章"
+      }
+    }
+  },
+  "character_table": {
+    "char_1": {
+      "name": "能天使",
+      "skills": [{"skillId": "skill_1"}]
+    },
+    "char_2": {
+      "name": "阿米娅",
+      "skills": []
+    }
+  },
+  "skill_table": {
+    "skill_1": {"levels": [{"name": "冲锋模式"}]}
+  },
+  "building_data": {
+    "customData": {
+      "furnitures": {"furn_1": {"name": "沙发"}}
+    }
+  },
+  "item_table": {
+    "items": {"rock": {"name": "固源岩 "}}
+  },
+  "enemy_table": {
+    "enemy_a": {"name": "W", "sortId": 1}
+  },
+  "enemy_database": {"enemies": []},
+  "level_table": {
+    "options": {
+      "characterLimit": 8,
+      "initialCost": 10,
+      "maxCost": 99,
+      "maxLifePoint": 3,
+      "maxPlayTime": 0
+    },
+    "enemyDbRefs": [
+      {
+        "id": "enemy_a",
+        "useDb": true,
+        "level": 0,
+        "overwrittenData": {
+          "name": {"m_defined": false, "m_value": ""},
+          "attributes": {
+            "maxHp": {"m_defined": false, "m_value": 0},
+            "atk": {"m_defined": false, "m_value": 0},
+            "def": {"m_defined": true, "m_value": 30},
+            "magicResistance": {"m_defined": false, "m_value": 0},
+            "baseAttackTime": {"m_defined": false, "m_value": 0},
+            "massLevel": {"m_defined": false, "m_value": 0},
+            "moveSpeed": {"m_defined": false, "m_value": 0},
+            "hpRecoveryPerSec": {"m_defined": false, "m_value": 0}
+          },
+          "rangeRadius": {"m_defined": false, "m_value": 0},
+          "lifePointReduce": {"m_defined": false, "m_value": 0}
+        }
+      },
+      {
+        "id": "enemy_b",
+        "useDb": false,
+        "level": 2,
+        "overwrittenData": {
+          "name": {"m_defined": true, "m_value": "测试敌人"},
+          "notCountInTotal": {"m_defined": false, "m_value": false}
+        }
+      }
+    ],
+    "waves": [
+      {
+        "preDelay": 1,
+        "postDelay": 2,
+        "fragments": [
+          {
+            "preDelay": 3,
+            "actions": [
+              {
+                "actionType": "SPAWN",
+                "key": "enemy_a",
+                "preDelay": 2,
+                "count": 2,
+                "interval": 1
+              },
+              {
+                "actionType": "SPAWN",
+                "key": "enemy_b",
+                "preDelay": 4,
+                "count": 1,
+                "interval": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "mapData": {
+      "map": [[0, 0], [0, 0]],
+      "tiles": [
+        {
+          "tileKey": "tile_test",
+          "blackboard": [
+            {"key": "power", "value": 2, "valueStr": null}
+          ]
+        }
+      ],
+      "tags": ["tag_a", "tag_b"]
+    },
+    "runes": [
+      {
+        "difficultyMask": "FOUR_STAR",
+        "buildableMask": "ALL",
+        "professionMask": 1023,
+        "key": "ebuff_attribute",
+        "blackboard": [
+          {"key": "atk", "value": 1.2, "valueStr": null}
+        ]
+      },
+      {
+        "difficultyMask": "NORMAL",
+        "buildableMask": "MELEE",
+        "professionMask": 1,
+        "key": "test_rune",
+        "blackboard": [
+          {"key": "value", "value": 2, "valueStr": "二"}
+        ]
+      }
+    ],
+    "predefines": {
+      "characterCards": [
+        {
+          "inst": {
+            "characterKey": "char_1",
+            "phase": "PHASE_1",
+            "level": 30,
+            "potentialRank": 1,
+            "favorPoint": 50
+          },
+          "skillIndex": 0,
+          "mainSkillLvl": 7
+        }
+      ],
+      "characterInsts": [
+        {
+          "inst": {
+            "characterKey": "char_2",
+            "phase": "PHASE_2",
+            "level": 40,
+            "potentialRank": 0,
+            "favorPoint": 20
+          },
+          "skillIndex": -1,
+          "mainSkillLvl": 7
+        }
+      ]
+    }
+  }
+}

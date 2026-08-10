@@ -74,8 +74,22 @@ class WikiTemplate:
 
         return self.add(key, f"\n{body}" if body else "")
 
+    def add_raw(self, line: str) -> Self:
+        """原样追加一行,不做 |key=value 的拆分。
+
+        用于模板内部的自由文本(如突袭关卡信息里留在注释中的情报),
+        这类内容不是参数表的一部分,序列化规则管不到它。
+        """
+
+        self._params.append(("", line))
+        return self
+
     def __str__(self) -> str:
         lines = ["{{" + self.name]
-        lines.extend(f"|{key}={value}" for key, value in self._params)
+        for key, value in self._params:
+            if key == "":
+                lines.append(value)
+            else:
+                lines.append(f"|{key}={value}")
         lines.append("}}")
         return "\n".join(lines)
