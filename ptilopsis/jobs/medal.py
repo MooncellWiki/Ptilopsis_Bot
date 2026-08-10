@@ -9,11 +9,11 @@ from ptilopsis.gamedata.medal import (
     MedalRarity,
 )
 from ptilopsis.log import logger
-from ptilopsis.rendering import render_wikitext
 from ptilopsis.utils.job import Job
 from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.wikitext import WikiTemplate, inline_template
 
-# 模板渲染视图,字段与 templates/wikitext/medal/ 下的模板一一对应
+# 渲染视图,字段与页面上的 wiki 模板参数一一对应
 
 
 class RewardView(BaseModel):
@@ -164,6 +164,56 @@ def build_sections(
     return sections
 
 
+def render_reward(reward: RewardView) -> str:
+    # 有数量的物品渲染为 {{材料消耗}},无数量的(干员/家具)直接显示名称
+    if reward.count is None:
+        return reward.name
+    return inline_template("材料消耗", reward.name, reward.count)
+
+
+def render_rewards(rewards: list[RewardView]) -> str:
+    return " ".join(render_reward(reward) for reward in rewards)
+
+
+def render_medal(medal: MedalView) -> str:
+    template = WikiTemplate("蚀刻章")
+    template.add_optional("套组", medal.group)
+    template.add("名称", medal.name)
+    template.add("稀有度", medal.rarity)
+    template.add("描述", medal.description)
+    template.add("获得方式", medal.get_method)
+    # 有镀层的奖章即使镀层方式为空也要留下这个参数
+    if medal.has_advanced:
+        template.add("镀层方式", medal.advance_method)
+    template.add_optional("奖励", render_rewards(medal.rewards))
+    return str(template)
+
+
+def render_group(group: GroupView) -> str:
+    template = WikiTemplate("蚀刻章/套组预览")
+    template.add("名称", group.name)
+    if group.plated:
+        template.add("镀层", 1)
+    template.add("标题名称", group.title)
+    template.add("标题背景", "")
+    template.add("介绍", group.description)
+    medals = "\n".join(render_medal(medal) for medal in group.medals)
+    template.add_block("内容", medals)
+    return f"==={group.title}===\n{template}"
+
+
+def render_section(section: SectionView) -> str:
+    # 二级标题 + 独立奖章 + 套组预览(新套组在前,顺序由 build_sections 决定)
+    blocks = [f"=={section.name}=="]
+    blocks.extend(render_medal(medal) for medal in section.standalone)
+    blocks.extend(render_group(group) for group in section.groups)
+    return "\n".join(blocks)
+
+
+def render_page(sections: list[SectionView]) -> str:
+    return "".join(f"{render_section(section)}\n" for section in sections)
+
+
 def update_medal(
     medal_table: dict,
     character_table: dict,
@@ -181,7 +231,7 @@ def update_medal(
     }
     resolve_medal_references(raw_medals, views)
     sections = build_sections(table, raw_medals, views)
-    return render_wikitext("medal/page.wiki.jinja2", sections=sections)
+    return render_page(sections)
 
 
 class Medal(Job):
