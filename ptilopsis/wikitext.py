@@ -4,6 +4,7 @@
 空参数按需省略——这些规则集中在这里实现,调用方只负责描述有哪些参数。
 """
 
+from collections.abc import Mapping
 from typing import Self
 
 
@@ -53,6 +54,20 @@ class WikiTemplate:
         if is_empty(value):
             return self
         return self.add(key, value)
+
+    def add_all(self, params: Mapping[str, object]) -> Self:
+        """按 dict 的书写顺序批量加入参数,写法接近页面上的参数表。"""
+
+        for key, value in params.items():
+            self.add(key, value)
+        return self
+
+    def add_all_optional(self, params: Mapping[str, object]) -> Self:
+        """批量加入参数,值为空的跳过。"""
+
+        for key, value in params.items():
+            self.add_optional(key, value)
+        return self
 
     def add_block(self, key: str, body: str) -> Self:
         """值占多行的参数,内容从等号的下一行开始。"""
