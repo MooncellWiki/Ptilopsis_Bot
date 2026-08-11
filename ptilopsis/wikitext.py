@@ -42,7 +42,8 @@ class WikiTemplate:
 
     def __init__(self, name: str) -> None:
         self.name = name
-        self._params: list[tuple[str, str]] = []
+        # key 为 None 的项是 add_raw 追加的自由文本行,不参与 |key=value 的拼接
+        self._params: list[tuple[str | None, str]] = []
 
     def add(self, key: str, value: object) -> Self:
         self._params.append((key, format_value(value)))
@@ -52,6 +53,18 @@ class WikiTemplate:
         """值为空时跳过该参数。"""
 
         if is_empty(value):
+            return self
+        return self.add(key, value)
+
+    def add_if_set(self, key: str, value: object) -> Self:
+        """值为 None 时跳过该参数,空字符串仍然输出 |key=。
+
+        与 add_optional 的区别在于对"空"的定义:这里 None 表示这类页面根本
+        没有该参数,空字符串表示参数存在但取值为空。MediaWiki 里参数缺失与
+        参数为空会走不同的 {{#if:}} 分支,两者不能混为一谈。
+        """
+
+        if value is None:
             return self
         return self.add(key, value)
 
@@ -74,22 +87,20 @@ class WikiTemplate:
 
         return self.add(key, f"\n{body}" if body else "")
 
-    def add_raw(self, line: str) -> Self:
-        """原样追加一行,不做 |key=value 的拆分。
+    def add_raw(self, text: str) -> Self:
+        """原样追加自由文本,不做 |key=value 的拆分。
 
         用于模板内部的自由文本(如突袭关卡信息里留在注释中的情报),
-        这类内容不是参数表的一部分,序列化规则管不到它。
+        这类内容不是参数表的一部分,序列化规则管不到它。用 None 而不是空
+        字符串作键,免得和某个真的算出空键名的参数撞上。
         """
 
-        self._params.append(("", line))
+        self._params.append((None, text))
         return self
 
     def __str__(self) -> str:
         lines = ["{{" + self.name]
         for key, value in self._params:
-            if key == "":
-                lines.append(value)
-            else:
-                lines.append(f"|{key}={value}")
+            lines.append(value if key is None else f"|{key}={value}")
         lines.append("}}")
         return "\n".join(lines)

@@ -5,7 +5,7 @@ import re
 from collections.abc import Callable
 
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from ptilopsis.gamedata.stage import (
     StageData,
@@ -43,8 +43,10 @@ class LevelInfoView(BaseModel):
 
 
 class BlackboardView(BaseModel):
+    # 黑板值只会被 str() 进注释,类型放宽到上游可能出现的所有形态:
+    # 收窄成 int | float 会让一条注释的降级变成整个 job 的 ValidationError
     key: str
-    value: int | float
+    value: int | float | str | None
     value_str: str | None
 
 
@@ -81,10 +83,9 @@ class BasicStageView(BaseModel):
 
 
 class SandboxMapView(BaseModel):
-    mode: str
-    code: str = ""
-    name: str = ""
-    stage_id: str = ""
+    code: str
+    name: str
+    stage_id: str
 
 
 class AssaultStageView(BaseModel):
@@ -127,7 +128,9 @@ class CampaignStageView(BaseModel):
 
 class EnemyOverrideView(BaseModel):
     label: str
-    value: str | int | float
+    # 覆盖值原样进模板,构造时就 str() 掉:上游给什么类型都不会校验失败,
+    # 且与重构前的 "{}".format(m_value) 逐字节一致(None 也渲染成 None)
+    value: str
 
 
 class EnemyView(BaseModel):
@@ -206,18 +209,6 @@ class RecalRunePageView(BasicPageView):
 class DisambiguationLinkView(BaseModel):
     page_name: str
     activity_name: str | None = None
-
-
-def _stage_data(value: dict | StageData) -> StageData:
-    if isinstance(value, StageData):
-        return value
-    return StageData.model_validate(value)
-
-
-def _stage_table(value: dict | StageTable) -> StageTable:
-    if isinstance(value, StageTable):
-        return value
-    return StageTable.model_validate(value)
 
 
 def parse_stage_type(stage_type):
@@ -317,6 +308,38 @@ def parse_rune_profession(professionMask):
     if p_list[9] == "1":
         p_text.append("近卫")
     return "和".join(p_text) + "干员"
+
+
+def build_rune_buffs(runes: list[dict]) -> tuple[int, list[str]]:
+    """扫描 runes,取出部署位增减和敌方属性加成。
+
+    返回 (部署上限增量, 情报行)。突袭和集成战略紧急作战两处都要这份结果。
+    """
+
+    climit = 0
+    ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
+    for rune in runes:
+        if rune["key"] in ["gbuff_placable_char_num", "global_placable_char_num_add"]:
+            climit = int(rune["blackboard"][0]["value"])
+        if rune["key"] in ["enemy_attribute_mul", "ebuff_attribute"]:
+            ebuff["flag"] = 1
+            for item in rune["blackboard"]:
+                ebuff[item["key"]] = item["value"]
+
+    intelligence = []
+    if ebuff["flag"] == 1:
+        ebuff_desc = []
+        if ebuff["atk"] != 1.0:
+            ebuff_desc.append("攻击力提升至{:.0%}".format(ebuff["atk"]))
+        if ebuff["def"] != 1.0:
+            ebuff_desc.append("防御力提升至{:.0%}".format(ebuff["def"]))
+        if ebuff["max_hp"] != 1.0:
+            ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
+        if ebuff_desc:
+            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
+        else:
+            intelligence.append("敌方单位无变化")
+    return climit, intelligence
 
 
 def build_rune_lines(runes: list[dict]) -> list[str]:
@@ -425,7 +448,9 @@ def build_enemy_overrides(overwritten_data: dict) -> list[EnemyOverrideView]:
         for key in path:
             value = value[key]
         if value["m_defined"]:
-            overrides.append(EnemyOverrideView(label=label, value=value["m_value"]))
+            overrides.append(
+                EnemyOverrideView(label=label, value=str(value["m_value"]))
+            )
     return overrides
 
 
@@ -754,7 +779,9 @@ def build_char_card_info(
             return SquadSectionView(
                 title="固定编队", units=units, note=fp_desc + memory_desc
             )
-    except (IndexError, KeyError, TypeError):
+    # ValidationError 也要接住:干员数据缺字段时只该丢掉这一关的固定编队,
+    # 不能让异常冒泡打断整轮三千多个关卡的生成
+    except (IndexError, KeyError, TypeError, ValidationError):
         logger.info(f"{stage_page_name}: characterCards error.")
     return None
 
@@ -810,7 +837,7 @@ def build_char_insert_info(
             else:
                 fp_desc = "，".join(favor_point)
             return SquadSectionView(title="已部署干员", units=units, note=fp_desc)
-    except (IndexError, KeyError, TypeError):
+    except (IndexError, KeyError, TypeError, ValidationError):
         logger.info(f"{stage_page_name}: characterInsts error.")
     return None
 
@@ -1004,7 +1031,9 @@ def build_enemies(
         display_name = None
         note = None
         overrides = []
-        if not enemy["useDb"]:
+        # 只有明确的 False 才读 overwrittenData;useDb 缺失(None)时仍然查表,
+        # 与 build_level_info 里对同一字段的判断保持一致
+        if enemy["useDb"] is False:
             enemy_name = enemy["overwrittenData"]["name"]["m_value"]
             note = "需人工复查！"
         else:
@@ -1052,8 +1081,8 @@ def format_zone(zone_table: dict, zone_id: str) -> str:
 
 
 def build_normal_stage(
-    stage_detail: dict | StageData,
-    stage_table: dict | StageTable,
+    stage: StageData,
+    table: StageTable,
     zone_table: dict,
     character_table: dict,
     building_data: dict,
@@ -1063,9 +1092,6 @@ def build_normal_stage(
     compile_rich_text: Callable[[str], str],
     map_override: str = "",
 ) -> BasicStageView:
-    stage = _stage_data(stage_detail)
-    table = _stage_table(stage_table)
-
     subtype = None
     if stage.hilight_mark:
         subtype = "难关"
@@ -1124,7 +1150,8 @@ def build_normal_stage(
         subtype=subtype,
         boss=stage.boss_mark,
         difficulty=stage.difficulty,
-        battle_stage=bool(stage.level_id),
+        # levelId 缺失(None)才算非战斗关卡;空字符串不是,与地图信息的截断判断不同
+        battle_stage=stage.level_id is not None,
         unlock_condition=", ".join(unlock_conditions),
         recommended_level=stage.danger_level or "-",
         zone=zone,
@@ -1142,8 +1169,8 @@ def build_normal_stage(
 
 
 def build_4star_stage(
-    stage_detail: dict | StageData,
-    stage_table: dict | StageTable,
+    stage: StageData,
+    table: StageTable,
     zone_table: dict,
     character_table: dict,
     building_data: dict,
@@ -1151,9 +1178,6 @@ def build_4star_stage(
     level_table: dict,
     compile_rich_text: Callable[[str], str],
 ) -> AssaultStageView:
-    stage = _stage_data(stage_detail)
-    table = _stage_table(stage_table)
-
     unlock_conditions = []
     for unlock in stage.unlock_condition:
         previous_stage = table.stages[unlock.stage_id]
@@ -1173,15 +1197,7 @@ def build_4star_stage(
 
     zone = format_zone(zone_table, stage.zone_id)
 
-    climit = 0
-    ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
-    for rune in level_table["runes"]:
-        if rune["key"] in ["gbuff_placable_char_num", "global_placable_char_num_add"]:
-            climit = int(rune["blackboard"][0]["value"])
-        if rune["key"] in ["enemy_attribute_mul", "ebuff_attribute"]:
-            ebuff["flag"] = 1
-            for i in rune["blackboard"]:
-                ebuff[i["key"]] = i["value"]
+    climit, intelligence = build_rune_buffs(level_table["runes"])
 
     rewards = []
     if stage.stage_drop_info.display_detail_rewards:
@@ -1192,19 +1208,6 @@ def build_4star_stage(
             item_table,
         )
 
-    intelligence = []
-    if ebuff["flag"] == 1:
-        ebuff_desc = []
-        if ebuff["atk"] != 1.0:
-            ebuff_desc.append("攻击力提升至{:.0%}".format(ebuff["atk"]))
-        if ebuff["def"] != 1.0:
-            ebuff_desc.append("防御力提升至{:.0%}".format(ebuff["def"]))
-        if ebuff["max_hp"] != 1.0:
-            ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
-        if ebuff_desc:
-            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
-        else:
-            intelligence.append("敌方单位无变化")
     intelligence.extend(build_rune_lines(level_table["runes"]))
 
     view = AssaultStageView(
@@ -1231,8 +1234,8 @@ def build_4star_stage(
 
 
 def build_campaign_stage(
-    stage_detail: dict | StageData,
-    stage_table: dict | StageTable,
+    stage: StageData,
+    table: StageTable,
     campaign_table: dict,
     character_table: dict,
     building_data: dict,
@@ -1241,9 +1244,6 @@ def build_campaign_stage(
     not_count_list: dict,
     compile_rich_text: Callable[[str], str],
 ) -> CampaignStageView:
-    stage = _stage_data(stage_detail)
-    table = _stage_table(stage_table)
-
     unlock_conditions = []
     for unlock in stage.unlock_condition:
         previous_stage = table.stages[unlock.stage_id]
@@ -1388,29 +1388,7 @@ def build_roguelike_4star_stage(
     level_table: dict,
     compile_rich_text: Callable[[str], str],
 ) -> AssaultStageView:
-    climit = 0
-    ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
-    for rune in level_table["runes"]:
-        if rune["key"] in ["gbuff_placable_char_num", "global_placable_char_num_add"]:
-            climit = int(rune["blackboard"][0]["value"])
-        if rune["key"] in ["enemy_attribute_mul", "ebuff_attribute"]:
-            ebuff["flag"] = 1
-            for i in rune["blackboard"]:
-                ebuff[i["key"]] = i["value"]
-
-    intelligence = []
-    if ebuff["flag"] == 1:
-        ebuff_desc = []
-        if ebuff["atk"] != 1.0:
-            ebuff_desc.append("攻击力提升至{:.0%}".format(ebuff["atk"]))
-        if ebuff["def"] != 1.0:
-            ebuff_desc.append("防御力提升至{:.0%}".format(ebuff["def"]))
-        if ebuff["max_hp"] != 1.0:
-            ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
-        if ebuff_desc:
-            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
-        else:
-            intelligence.append("敌方单位无变化")
+    climit, intelligence = build_rune_buffs(level_table["runes"])
 
     view = AssaultStageView(
         heading="紧急作战",
@@ -1495,41 +1473,6 @@ def build_memory_stage(
     return view
 
 
-def build_sandbox_stage(
-    stage_detail,
-    compile_rich_text,
-    level_table,
-    reward_data,
-    item_data,
-    notCount_list,
-) -> BasicStageView:
-    resources = []
-    for k in reward_data:
-        if stage_detail["stageId"] in reward_data[k]:
-            for r in reward_data[k][stage_detail["stageId"]]["rewardList"]:
-                if item_data[r["rewardItem"]]["itemType"] != "PLACEHOLDER":
-                    resources.append(item_data[r["rewardItem"]]["itemName"].strip())
-    view = BasicStageView(
-        code=stage_detail["code"],
-        name=stage_detail["name"],
-        stage_id=stage_detail["stageId"],
-        stage_type="生息演算",
-        level=(
-            build_level_info(level_table, notCount_list, use_countdown=True)
-            if stage_detail["levelId"]
-            else None
-        ),
-        description=compile_rich_text(
-            stage_detail["description"].replace("\n", "<br/>")
-        ),
-        resource_overview=resources,
-        action_cost=stage_detail["actionCost"],
-        power_cost=stage_detail["powerCost"],
-        sandbox_map=SandboxMapView(mode="widget"),
-    )
-    return view
-
-
 def build_sandbox_v2_stage(
     stage_detail: dict,
     compile_rich_text: Callable[[str], str],
@@ -1555,7 +1498,6 @@ def build_sandbox_v2_stage(
         action_cost=stage_detail["actionCost"],
         terrain_tags=terrain_tags,
         sandbox_map=SandboxMapView(
-            mode="tabber",
             code=stage_detail["code"],
             name=stage_detail["name"],
             stage_id=stage_detail["stageId"],
@@ -1663,28 +1605,28 @@ def render_basic_stage(stage: BasicStageView) -> str:
     template.add("关卡id", stage.stage_id)
     template.add_optional("地图预览override", stage.map_override)
     template.add("关卡类型", stage.stage_type)
-    template.add_optional("子类型", stage.subtype)
+    template.add_if_set("子类型", stage.subtype)
     if stage.boss:
         template.add("领袖标志", "Yes")
-    template.add_optional("关卡难度", stage.difficulty)
+    template.add_if_set("关卡难度", stage.difficulty)
     # 仅 False 时输出;None / True 都不输出
     if stage.battle_stage is False:
         template.add("战斗关卡", "false")
-    template.add_optional("解锁条件", stage.unlock_condition)
-    template.add_optional("推荐等级", stage.recommended_level)
-    template.add_optional("所属区域", stage.zone)
+    template.add_if_set("解锁条件", stage.unlock_condition)
+    template.add_if_set("推荐等级", stage.recommended_level)
+    template.add_if_set("所属区域", stage.zone)
     if stage.level is not None:
         add_level_info(template, stage.level)
-    template.add_optional("关卡描述", stage.description)
-    template.add_optional("作战消耗", stage.ap_cost)
-    template.add_optional("演习消耗", stage.practice_cost)
+    template.add_if_set("关卡描述", stage.description)
+    template.add_if_set("作战消耗", stage.ap_cost)
+    template.add_if_set("演习消耗", stage.practice_cost)
     if stage.resource_overview is not None:
         template.add(
             "资源概览",
             "".join(inline_template("资源概览", r) for r in stage.resource_overview),
         )
-    template.add_optional("action消耗", stage.action_cost)
-    template.add_optional("power消耗", stage.power_cost)
+    template.add_if_set("action消耗", stage.action_cost)
+    template.add_if_set("power消耗", stage.power_cost)
     for reward in stage.rewards:
         template.add(reward.label, render_reward_group(reward))
     if stage.tile_effects:
@@ -1692,24 +1634,18 @@ def render_basic_stage(stage: BasicStageView) -> str:
     if stage.terrain_tags is not None:
         template.add("地形tag", ",".join(stage.terrain_tags))
     if stage.sandbox_map is not None:
-        if stage.sandbox_map.mode == "widget":
-            template.add(
-                "特殊地图",
-                "{{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}",
-            )
-        elif stage.sandbox_map.mode == "tabber":
-            template.add(
-                "特殊地图",
-                "<tabber>\n"
-                "实景地图=\n"
-                f'<img alt="{stage.sandbox_map.code} {stage.sandbox_map.name} 地图" '
-                'loading="lazy" '
-                f'src="//torappu.prts.wiki/assets/map_preview/'
-                f'{stage.sandbox_map.stage_id}.png" width="580"/>\n'
-                "|-|\n"
-                "全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n"
-                "</tabber>",
-            )
+        template.add(
+            "特殊地图",
+            "<tabber>\n"
+            "实景地图=\n"
+            f'<img alt="{stage.sandbox_map.code} {stage.sandbox_map.name} 地图" '
+            'loading="lazy" '
+            f'src="//torappu.prts.wiki/assets/map_preview/'
+            f'{stage.sandbox_map.stage_id}.png" width="580"/>\n'
+            "|-|\n"
+            "全地图={{#Widget:XbMapViewer|data={{:{{FULLPAGENAME}}/data}}}}\n"
+            "</tabber>",
+        )
     blocks.append(str(template))
     return "\n".join(blocks)
 
@@ -1719,10 +1655,10 @@ def render_assault_stage(stage: AssaultStageView) -> str:
     template.add("关卡代号", stage.code)
     template.add("关卡名", stage.name)
     template.add("关卡类型", stage.stage_type)
-    template.add_optional("子类型", stage.subtype)
+    template.add_if_set("子类型", stage.subtype)
     template.add("关卡难度", stage.difficulty)
     template.add("解锁条件", stage.unlock_condition)
-    template.add_optional("推荐等级", stage.recommended_level)
+    template.add_if_set("推荐等级", stage.recommended_level)
     template.add("所属区域", stage.zone)
     template.add_all(
         {
@@ -1735,9 +1671,8 @@ def render_assault_stage(stage: AssaultStageView) -> str:
     template.add_all({"作战消耗": stage.ap_cost, "演习消耗": stage.practice_cost})
     for reward in stage.rewards:
         template.add(reward.label, render_reward_group(reward))
-    # 情报保留在注释中,供编辑者复查
-    intelligence = "\n".join(stage.intelligence)
-    template.add_raw(f"<!--|情报=\n{intelligence}\n-->")
+    # 情报保留在注释中,供编辑者复查;没有情报时注释里也不留空行
+    template.add_raw("\n".join(["<!--|情报=", *stage.intelligence, "-->"]))
     return f"=={stage.heading}==\n{template}"
 
 
@@ -1885,7 +1820,8 @@ def render_basic_page(
 ) -> str:
     """危机合约/悖论模拟/生息演算/训练场/全息作战矩阵/id 页面共用。
 
-    带 __NOTOC__ 的页面(crisis/memory/sandbox/mechanism/id)把 notoc 置 True。
+    带 __NOTOC__ 的页面(crisis/memory/mechanism/id)把 notoc 置 True;
+    生息演算历来不带,不要顺手打开。
     extra_sections 插在敌方情报与固定编队之后、注释与链接之前(如危机合约的合约详情),
     categories 追加在 {{关卡导航}} 之后(如分类:危机合约关卡)。
     """
@@ -2105,8 +2041,9 @@ class Stage(Job):
                 "act21side_05_t": "后巷(拉普兰德2)",
                 "act21side_06_t": "新城区大街(丹布朗)",
             }.get(stage_id, stage_detail["name"].strip())
+            # 表里的副本就是下面要渲染的那一关,改名后直接用它,不再单独校验一份
             typed_stage_table.stages[stage_id].name = stage_detail["name"]
-            typed_stage = StageData.model_validate(stage_detail)
+            typed_stage = typed_stage_table.stages[stage_id]
             stage_page_name = stage_detail["code"].strip() + " " + stage_detail["name"]
             if stage_detail["difficulty"] == "SIX_STAR":
                 stage_page_name = "险地" + stage_page_name
@@ -2704,13 +2641,13 @@ class Stage(Job):
                     )
                 else:
                     squads = []
+                # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
                 stage_content = render_basic_page(
                     BasicPageView(
                         stage=sandbox_stage,
                         enemies=enemies,
                         squads=squads,
                     ),
-                    notoc=True,
                 )
 
                 # old = self.wiki.read(stage_page_name)
