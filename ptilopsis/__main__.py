@@ -3,7 +3,7 @@ import os
 import click
 import sentry_sdk
 
-from ptilopsis.config import config
+from ptilopsis.config import config, get_settings
 from ptilopsis.jobs.activity import Activity
 from ptilopsis.jobs.basic import Basic
 from ptilopsis.jobs.building_buff import BuildingBuff
@@ -25,11 +25,6 @@ from ptilopsis.jobs.weedy import Weedy
 from ptilopsis.log import logger
 from ptilopsis.utils.data import GameData
 from ptilopsis.utils.wiki import Wiki
-
-sentry_sdk.init(
-    dsn="https://e2e7848581775da8b4369c6b8e1856c9@ingest.sentry.mooncell.wiki/10",
-    traces_sample_rate=1.0,
-)
 
 MODES = ["new", "regular", "special", "demand", "jp", "weedy"]
 
@@ -78,13 +73,16 @@ def main(
     dev: bool,
     modes: tuple[str, ...],
 ) -> None:
+    settings = get_settings()
+    if settings.sentry_dsn:
+        sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
+
     if remote:
         os.system("git submodule update --init --remote --recursive")
-        conf_remote = config
-        conf_remote["version"] = "version_remote.json"
-        gameData = GameData(config=conf_remote, source="thirdparty/ArknightsGameData")
+        game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
-        gameData = GameData(config=config, source="thirdparty/ArknightsGameData")
+        game_config = config
+    gameData = GameData(config=game_config, source="thirdparty/ArknightsGameData")
 
     if check_mode == "cn":
         os.system("git submodule update --remote")
@@ -102,10 +100,11 @@ def main(
         gameData.unpacker.check_all_update()
         return
 
+    username, password = settings.require_wiki_credentials()
     wiki = Wiki(
-        config["apiUrl"],
-        config["username"],
-        config["password"],
+        config.api_url,
+        username,
+        password,
         "dev" if dev else "product",
     )
     flag_new_char = False

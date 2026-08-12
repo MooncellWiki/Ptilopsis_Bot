@@ -17,6 +17,10 @@ jobs:
       uses: ./.github/actions/setup-python
 
     - name: update-cn
+      env:
+        PTILOPSIS_USERNAME: ${{ secrets.PTILOPSIS_USERNAME }}
+        PTILOPSIS_PASSWORD: ${{ secrets.PTILOPSIS_PASSWORD }}
+        PTILOPSIS_SENTRY_DSN: ${{ secrets.PTILOPSIS_SENTRY_DSN }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -12,11 +12,6 @@ class Wiki:
         self.api_url = api_url
         self.mode = mode
         session = requests.Session()
-        # 添加高峰期登陆的验证cookie
-        cookies = requests.utils.cookiejar_from_dict(
-            {"damedane": "yjnmsl"}, cookiejar=None, overwrite=True
-        )
-        session.cookies = cookies
 
         lgtoken = session.get(
             api_url,

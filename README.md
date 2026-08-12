@@ -18,7 +18,7 @@
 ```text
 ptilopsis/
 ├── __main__.py        # 入口，按命令行参数分派任务
-├── config.py          # 各服 CDN 地址、登录凭据、FlatBuffers 表名等
+├── config.py          # config.json 的 pydantic 模型 + 环境变量读取
 ├── jobs/              # 各类 Wiki 更新任务
 │   ├── basic.py           # 干员基础信息
 │   ├── sidebar.py         # 侧边栏干员一览
@@ -50,9 +50,40 @@ thirdparty/
 ├── ArknightsGameData/        # 国服游戏数据 (submodule)
 └── ArknightsGameData_YoStar/ # 海外服游戏数据 (submodule)
 .github/workflows/         # GitHub Actions 定时 / 手动触发
+config.json                # 非敏感配置：各服 CDN 地址、FlatBuffers 表名等
+.env.example               # 敏感配置的环境变量样例
 version_local.json         # 本地已更新到的资源版本
 version_remote.json        # 通过 --remote 拉取时使用的版本记录
 ```
+
+## 配置
+
+配置分为两部分，**敏感信息一律不入库**：
+
+| 内容 | 位置 | 说明 |
+| --- | --- | --- |
+| 各服 CDN 地址、FlatBuffers 表名、chatMask 等 | `config.json` | 随仓库提交，由 `ptilopsis/config.py` 中的 pydantic 模型校验；字段名以 camelCase 书写，多余或缺失字段会直接报错 |
+| Wiki 登录凭据、Sentry DSN | 环境变量 | 本地开发用 `.env`（已被 `.gitignore` 忽略），CI 用 GitHub Actions Secrets |
+
+需要的环境变量：
+
+| 变量 | 必填 | 说明 |
+| --- | --- | --- |
+| `PTILOPSIS_USERNAME` | 是 | Wiki 用户名，不带 `@BotName` 后缀 |
+| `PTILOPSIS_PASSWORD` | 是 | 请使用 [Special:BotPasswords](https://prts.wiki/w/Special:BotPasswords) 生成的机器人密码，格式为 `<BotName>@<32位随机串>`，**不要使用主账号密码** |
+| `PTILOPSIS_SENTRY_DSN` | 否 | 留空则不启用错误上报 |
+| `PTILOPSIS_CONFIG` | 否 | 指定 `config.json` 路径，默认取工作目录 / 仓库根目录 |
+
+本地开发：
+
+```bash
+cp .env.example .env   # 然后填入真实值
+```
+
+CI：在仓库 Settings → Secrets and variables → Actions 中添加同名 Secret，
+`main1` ~ `main4` 四个 workflow 会自动注入。
+
+> 注意：改动主账号密码会使该账号下**所有** BotPassword 失效，需要重新生成并更新 Secret。
 
 ## 环境准备
 

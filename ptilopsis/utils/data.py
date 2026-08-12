@@ -1,12 +1,16 @@
 import json
 import os
+from typing import TYPE_CHECKING
 
 from ptilopsis.log import logger
 from ptilopsis.utils.unpacker import Unpacker
 
+if TYPE_CHECKING:
+    from ptilopsis.config import Config
+
 
 class GameData:
-    def __init__(self, config, source="Unpacker"):
+    def __init__(self, config: "Config", source="Unpacker"):
         self.data = {}
         self.source = source
         self.config = config
@@ -19,7 +23,7 @@ class GameData:
         r = region
         fullpath = os.path.join(
             self._source(region),
-            self.config["serverList"][r]["folder"],
+            self.config.server_list[r].folder,
             "gamedata",
             path,
         )
@@ -28,7 +32,7 @@ class GameData:
         else:
             if self._source(region) == "Unpacker" and not os.path.exists(fullpath):
                 if "excel" not in path:
-                    self.unpacker.config[region]["files"] = "gamedata"
+                    self.unpacker.config[region].files = "gamedata"
                 if region == "CN":
                     self.unpacker.get_version(region)
                     self.unpacker.get_update_list(region)
@@ -46,7 +50,7 @@ class GameData:
         r = region
         fullpath = os.path.join(
             self._source(region),
-            self.config["serverList"][r]["folder"],
+            self.config.server_list[r].folder,
             "gamedata",
             path,
         )
