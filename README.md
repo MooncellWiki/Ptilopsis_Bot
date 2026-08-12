@@ -72,7 +72,7 @@ version_remote.json        # 通过 --remote 拉取时使用的版本记录
 | `PTILOPSIS_USERNAME` | 是 | Wiki 用户名，不带 `@BotName` 后缀 |
 | `PTILOPSIS_PASSWORD` | 是 | 请使用 [Special:BotPasswords](https://prts.wiki/w/Special:BotPasswords) 生成的机器人密码，格式为 `<BotName>@<32位随机串>`，**不要使用主账号密码** |
 | `PTILOPSIS_SENTRY_DSN` | 否 | 留空则不启用错误上报 |
-| `PTILOPSIS_CONFIG` | 否 | 指定 `config.json` 路径，默认取工作目录 / 仓库根目录 |
+| `PTILOPSIS_CONFIG_PATH` | 否 | 指定 `config.json` 路径，默认取工作目录 / 仓库根目录 |
 
 本地开发：
 

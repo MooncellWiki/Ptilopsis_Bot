@@ -8,11 +8,12 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-CONFIG_ENV_VAR = "PTILOPSIS_CONFIG"
+CONFIG_ENV_VAR = "PTILOPSIS_CONFIG_PATH"
+"""与 Settings.config_path 对应（env_prefix + 字段名），仅用于报错提示。"""
 CONFIG_FILENAME = "config.json"
 
 
@@ -68,10 +69,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    config_path: str = Field("", validation_alias=CONFIG_ENV_VAR)
-    """config.json 路径覆盖，对应 PTILOPSIS_CONFIG。
+    config_path: str = ""
+    """config.json 路径覆盖，对应 PTILOPSIS_CONFIG_PATH。
 
-    显式指定 validation_alias 以绕过 env_prefix（否则会被拼成 PTILOPSIS_CONFIG_PATH）。
     走 BaseSettings 而非直接读 os.environ，才能同时支持真实环境变量与 .env。
     """
     username: str = ""
