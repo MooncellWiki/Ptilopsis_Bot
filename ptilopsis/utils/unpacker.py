@@ -26,6 +26,8 @@ class Unpacker:
         logger.info(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
         self.manifest_idx = {}
+        self._version_dirty = False
+        """内存中的版本号是否有尚未落盘的变更，见 get_version / commit_version。"""
 
     def check_update(self, region="CN"):
         local_version = self.version[region]["resVersion"]
@@ -57,8 +59,12 @@ class Unpacker:
 
     @retry(stop_max_attempt_number=3)
     def get_version(self, region="CN"):
-        with open(self.version_dir) as f:
-            version = json.load(f)
+        """拉取远端版本号，只更新内存状态，落盘需显式调用 commit_version()。
+
+        推迟落盘是为了避免「版本号已推进但后续步骤失败」时状态被写死：
+        下一次运行会因为本地版本已等于远端而误判为无更新，从而静默跳过一轮更新。
+        """
+        version = self.version
         # version
         url = self.config[region].config_url + "Android/version"
         # url += f'?sign={int(time.time())}'
@@ -74,9 +80,16 @@ class Unpacker:
         version[region]["funcVer"] = ret2["funcVer"]
 
         self.version = version
-        with open(self.version_dir, "w") as f:
-            json.dump(version, f, indent=4)
+        self._version_dirty = True
         return ret1["resVersion"]
+
+    def commit_version(self):
+        """把内存中的版本号写回 version_*.json；无待落盘变更时为空操作。"""
+        if not self._version_dirty:
+            return
+        with open(self.version_dir, "w") as f:
+            json.dump(self.version, f, indent=4)
+        self._version_dirty = False
 
     @retry(stop_max_attempt_number=3)
     def get_update_list(self, region="CN"):

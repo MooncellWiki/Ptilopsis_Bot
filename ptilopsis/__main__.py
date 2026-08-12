@@ -77,6 +77,10 @@ def main(
     if settings.sentry_dsn:
         sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
 
+    # 有 Wiki 任务时先校验凭据再跑检查，缺失时不做任何网络请求就退出
+    if modes:
+        settings.require_wiki_credentials()
+
     if remote:
         os.system("git submodule update --init --remote --recursive")
         game_config = config.model_copy(update={"version": "version_remote.json"})
@@ -87,6 +91,7 @@ def main(
     if check_mode == "cn":
         os.system("git submodule update --remote")
         if not gameData.unpacker.check_update() and not force:
+            gameData.unpacker.commit_version()
             logger.info("No version update. Program exit.")
             return
     elif check_mode == "jp":
@@ -94,10 +99,17 @@ def main(
         sign2 = gameData.unpacker.check_update("US")
         gameData.unpacker.check_update("KR")
         if not sign1 and not sign2:
+            gameData.unpacker.commit_version()
             logger.info("No version update. Program exit.")
             return
     elif check_mode == "global":
         gameData.unpacker.check_all_update()
+        gameData.unpacker.commit_version()
+        return
+
+    if not modes:
+        gameData.unpacker.commit_version()
+        _push_remote(remote)
         return
 
     username, password = settings.require_wiki_credentials()
@@ -107,6 +119,9 @@ def main(
         password,
         "dev" if dev else "product",
     )
+    # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
+    # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
+    gameData.unpacker.commit_version()
     flag_new_char = False
     if "new" in modes:
         Sidebar(wiki, gameData).update()  # 先sidebar，避免影响old_num
@@ -161,10 +176,16 @@ def main(
     if "weedy" in modes:
         Weedy(wiki, gameData).run()
 
-    if remote:
-        os.system("git add .")
-        os.system('git commit -m "remote update"')
-        os.system("git push")
+    _push_remote(remote)
+
+
+def _push_remote(remote: bool) -> None:
+    """--remote 模式下把更新后的数据与版本号提交推送。"""
+    if not remote:
+        return
+    os.system("git add .")
+    os.system('git commit -m "remote update"')
+    os.system("git push")
 
 
 if __name__ == "__main__":

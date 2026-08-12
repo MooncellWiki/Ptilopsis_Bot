@@ -39,6 +39,8 @@ class GameData:
                     self.unpacker.load_idx(region)
                     self.unpacker.get_all_ab(region)
                     self.unpacker.unpack_all_data(region)
+                    # 数据确实解包落盘后再推进版本号，避免中途失败留下假的「已是最新」
+                    self.unpacker.commit_version()
             with open(fullpath, encoding="utf-8") as file:
                 data = json.loads(file.read())
                 if "excel" in fullpath:
