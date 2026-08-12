@@ -6,6 +6,8 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@v6
 
@@ -13,4 +15,8 @@ jobs:
       uses: ./.github/actions/setup-python
 
     - name: weedy_high
+      env:
+        PTILOPSIS_USERNAME: ${{ secrets.PTILOPSIS_USERNAME }}
+        PTILOPSIS_PASSWORD: ${{ secrets.PTILOPSIS_PASSWORD }}
+        PTILOPSIS_SENTRY_DSN: ${{ secrets.PTILOPSIS_SENTRY_DSN }}
       run: uv run ptil weedy

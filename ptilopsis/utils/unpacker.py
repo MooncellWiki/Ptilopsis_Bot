@@ -3,25 +3,31 @@ import io
 import json
 import os
 import zipfile
+from typing import TYPE_CHECKING
 
 import requests
 from retrying import retry
 
 from ptilopsis.log import logger
 
+if TYPE_CHECKING:
+    from ptilopsis.config import Config
+
 
 class Unpacker:
-    def __init__(self, config, region="CN"):
+    def __init__(self, config: "Config", region="CN"):
         self.ua = {
             "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; vivo X9L Build/MMB29M)"
         }
-        self.config = config["serverList"]
-        self.version_dir = config["version"]
+        self.config = config.server_list
+        self.version_dir = config.version
         with open(self.version_dir) as f:
             self.version = json.load(f)
         logger.info(f"[{region} VERSION]: {self.version[region]['resVersion']}")
         self.hot_update_list = {}
         self.manifest_idx = {}
+        self._version_dirty = False
+        """内存中的版本号是否有尚未落盘的变更，见 get_version / commit_version。"""
 
     def check_update(self, region="CN"):
         local_version = self.version[region]["resVersion"]
@@ -33,7 +39,7 @@ class Unpacker:
                 # self.get_all_ab(region)
                 # logger.info('Finish download all AB.')
                 logger.info(
-                    self.config[region]["updateMsg"].format(
+                    self.config[region].update_msg.format(
                         self.version[region]["clientVersion"],
                         self.version[region]["resVersion"],
                     )
@@ -53,16 +59,20 @@ class Unpacker:
 
     @retry(stop_max_attempt_number=3)
     def get_version(self, region="CN"):
-        with open(self.version_dir) as f:
-            version = json.load(f)
+        """拉取远端版本号，只更新内存状态，落盘需显式调用 commit_version()。
+
+        推迟落盘是为了避免「版本号已推进但后续步骤失败」时状态被写死：
+        下一次运行会因为本地版本已等于远端而误判为无更新，从而静默跳过一轮更新。
+        """
+        version = self.version
         # version
-        url = self.config[region]["configUrl"] + "Android/version"
+        url = self.config[region].config_url + "Android/version"
         # url += f'?sign={int(time.time())}'
         ret1 = requests.get(url, headers=self.ua).json()
         version[region]["resVersion"] = ret1["resVersion"]
         version[region]["clientVersion"] = ret1["clientVersion"]
         # network_config
-        url = self.config[region]["configUrl"] + "network_config"
+        url = self.config[region].config_url + "network_config"
         ret2 = requests.get(url, headers=self.ua).json()
         ret2 = json.loads(ret2["content"])
         if ret2["funcVer"] != version[region]["funcVer"]:
@@ -70,22 +80,25 @@ class Unpacker:
         version[region]["funcVer"] = ret2["funcVer"]
 
         self.version = version
-        with open(self.version_dir, "w") as f:
-            json.dump(version, f, indent=4)
+        self._version_dirty = True
         return ret1["resVersion"]
+
+    def commit_version(self):
+        """把内存中的版本号写回 version_*.json；无待落盘变更时为空操作。"""
+        if not self._version_dirty:
+            return
+        with open(self.version_dir, "w") as f:
+            json.dump(self.version, f, indent=4)
+        self._version_dirty = False
 
     @retry(stop_max_attempt_number=3)
     def get_update_list(self, region="CN"):
         res_version = self.version[region]["resVersion"]
-        os.makedirs(
-            os.path.join("Unpacker", self.config[region]["folder"]), exist_ok=True
-        )
+        os.makedirs(os.path.join("Unpacker", self.config[region].folder), exist_ok=True)
         dir = os.path.join(
-            "Unpacker", self.config[region]["folder"], "hot_update_list.json"
+            "Unpacker", self.config[region].folder, "hot_update_list.json"
         )
-        url = (
-            f"{self.config[region]['resUrl']}assets/{res_version}/hot_update_list.json"
-        )
+        url = f"{self.config[region].res_url}assets/{res_version}/hot_update_list.json"
         ret = requests.get(url, headers=self.ua).json()
         with open(dir, "w") as f:
             json.dump(ret, f, indent=4)
@@ -97,20 +110,18 @@ class Unpacker:
             return
         idx_path = self.hot_update_list[region]["manifestName"]
         url = (
-            f"{self.config[region]['resUrl']}assets/"
+            f"{self.config[region].res_url}assets/"
             f"{self.version[region]['resVersion']}/{idx_path[:-4]}.dat"
         )
         r = requests.get(url, headers=self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(
-            f"./Unpacker/{self.config[region]['folder']}/ab/"
+            f"./Unpacker/{self.config[region].folder}/ab/"
         )
-        fbs_path = f"./Unpacker/{self.config[region]['folder']}/flatbuffers"
+        fbs_path = f"./Unpacker/{self.config[region].folder}/flatbuffers"
         os.makedirs(
-            f"./Unpacker/{self.config[region]['folder']}/flatbuffers", exist_ok=True
+            f"./Unpacker/{self.config[region].folder}/flatbuffers", exist_ok=True
         )
-        with open(
-            f"./Unpacker/{self.config[region]['folder']}/ab/{idx_path}", "rb"
-        ) as f:
+        with open(f"./Unpacker/{self.config[region].folder}/ab/{idx_path}", "rb") as f:
             data = f.read()
         with open(f"{fbs_path}/ResourceManifest.bytes", mode="wb") as f:
             f.write(bytes(data)[128:])
@@ -136,7 +147,7 @@ class Unpacker:
                     jsons["bundles"][asset["bundleIndex"]]["name"]
                 ].append(asset["assetName"])
         with open(
-            f"./Unpacker/{self.config[region]['folder']}/idx.json",
+            f"./Unpacker/{self.config[region].folder}/idx.json",
             mode="w",
             encoding="utf-8",
         ) as f:
@@ -150,7 +161,7 @@ class Unpacker:
 
         for ab_info in filter(
             lambda x: (
-                x["name"].startswith(self.config[region]["files"])
+                x["name"].startswith(self.config[region].files)
                 or x["name"] in self.manifest_idx["bundleToAsset"]
             ),
             hot_update_list["abInfos"],
@@ -166,17 +177,17 @@ class Unpacker:
         dir = os.path.dirname(path)
         no_postfix = os.path.splitext(os.path.split(path)[-1])[0]
         url = (
-            f"{self.config[region]['resUrl']}assets/{res_version}/"
+            f"{self.config[region].res_url}assets/{res_version}/"
             f"{dir.replace('/', '_')}_{no_postfix.replace('#', '__')}.dat"
         )
         r = requests.get(url, headers=self.ua)
         zipfile.ZipFile(io.BytesIO(r.content)).extractall(
-            f"./Unpacker/{self.config[region]['folder']}/ab/"
+            f"./Unpacker/{self.config[region].folder}/ab/"
         )
         logger.info(f"download: {path}")
 
     def compare_ab_md5(self, md5, path, region="CN"):
-        ab_dir = os.path.join(f"./Unpacker/{self.config[region]['folder']}/ab", path)
+        ab_dir = os.path.join(f"./Unpacker/{self.config[region].folder}/ab", path)
         if not os.path.exists(ab_dir):
             return False
         with open(ab_dir, "rb") as f:
