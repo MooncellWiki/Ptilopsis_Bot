@@ -6,6 +6,9 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
+    permissions:
+      # --remote 结束后 git push 更新 version_remote.json
+      contents: write
     steps:
     - uses: actions/checkout@v6
 
