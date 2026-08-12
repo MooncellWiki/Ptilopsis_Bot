@@ -5,11 +5,10 @@ Wiki 登录凭据、Sentry DSN 等敏感信息一律走环境变量（本地开�
 """
 
 import json
-import os
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -69,6 +68,12 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    config_path: str = Field("", validation_alias=CONFIG_ENV_VAR)
+    """config.json 路径覆盖，对应 PTILOPSIS_CONFIG。
+
+    显式指定 validation_alias 以绕过 env_prefix（否则会被拼成 PTILOPSIS_CONFIG_PATH）。
+    走 BaseSettings 而非直接读 os.environ，才能同时支持真实环境变量与 .env。
+    """
     username: str = ""
     """Wiki 登录用户名，对应 PTILOPSIS_USERNAME。"""
     password: SecretStr = SecretStr("")
@@ -96,8 +101,8 @@ class Settings(BaseSettings):
 
 
 def _resolve_config_path() -> Path:
-    """按 环境变量 → 当前工作目录 → 包同级目录 的顺序定位 config.json。"""
-    if override := os.environ.get(CONFIG_ENV_VAR):
+    """按 环境变量 / .env → 当前工作目录 → 包同级目录 的顺序定位 config.json。"""
+    if override := get_settings().config_path:
         return Path(override)
     cwd_candidate = Path.cwd() / CONFIG_FILENAME
     if cwd_candidate.is_file():
