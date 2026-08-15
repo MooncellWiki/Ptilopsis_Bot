@@ -1,7 +1,7 @@
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def get_charword_data_jp(char_id, char_name, charword_table, charword_table_jp):
@@ -263,31 +263,30 @@ def update_furni_info(wiki, building_data, building_data_jp, building_data_en):
             logger.info(f"Same: {page_name}.")
 
 
-class UpdateJp(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        building_data = self.getgd("excel/building_data.json")
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
 
-        character_table_jp = self.getgd("excel/character_table.json", "JP")
-        skill_table_jp = self.getgd("excel/skill_table.json", "JP")
-        charword_table_jp = self.getgd("excel/charword_table.json", "JP")
-        building_data_jp = self.getgd("excel/building_data.json", "JP")
+    character_table_jp = ctx.getgd("excel/character_table.json", "JP")
+    skill_table_jp = ctx.getgd("excel/skill_table.json", "JP")
+    charword_table_jp = ctx.getgd("excel/charword_table.json", "JP")
+    building_data_jp = ctx.getgd("excel/building_data.json", "JP")
 
-        character_table_en = self.getgd("excel/character_table.json", "US")
-        skill_table_en = self.getgd("excel/skill_table.json", "US")
-        charword_table_en = self.getgd("excel/charword_table.json", "US")
-        building_data_en = self.getgd("excel/building_data.json", "US")
+    character_table_en = ctx.getgd("excel/character_table.json", "US")
+    skill_table_en = ctx.getgd("excel/skill_table.json", "US")
+    charword_table_en = ctx.getgd("excel/charword_table.json", "US")
+    building_data_en = ctx.getgd("excel/building_data.json", "US")
 
-        # update_charword_jp(self.wiki, character_table, charword_table, character_table_jp, charword_table_jp)
-        update_skill_and_name(
-            self.wiki,
-            character_table,
-            skill_table,
-            character_table_jp,
-            skill_table_jp,
-            character_table_en,
-            skill_table_en,
-        )
-        # update_furni_info(self.wiki, building_data, building_data_jp, building_data_en)
+    # update_charword_jp(ctx.wiki, character_table, charword_table, character_table_jp, charword_table_jp)
+    update_skill_and_name(
+        ctx.wiki,
+        character_table,
+        skill_table,
+        character_table_jp,
+        skill_table_jp,
+        character_table_en,
+        skill_table_en,
+    )

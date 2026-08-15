@@ -3,7 +3,7 @@ import io
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def update_menusidebar(wiki, old_num, id_table, character_table):
@@ -79,31 +79,24 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
     logger.info("Update: {}.".format("PRTS:Gameinfo/国服/干员一览"))
 
 
-class Sidebar(Job):
-    def _run(self):
-        pass
-
-    def update(self):
-        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
-        #     id_table = json.loads(file.read())
-        # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
-        id_csv, id_table = self.wiki.read("干员一览/干员id"), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row["name"]] = {
-                "id": int(row["sortId"]),
-                "approach": row["approach"],
-                "date": row["date"],
-            }
-        character_table = self.getgd("excel/character_table.json")
-        old_num, char_list = -1, self.wiki.category("分类:干员")
-        for char_key in character_table:
-            name = character_table[char_key]["name"]
-            if (
-                name in id_table
-                and name in char_list
-                and id_table[name]["id"] > old_num
-            ):
-                old_num = id_table[name]["id"]
-        update_menusidebar(self.wiki, old_num, id_table, character_table)
-        update_gameinfo(self.wiki, old_num, id_table, character_table)
+@job
+def update(ctx: JobContext) -> None:
+    # with open('character_id.json', 'r', encoding = 'utf-8') as file:
+    #     id_table = json.loads(file.read())
+    # id_table = json.loads(ctx.wiki.read('用户:Seniorious/CharacterId'))
+    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
+    reader = csv.DictReader(io.StringIO(id_csv))
+    for row in reader:
+        id_table[row["name"]] = {
+            "id": int(row["sortId"]),
+            "approach": row["approach"],
+            "date": row["date"],
+        }
+    character_table = ctx.getgd("excel/character_table.json")
+    old_num, char_list = -1, ctx.wiki.category("分类:干员")
+    for char_key in character_table:
+        name = character_table[char_key]["name"]
+        if name in id_table and name in char_list and id_table[name]["id"] > old_num:
+            old_num = id_table[name]["id"]
+    update_menusidebar(ctx.wiki, old_num, id_table, character_table)
+    update_gameinfo(ctx.wiki, old_num, id_table, character_table)

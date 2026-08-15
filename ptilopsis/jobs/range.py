@@ -1,5 +1,5 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 svgHeadTemplate = (
     '<svg xmlns="http://www.w3.org/2000/svg" '
@@ -64,7 +64,7 @@ def skill_range(wiki, raneg_table):
         logger.info("Updated: {}.".format("Widget:Range/" + rangeId))
 
 
-class Range(Job):
-    def _run(self):
-        range_table = self.getgd("excel/range_table.json")
-        skill_range(self.wiki, range_table)
+@job
+def run(ctx: JobContext) -> None:
+    range_table = ctx.getgd("excel/range_table.json")
+    skill_range(ctx.wiki, range_table)

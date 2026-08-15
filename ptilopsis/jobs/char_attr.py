@@ -2,7 +2,7 @@ import csv
 import io
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
@@ -135,27 +135,25 @@ def get_char_attr(character_table, uniequip_table, id_table, rts):
     return table
 
 
-class CharAttr(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        uniequip_table = self.getgd("excel/uniequip_table.json")
-        # with open('character_id.json', 'r', encoding = 'utf-8') as file:
-        #     id_table = json.loads(file.read())
-        # id_table = json.loads(self.wiki.read('用户:Seniorious/CharacterId'))
-        id_csv, id_table = self.wiki.read("干员一览/干员id"), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row["name"]] = {
-                "id": int(row["sortId"]),
-                "approach": row["approach"],
-                "date": row["date"],
-            }
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    uniequip_table = ctx.getgd("excel/uniequip_table.json")
+    # with open('character_id.json', 'r', encoding = 'utf-8') as file:
+    #     id_table = json.loads(file.read())
+    # id_table = json.loads(ctx.wiki.read('用户:Seniorious/CharacterId'))
+    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
+    reader = csv.DictReader(io.StringIO(id_csv))
+    for row in reader:
+        id_table[row["name"]] = {
+            "id": int(row["sortId"]),
+            "approach": row["approach"],
+            "date": row["date"],
+        }
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        content = get_char_attr(character_table, uniequip_table, id_table, rts)
+    content = get_char_attr(character_table, uniequip_table, id_table, rts)
 
-        self.wiki.edit(
-            title="用户:Seniorious/attribute", text=content, summary="update"
-        )
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/attribute"))
+    ctx.wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/attribute"))

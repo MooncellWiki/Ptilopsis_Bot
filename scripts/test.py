@@ -1,37 +1,26 @@
 from ptilopsis.config import config
 
-# from ptilopsis.jobs.basic import Basic
-# from ptilopsis.jobs.charword import Charword
-# from ptilopsis.jobs.sidebar import Sidebar
-# from ptilopsis.jobs.skin import Skin
-# from ptilopsis.jobs.stage import Stage
-# from ptilopsis.jobs.furni import Furni
-# from ptilopsis.jobs.weedy import Weedy
+# from ptilopsis.jobs import _temp, enemy, furni, item, route, skin, stage
 from ptilopsis.utils.data import GameData
 
+# from ptilopsis.utils.job import JobContext
 # from ptilopsis.utils.wiki import Wiki
-# from ptilopsis.jobs._temp import Temp
-# from ptilopsis.jobs.enemy import Enemy
-# from ptilopsis.jobs.route import Route
-# from ptilopsis.jobs.furni import Furni
-# from ptilopsis.jobs.item import Item
-# from ptilopsis.jobs.skin import Skin
-# from ptilopsis.jobs.stage import Stage
 
 if __name__ == "__main__":
     # wiki = Wiki(config['apiUrl'], config['username'], config['password'],
     #             ('dev' if '-dev' in sys.argv else 'product'))
     gameData = GameData(config=config, source="Unpacker")
+    # ctx = JobContext(wiki, gameData)
 
-    # Stage(wiki, gameData).run()
-    # Enemy(wiki, gameData).run()
-    # Enemy(wiki, gameData).update_data()
-    # Skin(wiki, gameData).run()
+    # stage.run(ctx)
+    # enemy.run(ctx)
+    # enemy.update_data(ctx)
+    # skin.run(ctx)
     # print('flag1')
-    # Furni(wiki, gameData).run()
+    # furni.run(ctx)
     # print('flag2')
-    # Item(wiki, gameData).run()
-    # Route(wiki,gameData).run()
+    # item.run(ctx)
+    # route.run(ctx)
 
     # up = Unpacker(config)
     # up.get_all_ab()

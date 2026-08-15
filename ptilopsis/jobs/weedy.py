@@ -4,7 +4,7 @@ import pytz
 import requests
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def update_yellow(wiki):
@@ -149,8 +149,8 @@ def update_rune(wiki):
     logger.info("Updated: {}.".format("用户:Seniorious/daily-rune"))
 
 
-class Weedy(Job):
-    def _run(self):
-        # if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
-        #     update_yellow(self.wiki)
-        update_rune(self.wiki)
+@job
+def run(ctx: JobContext) -> None:
+    # if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
+    #     update_yellow(ctx.wiki)
+    update_rune(ctx.wiki)

@@ -2,7 +2,7 @@ import os
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 class LangType:
@@ -462,61 +462,63 @@ def update_charword(
             logger.info("Same: {}.".format(char_name + "/语音记录"))
 
 
-class Charword(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        skin_table = self.getgd("excel/skin_table.json")
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    skin_table = ctx.getgd("excel/skin_table.json")
 
-        charword_page_list = self.wiki.category("分类:干员语音")
-        char_list = []
-        for char_id in character_table:
-            if (
-                character_table[char_id]["profession"] == "TRAP"
-                or character_table[char_id]["profession"] == "TOKEN"
-            ):
-                continue
-            if character_table[char_id]["name"] + "/语音记录" in charword_page_list:
-                continue
-            char_list.append((char_id, character_table[char_id]["name"].strip()))
+    charword_page_list = ctx.wiki.category("分类:干员语音")
+    char_list = []
+    for char_id in character_table:
+        if (
+            character_table[char_id]["profession"] == "TRAP"
+            or character_table[char_id]["profession"] == "TOKEN"
+        ):
+            continue
+        if character_table[char_id]["name"] + "/语音记录" in charword_page_list:
+            continue
+        char_list.append((char_id, character_table[char_id]["name"].strip()))
 
-        create_charword(self.wiki, char_list, skin_table, charword_table)
+    create_charword(ctx.wiki, char_list, skin_table, charword_table)
 
-    def update(self):
-        character_table = self.getgd("excel/character_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        charword_table_jp = self.getgd("excel/charword_table.json", "JP")
-        charword_table_en = self.getgd("excel/charword_table.json", "US")
-        charword_table_kr = self.getgd("excel/charword_table.json", "KR")
-        # charword_table_tw = self.getgd('excel/charword_table.json', 'TW')
-        skin_table = self.getgd("excel/skin_table.json")
 
-        char_list = []
-        for char_id in character_table:
-            if (
-                character_table[char_id]["profession"] == "TRAP"
-                or character_table[char_id]["profession"] == "TOKEN"
-            ):
-                continue
-            if char_id in [
-                "char_512_aprot",
-                "char_511_asnipe",
-                "char_510_amedic",
-                "char_509_acast",
-                "char_508_aguard",
-            ]:
-                continue
-            char_list.append((char_id, character_table[char_id]["name"].strip()))
-        # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
-        # char_list.append(('char_1037_amiya3', '阿米娅(医疗)'))
+@job
+def update(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    charword_table_jp = ctx.getgd("excel/charword_table.json", "JP")
+    charword_table_en = ctx.getgd("excel/charword_table.json", "US")
+    charword_table_kr = ctx.getgd("excel/charword_table.json", "KR")
+    # charword_table_tw = ctx.getgd('excel/charword_table.json', 'TW')
+    skin_table = ctx.getgd("excel/skin_table.json")
 
-        update_charword(
-            self.wiki,
-            char_list,
-            skin_table,
-            charword_table,
-            charword_table_jp,
-            charword_table_en,
-            charword_table_kr,
-            None,
-        )
+    char_list = []
+    for char_id in character_table:
+        if (
+            character_table[char_id]["profession"] == "TRAP"
+            or character_table[char_id]["profession"] == "TOKEN"
+        ):
+            continue
+        if char_id in [
+            "char_512_aprot",
+            "char_511_asnipe",
+            "char_510_amedic",
+            "char_509_acast",
+            "char_508_aguard",
+        ]:
+            continue
+        char_list.append((char_id, character_table[char_id]["name"].strip()))
+    # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
+    # char_list.append(('char_1037_amiya3', '阿米娅(医疗)'))
+
+    update_charword(
+        ctx.wiki,
+        char_list,
+        skin_table,
+        charword_table,
+        charword_table_jp,
+        charword_table_en,
+        charword_table_kr,
+        None,
+    )

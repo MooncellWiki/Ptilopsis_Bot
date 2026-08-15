@@ -1,15 +1,15 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
-class Sample(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        content = ""
+    content = ""
 
-        self.wiki.edit(title="", text=content, summary="update")
-        # logger.info(content)
-        logger.info("Updated: {}.".format(""))
+    ctx.wiki.edit(title="", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format(""))

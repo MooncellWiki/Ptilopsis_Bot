@@ -3,7 +3,7 @@ import json
 import requests
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
@@ -75,22 +75,22 @@ def update_gacha_list(wiki):
         # logger.info(page['text'])
 
 
-class Gacha(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        # get_gacha_list(self.wiki)
-        # update_gacha_list(self.wiki)
+    # get_gacha_list(ctx.wiki)
+    # update_gacha_list(ctx.wiki)
 
-        session = requests.Session()
-        gacha_data = session.get("https://weedy.baka.icu/gacha/LIMITED_9_0_3").json()[
-            "detail"
-        ]
+    session = requests.Session()
+    gacha_data = session.get("https://weedy.baka.icu/gacha/LIMITED_9_0_3").json()[
+        "detail"
+    ]
 
-        logger.info("request success.")
-        content = get_gacha_mainpage(character_table, gacha_data, rts)
+    logger.info("request success.")
+    content = get_gacha_mainpage(character_table, gacha_data, rts)
 
-        self.wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/test"))
+    ctx.wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/test"))

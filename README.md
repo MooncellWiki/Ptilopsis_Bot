@@ -43,7 +43,7 @@ ptilopsis/
     ├── data.py            # GameData，统一访问解包/仓库数据
     ├── unpacker.py        # 官方资源下载 + FlatBuffers 解析
     ├── wiki.py            # MediaWiki API 客户端（带 retry）
-    ├── job.py             # Job 基类
+    ├── job.py             # JobContext + @job 装饰器
     └── richTextStyles.py  # 游戏富文本 → Wiki 模板转换
 thirdparty/
 ├── OpenArknightsFBS/         # FlatBuffers schema (submodule)
@@ -127,7 +127,7 @@ ptil [flags] [modes ...]
 
 | 模式 | 包含任务 |
 | --- | --- |
-| `new` | 新干员相关：`Sidebar` → `Basic` → `Charword` |
+| `new` | 新干员相关：`sidebar.update` → `basic.run` → `charword.run` |
 | `regular` | 常规更新：基建、关卡、敌人、皮肤、家具、道具、新模组、活动、任务、属性、勋章、剧情、术语 |
 | `special` | 干员详情 / 密录、悖论模拟、剿灭、语音补全等 |
 | `jp` | JP 服增量更新 |

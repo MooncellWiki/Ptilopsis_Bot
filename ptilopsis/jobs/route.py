@@ -2,7 +2,7 @@ import copy
 import os
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def format_time(time):
@@ -324,47 +324,45 @@ def get_waves_table(level_waves, routes, enemy_table):
     return wave_table
 
 
-class Route(Job):
-    def _run(self):
-        enemy_table = self.getgd("excel/enemy_handbook_table.json")
-        stage_table = self.getgd("excel/stage_table.json")
-        enemy_db = self.getgd("levels/enemydata/enemy_database.json")
+@job
+def run(ctx: JobContext) -> None:
+    enemy_table = ctx.getgd("excel/enemy_handbook_table.json")
+    stage_table = ctx.getgd("excel/stage_table.json")
+    enemy_db = ctx.getgd("levels/enemydata/enemy_database.json")
 
-        filelist = []
-        base_dir = "./Unpacker/zh_CN/gameData/"
-        path = "levels/obt/roguelike/ro3/level_rogue3_5-1.json"
-        # path = 'levels/activities'
+    filelist = []
+    base_dir = "./Unpacker/zh_CN/gameData/"
+    path = "levels/obt/roguelike/ro3/level_rogue3_5-1.json"
+    # path = 'levels/activities'
 
-        def get_files(curr_path):
-            if ".DS_Store" in curr_path:
-                return
-            if os.path.isfile(os.path.join(base_dir, curr_path)):
-                filelist.append(curr_path)
-            else:
-                for f in os.listdir(os.path.join(base_dir, curr_path)):
-                    get_files(os.path.join(curr_path, f))
+    def get_files(curr_path):
+        if ".DS_Store" in curr_path:
+            return
+        if os.path.isfile(os.path.join(base_dir, curr_path)):
+            filelist.append(curr_path)
+        else:
+            for f in os.listdir(os.path.join(base_dir, curr_path)):
+                get_files(os.path.join(curr_path, f))
 
-        get_files(path)
+    get_files(path)
 
-        for file in filelist:
-            # stage_id = os.path.splitext(os.path.split(file)[1])[0]
-            level_table = self.getgd(file.lower())
-            routes = get_routes(level_table["routes"])
-            get_waves(level_table["waves"])
-            wave_table = get_waves_table(
-                level_table["waves"], routes, enemy_table["enemyData"]
-            )
+    for file in filelist:
+        # stage_id = os.path.splitext(os.path.split(file)[1])[0]
+        level_table = ctx.getgd(file.lower())
+        routes = get_routes(level_table["routes"])
+        get_waves(level_table["waves"])
+        wave_table = get_waves_table(
+            level_table["waves"], routes, enemy_table["enemyData"]
+        )
 
-            # roguelike_table = self.getgd('excel/roguelike_table.json')
-            # for stage in roguelike_table['stages']:
-            #     levelId = roguelike_table['stages'][stage]['levelId']
-            #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-            #         logger.info('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
-            #         level_table = self.getgd('levels/' + levelId + '.json')
-            #         count_enemy(level_table['waves'])
+        # roguelike_table = ctx.getgd('excel/roguelike_table.json')
+        # for stage in roguelike_table['stages']:
+        #     levelId = roguelike_table['stages'][stage]['levelId']
+        #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
+        #         logger.info('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
+        #         level_table = ctx.getgd('levels/' + levelId + '.json')
+        #         count_enemy(level_table['waves'])
 
-            self.wiki.edit(
-                title="用户:Seniorious/route", text=wave_table, summary="update"
-            )
-            # logger.info(wave_table)
-            logger.info("Updated: {}.".format("用户:Seniorious/route"))
+        ctx.wiki.edit(title="用户:Seniorious/route", text=wave_table, summary="update")
+        # logger.info(wave_table)
+        logger.info("Updated: {}.".format("用户:Seniorious/route"))

@@ -9,7 +9,7 @@ from ptilopsis.gamedata.medal import (
     MedalRarity,
 )
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.wikitext import WikiTemplate, inline_template
 
@@ -234,24 +234,24 @@ def update_medal(
     return render_page(sections)
 
 
-class Medal(Job):
-    def _run(self):
-        medal_table = self.getgd("excel/medal_table.json")
-        item_table = self.getgd("excel/item_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        character_table = self.getgd("excel/character_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    medal_table = ctx.getgd("excel/medal_table.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        content = update_medal(
-            medal_table, character_table, building_data, item_table, rts.compile
-        )
+    content = update_medal(
+        medal_table, character_table, building_data, item_table, rts.compile
+    )
 
-        self.wiki.edit(
-            title="用户:Seniorious/medal",
-            text=content,
-            summary="update",
-            bot=None,
-            minor=True,
-        )
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/medal"))
+    ctx.wiki.edit(
+        title="用户:Seniorious/medal",
+        text=content,
+        summary="update",
+        bot=None,
+        minor=True,
+    )
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/medal"))

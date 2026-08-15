@@ -1,7 +1,7 @@
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def get_skin_info(char_key, skin_table, drawer):
@@ -595,51 +595,51 @@ def update_logo_link(wiki, skin_table):
             # logger.info(link_title, content)
 
 
-class Skin(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        skin_table = self.getgd("excel/skin_table.json")
-        handbook_info_table = self.getgd("excel/handbook_info_table.json")
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    skin_table = ctx.getgd("excel/skin_table.json")
+    handbook_info_table = ctx.getgd("excel/handbook_info_table.json")
 
-        gallery = self.wiki.read("模板:时装回廊")
-        old_skin = []
-        result = re.findall(r"{{时装回廊/半身像\n([\s\S]*?)\n}}", gallery)
-        for skin in result:
-            r = re.search(r"\|干员名=([^\n]+?)\n[\s\S]*?\|时装名=([^\n]+?)\n", skin)
-            char_name, skin_name = r.group(1), r.group(2)
-            old_skin.append(f"{char_name} {skin_name}")
-        cid_list = {k: v["name"].strip() for k, v in character_table.items()}
-        cid_list["char_1001_amiya2"] = "阿米娅(近卫)"
-        cid_list["char_1037_amiya3"] = "阿米娅(医疗)"
-        skin_list = []
-        for skin_key, skin_info in skin_table["charSkins"].items():
-            if (
-                skin_info["displaySkin"]["skinGroupName"] == "默认服装"
-                or "token" in skin_key
-            ):
-                continue
-            if (
-                skin_info["charId"] == "char_002_amiya"
-                and skin_info["tmplId"] == "char_1001_amiya2"
-            ):
-                skin_char_key = "char_1001_amiya2"
-            elif (
-                skin_info["charId"] == "char_002_amiya"
-                and skin_info["tmplId"] == "char_1037_amiya3"
-            ):
-                skin_char_key = "char_1037_amiya3"
-            else:
-                skin_char_key = skin_info["charId"]
-            k = f"{cid_list[skin_char_key]} {skin_info['displaySkin']['skinName'].strip()}"
-            if k not in old_skin:
-                skin_list.append(cid_list[skin_char_key])
-                logger.info(f"新时装：{k}")
-        # skin_list = ['阿米娅(近卫)']
-        if skin_list is not None:
-            update_skin(self.wiki, character_table, skin_table, skin_list)
+    gallery = ctx.wiki.read("模板:时装回廊")
+    old_skin = []
+    result = re.findall(r"{{时装回廊/半身像\n([\s\S]*?)\n}}", gallery)
+    for skin in result:
+        r = re.search(r"\|干员名=([^\n]+?)\n[\s\S]*?\|时装名=([^\n]+?)\n", skin)
+        char_name, skin_name = r.group(1), r.group(2)
+        old_skin.append(f"{char_name} {skin_name}")
+    cid_list = {k: v["name"].strip() for k, v in character_table.items()}
+    cid_list["char_1001_amiya2"] = "阿米娅(近卫)"
+    cid_list["char_1037_amiya3"] = "阿米娅(医疗)"
+    skin_list = []
+    for skin_key, skin_info in skin_table["charSkins"].items():
+        if (
+            skin_info["displaySkin"]["skinGroupName"] == "默认服装"
+            or "token" in skin_key
+        ):
+            continue
+        if (
+            skin_info["charId"] == "char_002_amiya"
+            and skin_info["tmplId"] == "char_1001_amiya2"
+        ):
+            skin_char_key = "char_1001_amiya2"
+        elif (
+            skin_info["charId"] == "char_002_amiya"
+            and skin_info["tmplId"] == "char_1037_amiya3"
+        ):
+            skin_char_key = "char_1037_amiya3"
+        else:
+            skin_char_key = skin_info["charId"]
+        k = f"{cid_list[skin_char_key]} {skin_info['displaySkin']['skinName'].strip()}"
+        if k not in old_skin:
+            skin_list.append(cid_list[skin_char_key])
+            logger.info(f"新时装：{k}")
+    # skin_list = ['阿米娅(近卫)']
+    if skin_list is not None:
+        update_skin(ctx.wiki, character_table, skin_table, skin_list)
 
-        # update_randomFig(self.wiki, character_table, skin_table)
-        # update_skin_handbook(self.wiki, character_table, skin_table)
-        update_outfit_gallery(self.wiki, skin_table, character_table)
-        update_outfit_brand(self.wiki, skin_table, character_table)
-        update_logo_link(self.wiki, skin_table)
+    # update_randomFig(ctx.wiki, character_table, skin_table)
+    # update_skin_handbook(ctx.wiki, character_table, skin_table)
+    update_outfit_gallery(ctx.wiki, skin_table, character_table)
+    update_outfit_brand(ctx.wiki, skin_table, character_table)
+    update_logo_link(ctx.wiki, skin_table)

@@ -1,5 +1,5 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def parse_item(item, character_table, building_data, item_table):
@@ -138,25 +138,23 @@ def update_story_review(
     return content
 
 
-class StoryReview(Job):
-    def _run(self):
-        story_review_table = self.getgd("excel/story_review_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        zone_table = self.getgd("excel/zone_table.json")
+@job
+def run(ctx: JobContext) -> None:
+    story_review_table = ctx.getgd("excel/story_review_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    zone_table = ctx.getgd("excel/zone_table.json")
 
-        content = update_story_review(
-            self.gamedata,
-            story_review_table,
-            character_table,
-            building_data,
-            item_table,
-            zone_table,
-        )
+    content = update_story_review(
+        ctx.gamedata,
+        story_review_table,
+        character_table,
+        building_data,
+        item_table,
+        zone_table,
+    )
 
-        self.wiki.edit(
-            title="用户:Seniorious/情报处理室", text=content, summary="update"
-        )
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/情报处理室"))
+    ctx.wiki.edit(title="用户:Seniorious/情报处理室", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/情报处理室"))
