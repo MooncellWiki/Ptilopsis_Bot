@@ -175,6 +175,35 @@ def test_stage_table_tolerates_a_stage_with_missing_fields() -> None:
     assert table.stages["hard"].code == "T-1"
 
 
+def test_stage_table_tolerates_a_field_turning_null() -> None:
+    """上游把字段改成 null 比整个删掉更常见,退化路径要和缺失一致。"""
+    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
+    stage_table = fixture["stage_table"]
+    stage_table["stages"]["normal"]["apCost"] = None
+    stage_table["stages"]["normal"]["appearanceStyle"] = None
+    stage_table["stages"]["normal"]["stageDropInfo"] = None
+
+    table = StageTable.model_validate(stage_table)
+
+    assert table.stages["normal"].ap_cost == 0
+    assert table.stages["normal"].appearance_style == ""
+    assert table.stages["normal"].stage_drop_info.display_detail_rewards == []
+    assert table.stages["hard"].code == "T-1"
+
+
+def test_stage_table_keeps_null_for_optional_fields() -> None:
+    """值为 null 的可选字段仍然是 None,不能被默认值悄悄改写成别的东西。"""
+    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
+    stage_table = fixture["stage_table"]
+    stage_table["stages"]["normal"]["dangerLevel"] = None
+    stage_table["stages"]["normal"]["levelId"] = None
+
+    table = StageTable.model_validate(stage_table)
+
+    assert table.stages["normal"].danger_level is None
+    assert table.stages["normal"].level_id is None
+
+
 def test_campaign_entry_template_renders_the_complete_page() -> None:
     progress = CampaignProgressView(
         rows=[

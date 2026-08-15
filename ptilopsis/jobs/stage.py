@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import requests
 from pydantic import BaseModel, ValidationError
@@ -55,6 +55,12 @@ class TileEffectView(BaseModel):
     blackboards: list[list[BlackboardView]]
 
 
+class SandboxMapView(BaseModel):
+    code: str
+    name: str
+    stage_id: str
+
+
 class BasicStageView(BaseModel):
     heading: str | None = None
     code: str
@@ -79,13 +85,7 @@ class BasicStageView(BaseModel):
     rewards: list[RewardGroupView] = []
     tile_effects: list[TileEffectView] = []
     terrain_tags: list[str] | None = None
-    sandbox_map: "SandboxMapView | None" = None
-
-
-class SandboxMapView(BaseModel):
-    code: str
-    name: str
-    stage_id: str
+    sandbox_map: SandboxMapView | None = None
 
 
 class AssaultStageView(BaseModel):
@@ -388,21 +388,19 @@ def build_rune_lines(runes: list[dict]) -> list[str]:
 
 
 def parse_drop_item(
-    drop_item: dict | StageDataDisplayDetailRewards,
+    item_type: str,
+    item_id: str,
     character_table: dict,
     building_data: dict,
     item_table: dict,
 ) -> str:
-    item_type = (
-        drop_item.type
-        if isinstance(drop_item, StageDataDisplayDetailRewards)
-        else drop_item["type"]
-    )
-    item_id = (
-        drop_item.id
-        if isinstance(drop_item, StageDataDisplayDetailRewards)
-        else drop_item["id"]
-    )
+    """把掉落物的类型与 id 翻译成 wiki 上的显示名。
+
+    掉落在数据里有两种载体:关卡的 displayDetailRewards 已经建模成
+    StageDataDisplayDetailRewards,而回忆关卡的 rewardItem、剿灭进度奖励仍是
+    裸 dict。取字段这一步留给调用方,这里只认类型和 id。
+    """
+
     try:
         if item_type == "CHAR":
             return character_table[item_id]["name"]
@@ -455,7 +453,7 @@ def build_enemy_overrides(overwritten_data: dict) -> list[EnemyOverrideView]:
 
 
 def build_reward_groups(
-    rewards: list[dict] | list[StageDataDisplayDetailRewards],
+    rewards: Sequence[dict | StageDataDisplayDetailRewards],
     character_table: dict,
     building_data: dict,
     item_table: dict,
@@ -475,18 +473,20 @@ def build_reward_groups(
         "ITEM_RETURN": [],
     }
     for raw_reward in rewards:
-        reward = (
-            raw_reward
-            if isinstance(raw_reward, StageDataDisplayDetailRewards)
-            else StageDataDisplayDetailRewards.model_validate(raw_reward)
-        )
+        # 关卡表里的掉落已经建模,剿灭的 dropGains 仍是裸 dict,这里统一成模型
+        if isinstance(raw_reward, StageDataDisplayDetailRewards):
+            reward = raw_reward
+        else:
+            reward = StageDataDisplayDetailRewards.model_validate(raw_reward)
         furniture = reward.type == "FURN"
         occurrence = parse_occ_type(reward.occ_percent, reward.drop_type, furniture)
         occurrence_prefix = ":2=" if furniture else ":"
         if occurrence.startswith(occurrence_prefix):
             occurrence = occurrence.removeprefix(occurrence_prefix)
         drop = DropView(
-            name=parse_drop_item(reward, character_table, building_data, item_table),
+            name=parse_drop_item(
+                reward.type, reward.id, character_table, building_data, item_table
+            ),
             furniture=furniture,
             occurrence=occurrence,
         )
@@ -1440,7 +1440,9 @@ def build_memory_stage(
 
     reward_items = [
         DropView(
-            name=parse_drop_item(r, character_table, building_data, item_table),
+            name=parse_drop_item(
+                r["type"], r["id"], character_table, building_data, item_table
+            ),
             occurrence="三星获得",
         )
         for r in stage_detail["rewardItem"]
@@ -2286,7 +2288,8 @@ class Stage(Job):
                         items=[
                             CampaignProgressItemView(
                                 name=parse_drop_item(
-                                    reward,
+                                    reward["type"],
+                                    reward["id"],
                                     character_table,
                                     building_data,
                                     item_table,
