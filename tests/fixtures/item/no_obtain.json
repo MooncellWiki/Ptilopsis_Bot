@@ -1,0 +1,25 @@
+{
+  "item_key": "73",
+  "item_table": {
+    "items": {
+      "73": {
+        "itemId": "73",
+        "name": "普通道具",
+        "description": "普通描述",
+        "rarity": "TIER_1",
+        "iconId": "item_73",
+        "sortId": 73,
+        "usage": null,
+        "obtainApproach": null,
+        "hideInItemGet": false,
+        "itemType": "MATERIAL",
+        "buildingProductList": []
+      }
+    }
+  },
+  "building_data": {
+    "manufactFormulas": {},
+    "workshopFormulas": {}
+  },
+  "stage_table": {"stages": {}}
+}
