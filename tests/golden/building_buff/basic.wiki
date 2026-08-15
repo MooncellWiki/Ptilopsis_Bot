@@ -1,0 +1,39 @@
+==控制中枢==
+{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
+! colspan="4" | 控制中枢
+|-
+! width="30px" |
+! width="100px" |名称
+! width="520px" |描述
+! width="350px" |持有干员
+|-
+{{后勤技能信息/store
+|技能名=普通技能
+|房间=控制中枢
+|技能图标=icon_normal
+|技能描述=[RTS]普通描述
+}}
+|-
+{{后勤技能信息/store
+|技能名=领袖(控制中枢)
+|房间=控制中枢
+|技能图标=icon_leader_control
+|技能描述=[RTS]控制描述
+}}
+|}
+==宿舍==
+{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
+! colspan="4" | 宿舍
+|-
+! width="30px" |
+! width="100px" |名称
+! width="520px" |描述
+! width="350px" |持有干员
+|-
+{{后勤技能信息/store
+|技能名=领袖(宿舍)
+|房间=宿舍
+|技能图标=icon_leader_dorm
+|技能描述=[RTS]宿舍描述
+}}
+|}
