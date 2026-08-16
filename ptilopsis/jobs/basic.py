@@ -3,7 +3,7 @@ import io
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 
@@ -1714,246 +1714,83 @@ content = """{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 {{{{干员导航}}}}"""
 
 
-class Basic(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        uniequip_table = self.getgd("excel/uniequip_table.json")
-        battle_equip_table = self.getgd("excel/battle_equip_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        team_table = self.getgd("excel/handbook_team_table.json")
-        stories_table = self.getgd("excel/handbook_info_table.json")
-        skin_table = self.getgd("excel/skin_table.json")
-        gamedata_const = self.getgd("excel/gamedata_const.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        medal_table = self.getgd("excel/medal_table.json")
-        id_csv, id_table = self.wiki.read("干员一览/干员id"), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row["name"]] = {
-                "id": int(row["sortId"]),
-                "approach": row["approach"],
-                "date": row["date"],
-            }
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> bool:
+    character_table = ctx.getgd("excel/character_table.json")
+    uniequip_table = ctx.getgd("excel/uniequip_table.json")
+    battle_equip_table = ctx.getgd("excel/battle_equip_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    team_table = ctx.getgd("excel/handbook_team_table.json")
+    stories_table = ctx.getgd("excel/handbook_info_table.json")
+    skin_table = ctx.getgd("excel/skin_table.json")
+    gamedata_const = ctx.getgd("excel/gamedata_const.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    medal_table = ctx.getgd("excel/medal_table.json")
+    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
+    reader = csv.DictReader(io.StringIO(id_csv))
+    for row in reader:
+        id_table[row["name"]] = {
+            "id": int(row["sortId"]),
+            "approach": row["approach"],
+            "date": row["date"],
+        }
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        flag_new_char = False
-        char_list = self.wiki.category("分类:干员")
-        update_token_page = False
+    flag_new_char = False
+    char_list = ctx.wiki.category("分类:干员")
+    update_token_page = False
 
-        for char_key in character_table:
-            char_detail = character_table[char_key]
-            char_detail["name"] = char_detail["name"].strip()
-            if (
-                char_detail["profession"] == "TRAP"
-                or char_detail["profession"] == "TOKEN"
-            ):
-                continue
-            if char_detail["isNotObtainable"] == True:
-                continue
-            # if char_detail['name'] not in ['罗德岛隐秘队']:
-            if char_detail["name"] in char_list:
-                continue
-            if char_detail["name"] not in id_table:
-                logger.info(
-                    "Unknown Character: {} {}.".format(char_key, char_detail["name"])
-                )
-                # continue
+    for char_key in character_table:
+        char_detail = character_table[char_key]
+        char_detail["name"] = char_detail["name"].strip()
+        if char_detail["profession"] == "TRAP" or char_detail["profession"] == "TOKEN":
+            continue
+        if char_detail["isNotObtainable"] == True:
+            continue
+        # if char_detail['name'] not in ['罗德岛隐秘队']:
+        if char_detail["name"] in char_list:
+            continue
+        if char_detail["name"] not in id_table:
+            logger.info(
+                "Unknown Character: {} {}.".format(char_key, char_detail["name"])
+            )
+            # continue
 
-            basic_info = get_basic_info(
-                char_detail,
-                char_key,
-                id_table,
-                rts,
-                uniequip_table,
-                team_table,
-                skin_table,
-                charword_table,
-            )
-            char_approach = get_char_approach(char_detail, id_table)
-            phases_data = get_phases_data(
-                char_detail, char_key, uniequip_table, battle_equip_table, team_table
-            )
-            range_data = get_range_data(char_detail)
-            talent_list = get_talent_list(char_detail, rts)
-            potential_list = get_potential_list(char_detail)
-            skill_list = get_skill_list(char_detail, skill_table, rts)
-            token_info = get_token_info(
-                self.wiki,
-                char_detail,
-                update_token_page,
-                character_table,
-                skill_table,
-                rts,
-            )
-            building_skill = get_building_skill(building_data, char_key, rts)
-            phase_list = get_phase_list(char_detail, gamedata_const, item_table)
-            skill_levelUp_list = get_skill_levelUp_list(
-                char_detail, item_table, skill_table
-            )
-            battle_equip = "".join(
-                get_battle_equip(
-                    char_detail,
-                    char_key,
-                    battle_equip_table,
-                    uniequip_table,
-                    item_table,
-                    rts,
-                )
-            )
-            related_item = get_related_item(char_detail, item_table)
-            stories_list_set, stories_list = get_stories_list(
-                char_detail, stories_table, char_key
-            )
-            stories_list = stories_list_set + stories_list
-            handbook_avg = get_handbook_avg(
-                char_detail, stories_table, char_key, medal_table
-            )
-            handbook_stage = get_handbook_stage(
-                char_detail, char_key, stories_table, item_table, rts
-            )
-
-            char_info = content.format(
-                name=char_detail["name"],
-                char_approach=char_approach,
-                basic_info=basic_info,
-                phases_data=phases_data,
-                range_data=range_data,
-                talents=talent_list,
-                potential=potential_list,
-                skill=skill_list,
-                building=building_skill,
-                token_info=token_info,
-                phase=phase_list,
-                skill_levelup=skill_levelUp_list,
-                equip=battle_equip,
-                related_item=related_item,
-                stories=stories_list,
-                handbook_avg=handbook_avg,
-                handbook_stage=handbook_stage,
-            )
-            fin = char_info
-
-            flag_new_char = True
-            self.wiki.edit(
-                title=char_detail["name"],
-                text=fin,
-                summary="init",
-                bot=None,
-                minor=True,
-                createonly="1",
-            )
-            self.wiki.protect(
-                title=char_detail["name"],
-                protections="edit=autoconfirmed|move=sysop",
-                reason="protect",
-            )
-            # self.wiki.edit(
-            #     title = char_detail['name'] + '/spine',
-            #     text = '{}',
-            #     summary = 'init',
-            #     bot = None,
-            #     minor = True,
-            #     createonly = True,
-            #     contentmodel = 'json'
-            # )
-            if char_detail["name"] != char_detail["appellation"]:
-                redirect_text = "#redirect [[{}]]".format(char_detail["name"])
-                self.wiki.edit(
-                    title=char_detail["appellation"],
-                    text=redirect_text,
-                    summary="init",
-                    createonly=True,
-                )
-            # logger.info(fin)
-            logger.info("Created: {}.".format(char_detail["name"]))
-
-        return flag_new_char
-
-    def update(self):
-        character_table = self.getgd("excel/character_table.json")
-        uniequip_table = self.getgd("excel/uniequip_table.json")
-        battle_equip_table = self.getgd("excel/battle_equip_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        team_table = self.getgd("excel/handbook_team_table.json")
-        stories_table = self.getgd("excel/handbook_info_table.json")
-        skin_table = self.getgd("excel/skin_table.json")
-        gamedata_const = self.getgd("excel/gamedata_const.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        id_csv, id_table = self.wiki.read("干员一览/干员id"), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row["name"]] = {
-                "id": int(row["sortId"]),
-                "approach": row["approach"],
-                "date": row["date"],
-            }
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-
-        for char_key in character_table:
-            char_detail = character_table[char_key]
-            char_detail["name"] = char_detail["name"].strip()
-            if (
-                char_detail["profession"] == "TRAP"
-                or char_detail["profession"] == "TOKEN"
-            ):
-                continue
-            if char_key in [
-                "char_512_aprot",
-                "char_508_aguard",
-                "char_509_acast",
-                "char_511_asnipe",
-                "char_510_amedic",
-                "char_513_apionr",
-            ]:
-                continue
-            if char_detail["isNotObtainable"] == True:
-                continue
-            # if char_detail['name'] not in ['温蒂']:
-            #     continue
-            origin_text = self.wiki.read(char_detail["name"])
-            new_text = origin_text
-
-            # 更新后勤技能
-            building_skill = get_building_skill(building_data, char_key, rts)
-            num1 = new_text.find("==后勤技能==")
-            num2 = new_text.find("==召唤物信息==")
-            if num2 == -1:
-                num2 = new_text.find("==精英化材料==")
-            new_text = (
-                new_text[:num1]
-                + "==后勤技能==\n"
-                + building_skill
-                + "\n"
-                + new_text[num2:]
-            )
-
-            # 更新属性
-            phases_data = get_phases_data(
-                char_detail, char_key, uniequip_table, battle_equip_table, team_table
-            )
-            num1 = new_text.find("==属性==")
-            num2 = new_text.find("==攻击范围==")
-            new_text = (
-                new_text[:num1] + "==属性==\n" + phases_data + "\n" + new_text[num2:]
-            )
-
-            # 更新干员势力
-            # num1 = new_text.find('|情报编号=')
-            # num2 = new_text.find('|位置=')
-            # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
-            #     displayNumber = char_detail['displayNumber'],
-            #     nation = trans_team(char_detail['nationId'], team_table),
-            #     group = trans_team(char_detail['groupId'], team_table),
-            #     team = trans_team(char_detail['teamId'], team_table)
-            # )
-            # new_text = new_text[:num1] + tt + new_text[num2:]
-
-            # 更新模组
-            equip_list = get_battle_equip(
+        basic_info = get_basic_info(
+            char_detail,
+            char_key,
+            id_table,
+            rts,
+            uniequip_table,
+            team_table,
+            skin_table,
+            charword_table,
+        )
+        char_approach = get_char_approach(char_detail, id_table)
+        phases_data = get_phases_data(
+            char_detail, char_key, uniequip_table, battle_equip_table, team_table
+        )
+        range_data = get_range_data(char_detail)
+        talent_list = get_talent_list(char_detail, rts)
+        potential_list = get_potential_list(char_detail)
+        skill_list = get_skill_list(char_detail, skill_table, rts)
+        token_info = get_token_info(
+            ctx.wiki,
+            char_detail,
+            update_token_page,
+            character_table,
+            skill_table,
+            rts,
+        )
+        building_skill = get_building_skill(building_data, char_key, rts)
+        phase_list = get_phase_list(char_detail, gamedata_const, item_table)
+        skill_levelUp_list = get_skill_levelUp_list(
+            char_detail, item_table, skill_table
+        )
+        battle_equip = "".join(
+            get_battle_equip(
                 char_detail,
                 char_key,
                 battle_equip_table,
@@ -1961,133 +1798,281 @@ class Basic(Job):
                 item_table,
                 rts,
             )
-            num1 = new_text.find("==模组==")
-            num2 = new_text.find("\n==相关道具==")
-            if num1 == -1:
-                num1 = num2
-                new_text = (
-                    new_text[:num1].rstrip() + "".join(equip_list) + new_text[num2:]
-                )
-            else:
-                equip_text = new_text[num1:num2]
-                for equip in equip_list:
-                    result = re.search("===(.+?)===", equip)
-                    if not result:
-                        continue
-                    if f"==={result.group(1)}===" not in equip_text:
-                        equip_text += equip
-                new_text = new_text[:num1] + equip_text + new_text[num2:]
+        )
+        related_item = get_related_item(char_detail, item_table)
+        stories_list_set, stories_list = get_stories_list(
+            char_detail, stories_table, char_key
+        )
+        stories_list = stories_list_set + stories_list
+        handbook_avg = get_handbook_avg(
+            char_detail, stories_table, char_key, medal_table
+        )
+        handbook_stage = get_handbook_stage(
+            char_detail, char_key, stories_table, item_table, rts
+        )
 
-            # 更新干员cv
-            num1 = new_text.find("\n|画师=")
-            num2 = new_text.find("\n|精英0介绍=")
-            cv, drawer = "", ""
-            try:
-                cv_dict = charword_table["voiceLangDict"][char_key]["dict"]
-                lang_dict = {
-                    k: v["name"] for k, v in charword_table["voiceLangTypeDict"].items()
-                }
-                lang_dict["CN_MANDARIN"], lang_dict["CN_TOPOLECT"] = "中文", "中文方言"
-                for k in cv_dict:
-                    lang = lang_dict.get(k, "未知语言")
-                    # if lang == '联动':
-                    #     if char_key in ['char_4019_ncdeer']:
-                    #         lang = '中文'
-                    #     elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak', 'char_4123_ela', 'char_4124_iana', 'char_4125_rdoc', 'char_4126_fuze']:
-                    #         lang = '英文'
-                    cv += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
-            except:
-                cv += "\n|日文配音="
-            try:
-                drawer_append = ""
-                for skin_p, skin_k in skin_table["buildinEvolveMap"][char_key].items():
-                    drawer_temp = ",".join(
-                        skin_table["charSkins"][skin_k]["displaySkin"]["drawerList"]
-                    )
-                    if drawer == "":
-                        drawer = drawer_temp
-                    elif drawer != drawer_temp:
-                        drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
-                drawer = "\n|画师=" + drawer + drawer_append
-            except:
-                drawer = "\n|画师="
-            new_text = new_text[:num1] + drawer + cv + new_text[num2:]
+        char_info = content.format(
+            name=char_detail["name"],
+            char_approach=char_approach,
+            basic_info=basic_info,
+            phases_data=phases_data,
+            range_data=range_data,
+            talents=talent_list,
+            potential=potential_list,
+            skill=skill_list,
+            building=building_skill,
+            token_info=token_info,
+            phase=phase_list,
+            skill_levelup=skill_levelUp_list,
+            equip=battle_equip,
+            related_item=related_item,
+            stories=stories_list,
+            handbook_avg=handbook_avg,
+            handbook_stage=handbook_stage,
+        )
+        fin = char_info
+
+        flag_new_char = True
+        ctx.wiki.edit(
+            title=char_detail["name"],
+            text=fin,
+            summary="init",
+            bot=None,
+            minor=True,
+            createonly="1",
+        )
+        ctx.wiki.protect(
+            title=char_detail["name"],
+            protections="edit=autoconfirmed|move=sysop",
+            reason="protect",
+        )
+        # ctx.wiki.edit(
+        #     title = char_detail['name'] + '/spine',
+        #     text = '{}',
+        #     summary = 'init',
+        #     bot = None,
+        #     minor = True,
+        #     createonly = True,
+        #     contentmodel = 'json'
+        # )
+        if char_detail["name"] != char_detail["appellation"]:
+            redirect_text = "#redirect [[{}]]".format(char_detail["name"])
+            ctx.wiki.edit(
+                title=char_detail["appellation"],
+                text=redirect_text,
+                summary="init",
+                createonly=True,
+            )
+        # logger.info(fin)
+        logger.info("Created: {}.".format(char_detail["name"]))
+
+    return flag_new_char
+
+
+@job
+def update(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    uniequip_table = ctx.getgd("excel/uniequip_table.json")
+    battle_equip_table = ctx.getgd("excel/battle_equip_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    team_table = ctx.getgd("excel/handbook_team_table.json")
+    stories_table = ctx.getgd("excel/handbook_info_table.json")
+    skin_table = ctx.getgd("excel/skin_table.json")
+    gamedata_const = ctx.getgd("excel/gamedata_const.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
+    reader = csv.DictReader(io.StringIO(id_csv))
+    for row in reader:
+        id_table[row["name"]] = {
+            "id": int(row["sortId"]),
+            "approach": row["approach"],
+            "date": row["date"],
+        }
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    for char_key in character_table:
+        char_detail = character_table[char_key]
+        char_detail["name"] = char_detail["name"].strip()
+        if char_detail["profession"] == "TRAP" or char_detail["profession"] == "TOKEN":
+            continue
+        if char_key in [
+            "char_512_aprot",
+            "char_508_aguard",
+            "char_509_acast",
+            "char_511_asnipe",
+            "char_510_amedic",
+            "char_513_apionr",
+        ]:
+            continue
+        if char_detail["isNotObtainable"] == True:
+            continue
+        # if char_detail['name'] not in ['温蒂']:
+        #     continue
+        origin_text = ctx.wiki.read(char_detail["name"])
+        new_text = origin_text
+
+        # 更新后勤技能
+        building_skill = get_building_skill(building_data, char_key, rts)
+        num1 = new_text.find("==后勤技能==")
+        num2 = new_text.find("==召唤物信息==")
+        if num2 == -1:
+            num2 = new_text.find("==精英化材料==")
+        new_text = (
+            new_text[:num1] + "==后勤技能==\n" + building_skill + "\n" + new_text[num2:]
+        )
+
+        # 更新属性
+        phases_data = get_phases_data(
+            char_detail, char_key, uniequip_table, battle_equip_table, team_table
+        )
+        num1 = new_text.find("==属性==")
+        num2 = new_text.find("==攻击范围==")
+        new_text = new_text[:num1] + "==属性==\n" + phases_data + "\n" + new_text[num2:]
+
+        # 更新干员势力
+        # num1 = new_text.find('|情报编号=')
+        # num2 = new_text.find('|位置=')
+        # tt = '|情报编号={displayNumber}\n|所属国家={nation}\n|所属组织={group}\n|所属团队={team}\n'.format(
+        #     displayNumber = char_detail['displayNumber'],
+        #     nation = trans_team(char_detail['nationId'], team_table),
+        #     group = trans_team(char_detail['groupId'], team_table),
+        #     team = trans_team(char_detail['teamId'], team_table)
+        # )
+        # new_text = new_text[:num1] + tt + new_text[num2:]
+
+        # 更新模组
+        equip_list = get_battle_equip(
+            char_detail,
+            char_key,
+            battle_equip_table,
+            uniequip_table,
+            item_table,
+            rts,
+        )
+        num1 = new_text.find("==模组==")
+        num2 = new_text.find("\n==相关道具==")
+        if num1 == -1:
+            num1 = num2
+            new_text = new_text[:num1].rstrip() + "".join(equip_list) + new_text[num2:]
+        else:
+            equip_text = new_text[num1:num2]
+            for equip in equip_list:
+                result = re.search("===(.+?)===", equip)
+                if not result:
+                    continue
+                if f"==={result.group(1)}===" not in equip_text:
+                    equip_text += equip
+            new_text = new_text[:num1] + equip_text + new_text[num2:]
+
+        # 更新干员cv
+        num1 = new_text.find("\n|画师=")
+        num2 = new_text.find("\n|精英0介绍=")
+        cv, drawer = "", ""
+        try:
+            cv_dict = charword_table["voiceLangDict"][char_key]["dict"]
+            lang_dict = {
+                k: v["name"] for k, v in charword_table["voiceLangTypeDict"].items()
+            }
+            lang_dict["CN_MANDARIN"], lang_dict["CN_TOPOLECT"] = "中文", "中文方言"
+            for k in cv_dict:
+                lang = lang_dict.get(k, "未知语言")
+                # if lang == '联动':
+                #     if char_key in ['char_4019_ncdeer']:
+                #         lang = '中文'
+                #     elif char_key in ['char_456_ash', 'char_458_rfrost', 'char_457_blitz', 'char_459_tachak', 'char_4123_ela', 'char_4124_iana', 'char_4125_rdoc', 'char_4126_fuze']:
+                #         lang = '英文'
+                cv += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
+        except:
+            cv += "\n|日文配音="
+        try:
+            drawer_append = ""
+            for skin_p, skin_k in skin_table["buildinEvolveMap"][char_key].items():
+                drawer_temp = ",".join(
+                    skin_table["charSkins"][skin_k]["displaySkin"]["drawerList"]
+                )
+                if drawer == "":
+                    drawer = drawer_temp
+                elif drawer != drawer_temp:
+                    drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
+            drawer = "\n|画师=" + drawer + drawer_append
+        except:
+            drawer = "\n|画师="
+        new_text = new_text[:num1] + drawer + cv + new_text[num2:]
+
+        if new_text != origin_text:
+            ctx.wiki.edit(title=char_detail["name"], text=new_text, summary="update")
+            # logger.info(new_text)
+            logger.info("Updated: {}.".format(char_detail["name"]))
+        else:
+            logger.info("Same: {}.".format(char_detail["name"]))
+
+        # 本地diff对比
+        # f_wiki = open('old.txt', 'w')
+        # # num1 = origin_text.find('==干员档案==')
+        # # num2 = origin_text.find('==语音记录==')
+        # num1 = origin_text.find('==技能==')
+        # num2 = origin_text.find('==后勤技能==')
+        # f_wiki.write(origin_text)
+        # f_wiki.close()
+        # f_new = open('new.txt', 'w')
+        # # f_new.write('==干员档案==\n{}\n'.format(stories_list))
+        # f_new.write(new_text)
+        # f_new.close()
+        # os.system('echo {}'.format(char_detail['name']))
+        # os.system('diff old.txt new.txt')
+
+
+@job
+def update_handbook(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    stories_table = ctx.getgd("excel/handbook_info_table.json")
+    medal_table = ctx.getgd("excel/medal_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    # memory_list = ctx.wiki.category('分类:拥有干员密录的干员')
+    for char_key in character_table:
+        char_detail = character_table[char_key]
+        char_detail["name"] = char_detail["name"].strip()
+        if char_detail["profession"] == "TRAP" or char_detail["profession"] == "TOKEN":
+            continue
+        if char_detail["isNotObtainable"] == True:
+            continue
+        # if char_detail['name'] in memory_list:
+        #     continue
+
+        handbook_avg = get_handbook_avg(
+            char_detail, stories_table, char_key, medal_table
+        )
+        handbook_stage = get_handbook_stage(
+            char_detail, char_key, stories_table, item_table, rts
+        )
+
+        if handbook_avg != "" or handbook_stage != "":
+            origin_text = ctx.wiki.read(char_detail["name"])
+
+            num1 = origin_text.find("/语音记录}}")
+            num2 = origin_text.find("\n==干员模型==")
+            num3 = origin_text.find("\n==干员异格任务==")
+            if num3 > 0:
+                num2 = min(num2, num3)
+            new_text = (
+                origin_text[:num1]
+                + "/语音记录}}"
+                + handbook_avg
+                + handbook_stage
+                + origin_text[num2:]
+            )
 
             if new_text != origin_text:
-                self.wiki.edit(
-                    title=char_detail["name"], text=new_text, summary="update"
+                ctx.wiki.edit(
+                    title=char_detail["name"],
+                    text=new_text,
+                    summary="更新干员密录&悖论模拟",
                 )
                 # logger.info(new_text)
                 logger.info("Updated: {}.".format(char_detail["name"]))
             else:
                 logger.info("Same: {}.".format(char_detail["name"]))
-
-            # 本地diff对比
-            # f_wiki = open('old.txt', 'w')
-            # # num1 = origin_text.find('==干员档案==')
-            # # num2 = origin_text.find('==语音记录==')
-            # num1 = origin_text.find('==技能==')
-            # num2 = origin_text.find('==后勤技能==')
-            # f_wiki.write(origin_text)
-            # f_wiki.close()
-            # f_new = open('new.txt', 'w')
-            # # f_new.write('==干员档案==\n{}\n'.format(stories_list))
-            # f_new.write(new_text)
-            # f_new.close()
-            # os.system('echo {}'.format(char_detail['name']))
-            # os.system('diff old.txt new.txt')
-
-    def update_handbook(self):
-        character_table = self.getgd("excel/character_table.json")
-        item_table = self.getgd("excel/item_table.json")
-        stories_table = self.getgd("excel/handbook_info_table.json")
-        medal_table = self.getgd("excel/medal_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-
-        # memory_list = self.wiki.category('分类:拥有干员密录的干员')
-        for char_key in character_table:
-            char_detail = character_table[char_key]
-            char_detail["name"] = char_detail["name"].strip()
-            if (
-                char_detail["profession"] == "TRAP"
-                or char_detail["profession"] == "TOKEN"
-            ):
-                continue
-            if char_detail["isNotObtainable"] == True:
-                continue
-            # if char_detail['name'] in memory_list:
-            #     continue
-
-            handbook_avg = get_handbook_avg(
-                char_detail, stories_table, char_key, medal_table
-            )
-            handbook_stage = get_handbook_stage(
-                char_detail, char_key, stories_table, item_table, rts
-            )
-
-            if handbook_avg != "" or handbook_stage != "":
-                origin_text = self.wiki.read(char_detail["name"])
-
-                num1 = origin_text.find("/语音记录}}")
-                num2 = origin_text.find("\n==干员模型==")
-                num3 = origin_text.find("\n==干员异格任务==")
-                if num3 > 0:
-                    num2 = min(num2, num3)
-                new_text = (
-                    origin_text[:num1]
-                    + "/语音记录}}"
-                    + handbook_avg
-                    + handbook_stage
-                    + origin_text[num2:]
-                )
-
-                if new_text != origin_text:
-                    self.wiki.edit(
-                        title=char_detail["name"],
-                        text=new_text,
-                        summary="更新干员密录&悖论模拟",
-                    )
-                    # logger.info(new_text)
-                    logger.info("Updated: {}.".format(char_detail["name"]))
-                else:
-                    logger.info("Same: {}.".format(char_detail["name"]))

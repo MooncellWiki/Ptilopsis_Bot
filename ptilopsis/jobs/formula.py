@@ -1,5 +1,5 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def get_workshop_formulas(building_data, item_table, stage_table):
@@ -102,16 +102,16 @@ def get_workshop_formulas(building_data, item_table, stage_table):
     return formulas_text
 
 
-class Formula(Job):
-    def _run(self):
-        item_table = self.getgd("excel/item_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        stage_table = self.getgd("excel/stage_table.json")
+@job
+def run(ctx: JobContext) -> None:
+    item_table = ctx.getgd("excel/item_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    stage_table = ctx.getgd("excel/stage_table.json")
 
-        content = get_workshop_formulas(building_data, item_table, stage_table)
+    content = get_workshop_formulas(building_data, item_table, stage_table)
 
-        self.wiki.edit(
-            title="用户:Seniorious/workshopFormulas", text=content, summary="update"
-        )
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/workshopFormulas"))
+    ctx.wiki.edit(
+        title="用户:Seniorious/workshopFormulas", text=content, summary="update"
+    )
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/workshopFormulas"))

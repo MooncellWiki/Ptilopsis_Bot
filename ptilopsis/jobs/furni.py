@@ -1,5 +1,5 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def update_furni(wiki, building_data, item_table):
@@ -343,31 +343,34 @@ def create_themes(wiki, building_data, shop_client_table):
 duplicate_list = []
 
 
-class Furni(Job):
-    def _run(self):
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        shop_client_table = self.getgd("excel/shop_client_table.json")
+@job
+def run(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    shop_client_table = ctx.getgd("excel/shop_client_table.json")
 
-        self.check_duplicate()
-        create_themes(self.wiki, building_data, shop_client_table)
-        create_furni(self.wiki, building_data, item_table)
+    check_duplicate(ctx)
+    create_themes(ctx.wiki, building_data, shop_client_table)
+    create_furni(ctx.wiki, building_data, item_table)
 
-    def update(self):
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
 
-        update_furni(self.wiki, building_data, item_table)
+@job
+def update(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
 
-    def check_duplicate(self):
-        building_data = self.getgd("excel/building_data.json")
+    update_furni(ctx.wiki, building_data, item_table)
 
-        furni_dict = {}
-        furnitures = building_data["customData"]["furnitures"]
-        for furni in furnitures.values():
-            if furni["name"] not in furni_dict:
-                furni_dict[furni["name"]] = []
-            furni_dict[furni["name"]].append(furni["id"])
-        for name, f_list in furni_dict.items():
-            if len(f_list) > 1:
-                duplicate_list.append(name)
+
+def check_duplicate(ctx: JobContext):
+    building_data = ctx.getgd("excel/building_data.json")
+
+    furni_dict = {}
+    furnitures = building_data["customData"]["furnitures"]
+    for furni in furnitures.values():
+        if furni["name"] not in furni_dict:
+            furni_dict[furni["name"]] = []
+        furni_dict[furni["name"]].append(furni["id"])
+    for name, f_list in furni_dict.items():
+        if len(f_list) > 1:
+            duplicate_list.append(name)

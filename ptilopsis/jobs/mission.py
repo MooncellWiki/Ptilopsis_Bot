@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 table_title = '{|class = "wikitable mw-collapsed mw-collapsible" style = "text-align:center; display:table; white-space:normal; width:800px;"'
@@ -221,14 +221,14 @@ def update_mission(mission_table, item_table, rts):
     return mission_text
 
 
-class Mission(Job):
-    def _run(self):
-        mission_table = self.getgd("excel/mission_table.json")
-        item_table = self.getgd("excel/item_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    mission_table = ctx.getgd("excel/mission_table.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        content = update_mission(mission_table, item_table, rts)
+    content = update_mission(mission_table, item_table, rts)
 
-        self.wiki.edit(title="用户:Seniorious/missions", text=content, summary="update")
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/missions"))
+    ctx.wiki.edit(title="用户:Seniorious/missions", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/missions"))

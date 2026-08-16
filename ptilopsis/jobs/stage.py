@@ -13,7 +13,7 @@ from ptilopsis.gamedata.stage import (
     StageTable,
 )
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.wikitext import WikiTemplate, inline_template
 
@@ -1925,790 +1925,697 @@ class ActionInfo:
                 )
 
 
-class Stage(Job):
-    def check_duplicate(self):
-        stage_table = self.getgd("excel/stage_table.json")
-        activity_table = self.getgd("excel/activity_table.json")
+def check_duplicate(ctx: JobContext) -> dict[str, str]:
+    """同名关卡代号 -> 消歧义页 wikitext。"""
+    stage_table = ctx.getgd("excel/stage_table.json")
+    activity_table = ctx.getgd("excel/activity_table.json")
 
-        stage_code_dict, duplicate_dict = {}, {}
-        for s in stage_table["stages"].values():
-            if s["name"] is None or s["code"] is None:
-                continue
-            if (
-                s["difficulty"] in ["FOUR_STAR", "SIX_STAR"]
-                or s["stageType"] == "GUIDE"
-                or s["diffGroup"] in ["EASY", "TOUGH"]
-            ):
-                continue
-            if s["code"] not in stage_code_dict:
-                stage_code_dict[s["code"].strip()] = []
-            stage_code_dict[s["code"].strip()].append(s["stageId"])
-        for code, s_list in stage_code_dict.items():
-            if len(s_list) > 1:
-                links = []
-                seen_links = set()
-                for sid in s_list:
-                    activity_name = None
-                    if stage_table["stages"][sid]["stageType"] == "ACTIVITY":
-                        result = re.search("^([^_]+)[_-]", sid)
-                        act_id = result.group(1)
-                        if act_id in activity_table["basicInfo"]:
-                            activity_name = activity_table["basicInfo"][act_id][
-                                "name"
-                            ].replace("#", "/0")
-                    page_name = "{} {}".format(
-                        stage_table["stages"][sid]["code"].strip(),
-                        stage_table["stages"][sid]["name"].strip(),
-                    )
-                    link_key = (page_name, activity_name)
-                    if link_key not in seen_links:
-                        links.append(
-                            DisambiguationLinkView(
-                                page_name=page_name,
-                                activity_name=activity_name,
-                            )
+    stage_code_dict, duplicate_dict = {}, {}
+    for s in stage_table["stages"].values():
+        if s["name"] is None or s["code"] is None:
+            continue
+        if (
+            s["difficulty"] in ["FOUR_STAR", "SIX_STAR"]
+            or s["stageType"] == "GUIDE"
+            or s["diffGroup"] in ["EASY", "TOUGH"]
+        ):
+            continue
+        if s["code"] not in stage_code_dict:
+            stage_code_dict[s["code"].strip()] = []
+        stage_code_dict[s["code"].strip()].append(s["stageId"])
+    for code, s_list in stage_code_dict.items():
+        if len(s_list) > 1:
+            links = []
+            seen_links = set()
+            for sid in s_list:
+                activity_name = None
+                if stage_table["stages"][sid]["stageType"] == "ACTIVITY":
+                    result = re.search("^([^_]+)[_-]", sid)
+                    act_id = result.group(1)
+                    if act_id in activity_table["basicInfo"]:
+                        activity_name = activity_table["basicInfo"][act_id][
+                            "name"
+                        ].replace("#", "/0")
+                page_name = "{} {}".format(
+                    stage_table["stages"][sid]["code"].strip(),
+                    stage_table["stages"][sid]["name"].strip(),
+                )
+                link_key = (page_name, activity_name)
+                if link_key not in seen_links:
+                    links.append(
+                        DisambiguationLinkView(
+                            page_name=page_name,
+                            activity_name=activity_name,
                         )
-                        seen_links.add(link_key)
-                duplicate_dict[code] = render_disambiguation(links)
-        self.duplicate_dict = duplicate_dict
-        # logger.info(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
+                    )
+                    seen_links.add(link_key)
+            duplicate_dict[code] = render_disambiguation(links)
+    # logger.info(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
+    return duplicate_dict
 
-    def _get_list_notCountInTotal(self):
-        enemy_database = self.getgd("levels/enemydata/enemy_database.json")
-        notCount_list = {}
-        try:
-            for enemy in enemy_database["enemies"]:
-                for enemy_level in enemy["Value"]:
-                    if "notCountInTotal" in enemy_level["enemyData"]:
+
+def _get_list_notCountInTotal(ctx: JobContext):
+    enemy_database = ctx.getgd("levels/enemydata/enemy_database.json")
+    notCount_list = {}
+    try:
+        for enemy in enemy_database["enemies"]:
+            for enemy_level in enemy["Value"]:
+                if "notCountInTotal" in enemy_level["enemyData"]:
+                    if enemy_level["enemyData"]["notCountInTotal"]["m_defined"] is True:
                         if (
-                            enemy_level["enemyData"]["notCountInTotal"]["m_defined"]
+                            enemy_level["enemyData"]["notCountInTotal"]["m_value"]
                             is True
                         ):
-                            if (
-                                enemy_level["enemyData"]["notCountInTotal"]["m_value"]
-                                is True
-                            ):
-                                if enemy["Key"] not in notCount_list:
-                                    notCount_list[enemy["Key"]] = []
-                                notCount_list[enemy["Key"]].append(enemy_level["level"])
-                        elif (
-                            enemy["Key"] in notCount_list
-                            and enemy_level["level"] - 1 in notCount_list[enemy["Key"]]
-                        ):
+                            if enemy["Key"] not in notCount_list:
+                                notCount_list[enemy["Key"]] = []
                             notCount_list[enemy["Key"]].append(enemy_level["level"])
-            return notCount_list
-        except Exception:
-            return {}
+                    elif (
+                        enemy["Key"] in notCount_list
+                        and enemy_level["level"] - 1 in notCount_list[enemy["Key"]]
+                    ):
+                        notCount_list[enemy["Key"]].append(enemy_level["level"])
+        return notCount_list
+    except Exception:
+        return {}
 
-    def _run(self):
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        stage_table = self.getgd("excel/stage_table.json")
-        typed_stage_table = StageTable.model_validate(stage_table)
-        zone_table = self.getgd("excel/zone_table.json")
-        redirect_table = self.getgd("battle/battle_misc_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
-        stage_list = self.wiki.category("分类:普通难度关卡")
-        new_stage_list = []
-        self.check_duplicate()
-        notCount_list = self._get_list_notCountInTotal()
+@job
+def run(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    stage_table = ctx.getgd("excel/stage_table.json")
+    typed_stage_table = StageTable.model_validate(stage_table)
+    zone_table = ctx.getgd("excel/zone_table.json")
+    redirect_table = ctx.getgd("battle/battle_misc_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        for stage_id in stage_table["stages"]:
-            stage_detail = stage_table["stages"][stage_id]
-            if stage_detail["name"] is None or stage_detail["code"] is None:
+    stage_list = ctx.wiki.category("分类:普通难度关卡")
+    new_stage_list = []
+    duplicate_dict = check_duplicate(ctx)
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for stage_id in stage_table["stages"]:
+        stage_detail = stage_table["stages"][stage_id]
+        if stage_detail["name"] is None or stage_detail["code"] is None:
+            continue
+        if (
+            stage_detail["stageType"]
+            not in [
+                "MAIN",
+                "SUB",
+                "DAILY",
+                "ACTIVITY",
+                "SPECIAL_STORY",
+                "CLIMB_TOWER",
+            ]
+            or stage_detail["difficulty"] in ["FOUR_STAR"]
+            or stage_detail["diffGroup"] in ["EASY"]
+        ):
+            continue
+        stage_detail["name"] = {
+            "act21side_01_t": "新城区大街(德克萨斯)",
+            "act21side_02_t": "萨卢佐家(拉普兰德2)",
+            "act21side_03_m2": "后巷(拉普兰德1)",
+            "act21side_04_m1": "萨卢佐家(拉普兰德1)",
+            "act21side_05_m1": "后巷(乔万娜)",
+            "act21side_05_t": "后巷(拉普兰德2)",
+            "act21side_06_t": "新城区大街(丹布朗)",
+        }.get(stage_id, stage_detail["name"].strip())
+        # 表里的副本就是下面要渲染的那一关,改名后直接用它,不再单独校验一份
+        typed_stage_table.stages[stage_id].name = stage_detail["name"]
+        typed_stage = typed_stage_table.stages[stage_id]
+        stage_page_name = stage_detail["code"].strip() + " " + stage_detail["name"]
+        if stage_detail["difficulty"] == "SIX_STAR":
+            stage_page_name = "险地" + stage_page_name
+        elif (
+            stage_detail["diffGroup"] == "TOUGH"
+            and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
+        ):
+            stage_page_name = "磨难" + stage_page_name
+        if stage_page_name in stage_list:
+            continue
+        # if stage_detail['code'] not in ['IG-DF-6']:
+        #     continue
+
+        map_override = ""
+        if stage_detail["levelId"]:
+            try:
+                if stage_detail["levelId"] in redirect_table["levelScenePairs"]:
+                    level_table = ctx.getgd(
+                        "levels/"
+                        + redirect_table["levelScenePairs"][stage_detail["levelId"]][
+                            "levelId"
+                        ].lower()
+                        + ".json"
+                    )
+                    if (
+                        redirect_table["levelScenePairs"][stage_detail["levelId"]][
+                            "hookedMapPreviewId"
+                        ]
+                        is not None
+                    ):
+                        map_override = redirect_table["levelScenePairs"][
+                            stage_detail["levelId"]
+                        ]["hookedMapPreviewId"]
+                else:
+                    level_table = ctx.getgd(
+                        "levels/" + stage_detail["levelId"].lower() + ".json"
+                    )
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-            if (
-                stage_detail["stageType"]
-                not in [
-                    "MAIN",
-                    "SUB",
-                    "DAILY",
-                    "ACTIVITY",
-                    "SPECIAL_STORY",
-                    "CLIMB_TOWER",
-                ]
-                or stage_detail["difficulty"] in ["FOUR_STAR"]
-                or stage_detail["diffGroup"] in ["EASY"]
-            ):
-                continue
-            stage_detail["name"] = {
-                "act21side_01_t": "新城区大街(德克萨斯)",
-                "act21side_02_t": "萨卢佐家(拉普兰德2)",
-                "act21side_03_m2": "后巷(拉普兰德1)",
-                "act21side_04_m1": "萨卢佐家(拉普兰德1)",
-                "act21side_05_m1": "后巷(乔万娜)",
-                "act21side_05_t": "后巷(拉普兰德2)",
-                "act21side_06_t": "新城区大街(丹布朗)",
-            }.get(stage_id, stage_detail["name"].strip())
-            # 表里的副本就是下面要渲染的那一关,改名后直接用它,不再单独校验一份
-            typed_stage_table.stages[stage_id].name = stage_detail["name"]
-            typed_stage = typed_stage_table.stages[stage_id]
-            stage_page_name = stage_detail["code"].strip() + " " + stage_detail["name"]
-            if stage_detail["difficulty"] == "SIX_STAR":
-                stage_page_name = "险地" + stage_page_name
-            elif (
-                stage_detail["diffGroup"] == "TOUGH"
-                and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
-            ):
-                stage_page_name = "磨难" + stage_page_name
-            if stage_page_name in stage_list:
-                continue
-            # if stage_detail['code'] not in ['IG-DF-6']:
-            #     continue
+        else:
+            level_table = {}
 
-            map_override = ""
-            if stage_detail["levelId"]:
-                try:
-                    if stage_detail["levelId"] in redirect_table["levelScenePairs"]:
-                        level_table = self.getgd(
-                            "levels/"
-                            + redirect_table["levelScenePairs"][
-                                stage_detail["levelId"]
-                            ]["levelId"].lower()
-                            + ".json"
-                        )
-                        if (
-                            redirect_table["levelScenePairs"][stage_detail["levelId"]][
-                                "hookedMapPreviewId"
-                            ]
-                            is not None
-                        ):
-                            map_override = redirect_table["levelScenePairs"][
-                                stage_detail["levelId"]
-                            ]["hookedMapPreviewId"]
-                    else:
-                        level_table = self.getgd(
-                            "levels/" + stage_detail["levelId"].lower() + ".json"
-                        )
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
-            else:
-                level_table = {}
-
-            normal_stage = build_normal_stage(
-                typed_stage,
+        normal_stage = build_normal_stage(
+            typed_stage,
+            typed_stage_table,
+            zone_table,
+            character_table,
+            building_data,
+            item_table,
+            level_table,
+            notCount_list,
+            rts.compile,
+            map_override=map_override,
+        )
+        enemies = (
+            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+        )
+        assault_stage = (
+            build_4star_stage(
+                typed_stage_table.stages[typed_stage.hard_staged_id],
                 typed_stage_table,
                 zone_table,
                 character_table,
                 building_data,
                 item_table,
                 level_table,
-                notCount_list,
                 rts.compile,
-                map_override=map_override,
             )
-            enemies = (
-                self._build_enemy_views(level_table)
-                if stage_detail["levelId"]
-                else None
+            if stage_detail["hardStagedId"]
+            else None
+        )
+        has_material_drop = any(
+            reward["dropType"] in [2, 3, 4]
+            for reward in stage_detail["stageDropInfo"]["displayDetailRewards"]
+        )
+        if stage_detail["levelId"]:
+            squads = build_squad_sections(
+                level_table, stage_page_name, character_table, skill_table
             )
-            assault_stage = (
-                build_4star_stage(
-                    typed_stage_table.stages[typed_stage.hard_staged_id],
-                    typed_stage_table,
-                    zone_table,
-                    character_table,
-                    building_data,
-                    item_table,
-                    level_table,
-                    rts.compile,
-                )
-                if stage_detail["hardStagedId"]
-                else None
+        else:
+            squads = []
+
+        stage_content = render_normal_page(
+            NormalPageView(
+                normal=normal_stage,
+                assault=assault_stage,
+                enemies=enemies,
+                squads=squads,
+                material_drop=has_material_drop,
             )
-            has_material_drop = any(
-                reward["dropType"] in [2, 3, 4]
-                for reward in stage_detail["stageDropInfo"]["displayDetailRewards"]
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
+
+        # old = ctx.wiki.read(stage_page_name)
+        # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
+        # if result:
+        #     stage_content = old.replace(result.group(1), stage_enemy_data)
+        # else:
+        #     continue
+
+        # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
+        # if not result2:
+        #     continue
+        # old = ctx.wiki.read(stage_page_name)
+        # result1 = re.search(r"\|额外物资=(.*?)\n", old)
+        # if result1 and result2:
+        #     stage_content = old.replace(result1.group(1), result2.group(1))
+        #     if stage_content != old:
+        #         logger.info(f'{stage_page_name} differenet. update.')
+        #         ctx.wiki.edit(
+        #             title=stage_page_name,
+        #             text=stage_content,
+        #             summary='update'
+        #         )
+        #     else:
+        #         logger.info(f'{stage_page_name} same.')
+        # else:
+        #     continue
+
+        if stage_detail["code"].strip() in duplicate_dict:
+            ctx.wiki.edit(
+                title=stage_detail["code"].strip(),
+                text=duplicate_dict[stage_detail["code"].strip()],
+                summary="消歧义",
             )
-            if stage_detail["levelId"]:
-                squads = build_squad_sections(
-                    level_table, stage_page_name, character_table, skill_table
-                )
+        else:
+            if stage_detail["difficulty"] == "SIX_STAR":
+                redirect_title = "险地" + stage_detail["code"].strip()
+            elif (
+                stage_detail["diffGroup"] == "TOUGH"
+                and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
+            ):
+                redirect_title = "磨难" + stage_detail["code"].strip()
             else:
-                squads = []
+                redirect_title = stage_detail["code"].strip()
+            ctx.wiki.edit(
+                title=redirect_title,
+                text=stage_redirect,
+                summary="init",
+                createonly="1",
+            )
+        ctx.wiki.edit(
+            title=stage_detail["stageId"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            createonly="1",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
 
-            stage_content = render_normal_page(
-                NormalPageView(
-                    normal=normal_stage,
-                    assault=assault_stage,
-                    enemies=enemies,
-                    squads=squads,
-                    material_drop=has_material_drop,
+        new_stage_list.append(f"* [[{stage_page_name}]]")
+
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            text="\n".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
+
+
+@job
+def run_campaign(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    stage_table = ctx.getgd("excel/stage_table.json")
+    typed_stage_table = StageTable.model_validate(stage_table)
+    campaign_table = ctx.getgd("excel/campaign_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    stage_list = ctx.wiki.category("分类:剿灭关卡")
+    new_stage_list = []
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for stage_id in stage_table["stages"]:
+        stage_detail = stage_table["stages"][stage_id]
+        if stage_detail["stageType"] != "CAMPAIGN":
+            continue
+        stage_page_name = (
+            stage_detail["code"].strip() + " " + stage_detail["name"].strip()
+        )
+        if stage_page_name in stage_list:
+            continue
+
+        if stage_detail["levelId"]:
+            try:
+                level_table = ctx.getgd(
+                    "levels/" + stage_detail["levelId"].lower() + ".json"
+                )
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
+                continue
+        else:
+            level_table = {}
+
+        campaign_stage = build_campaign_stage(
+            typed_stage_table.stages[stage_id],
+            typed_stage_table,
+            campaign_table,
+            character_table,
+            building_data,
+            item_table,
+            level_table,
+            notCount_list,
+            rts.compile,
+        )
+        enemies = (
+            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+        )
+        squads = build_squad_sections(
+            level_table,
+            stage_page_name,
+            character_table,
+            skill_table,
+            include_inserted=False,
+        )
+        progress_rows = []
+        for r in campaign_table["campaigns"][stage_detail["stageId"]]["breakLadders"]:
+            progress_rows.append(
+                CampaignProgressRowView(
+                    kill_count=r["killCnt"],
+                    items=[
+                        CampaignProgressItemView(
+                            name=parse_drop_item(
+                                reward["type"],
+                                reward["id"],
+                                character_table,
+                                building_data,
+                                item_table,
+                            ),
+                            count=reward["count"],
+                        )
+                        for reward in r["rewards"]
+                    ],
+                    break_fee_add=r["breakFeeAdd"],
                 )
             )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            # old = self.wiki.read(stage_page_name)
-            # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
-            # if result:
-            #     stage_content = old.replace(result.group(1), stage_enemy_data)
-            # else:
-            #     continue
+        stage_content = render_campaign_page(
+            CampaignPageView(
+                stage=campaign_stage,
+                enemies=enemies,
+                squads=squads,
+                progress=CampaignProgressView(rows=progress_rows),
+            )
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
-            # if not result2:
-            #     continue
-            # old = self.wiki.read(stage_page_name)
-            # result1 = re.search(r"\|额外物资=(.*?)\n", old)
-            # if result1 and result2:
-            #     stage_content = old.replace(result1.group(1), result2.group(1))
-            #     if stage_content != old:
-            #         logger.info(f'{stage_page_name} differenet. update.')
-            #         self.wiki.edit(
-            #             title=stage_page_name,
-            #             text=stage_content,
-            #             summary='update'
-            #         )
-            #     else:
-            #         logger.info(f'{stage_page_name} same.')
-            # else:
-            #     continue
+        ctx.wiki.edit(
+            title=stage_detail["name"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_detail["stageId"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
 
-            if stage_detail["code"].strip() in self.duplicate_dict:
-                self.wiki.edit(
-                    title=stage_detail["code"].strip(),
-                    text=self.duplicate_dict[stage_detail["code"].strip()],
-                    summary="消歧义",
+        new_stage_list.append(f"* [[{stage_page_name}]]")
+
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            text="\n".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
+
+
+@job
+def run_crisis(ctx: JobContext) -> None:
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    # 从 crisis_info 读
+    # https://weedy.prts.wiki/crisis_info.json
+    # with open('crisis_info.json', 'r', encoding='utf-8') as file:
+    #     stage_table = json.loads(file.read())['info']['mapStageDataMap']
+    # # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
+    # #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
+    # #     stage_detail['stageId'] = stage_key
+    # #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
+    # for stage_x in stage_table.values():
+    #     stage_detail = stage_x
+
+    # 从 weedy 读
+    session = requests.Session()
+    stage_list = session.get("https://weedy.prts.wiki/crisis_info.json").json()["info"][
+        "mapStageDataMap"
+    ]
+    for stage_detail in stage_list.values():
+        stage_page_name = (
+            stage_detail["code"].strip() + " " + stage_detail["name"].strip()
+        )
+
+        if stage_detail["levelId"]:
+            try:
+                level_table = ctx.getgd(
+                    "levels/" + stage_detail["levelId"].lower() + ".json"
                 )
-            else:
-                if stage_detail["difficulty"] == "SIX_STAR":
-                    redirect_title = "险地" + stage_detail["code"].strip()
-                elif (
-                    stage_detail["diffGroup"] == "TOUGH"
-                    and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
+                continue
+        else:
+            level_table = {}
+
+        crisis_stage = build_crisis_stage(
+            stage_detail, level_table, notCount_list, rts.compile
+        )
+        enemies = (
+            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+        )
+
+        stage_content = render_basic_page(
+            BasicPageView(stage=crisis_stage, enemies=enemies),
+            notoc=True,
+            extra_sections=["==合约详情==\n{{合约详情}}"],
+            categories=["[[分类:危机合约关卡]]"],
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
+
+        ctx.wiki.edit(
+            title=stage_detail["name"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            bot=None,
+            minor=True,
+            createonly="1",
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
+
+
+@job
+def run_rogue_like(ctx: JobContext) -> None:
+    # roguelike_table = ctx.getgd('excel/roguelike_table.json')
+    roguelike_table = ctx.getgd("excel/roguelike_topic_table.json")
+    roguelike_table = roguelike_table["details"]["rogue_6"]
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for stage_key in roguelike_table["stages"]:
+        stage_detail = roguelike_table["stages"][stage_key]
+        if stage_detail["difficulty"] == "FOUR_STAR":
+            continue
+        if stage_key == "ro4_b_9":
+            continue
+
+        stage_page_name = (
+            stage_detail["code"].strip() + " " + stage_detail["name"].strip()
+        )
+
+        if stage_detail["levelId"]:
+            try:
+                if (
+                    stage_detail["levelReplaceIds"]
+                    and len(stage_detail["levelReplaceIds"]) >= 1
                 ):
-                    redirect_title = "磨难" + stage_detail["code"].strip()
+                    level_table = ctx.getgd(
+                        "levels/" + stage_detail["levelReplaceIds"][0].lower() + ".json"
+                    )
                 else:
-                    redirect_title = stage_detail["code"].strip()
-                self.wiki.edit(
-                    title=redirect_title,
-                    text=stage_redirect,
-                    summary="init",
-                    createonly="1",
-                )
-            self.wiki.edit(
-                title=stage_detail["stageId"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                createonly="1",
-                bot=None,
-                minor=True,
-            )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_page_name}.")
-
-            new_stage_list.append(f"* [[{stage_page_name}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                text="\n".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
-
-    def run_campaign(self):
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        stage_table = self.getgd("excel/stage_table.json")
-        typed_stage_table = StageTable.model_validate(stage_table)
-        campaign_table = self.getgd("excel/campaign_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-
-        stage_list = self.wiki.category("分类:剿灭关卡")
-        new_stage_list = []
-        notCount_list = self._get_list_notCountInTotal()
-
-        for stage_id in stage_table["stages"]:
-            stage_detail = stage_table["stages"][stage_id]
-            if stage_detail["stageType"] != "CAMPAIGN":
-                continue
-            stage_page_name = (
-                stage_detail["code"].strip() + " " + stage_detail["name"].strip()
-            )
-            if stage_page_name in stage_list:
-                continue
-
-            if stage_detail["levelId"]:
-                try:
-                    level_table = self.getgd(
+                    level_table = ctx.getgd(
                         "levels/" + stage_detail["levelId"].lower() + ".json"
                     )
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
-            else:
-                level_table = {}
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
+                continue
+        else:
+            level_table = {}
 
-            campaign_stage = build_campaign_stage(
-                typed_stage_table.stages[stage_id],
-                typed_stage_table,
-                campaign_table,
-                character_table,
-                building_data,
-                item_table,
+        normal_stage = build_roguelike_stage(
+            stage_detail, level_table, notCount_list, rts.compile
+        )
+        linkedStage = [
+            k
+            for k in roguelike_table["stages"]
+            if roguelike_table["stages"][k]["linkedStageId"] == stage_key
+        ]
+        if len(linkedStage) >= 1:
+            assault_stage = build_roguelike_4star_stage(
+                roguelike_table["stages"][linkedStage[0]],
                 level_table,
-                notCount_list,
                 rts.compile,
             )
-            enemies = (
-                self._build_enemy_views(level_table)
-                if stage_detail["levelId"]
-                else None
+        else:
+            assault_stage = None
+        enemies = (
+            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+        )
+
+        stage_content = render_roguelike_page(
+            RoguelikePageView(
+                normal=normal_stage,
+                assault=assault_stage,
+                enemies=enemies,
             )
-            squads = build_squad_sections(
-                level_table,
-                stage_page_name,
-                character_table,
-                skill_table,
-                include_inserted=False,
-            )
-            progress_rows = []
-            for r in campaign_table["campaigns"][stage_detail["stageId"]][
-                "breakLadders"
-            ]:
-                progress_rows.append(
-                    CampaignProgressRowView(
-                        kill_count=r["killCnt"],
-                        items=[
-                            CampaignProgressItemView(
-                                name=parse_drop_item(
-                                    reward["type"],
-                                    reward["id"],
-                                    character_table,
-                                    building_data,
-                                    item_table,
-                                ),
-                                count=reward["count"],
-                            )
-                            for reward in r["rewards"]
-                        ],
-                        break_fee_add=r["breakFeeAdd"],
-                    )
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
+
+        ctx.wiki.edit(
+            title=stage_detail["name"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            bot=None,
+            minor=True,
+            createonly="1",
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
+
+
+@job
+def run_memory(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    handbook_info_table = ctx.getgd("excel/handbook_info_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    stage_list = ctx.wiki.category("分类:悖论模拟关卡")
+    new_stage_list = []
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for stage_detail in handbook_info_table["handbookStageData"].values():
+        stage_page_name = "悖论模拟 {}".format(stage_detail["name"].strip())
+        if stage_page_name in stage_list:
+            continue
+        if stage_detail["levelId"]:
+            try:
+                level_table = ctx.getgd(
+                    "levels/" + stage_detail["levelId"].lower() + ".json"
                 )
-
-            stage_content = render_campaign_page(
-                CampaignPageView(
-                    stage=campaign_stage,
-                    enemies=enemies,
-                    squads=squads,
-                    progress=CampaignProgressView(rows=progress_rows),
-                )
-            )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
-
-            self.wiki.edit(
-                title=stage_detail["name"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_detail["stageId"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                bot=None,
-                minor=True,
-            )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_page_name}.")
-
-            new_stage_list.append(f"* [[{stage_page_name}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                text="\n".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
-
-    def run_crisis(self):
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-        notCount_list = self._get_list_notCountInTotal()
-
-        # 从 crisis_info 读
-        # https://weedy.prts.wiki/crisis_info.json
-        # with open('crisis_info.json', 'r', encoding='utf-8') as file:
-        #     stage_table = json.loads(file.read())['info']['mapStageDataMap']
-        # # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
-        # #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
-        # #     stage_detail['stageId'] = stage_key
-        # #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
-        # for stage_x in stage_table.values():
-        #     stage_detail = stage_x
-
-        # 从 weedy 读
-        session = requests.Session()
-        stage_list = session.get("https://weedy.prts.wiki/crisis_info.json").json()[
-            "info"
-        ]["mapStageDataMap"]
-        for stage_detail in stage_list.values():
-            stage_page_name = (
-                stage_detail["code"].strip() + " " + stage_detail["name"].strip()
-            )
-
-            if stage_detail["levelId"]:
-                try:
-                    level_table = self.getgd(
-                        "levels/" + stage_detail["levelId"].lower() + ".json"
-                    )
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
-            else:
-                level_table = {}
-
-            crisis_stage = build_crisis_stage(
-                stage_detail, level_table, notCount_list, rts.compile
-            )
-            enemies = (
-                self._build_enemy_views(level_table)
-                if stage_detail["levelId"]
-                else None
-            )
-
-            stage_content = render_basic_page(
-                BasicPageView(stage=crisis_stage, enemies=enemies),
-                notoc=True,
-                extra_sections=["==合约详情==\n{{合约详情}}"],
-                categories=["[[分类:危机合约关卡]]"],
-            )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
-
-            self.wiki.edit(
-                title=stage_detail["name"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                bot=None,
-                minor=True,
-                createonly="1",
-            )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_page_name}.")
-
-    def run_rogue_like(self):
-        # roguelike_table = self.getgd('excel/roguelike_table.json')
-        roguelike_table = self.getgd("excel/roguelike_topic_table.json")
-        roguelike_table = roguelike_table["details"]["rogue_6"]
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-
-        notCount_list = self._get_list_notCountInTotal()
-
-        for stage_key in roguelike_table["stages"]:
-            stage_detail = roguelike_table["stages"][stage_key]
-            if stage_detail["difficulty"] == "FOUR_STAR":
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-            if stage_key == "ro4_b_9":
-                continue
+        else:
+            level_table = {}
 
-            stage_page_name = (
-                stage_detail["code"].strip() + " " + stage_detail["name"].strip()
-            )
+        memory_stage = build_memory_stage(
+            stage_detail,
+            level_table,
+            rts.compile,
+            character_table,
+            building_data,
+            item_table,
+            notCount_list,
+        )
+        enemies = (
+            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+        )
+        squads = build_squad_sections(
+            level_table,
+            stage_page_name,
+            character_table,
+            skill_table,
+            stage_char_id=stage_detail["charId"],
+        )
 
-            if stage_detail["levelId"]:
-                try:
-                    if (
-                        stage_detail["levelReplaceIds"]
-                        and len(stage_detail["levelReplaceIds"]) >= 1
-                    ):
-                        level_table = self.getgd(
-                            "levels/"
-                            + stage_detail["levelReplaceIds"][0].lower()
-                            + ".json"
-                        )
-                    else:
-                        level_table = self.getgd(
-                            "levels/" + stage_detail["levelId"].lower() + ".json"
-                        )
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
-            else:
-                level_table = {}
+        stage_content = render_basic_page(
+            BasicPageView(
+                stage=memory_stage,
+                enemies=enemies,
+                squads=squads,
+            ),
+            notoc=True,
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            normal_stage = build_roguelike_stage(
-                stage_detail, level_table, notCount_list, rts.compile
-            )
-            linkedStage = [
-                k
-                for k in roguelike_table["stages"]
-                if roguelike_table["stages"][k]["linkedStageId"] == stage_key
-            ]
-            if len(linkedStage) >= 1:
-                assault_stage = build_roguelike_4star_stage(
-                    roguelike_table["stages"][linkedStage[0]],
-                    level_table,
-                    rts.compile,
-                )
-            else:
-                assault_stage = None
-            enemies = (
-                self._build_enemy_views(level_table)
-                if stage_detail["levelId"]
-                else None
-            )
+        ctx.wiki.edit(
+            title=stage_detail["name"].strip(),
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            createonly="1",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
 
-            stage_content = render_roguelike_page(
-                RoguelikePageView(
-                    normal=normal_stage,
-                    assault=assault_stage,
-                    enemies=enemies,
-                )
-            )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
+        new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
-            self.wiki.edit(
-                title=stage_detail["name"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                bot=None,
-                minor=True,
-                createonly="1",
-            )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_page_name}.")
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            appendtext="".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
 
-    def run_memory(self):
-        building_data = self.getgd("excel/building_data.json")
-        item_table = self.getgd("excel/item_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        handbook_info_table = self.getgd("excel/handbook_info_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
-        stage_list = self.wiki.category("分类:悖论模拟关卡")
-        new_stage_list = []
-        notCount_list = self._get_list_notCountInTotal()
+@job
+def run_sandbox(ctx: JobContext) -> None:
+    # sandbox_table = ctx.getgd('excel/sandbox_table.json')
+    sandbox_table = ctx.getgd("excel/sandbox_perm_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        for stage_detail in handbook_info_table["handbookStageData"].values():
-            stage_page_name = "悖论模拟 {}".format(stage_detail["name"].strip())
+    stage_list = ctx.wiki.category("分类:生息演算关卡")
+    new_stage_list = []
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    # sandbox_stage_list = sandbox_table['sandboxActTables']
+    sandbox_stage_list = sandbox_table["detail"]["SANDBOX_V2"]
+
+    for act_key in sandbox_stage_list:
+        for stage_id, stage_data in sandbox_stage_list[act_key]["stageData"].items():
+            stage_data["name"] = stage_data["name"].strip()
+            stage_page_name = f"{stage_data['code']} {stage_data['name']}(沙洲遗闻)"
             if stage_page_name in stage_list:
                 continue
-            if stage_detail["levelId"]:
-                try:
-                    level_table = self.getgd(
-                        "levels/" + stage_detail["levelId"].lower() + ".json"
-                    )
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
-            else:
-                level_table = {}
-
-            memory_stage = build_memory_stage(
-                stage_detail,
-                level_table,
-                rts.compile,
-                character_table,
-                building_data,
-                item_table,
-                notCount_list,
-            )
-            enemies = (
-                self._build_enemy_views(level_table)
-                if stage_detail["levelId"]
-                else None
-            )
-            squads = build_squad_sections(
-                level_table,
-                stage_page_name,
-                character_table,
-                skill_table,
-                stage_char_id=stage_detail["charId"],
-            )
-
-            stage_content = render_basic_page(
-                BasicPageView(
-                    stage=memory_stage,
-                    enemies=enemies,
-                    squads=squads,
-                ),
-                notoc=True,
-            )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
-
-            self.wiki.edit(
-                title=stage_detail["name"].strip(),
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
-            )
-            self.wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                createonly="1",
-                bot=None,
-                minor=True,
-            )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_page_name}.")
-
-            new_stage_list.append(f"\n* [[{stage_page_name}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                appendtext="".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
-
-    def run_sandbox(self):
-        # sandbox_table = self.getgd('excel/sandbox_table.json')
-        sandbox_table = self.getgd("excel/sandbox_perm_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
-
-        stage_list = self.wiki.category("分类:生息演算关卡")
-        new_stage_list = []
-        notCount_list = self._get_list_notCountInTotal()
-
-        # sandbox_stage_list = sandbox_table['sandboxActTables']
-        sandbox_stage_list = sandbox_table["detail"]["SANDBOX_V2"]
-
-        for act_key in sandbox_stage_list:
-            for stage_id, stage_data in sandbox_stage_list[act_key][
-                "stageData"
-            ].items():
-                stage_data["name"] = stage_data["name"].strip()
-                stage_page_name = f"{stage_data['code']} {stage_data['name']}(沙洲遗闻)"
-                if stage_page_name in stage_list:
-                    continue
-                # if stage_data['name'] not in ['炎岩关']:
-                #     continue
-
-                if stage_data["levelId"]:
-                    try:
-                        level_table = self.getgd(
-                            "levels/" + stage_data["levelId"].lower() + ".json"
-                        )
-                    except Exception:
-                        logger.info(f"Cannot find level data of {stage_page_name}.")
-                        continue
-                else:
-                    level_table = {}
-
-                sandbox_stage = build_sandbox_v2_stage(
-                    stage_data, rts.compile, level_table, notCount_list
-                )
-                enemies = (
-                    self._build_enemy_views(level_table)
-                    if stage_data["levelId"]
-                    else None
-                )
-                if stage_data["levelId"]:
-                    squads = build_squad_sections(
-                        level_table, stage_page_name, character_table, skill_table
-                    )
-                else:
-                    squads = []
-                # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
-                stage_content = render_basic_page(
-                    BasicPageView(
-                        stage=sandbox_stage,
-                        enemies=enemies,
-                        squads=squads,
-                    ),
-                )
-
-                # old = self.wiki.read(stage_page_name)
-                # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
-                # if result:
-                #     stage_content = old.replace(result.group(1), stage_enemy_data)
-                # else:
-                #     continue
-
-                self.wiki.edit(
-                    title=stage_page_name + "/data",
-                    text=json.dumps(level_table, ensure_ascii=False),
-                    summary="init",
-                    createonly=True,
-                    contentmodel="json",
-                )
-                self.wiki.edit(
-                    title=stage_page_name,
-                    text=stage_content,
-                    summary="init",
-                    createonly=True,
-                    bot=None,
-                    minor=True,
-                )
-                # logger.info(stage_content)
-                logger.info(f"Created: {stage_page_name}.")
-
-                new_stage_list.append(f"\n* [[{stage_page_name}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                appendtext="".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
-
-    def run_mechanism(self):
-        story_review_meta_table = self.getgd("excel/story_review_meta_table.json")
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-
-        new_stage_list = []
-        notCount_list = self._get_list_notCountInTotal()
-
-        for stage_data in story_review_meta_table["trainingCampData"][
-            "stageData"
-        ].values():
-            stage_page_name = f"{stage_data['code']} {stage_data['name'].strip()}"
-            # if stage_page_name in stage_list:
+            # if stage_data['name'] not in ['炎岩关']:
             #     continue
 
             if stage_data["levelId"]:
                 try:
-                    level_table = self.getgd(
+                    level_table = ctx.getgd(
                         "levels/" + stage_data["levelId"].lower() + ".json"
                     )
                 except Exception:
@@ -2717,230 +2624,318 @@ class Stage(Job):
             else:
                 level_table = {}
 
-            mechanism_stage = BasicStageView(
-                code=stage_data["code"],
-                name=stage_data["name"].strip(),
-                stage_id=stage_data["stageId"],
-                stage_type="训练场",
-                difficulty="NORMAL",
-                unlock_condition="—",
-                recommended_level="—",
-                zone="-",
-                level=build_level_info(level_table, notCount_list),
-                description=stage_data["description"],
-                ap_cost=0,
-                practice_cost=-1,
+            sandbox_stage = build_sandbox_v2_stage(
+                stage_data, rts.compile, level_table, notCount_list
             )
-
-            enemies = self._build_enemy_views(level_table)
-            squads = build_squad_sections(
-                level_table, stage_page_name, character_table, skill_table
+            enemies = (
+                _build_enemy_views(ctx, level_table) if stage_data["levelId"] else None
             )
+            if stage_data["levelId"]:
+                squads = build_squad_sections(
+                    level_table, stage_page_name, character_table, skill_table
+                )
+            else:
+                squads = []
+            # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
             stage_content = render_basic_page(
                 BasicPageView(
-                    stage=mechanism_stage,
+                    stage=sandbox_stage,
                     enemies=enemies,
                     squads=squads,
                 ),
-                notoc=True,
             )
 
-            self.wiki.edit(
+            # old = ctx.wiki.read(stage_page_name)
+            # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
+            # if result:
+            #     stage_content = old.replace(result.group(1), stage_enemy_data)
+            # else:
+            #     continue
+
+            ctx.wiki.edit(
+                title=stage_page_name + "/data",
+                text=json.dumps(level_table, ensure_ascii=False),
+                summary="init",
+                createonly=True,
+                contentmodel="json",
+            )
+            ctx.wiki.edit(
                 title=stage_page_name,
                 text=stage_content,
                 summary="init",
+                createonly=True,
                 bot=None,
                 minor=True,
             )
             # logger.info(stage_content)
             logger.info(f"Created: {stage_page_name}.")
+
             new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                appendtext="".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info(''.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            appendtext="".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
 
-    def run_recalrune(self):
-        crisis_v2_table = self.getgd("excel/crisis_v2_table.json")
-        recalrune_table = crisis_v2_table["recalRuneData"]
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
 
-        stage_list = self.wiki.category("分类:全息作战矩阵关卡")
-        new_stage_list = []
-        notCount_list = self._get_list_notCountInTotal()
+@job
+def run_mechanism(ctx: JobContext) -> None:
+    story_review_meta_table = ctx.getgd("excel/story_review_meta_table.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
 
-        for season_info in recalrune_table["seasons"].values():
-            for stage_id, stage_data in season_info["stages"].items():
-                stage_data["levelName"] = stage_data["levelName"].strip()
-                stage_page_name = (
-                    f"全息{stage_data['levelCode']} "
-                    f"{stage_data['levelName'].replace('#', '＃')}"
+    new_stage_list = []
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for stage_data in story_review_meta_table["trainingCampData"]["stageData"].values():
+        stage_page_name = f"{stage_data['code']} {stage_data['name'].strip()}"
+        # if stage_page_name in stage_list:
+        #     continue
+
+        if stage_data["levelId"]:
+            try:
+                level_table = ctx.getgd(
+                    "levels/" + stage_data["levelId"].lower() + ".json"
                 )
-                if stage_page_name in stage_list:
-                    continue
-                # if stage_data['levelName'] not in ['#爱国者之死']:
-                #     continue
-
-                if stage_data["levelId"]:
-                    try:
-                        level_table = self.getgd(
-                            "levels/" + stage_data["levelId"].lower() + ".json"
-                        )
-                    except Exception:
-                        logger.info(f"Cannot find level data of {stage_page_name}.")
-                        continue
-                else:
-                    level_table = {}
-
-                recal_rune_stage = build_recal_rune_stage(
-                    stage_data, rts.compile, level_table, notCount_list
-                )
-                enemies = (
-                    self._build_enemy_views(level_table)
-                    if stage_data["levelId"]
-                    else None
-                )
-                if stage_data["levelId"]:
-                    squads = build_squad_sections(
-                        level_table, stage_page_name, character_table, skill_table
-                    )
-                else:
-                    squads = []
-                stage_content = render_recal_rune_page(
-                    RecalRunePageView(
-                        stage=recal_rune_stage,
-                        enemies=enemies,
-                        squads=squads,
-                        display_title=(
-                            f"全息{stage_data['levelCode']} {stage_data['levelName']}"
-                        ),
-                    )
-                )
-                stage_redirect = f"#redirect [[{stage_page_name}]]"
-
-                self.wiki.edit(
-                    title=f"全息{stage_data['levelCode']}",
-                    text=stage_redirect,
-                    summary="init",
-                    createonly="1",
-                )
-                self.wiki.edit(
-                    title=stage_page_name,
-                    text=stage_content,
-                    summary="init",
-                    createonly=True,
-                    bot=None,
-                    minor=True,
-                )
-                # logger.info(stage_content)
-                logger.info(f"Created: {stage_page_name}.")
-
-                new_stage_list.append(f"\n* [[{stage_page_name}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                appendtext="".join(new_stage_list),
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
-
-    def run_id(self, path):
-        # if self.gamedata._source() != 'Unpacker':
-        #     return
-
-        character_table = self.getgd("excel/character_table.json")
-        skill_table = self.getgd("excel/skill_table.json")
-        stage_table = self.getgd("excel/stage_table.json")
-        stage_id_list = []
-        for s in stage_table["stages"].values():
-            if s["levelId"] is not None:
-                stage_id_list.append("levels/" + s["levelId"].lower() + ".json")
-        notCount_list = self._get_list_notCountInTotal()
-
-        filelist = []
-        base_dir = "./thirdparty/ArknightsGameData/zh_CN/gameData/"
-
-        def get_files(curr_path):
-            if ".DS_Store" in curr_path:
-                return
-            if os.path.isfile(os.path.join(base_dir, curr_path)):
-                filelist.append(curr_path)
-            else:
-                for f in os.listdir(os.path.join(base_dir, curr_path)):
-                    get_files(os.path.join(curr_path, f))
-
-        get_files(path)
-
-        new_stage_list = []
-        for file in filelist:
-            stage_id = os.path.splitext(os.path.split(file)[1])[0]
-            if file.lower() in stage_id_list:
-                logger.info(stage_id, "already in stage_table. Pass.")
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-            level_table = self.getgd(file.lower())
+        else:
+            level_table = {}
 
-            unknown_stage = BasicStageView(
-                code="—",
-                name=stage_id,
-                stage_id=stage_id.replace("level_", ""),
-                stage_type="活动",
-                difficulty="NORMAL",
-                unlock_condition="—",
-                recommended_level="—",
-                zone="-",
-                level=build_level_info(level_table, notCount_list),
-                description="",
-                ap_cost=0,
-                practice_cost=-1,
-            )
+        mechanism_stage = BasicStageView(
+            code=stage_data["code"],
+            name=stage_data["name"].strip(),
+            stage_id=stage_data["stageId"],
+            stage_type="训练场",
+            difficulty="NORMAL",
+            unlock_condition="—",
+            recommended_level="—",
+            zone="-",
+            level=build_level_info(level_table, notCount_list),
+            description=stage_data["description"],
+            ap_cost=0,
+            practice_cost=-1,
+        )
 
-            enemies = self._build_enemy_views(level_table)
-            squads = build_squad_sections(
-                level_table, stage_id, character_table, skill_table
+        enemies = _build_enemy_views(ctx, level_table)
+        squads = build_squad_sections(
+            level_table, stage_page_name, character_table, skill_table
+        )
+        stage_content = render_basic_page(
+            BasicPageView(
+                stage=mechanism_stage,
+                enemies=enemies,
+                squads=squads,
+            ),
+            notoc=True,
+        )
+
+        ctx.wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_page_name}.")
+        new_stage_list.append(f"\n* [[{stage_page_name}]]")
+
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            appendtext="".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(''.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
+
+
+@job
+def run_recalrune(ctx: JobContext) -> None:
+    crisis_v2_table = ctx.getgd("excel/crisis_v2_table.json")
+    recalrune_table = crisis_v2_table["recalRuneData"]
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+
+    stage_list = ctx.wiki.category("分类:全息作战矩阵关卡")
+    new_stage_list = []
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    for season_info in recalrune_table["seasons"].values():
+        for stage_id, stage_data in season_info["stages"].items():
+            stage_data["levelName"] = stage_data["levelName"].strip()
+            stage_page_name = (
+                f"全息{stage_data['levelCode']} "
+                f"{stage_data['levelName'].replace('#', '＃')}"
             )
-            stage_content = render_basic_page(
-                BasicPageView(
-                    stage=unknown_stage,
+            if stage_page_name in stage_list:
+                continue
+            # if stage_data['levelName'] not in ['#爱国者之死']:
+            #     continue
+
+            if stage_data["levelId"]:
+                try:
+                    level_table = ctx.getgd(
+                        "levels/" + stage_data["levelId"].lower() + ".json"
+                    )
+                except Exception:
+                    logger.info(f"Cannot find level data of {stage_page_name}.")
+                    continue
+            else:
+                level_table = {}
+
+            recal_rune_stage = build_recal_rune_stage(
+                stage_data, rts.compile, level_table, notCount_list
+            )
+            enemies = (
+                _build_enemy_views(ctx, level_table) if stage_data["levelId"] else None
+            )
+            if stage_data["levelId"]:
+                squads = build_squad_sections(
+                    level_table, stage_page_name, character_table, skill_table
+                )
+            else:
+                squads = []
+            stage_content = render_recal_rune_page(
+                RecalRunePageView(
+                    stage=recal_rune_stage,
                     enemies=enemies,
                     squads=squads,
-                ),
-                notoc=True,
+                    display_title=(
+                        f"全息{stage_data['levelCode']} {stage_data['levelName']}"
+                    ),
+                )
             )
+            stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            self.wiki.edit(
-                title=stage_id, text=stage_content, summary="init", bot=None, minor=True
+            ctx.wiki.edit(
+                title=f"全息{stage_data['levelCode']}",
+                text=stage_redirect,
+                summary="init",
+                createonly="1",
             )
-            # logger.info(stage_content)
-            logger.info(f"Created: {stage_id}.")
-            new_stage_list.append(f"\n* [[{stage_id}]]")
-
-        if new_stage_list != []:
-            self.wiki.edit(
-                title="首页/新增关卡",
-                appendtext="".join(new_stage_list),
-                summary="update",
+            ctx.wiki.edit(
+                title=stage_page_name,
+                text=stage_content,
+                summary="init",
+                createonly=True,
                 bot=None,
                 minor=True,
             )
-            # logger.info('\n'.join(new_stage_list))
-            logger.info("Updated: {}.".format("首页/新增关卡"))
+            # logger.info(stage_content)
+            logger.info(f"Created: {stage_page_name}.")
 
-    def _build_enemy_views(self, level_table, flag_skip0=False):
-        enemy_table = self.getgd("excel/enemy_handbook_table.json")
-        enemy_database = self.getgd("levels/enemydata/enemy_database.json")
-        return build_enemies(
-            level_table, enemy_table["enemyData"], enemy_database, flag_skip0
+            new_stage_list.append(f"\n* [[{stage_page_name}]]")
+
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            appendtext="".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
         )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
+
+
+@job
+def run_id(ctx: JobContext, path) -> None:
+    # if ctx.gamedata._source() != 'Unpacker':
+    #     return
+
+    character_table = ctx.getgd("excel/character_table.json")
+    skill_table = ctx.getgd("excel/skill_table.json")
+    stage_table = ctx.getgd("excel/stage_table.json")
+    stage_id_list = []
+    for s in stage_table["stages"].values():
+        if s["levelId"] is not None:
+            stage_id_list.append("levels/" + s["levelId"].lower() + ".json")
+    notCount_list = _get_list_notCountInTotal(ctx)
+
+    filelist = []
+    base_dir = "./thirdparty/ArknightsGameData/zh_CN/gameData/"
+
+    def get_files(curr_path):
+        if ".DS_Store" in curr_path:
+            return
+        if os.path.isfile(os.path.join(base_dir, curr_path)):
+            filelist.append(curr_path)
+        else:
+            for f in os.listdir(os.path.join(base_dir, curr_path)):
+                get_files(os.path.join(curr_path, f))
+
+    get_files(path)
+
+    new_stage_list = []
+    for file in filelist:
+        stage_id = os.path.splitext(os.path.split(file)[1])[0]
+        if file.lower() in stage_id_list:
+            logger.info(stage_id, "already in stage_table. Pass.")
+            continue
+        level_table = ctx.getgd(file.lower())
+
+        unknown_stage = BasicStageView(
+            code="—",
+            name=stage_id,
+            stage_id=stage_id.replace("level_", ""),
+            stage_type="活动",
+            difficulty="NORMAL",
+            unlock_condition="—",
+            recommended_level="—",
+            zone="-",
+            level=build_level_info(level_table, notCount_list),
+            description="",
+            ap_cost=0,
+            practice_cost=-1,
+        )
+
+        enemies = _build_enemy_views(ctx, level_table)
+        squads = build_squad_sections(
+            level_table, stage_id, character_table, skill_table
+        )
+        stage_content = render_basic_page(
+            BasicPageView(
+                stage=unknown_stage,
+                enemies=enemies,
+                squads=squads,
+            ),
+            notoc=True,
+        )
+
+        ctx.wiki.edit(
+            title=stage_id, text=stage_content, summary="init", bot=None, minor=True
+        )
+        # logger.info(stage_content)
+        logger.info(f"Created: {stage_id}.")
+        new_stage_list.append(f"\n* [[{stage_id}]]")
+
+    if new_stage_list != []:
+        ctx.wiki.edit(
+            title="首页/新增关卡",
+            appendtext="".join(new_stage_list),
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info('\n'.join(new_stage_list))
+        logger.info("Updated: {}.".format("首页/新增关卡"))
+
+
+def _build_enemy_views(ctx: JobContext, level_table, flag_skip0=False):
+    enemy_table = ctx.getgd("excel/enemy_handbook_table.json")
+    enemy_database = ctx.getgd("levels/enemydata/enemy_database.json")
+    return build_enemies(
+        level_table, enemy_table["enemyData"], enemy_database, flag_skip0
+    )

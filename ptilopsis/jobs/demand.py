@@ -2,7 +2,7 @@ import csv
 import io
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 mat_dic = {}
 
@@ -168,38 +168,38 @@ def update_mat_demand(wiki, character_table, item_table):
         #     logger.info('Same: {}.'.format(item_table['items'][material]['name'].strip()))
 
 
-class Demand(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        item_table = self.getgd("excel/item_table.json")
-        char_patch_table = self.getgd("excel/char_patch_table.json")
-        id_csv, id_table = self.wiki.read("干员一览/干员id‎‎"), {}
-        reader = csv.DictReader(io.StringIO(id_csv))
-        for row in reader:
-            id_table[row["name"]] = {
-                "id": int(row["sortId"]),
-                "approach": row["approach"],
-                "date": row["date"],
-            }
-
-        def sort_id(k, l, i):
-            n = l[k]["name"]
-            return i[n]["id"] if n in i else 9999
-
-        for k in char_patch_table["patchChars"]:
-            character_table[k] = char_patch_table["patchChars"][k]
-        character_table["char_1001_amiya2"]["name"] = "阿米娅(近卫)"
-        character_table["char_1001_amiya2"]["phases"] = character_table[
-            "char_508_aguard"
-        ]["phases"]
-        character_table["char_1001_amiya2"]["allSkillLvlup"] = character_table[
-            "char_508_aguard"
-        ]["allSkillLvlup"]
-        character_table_new = {
-            k: character_table[k]
-            for k in sorted(
-                character_table, key=lambda x: sort_id(x, character_table, id_table)
-            )
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    char_patch_table = ctx.getgd("excel/char_patch_table.json")
+    id_csv, id_table = ctx.wiki.read("干员一览/干员id‎‎"), {}
+    reader = csv.DictReader(io.StringIO(id_csv))
+    for row in reader:
+        id_table[row["name"]] = {
+            "id": int(row["sortId"]),
+            "approach": row["approach"],
+            "date": row["date"],
         }
 
-        update_mat_demand(self.wiki, character_table_new, item_table)
+    def sort_id(k, l, i):
+        n = l[k]["name"]
+        return i[n]["id"] if n in i else 9999
+
+    for k in char_patch_table["patchChars"]:
+        character_table[k] = char_patch_table["patchChars"][k]
+    character_table["char_1001_amiya2"]["name"] = "阿米娅(近卫)"
+    character_table["char_1001_amiya2"]["phases"] = character_table["char_508_aguard"][
+        "phases"
+    ]
+    character_table["char_1001_amiya2"]["allSkillLvlup"] = character_table[
+        "char_508_aguard"
+    ]["allSkillLvlup"]
+    character_table_new = {
+        k: character_table[k]
+        for k in sorted(
+            character_table, key=lambda x: sort_id(x, character_table, id_table)
+        )
+    }
+
+    update_mat_demand(ctx.wiki, character_table_new, item_table)

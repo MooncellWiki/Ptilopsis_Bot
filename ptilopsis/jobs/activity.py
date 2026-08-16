@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:800px;"'
@@ -265,21 +265,19 @@ def update_activity(
     return activity_text
 
 
-class Activity(Job):
-    def _run(self):
-        activity_table = self.getgd("excel/activity_table.json")
-        item_table = self.getgd("excel/item_table.json")
-        building_data = self.getgd("excel/building_data.json")
-        character_table = self.getgd("excel/character_table.json")
-        skin_table = self.getgd("excel/skin_table.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    activity_table = ctx.getgd("excel/activity_table.json")
+    item_table = ctx.getgd("excel/item_table.json")
+    building_data = ctx.getgd("excel/building_data.json")
+    character_table = ctx.getgd("excel/character_table.json")
+    skin_table = ctx.getgd("excel/skin_table.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        content = update_activity(
-            activity_table, item_table, building_data, character_table, skin_table, rts
-        )
+    content = update_activity(
+        activity_table, item_table, building_data, character_table, skin_table, rts
+    )
 
-        self.wiki.edit(
-            title="用户:Seniorious/activities", text=content, summary="update"
-        )
-        # logger.info(content)
-        logger.info("Updated: {}.".format("用户:Seniorious/activities"))
+    ctx.wiki.edit(title="用户:Seniorious/activities", text=content, summary="update")
+    # logger.info(content)
+    logger.info("Updated: {}.".format("用户:Seniorious/activities"))

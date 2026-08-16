@@ -1,7 +1,7 @@
 import re
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 
 
 def norm_text(t):
@@ -242,79 +242,83 @@ def char_filter(char_tuple):
     return True
 
 
-class Charword(Job):
-    def _run(self):
-        character_table = self.getgd("excel/character_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        voice_lang_dict = charword_table["voiceLangDict"]
-        charword_table = charword_table["charWords"]
+@job
+def run(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    voice_lang_dict = charword_table["voiceLangDict"]
+    charword_table = charword_table["charWords"]
 
-        charword_page_list = self.wiki.category("分类:干员语音")
-        char_list = []
-        for char_id in character_table:
-            if (
-                character_table[char_id]["profession"] == "TRAP"
-                or character_table[char_id]["profession"] == "TOKEN"
-            ):
-                continue
-            if character_table[char_id]["name"] + "/语音记录" in charword_page_list:
-                continue
+    charword_page_list = ctx.wiki.category("分类:干员语音")
+    char_list = []
+    for char_id in character_table:
+        if (
+            character_table[char_id]["profession"] == "TRAP"
+            or character_table[char_id]["profession"] == "TOKEN"
+        ):
+            continue
+        if character_table[char_id]["name"] + "/语音记录" in charword_page_list:
+            continue
+        char_list.append((char_id, character_table[char_id]["name"]))
+
+    create_charword(ctx.wiki, char_list, charword_table, voice_lang_dict)
+
+
+@job
+def update(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    voice_lang_dict = charword_table["voiceLangDict"]
+    charword_table = charword_table["charWords"]
+
+    char_list = [
+        (k, v["name"]) for k, v in filter(char_filter, character_table.items())
+    ]
+    char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
+    update_charword(ctx.wiki, char_list, charword_table, voice_lang_dict)
+
+
+@job
+def update_jp(ctx: JobContext) -> None:
+    character_table = ctx.getgd("excel/character_table.json")
+    charword_table = ctx.getgd("excel/charword_table.json")
+    voice_lang_dict = charword_table["voiceLangDict"]
+    charword_table = charword_table["charWords"]
+
+    character_table_jp = ctx.getgd("excel/character_table.json", "JP")
+    charword_table_jp = ctx.getgd("excel/charword_table.json", "JP")
+
+    en_list = [
+        "char_457_blitz",
+        "char_456_ash",
+        "char_458_rfrost",
+        "char_459_tachak",
+    ]
+    charword_table_en = ctx.getgd("excel/charword_table.json", "US")
+
+    char_list, char_list_en = [], []
+    for char_id in character_table_jp:
+        if char_id not in character_table:
+            logger.info(f"Character {char_id} not find.")
+            continue
+        if (
+            character_table[char_id]["profession"] == "TRAP"
+            or character_table[char_id]["profession"] == "TOKEN"
+        ):
+            continue
+        if char_id in en_list:
+            char_list_en.append((char_id, character_table[char_id]["name"]))
+        else:
             char_list.append((char_id, character_table[char_id]["name"]))
-
-        create_charword(self.wiki, char_list, charword_table, voice_lang_dict)
-
-    def update(self):
-        character_table = self.getgd("excel/character_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        voice_lang_dict = charword_table["voiceLangDict"]
-        charword_table = charword_table["charWords"]
-
-        char_list = [
-            (k, v["name"]) for k, v in filter(char_filter, character_table.items())
-        ]
-        char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
-        update_charword(self.wiki, char_list, charword_table, voice_lang_dict)
-
-    def update_jp(self):
-        character_table = self.getgd("excel/character_table.json")
-        charword_table = self.getgd("excel/charword_table.json")
-        voice_lang_dict = charword_table["voiceLangDict"]
-        charword_table = charword_table["charWords"]
-
-        character_table_jp = self.getgd("excel/character_table.json", "JP")
-        charword_table_jp = self.getgd("excel/charword_table.json", "JP")
-
-        en_list = [
-            "char_457_blitz",
-            "char_456_ash",
-            "char_458_rfrost",
-            "char_459_tachak",
-        ]
-        charword_table_en = self.getgd("excel/charword_table.json", "US")
-
-        char_list, char_list_en = [], []
-        for char_id in character_table_jp:
-            if char_id not in character_table:
-                logger.info(f"Character {char_id} not find.")
-                continue
-            if (
-                character_table[char_id]["profession"] == "TRAP"
-                or character_table[char_id]["profession"] == "TOKEN"
-            ):
-                continue
-            if char_id in en_list:
-                char_list_en.append((char_id, character_table[char_id]["name"]))
-            else:
-                char_list.append((char_id, character_table[char_id]["name"]))
-        char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
-        update_charword_jp(
-            self.wiki, char_list, charword_table, voice_lang_dict, charword_table_jp
-        )
-        update_charword_jp(
-            self.wiki,
-            char_list_en,
-            charword_table,
-            voice_lang_dict,
-            charword_table_en,
-            mode="US",
-        )
+    char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
+    update_charword_jp(
+        ctx.wiki, char_list, charword_table, voice_lang_dict, charword_table_jp
+    )
+    update_charword_jp(
+        ctx.wiki,
+        char_list_en,
+        charword_table,
+        voice_lang_dict,
+        charword_table_en,
+        mode="US",
+    )

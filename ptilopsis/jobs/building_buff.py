@@ -1,5 +1,5 @@
 from ptilopsis.log import logger
-from ptilopsis.utils.job import Job
+from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
 # def special_buff(buff_name, description):
@@ -88,25 +88,25 @@ def get_building_buff(building_data, rts):
     return content
 
 
-class BuildingBuff(Job):
-    def _run(self):
-        building_data = self.getgd("excel/building_data.json")
-        rts = RichTextStyles(self.getgd("excel/gamedata_const.json"))
+@job
+def run(ctx: JobContext) -> None:
+    building_data = ctx.getgd("excel/building_data.json")
+    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
-        origin_text = self.wiki.read("后勤技能一览/store")
-        flag = origin_text.find("==控制中枢==")
-        head = origin_text[:flag].rstrip()
-        content = head + "\n" + get_building_buff(building_data, rts).rstrip()
+    origin_text = ctx.wiki.read("后勤技能一览/store")
+    flag = origin_text.find("==控制中枢==")
+    head = origin_text[:flag].rstrip()
+    content = head + "\n" + get_building_buff(building_data, rts).rstrip()
 
-        if content != origin_text:
-            self.wiki.edit(
-                title="后勤技能一览/store",
-                text=content,
-                summary="update",
-                bot=None,
-                minor=True,
-            )
-            # logger.info(content)
-            logger.info("Updated: {}.".format("后勤技能一览/store"))
-        else:
-            logger.info("Same: {}.".format("后勤技能一览/store"))
+    if content != origin_text:
+        ctx.wiki.edit(
+            title="后勤技能一览/store",
+            text=content,
+            summary="update",
+            bot=None,
+            minor=True,
+        )
+        # logger.info(content)
+        logger.info("Updated: {}.".format("后勤技能一览/store"))
+    else:
+        logger.info("Same: {}.".format("后勤技能一览/store"))
