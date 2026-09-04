@@ -105,7 +105,7 @@ def get_char_attr(character_table, uniequip_table, id_table, rts):
             remark = "<br/>".join(
                 [
                     rts.compile(talent["candidates"][-1]["description"])
-                    for talent in char_detail["talents"]
+                    for talent in char_detail["talents"] if talent["candidates"] is not None and talent["candidates"][-1]["description"] is not None
                 ]
             )
             desc += f'\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{remark}'

@@ -596,6 +596,8 @@ def get_talent_list(char_detail, rts):
     talent_list = "{{天赋列表\n"
     for talent_id in range(len(char_detail["talents"])):
         talent_table = char_detail["talents"][talent_id]["candidates"]
+        if talent_table is None:
+            continue
         talent_num = ""
         for talent_table_id in range(len(talent_table)):
             if (
