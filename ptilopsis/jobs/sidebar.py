@@ -1,9 +1,10 @@
-import csv
-import io
 import re
+from typing import Annotated
 
+from ptilopsis.jobs.params import CharIdTable, RawCharacterTable, category
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
 def update_menusidebar(wiki, old_num, id_table, character_table):
@@ -80,23 +81,16 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
 
 
 @job
-def update(ctx: JobContext) -> None:
-    # with open('character_id.json', 'r', encoding = 'utf-8') as file:
-    #     id_table = json.loads(file.read())
-    # id_table = json.loads(ctx.wiki.read('用户:Seniorious/CharacterId'))
-    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
-    reader = csv.DictReader(io.StringIO(id_csv))
-    for row in reader:
-        id_table[row["name"]] = {
-            "id": int(row["sortId"]),
-            "approach": row["approach"],
-            "date": row["date"],
-        }
-    character_table = ctx.getgd("excel/character_table.json")
-    old_num, char_list = -1, ctx.wiki.category("分类:干员")
+def update(
+    wiki: Wiki,
+    id_table: CharIdTable,
+    character_table: RawCharacterTable,
+    char_list: Annotated[list[str], category("分类:干员")],
+) -> None:
+    old_num = -1
     for char_key in character_table:
         name = character_table[char_key]["name"]
         if name in id_table and name in char_list and id_table[name]["id"] > old_num:
             old_num = id_table[name]["id"]
-    update_menusidebar(ctx.wiki, old_num, id_table, character_table)
-    update_gameinfo(ctx.wiki, old_num, id_table, character_table)
+    update_menusidebar(wiki, old_num, id_table, character_table)
+    update_gameinfo(wiki, old_num, id_table, character_table)

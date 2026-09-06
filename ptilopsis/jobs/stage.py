@@ -2850,7 +2850,7 @@ def run_recalrune(ctx: JobContext) -> None:
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
-@job
+# 手动调用的调试入口,带额外参数,不注册成 job
 def run_id(ctx: JobContext, path) -> None:
     # if ctx.gamedata._source() != 'Unpacker':
     #     return

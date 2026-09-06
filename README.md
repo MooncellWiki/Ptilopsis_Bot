@@ -39,12 +39,14 @@ ptilopsis/
 │   ├── term.py            # 术语
 │   ├── update_jp.py       # JP 服增量更新
 │   ├── weedy.py           # 高规格自动任务
+│   ├── params.py          # job 可注入的现成依赖（gamedata / RichText / CharIdTable …）
 │   └── ...
 └── utils/
     ├── data.py            # GameData，统一访问解包/仓库数据
     ├── unpacker.py        # 官方资源下载 + FlatBuffers 解析
     ├── wiki.py            # MediaWiki API 客户端（带 retry）
-    ├── job.py             # JobContext + @job 装饰器
+    ├── di.py              # 依赖注入：Depends / analyze / Resolver
+    ├── job.py             # @job 注册表、JobContext、按名字调度
     └── richTextStyles.py  # 游戏富文本 → Wiki 模板转换
 thirdparty/
 ├── OpenArknightsFBS/         # FlatBuffers schema (submodule)
@@ -198,6 +200,38 @@ diff -r out/before out/after
 ```bash
 uv run pre-commit install
 ```
+
+### 编写 job
+
+job 是用 `@job` 注册的普通函数，参数按注解注入（实现见 `ptilopsis/utils/di.py`，
+借鉴 torappu 的 task 写法）：
+
+```python
+from typing import Annotated, Any
+
+from ptilopsis.jobs.params import CharIdTable, RawItemTable, RichText, category, gamedata
+from ptilopsis.utils.job import SkipJob, job
+from ptilopsis.utils.wiki import Wiki
+
+
+@job
+def run(
+    wiki: Wiki,
+    item_table: RawItemTable,
+    stage_table: Annotated[dict[str, Any], gamedata("excel/stage_table.json")],
+    id_table: CharIdTable,
+    rts: RichText,
+    pages: Annotated[list[str], category("分类:道具")],
+) -> None:
+    ...
+```
+
+- `Wiki` / `GameData` / `Config` / `JobContext` 直接按类型注入，其余依赖用 `Depends`
+  标记；`params.py` 里放着各 job 共用的表、富文本转换器、干员序号表等。
+- 同一次运行里相同的依赖只解析一次；依赖或 job 抛 `SkipJob` 表示这次没事可做。
+- job 名默认是 `<模块>.<函数>`，`__main__.py` 的 `MODE_JOBS` 用它编排各模式的执行顺序。
+  签名有问题（参数注不进去）会在导入时就报错。
+- 旧写法 `def run(ctx: JobContext)` 仍然可用，逐个改写即可。
 
 ## 致谢
 
