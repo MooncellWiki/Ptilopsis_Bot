@@ -19,6 +19,7 @@
 ptilopsis/
 ├── __main__.py        # 入口，按命令行参数分派任务
 ├── config.py          # config.json 的 pydantic 模型 + 环境变量读取
+├── gamedata/          # 各表的 pydantic 模型（由 FBS 生成）+ 客户端展示规则
 ├── jobs/              # 各类 Wiki 更新任务
 │   ├── basic.py           # 干员基础信息
 │   ├── sidebar.py         # 侧边栏干员一览
@@ -167,6 +168,29 @@ ptil --dev regular
 ```bash
 uv run ruff check .
 uv run ruff format .
+```
+
+### 数据模型
+
+`ptilopsis/gamedata/` 下的整表模型由 `thirdparty/OpenArknightsFBS/FBS/*.fbs` 生成，
+FBS 更新后重新生成对应的表即可：
+
+```bash
+uv run python scripts/gen_gamedata_models.py character_table skill_table
+```
+
+FlatBuffers 里 string / table / vector 字段都可能缺失，生成的模型把它们一律声明成
+`T | None`，未判空的访问会被 pyright 指出；标量按 FBS 默认值填充，枚举字段保留成员名字符串。
+
+### 页面比对
+
+改动 `basic` / `char_attr` 的渲染逻辑后，用 `scripts/parity_basic.py` 把重构前后的页面落盘做 diff：
+
+```bash
+PYTHONHASHSEED=0 uv run python scripts/parity_basic.py out/before
+# 切换分支后
+PYTHONHASHSEED=0 uv run python scripts/parity_basic.py out/after
+diff -r out/before out/after
 ```
 
 仓库已配置 `pre-commit`，建议本地启用：
