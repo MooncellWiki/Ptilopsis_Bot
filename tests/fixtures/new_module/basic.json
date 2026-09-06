@@ -1,0 +1,98 @@
+{
+  "current_timestamp": 2000000000,
+  "module_table": {
+    "equipDict": {
+      "uniequip_active": {
+        "uniEquipName": "使命必达",
+        "typeName1": "神射手",
+        "typeName2": "神射手-X"
+      },
+      "uniequip_permanent": {
+        "uniEquipName": "无人机防护模块",
+        "typeName1": "驭械术师",
+        "typeName2": "驭械术师-Y"
+      },
+      "uniequip_initial": {
+        "uniEquipName": "基础模组",
+        "typeName1": "神射手",
+        "typeName2": "基础"
+      },
+      "uniequip_expired": {
+        "uniEquipName": "已过期模组",
+        "typeName1": "术师",
+        "typeName2": "术师-X"
+      },
+      "uniequip_end_now": {
+        "uniEquipName": "当前结束模组",
+        "typeName1": "近卫",
+        "typeName2": "近卫-X"
+      },
+      "uniequip_old": {
+        "uniEquipName": "旧模组",
+        "typeName1": "医疗",
+        "typeName2": "医疗-X"
+      }
+    },
+    "equipTrackDict": [
+      {
+        "timeStamp": 1997408000,
+        "trackList": [
+          {
+            "charId": "char_exusiai",
+            "equipId": "uniequip_active",
+            "type": "ADVANCED",
+            "archiveShowTimeEnd": 2000000001
+          },
+          {
+            "charId": "char_exusiai",
+            "equipId": "uniequip_initial",
+            "type": "INITIAL",
+            "archiveShowTimeEnd": 2000000001
+          }
+        ]
+      },
+      {
+        "timeStamp": 2000000000,
+        "trackList": [
+          {
+            "charId": "char_mayer",
+            "equipId": "uniequip_permanent",
+            "type": "ADVANCED",
+            "archiveShowTimeEnd": -1
+          },
+          {
+            "charId": "char_expired",
+            "equipId": "uniequip_expired",
+            "type": "ADVANCED",
+            "archiveShowTimeEnd": 1999999999
+          },
+          {
+            "charId": "char_end_now",
+            "equipId": "uniequip_end_now",
+            "type": "ADVANCED",
+            "archiveShowTimeEnd": 2000000000
+          }
+        ]
+      },
+      {
+        "timeStamp": 1997407999,
+        "trackList": [
+          {
+            "charId": "char_old",
+            "equipId": "uniequip_old",
+            "type": "ADVANCED",
+            "archiveShowTimeEnd": -1
+          }
+        ]
+      }
+    ]
+  },
+  "character_table": {
+    "char_exusiai": {"name": "能天使"},
+    "char_mayer": {"name": "梅尔"},
+    "char_expired": {"name": "过期干员"},
+    "char_end_now": {"name": "截止干员"},
+    "char_old": {"name": "旧干员"}
+  }
+}
+
