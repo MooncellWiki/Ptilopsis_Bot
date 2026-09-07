@@ -1,120 +1,117 @@
-import csv
-import io
+from typing import Any
 
+from ptilopsis.gamedata.character_table import CharacterData, CharacterTable
+from ptilopsis.gamedata.character_util import (
+    MAX_POTENTIAL_RANK,
+    is_talent_hidden_on_ui,
+    rarity_stars,
+    select_candidate,
+)
+from ptilopsis.gamedata.uniequip_table import UniEquipTable
+from ptilopsis.jobs.basic import (
+    favor_attributes,
+    load_id_table,
+    phase_attributes,
+    sub_profession_name,
+    trans_profession,
+)
 from ptilopsis.log import logger
 from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
-
-def trans_profession(profession):
-    return {
-        "TANK": "重装",
-        "PIONEER": "先锋",
-        "SUPPORT": "辅助",
-        "SNIPER": "狙击",
-        "MEDIC": "医疗",
-        "WARRIOR": "近卫",
-        "CASTER": "术师",
-        "SPECIAL": "特种",
-    }[profession]
+# 潜能加成的属性名 → 累加到哪个面板值
+POTENTIAL_ATTRIBUTES = {
+    "MAX_HP": "maxHp",
+    "ATK": "atk",
+    "DEF": "defence",
+    "MAGIC_RESISTANCE": "magicResistance",
+    "COST": "cost",
+    "ATTACK_SPEED": "attackSpeed",
+    "RESPAWN_TIME": "respawnTime",
+}
 
 
-def get_char_attr(character_table, uniequip_table, id_table, rts):
-    content = []
-    for char in character_table:
-        char_detail = character_table[char]
-        if char_detail["profession"] == "TRAP" or char_detail["profession"] == "TOKEN":
+def max_talent_remarks(char: CharacterData, rts: RichTextStyles) -> list[str]:
+    """满精英、满级、满潜能时客户端会展示的各天赋描述。"""
+
+    phases = char.phases or []
+    if not phases:
+        return []
+    remarks = []
+    for bundle in char.talents or []:
+        talent = select_candidate(
+            bundle.candidates,
+            level=phases[-1].max_level,
+            phase=len(phases) - 1,
+            potential=MAX_POTENTIAL_RANK,
+        )
+        if talent is None or is_talent_hidden_on_ui(talent):
             continue
+        remarks.append(rts.compile(talent.description))
+    return remarks
 
-        final_phase = char_detail["phases"][len(char_detail["phases"]) - 1]
 
-        maxHp = final_phase["attributesKeyFrames"][1]["data"]["maxHp"]
-        atk = final_phase["attributesKeyFrames"][1]["data"]["atk"]
-        defence = final_phase["attributesKeyFrames"][1]["data"]["def"]
-        magicResistance = final_phase["attributesKeyFrames"][1]["data"][
-            "magicResistance"
-        ]
-        cost = final_phase["attributesKeyFrames"][1]["data"]["cost"]
-        blockCnt = final_phase["attributesKeyFrames"][1]["data"]["blockCnt"]
-        attackSpeed = final_phase["attributesKeyFrames"][1]["data"]["attackSpeed"]
-        baseAttackTime = final_phase["attributesKeyFrames"][1]["data"]["baseAttackTime"]
-        respawnTime = final_phase["attributesKeyFrames"][1]["data"]["respawnTime"]
+def get_char_attr(
+    character_table: dict[str, CharacterData],
+    uniequip_table: UniEquipTable,
+    id_table: dict[str, Any],
+    rts: RichTextStyles,
+) -> str:
+    content = []
+    for char in character_table.values():
+        if char.profession in ("TRAP", "TOKEN"):
+            continue
+        phases = char.phases or []
+        if not phases:
+            continue
+        final = phase_attributes(phases[-1])[-1]
+        favor = favor_attributes(char)
 
-        atk += char_detail["favorKeyFrames"][1]["data"]["atk"]
-        defence += char_detail["favorKeyFrames"][1]["data"]["def"]
-        maxHp += char_detail["favorKeyFrames"][1]["data"]["maxHp"]
+        panel: dict[str, float] = {
+            "maxHp": final.max_hp + favor.max_hp,
+            "atk": final.atk + favor.atk,
+            "defence": final.def_ + favor.def_,
+            "magicResistance": final.magic_resistance,
+            "cost": final.cost,
+            "blockCnt": final.block_cnt,
+            "attackSpeed": final.attack_speed,
+            "respawnTime": final.respawn_time,
+        }
 
-        for potentialRank in char_detail["potentialRanks"]:
-            if potentialRank["type"] == "BUFF":
-                attributeType = potentialRank["buff"]["attributes"][
-                    "attributeModifiers"
-                ][0]["attributeType"]
-                if attributeType == "MAX_HP":
-                    maxHp += potentialRank["buff"]["attributes"]["attributeModifiers"][
-                        0
-                    ]["value"]
-                elif attributeType == "ATK":
-                    atk += potentialRank["buff"]["attributes"]["attributeModifiers"][0][
-                        "value"
-                    ]
-                elif attributeType == "DEF":
-                    defence += potentialRank["buff"]["attributes"][
-                        "attributeModifiers"
-                    ][0]["value"]
-                elif attributeType == "MAGIC_RESISTANCE":
-                    magicResistance += potentialRank["buff"]["attributes"][
-                        "attributeModifiers"
-                    ][0]["value"]
-                elif attributeType == "COST":
-                    cost += potentialRank["buff"]["attributes"]["attributeModifiers"][
-                        0
-                    ]["value"]
-                elif attributeType == "ATTACK_SPEED":
-                    attackSpeed += potentialRank["buff"]["attributes"][
-                        "attributeModifiers"
-                    ][0]["value"]
-                elif attributeType == "RESPAWN_TIME":
-                    respawnTime += potentialRank["buff"]["attributes"][
-                        "attributeModifiers"
-                    ][0]["value"]
-                else:
+        for potential_rank in char.potential_ranks or []:
+            if potential_rank.type != "BUFF":
+                continue
+            attributes = potential_rank.buff.attributes if potential_rank.buff else None
+            for modifier in (
+                attributes.attribute_modifiers if attributes else None
+            ) or []:
+                key = POTENTIAL_ATTRIBUTES.get(modifier.attribute_type)
+                if key is None:
                     logger.info(
                         "Error! Char {name} attributeType {num} don't know!".format(
-                            name=char_detail["name"], num=attributeType
+                            name=char.name, num=modifier.attribute_type
                         )
                     )
+                    continue
+                panel[key] += modifier.value
 
         desc = "|[[{name}]]||{rarity}||{profession}||{subProfession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s".format(
-            name=char_detail["name"],
-            rarity=char_detail["rarity"][-1],
-            profession=trans_profession(char_detail["profession"]),
-            subProfession=uniequip_table["subProfDict"][char_detail["subProfessionId"]][
-                "subProfessionName"
-            ].strip(),
-            maxHp=maxHp,
-            atk=atk,
-            defence=defence,
-            magicResistance=magicResistance,
-            cost=cost,
-            blockCnt=blockCnt,
-            attackSpeed=attackSpeed,
-            baseAttackTime=baseAttackTime,
-            respawnTime=respawnTime,
+            name=char.name,
+            rarity=rarity_stars(char.rarity),
+            profession=trans_profession(char.profession),
+            subProfession=sub_profession_name(
+                uniequip_table, char.sub_profession_id
+            ).strip(),
+            baseAttackTime=final.base_attack_time,
+            **panel,
         )
-        if char_detail["talents"]:
-            remark = "<br/>".join(
-                [
-                    rts.compile(talent["candidates"][-1]["description"])
-                    for talent in char_detail["talents"] if talent["candidates"] is not None and talent["candidates"][-1]["description"] is not None
-                ]
-            )
-            desc += f'\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{remark}'
+        remarks = max_talent_remarks(char, rts)
+        if remarks:
+            desc += f'\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{"<br/>".join(remarks)}'
 
         content.append(
             {
-                "sortId": id_table[char_detail["name"]]["id"]
-                if char_detail["name"] in id_table
-                else 1000,
+                "sortId": id_table[char.name]["id"] if char.name in id_table else 1000,
                 "text": desc,
             }
         )
@@ -137,23 +134,16 @@ def get_char_attr(character_table, uniequip_table, id_table, rts):
 
 @job
 def run(ctx: JobContext) -> None:
-    character_table = ctx.getgd("excel/character_table.json")
-    uniequip_table = ctx.getgd("excel/uniequip_table.json")
-    # with open('character_id.json', 'r', encoding = 'utf-8') as file:
-    #     id_table = json.loads(file.read())
-    # id_table = json.loads(ctx.wiki.read('用户:Seniorious/CharacterId'))
-    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
-    reader = csv.DictReader(io.StringIO(id_csv))
-    for row in reader:
-        id_table[row["name"]] = {
-            "id": int(row["sortId"]),
-            "approach": row["approach"],
-            "date": row["date"],
-        }
+    character_table = CharacterTable.validate_python(
+        ctx.getgd("excel/character_table.json")
+    )
+    uniequip_table = UniEquipTable.model_validate(
+        ctx.getgd("excel/uniequip_table.json")
+    )
+    id_table = load_id_table(ctx)
     rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
 
     content = get_char_attr(character_table, uniequip_table, id_table, rts)
 
     ctx.wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
-    # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/attribute"))
