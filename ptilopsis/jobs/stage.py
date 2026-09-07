@@ -2864,19 +2864,7 @@ def run_id(ctx: JobContext, path) -> None:
             stage_id_list.append("levels/" + s["levelId"].lower() + ".json")
     notCount_list = _get_list_notCountInTotal(ctx)
 
-    filelist = []
-    base_dir = "./thirdparty/ArknightsGameData/zh_CN/gameData/"
-
-    def get_files(curr_path):
-        if ".DS_Store" in curr_path:
-            return
-        if os.path.isfile(os.path.join(base_dir, curr_path)):
-            filelist.append(curr_path)
-        else:
-            for f in os.listdir(os.path.join(base_dir, curr_path)):
-                get_files(os.path.join(curr_path, f))
-
-    get_files(path)
+    filelist = ctx.gamedata.list_files(path)
 
     new_stage_list = []
     for file in filelist:

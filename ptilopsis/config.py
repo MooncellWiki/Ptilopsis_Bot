@@ -51,6 +51,8 @@ class Config(BaseModel):
 
     api_url: str
     """MediaWiki api.php 地址。"""
+    torappu_url: str
+    """torappu 资源仓库地址,国服 gamedata 从这里读取。"""
     version: str
     """记录各服版本号的 json 文件路径。"""
     server_list: dict[str, ServerConfig]

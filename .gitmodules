@@ -6,7 +6,3 @@
 	path = thirdparty/ArknightsGameData_YoStar
 	url = https://github.com/Kengxxiao/ArknightsGameData_YoStar.git
 	shallow = true
-[submodule "ArknightsGameData"]
-	path = thirdparty/ArknightsGameData
-	url = https://github.com/Kengxxiao/ArknightsGameData.git
-	shallow = true

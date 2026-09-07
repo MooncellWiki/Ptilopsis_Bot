@@ -6,7 +6,7 @@ import sentry_sdk
 from ptilopsis.config import config, get_settings
 from ptilopsis.jobs import discover_jobs
 from ptilopsis.log import logger
-from ptilopsis.utils.data import GameData
+from ptilopsis.utils.data import YOSTAR_DIR, GameData
 from ptilopsis.utils.job import JobContext, run_jobs
 from ptilopsis.utils.wiki import Wiki
 
@@ -80,7 +80,8 @@ def jobs_for(modes: tuple[str, ...]) -> list[str]:
 @click.option(
     "--remote",
     is_flag=True,
-    help="使用 ArknightsGameData 仓库作为数据源，结束后自动提交推送",
+    help="CI 模式：版本记录用 version_remote.json，拉取海外服数据子模块，"
+    "结束后自动提交推送",
 )
 @click.option(
     "--force",
@@ -110,14 +111,14 @@ def main(
         settings.require_wiki_credentials()
 
     if remote:
-        os.system("git submodule update --init --remote --recursive")
+        # 国服数据在线读 torappu，只有海外服还依赖子模块
+        os.system(f"git submodule update --init --remote -- {YOSTAR_DIR}")
         game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
         game_config = config
-    gameData = GameData(config=game_config, source="thirdparty/ArknightsGameData")
+    gameData = GameData(config=game_config)
 
     if check_mode == "cn":
-        os.system("git submodule update --remote")
         if not gameData.unpacker.check_update() and not force:
             gameData.unpacker.commit_version()
             logger.info("No version update. Program exit.")

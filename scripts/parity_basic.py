@@ -6,13 +6,14 @@
     diff -r out/before out/after
 
 不访问 wiki:干员序号表为空,召唤物页面由内存里的假 Wiki 收集。
+数据按 version_local.json 里的国服版本从 torappu 读取(有本地缓存)。
 """
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
 
+from ptilopsis.config import config
 from ptilopsis.gamedata.battle_equip_table import BattleEquipTable
 from ptilopsis.gamedata.character_table import CharacterTable
 from ptilopsis.gamedata.gamedata_const import GameDataConsts
@@ -20,9 +21,10 @@ from ptilopsis.gamedata.handbook_team_table import HandbookTeamTable
 from ptilopsis.gamedata.skill_table import SkillTable
 from ptilopsis.gamedata.uniequip_table import UniEquipTable
 from ptilopsis.jobs import basic, char_attr
+from ptilopsis.utils.data import GameData
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
-GAMEDATA = Path("thirdparty/ArknightsGameData/zh_CN/gamedata/excel")
+GAMEDATA = GameData(config)
 
 
 class RecordingWiki:
@@ -40,7 +42,7 @@ class RecordingWiki:
 
 
 def load(name: str) -> Any:
-    return json.loads((GAMEDATA / f"{name}.json").read_text(encoding="utf-8"))
+    return GAMEDATA.get(f"excel/{name}.json", "CN")
 
 
 def main(out_dir: Path) -> None:

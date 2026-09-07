@@ -1,5 +1,6 @@
 {
   "apiUrl": "https://prts.wiki/api.php",
+  "torappuUrl": "https://torappu.prts.wiki",
   "version": "version_local.json",
   "serverList": {
     "CN": {
