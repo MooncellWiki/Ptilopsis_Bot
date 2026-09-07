@@ -1,14 +1,11 @@
+from ptilopsis.jobs.params import RawGamedataConst, RichText
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
-from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(ctx: JobContext) -> None:
-    character_table = ctx.getgd("excel/character_table.json")
-    gamedata_const = ctx.getgd("excel/gamedata_const.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def run(wiki: Wiki, gamedata_const: RawGamedataConst, rts: RichText) -> None:
     term_list = []
     for t in gamedata_const["termDescriptionDict"].values():
         desc = rts.compile(t["description"]).replace("\n", "<br>")
@@ -16,12 +13,11 @@ def run(ctx: JobContext) -> None:
 
     content = "\n\n".join(term_list)
 
-    ctx.wiki.edit(
+    wiki.edit(
         title="用户:Seniorious/term",
         text=content,
         summary="update",
         bot=None,
         minor=True,
     )
-    # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/term"))

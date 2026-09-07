@@ -1,6 +1,7 @@
+from ptilopsis.jobs.params import RawBuildingData, RichText
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
-from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 # def special_buff(buff_name, description):
 #     if buff_name == '坚毅随和':
@@ -89,17 +90,14 @@ def get_building_buff(building_data, rts):
 
 
 @job
-def run(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
-    origin_text = ctx.wiki.read("后勤技能一览/store")
+def run(wiki: Wiki, building_data: RawBuildingData, rts: RichText) -> None:
+    origin_text = wiki.read("后勤技能一览/store")
     flag = origin_text.find("==控制中枢==")
     head = origin_text[:flag].rstrip()
     content = head + "\n" + get_building_buff(building_data, rts).rstrip()
 
     if content != origin_text:
-        ctx.wiki.edit(
+        wiki.edit(
             title="后勤技能一览/store",
             text=content,
             summary="update",

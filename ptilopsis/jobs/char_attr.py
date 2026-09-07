@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 from ptilopsis.gamedata.character_table import CharacterData, CharacterTable
 from ptilopsis.gamedata.character_util import (
@@ -10,14 +10,15 @@ from ptilopsis.gamedata.character_util import (
 from ptilopsis.gamedata.uniequip_table import UniEquipTable
 from ptilopsis.jobs.basic import (
     favor_attributes,
-    load_id_table,
     phase_attributes,
     sub_profession_name,
     trans_profession,
 )
+from ptilopsis.jobs.params import CharIdTable, RichText, gamedata
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
 from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.wiki import Wiki
 
 # 潜能加成的属性名 → 累加到哪个面板值
 POTENTIAL_ATTRIBUTES = {
@@ -133,17 +134,19 @@ def get_char_attr(
 
 
 @job
-def run(ctx: JobContext) -> None:
-    character_table = CharacterTable.validate_python(
-        ctx.getgd("excel/character_table.json")
-    )
-    uniequip_table = UniEquipTable.model_validate(
-        ctx.getgd("excel/uniequip_table.json")
-    )
-    id_table = load_id_table(ctx)
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def run(
+    wiki: Wiki,
+    character_table: Annotated[
+        dict[str, CharacterData],
+        gamedata("excel/character_table.json", CharacterTable),
+    ],
+    uniequip_table: Annotated[
+        UniEquipTable, gamedata("excel/uniequip_table.json", UniEquipTable)
+    ],
+    id_table: CharIdTable,
+    rts: RichText,
+) -> None:
     content = get_char_attr(character_table, uniequip_table, id_table, rts)
 
-    ctx.wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
+    wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
     logger.info("Updated: {}.".format("用户:Seniorious/attribute"))

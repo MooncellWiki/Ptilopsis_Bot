@@ -4,32 +4,57 @@ import click
 import sentry_sdk
 
 from ptilopsis.config import config, get_settings
-from ptilopsis.jobs import (
-    activity,
-    basic,
-    building_buff,
-    char_attr,
-    charword,
-    enemy,
-    furni,
-    item,
-    medal,
-    mission,
-    newModule,
-    sidebar,
-    skin,
-    stage,
-    story_review,
-    term,
-    update_jp,
-    weedy,
-)
+from ptilopsis.jobs import discover_jobs
 from ptilopsis.log import logger
 from ptilopsis.utils.data import GameData
-from ptilopsis.utils.job import JobContext
+from ptilopsis.utils.job import JobContext, run_jobs
 from ptilopsis.utils.wiki import Wiki
 
-MODES = ["new", "regular", "special", "demand", "jp", "weedy"]
+MODE_JOBS: dict[str, list[str]] = {
+    # 先 sidebar，避免影响 old_num
+    "new": ["sidebar.update", "basic.run", "charword.run"],
+    "regular": [
+        "building_buff.run",
+        "stage.run",
+        "enemy.run",
+        "enemy.update_data",
+        "skin.run",
+        "furni.run",
+        "item.run",
+        "newModule.run",
+        "activity.run",
+        "mission.run",
+        "char_attr.run",
+        "medal.run",
+        "story_review.run",
+        "term.run",
+    ],
+    "special": [
+        # "furni.update",
+        "basic.update",  # 干员详情
+        "basic.update_handbook",  # 干员密录
+        "stage.run_memory",  # 悖论模拟
+        "stage.run_campaign",  # 剿灭
+        # "stage.run_crisis",  # 需 crisis_info
+        # "stage.run_rogue_like",
+        # "stage.run_recalrune",
+        "charword.update",
+        # "route.run", "formula.run", "range.run",
+    ],
+    # "demand.run" 尚未启用
+    "demand": [],
+    "jp": ["charword.update", "update_jp.run"],
+    "weedy": ["weedy.run"],
+}
+"""各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并。"""
+
+MODES = list(MODE_JOBS)
+
+
+def jobs_for(modes: tuple[str, ...]) -> list[str]:
+    return [
+        name for mode, names in MODE_JOBS.items() if mode in modes for name in names
+    ]
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -125,60 +150,11 @@ def main(
     # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
     # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
     gameData.unpacker.commit_version()
-    ctx = JobContext(wiki, gameData)
-    flag_new_char = False
-    if "new" in modes:
-        sidebar.update(ctx)  # 先sidebar，避免影响old_num
-        flag_new_char = bool(basic.run(ctx))
-        charword.run(ctx)
 
-    if "regular" in modes:
-        building_buff.run(ctx)
-        stage.run(ctx)
-        enemy.run(ctx)
-        enemy.update_data(ctx)
-        skin.run(ctx)
-        furni.run(ctx)
-        item.run(ctx)
-        newModule.run(ctx)
-
-        activity.run(ctx)
-        mission.run(ctx)
-        char_attr.run(ctx)
-        medal.run(ctx)
-        story_review.run(ctx)
-        term.run(ctx)
-
-    if "special" in modes:
-        # furni.update(ctx)
-        basic.update(ctx)  # 干员详情
-        basic.update_handbook(ctx)  # 干员密录
-        stage.run_memory(ctx)  # 悖论模拟
-        stage.run_campaign(ctx)  # 剿灭
-        # stage.run_crisis(ctx)  # 需crisis_info
-        # stage.run_id(ctx, "levels/activities/act2autochess")
-        # stage.run_rogue_like(ctx)
-        # stage.run_recalrune(ctx)
-        charword.update(ctx)
-
-        # from ptilopsis.jobs import route
-        # route.run(ctx)
-        # from ptilopsis.jobs import formula
-        # formula.run(ctx)
-        # from ptilopsis.jobs import range
-        # range.run(ctx)
-
-    if "demand" in modes or flag_new_char:
-        pass
-        # from ptilopsis.jobs import demand
-        # demand.run(ctx)
-
-    if "jp" in modes:
-        charword.update(ctx)
-        update_jp.run(ctx)
-
-    if "weedy" in modes:
-        weedy.run(ctx)
+    discover_jobs()
+    failed = run_jobs(jobs_for(modes), JobContext(wiki, gameData))
+    if failed:
+        logger.error(f"{len(failed)} job(s) failed: {', '.join(failed)}")
 
     _push_remote(remote)
 

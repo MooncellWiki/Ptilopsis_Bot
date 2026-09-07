@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Annotated, Any
 
 from pydantic import BaseModel
 
@@ -8,9 +9,16 @@ from ptilopsis.gamedata.medal import (
     MedalPerData,
     MedalRarity,
 )
+from ptilopsis.jobs.params import (
+    RawBuildingData,
+    RawCharacterTable,
+    RawItemTable,
+    RichText,
+    gamedata,
+)
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
-from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 from ptilopsis.wikitext import WikiTemplate, inline_template
 
 # 渲染视图,字段与页面上的 wiki 模板参数一一对应
@@ -235,18 +243,19 @@ def update_medal(
 
 
 @job
-def run(ctx: JobContext) -> None:
-    medal_table = ctx.getgd("excel/medal_table.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    building_data = ctx.getgd("excel/building_data.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def run(
+    wiki: Wiki,
+    medal_table: Annotated[dict[str, Any], gamedata("excel/medal_table.json")],
+    item_table: RawItemTable,
+    building_data: RawBuildingData,
+    character_table: RawCharacterTable,
+    rts: RichText,
+) -> None:
     content = update_medal(
         medal_table, character_table, building_data, item_table, rts.compile
     )
 
-    ctx.wiki.edit(
+    wiki.edit(
         title="用户:Seniorious/medal",
         text=content,
         summary="update",

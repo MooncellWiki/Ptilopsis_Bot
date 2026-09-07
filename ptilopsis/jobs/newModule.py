@@ -1,14 +1,15 @@
 import time
 
+from ptilopsis.jobs.params import RawCharacterTable, RawUniEquipTable
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(ctx: JobContext) -> None:
-    module_table = ctx.getgd("excel/uniequip_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-
+def run(
+    wiki: Wiki, module_table: RawUniEquipTable, character_table: RawCharacterTable
+) -> None:
     cur_ts = int(time.time())
     latest_modules_tracks = []
     for track in module_table["equipTrackDict"]:
@@ -30,7 +31,7 @@ def run(ctx: JobContext) -> None:
 
     content = ",".join(module_list)
 
-    ctx.wiki.edit(
+    wiki.edit(
         title="首页/亮点干员/新增模组/数据",
         text=content,
         summary="update",
