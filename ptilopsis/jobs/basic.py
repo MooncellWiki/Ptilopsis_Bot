@@ -3,6 +3,7 @@ import io
 import re
 
 from ptilopsis.log import logger
+from ptilopsis.utils.blackboard import blackboard_values, format_paramed_text
 from ptilopsis.utils.job import JobContext, job
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -29,32 +30,17 @@ def get_basic_info(
     # 特性
     if char_detail["trait"] is not None:
         trait_list = ["", "", ""]
-        for trait_desc in char_detail["trait"]["candidates"]:
+        for trait_desc in char_detail["trait"]["candidates"] or []:
             if trait_desc["overrideDescripton"] is not None:
-                desc_dic = {}
-                for i in trait_desc["blackboard"]:
-                    if i["value"] != int(i["value"]):
-                        desc_dic[
-                            i["key"].replace(".", "").replace("]", "").replace("[", "")
-                        ] = i["value"]
-                    else:
-                        desc_dic[
-                            i["key"].replace(".", "").replace("]", "").replace("[", "")
-                        ] = int(i["value"])
+                override_desc = format_paramed_text(
+                    trait_desc["overrideDescripton"],
+                    blackboard_values(trait_desc["blackboard"]),
+                )
                 override_desc = (
-                    trait_desc["overrideDescripton"]
-                    .replace("-{-", "{")
-                    .replace("{-", "{")
+                    rts.compile(override_desc)
                     .replace("\\n", "<br/>")
+                    .replace("\n", "<br/>")
                 )
-                override_desc = replace_key(replace_upper(override_desc))
-                override_desc = (
-                    override_desc.replace(":0%}", ":.0%}")
-                    .replace(":0.0%}", ":0.1%}")
-                    .replace(":0.0}", "}")
-                )
-                override_desc = override_desc.format(**desc_dic)
-                override_desc = rts.compile(override_desc)
                 trait_list[trans_phase(trait_desc["unlockCondition"]["phase"])] = (
                     override_desc
                 )
@@ -669,6 +655,10 @@ def get_skill_text(skill_table, skill_id, rts):
         logger.info(f"skillId {skill_id} not found")
         return ""
     skill_data = skill_table[skill_id]
+    if all(level["description"] is None for level in skill_data["levels"]):
+        # 召唤物/装置的内部技能没有描述,客户端也不展示
+        logger.info(f"skillId {skill_id} has no description, skipped")
+        return ""
     skill_text = "{{{{技能\n|技能名={skill_name}\n|技能类型1={type1}{type2}".format(
         skill_name=skill_data["levels"][0]["name"],
         type1=trans_sp_type(skill_data["levels"][0]["spData"]["spType"]),
@@ -685,34 +675,16 @@ def get_skill_text(skill_table, skill_id, rts):
                 )
                 break
     for idx, level_data in enumerate(skill_data["levels"]):
-        skill_dic = {}
-        for i in level_data["blackboard"]:
-            k = i["key"].replace(".", "").replace("]", "").replace("[", "")
-            if i["value"] != int(i["value"]):
-                skill_dic[k] = i["value"]
-            else:
-                skill_dic[k] = int(i["value"])
-        skill_description = (
-            level_data["description"]
-            .replace("-{-", "{")
-            .replace("{-", "{")
-            .replace("\\n", "<br/>")
-        )
-        skill_description = replace_key(replace_upper(skill_description))
-        skill_description = (
-            skill_description.replace(":0%}", ":.0%}")
-            .replace(":0.0%}", ":0.1%}")
-            .replace(":0.0}", "}")
-        )
-        # 处理暴雨1技能缺失的duration
+        blackboard = blackboard_values(level_data["blackboard"])
+        # 暴雨一技能的描述引用了黑板里没有的 duration,客户端会把 {duration} 原样留下
         if skill_data["skillId"] == "skchr_zebra_1":
-            skill_dic["duration"] = int(level_data["duration"])
-        if skill_data["skillId"] == "skchr_accast_3":
-            skill_description = skill_description.replace(
-                "atk_scale_AOE", "atk_scale_aoe"
-            )
-        skill_description = skill_description.format(**skill_dic)
-        skill_description = rts.compile(skill_description)
+            blackboard.setdefault("duration", level_data["duration"])
+        skill_description = format_paramed_text(level_data["description"], blackboard)
+        skill_description = (
+            rts.compile(skill_description)
+            .replace("\\n", "<br/>")
+            .replace("\n", "<br/>")
+        )
 
         if level_data["duration"] == 0 or level_data["duration"] == -1:
             skill_duration = ""
@@ -1161,33 +1133,19 @@ def get_battle_equip(
                                 trait_text = e["overrideTraitDataBundle"]["candidates"][
                                     0
                                 ]["overrideDescripton"]
-                            trait_dic = {}
-                            for eb in e["overrideTraitDataBundle"]["candidates"][0][
-                                "blackboard"
-                            ]:
-                                k = (
-                                    eb["key"]
-                                    .replace(".", "")
-                                    .replace("]", "")
-                                    .replace("[", "")
-                                )
-                                if eb["value"] != int(eb["value"]):
-                                    trait_dic[k] = eb["value"]
-                                else:
-                                    trait_dic[k] = int(eb["value"])
+                            trait_text = format_paramed_text(
+                                trait_text,
+                                blackboard_values(
+                                    e["overrideTraitDataBundle"]["candidates"][0][
+                                        "blackboard"
+                                    ]
+                                ),
+                            )
                             trait_text = (
-                                trait_text.replace("-{-", "{")
-                                .replace("{-", "{")
+                                rts.compile(trait_text)
                                 .replace("\\n", "<br/>")
+                                .replace("\n", "<br/>")
                             )
-                            trait_text = replace_key(replace_upper(trait_text))
-                            trait_text = (
-                                trait_text.replace(":0%}", ":.0%}")
-                                .replace(":0.0%}", ":0.1%}")
-                                .replace(":0.0}", "}")
-                            )
-                            trait_text = trait_text.format(**trait_dic)
-                            trait_text = rts.compile(trait_text)
                             if trait_text != "":
                                 trait += "\n|特性{idx}={text}".format(
                                     idx="" if e_lv == 0 else str(e_lv + 1),
@@ -1596,39 +1554,6 @@ def trans_rarity(rarity):
         "TIER_5": 4,
         "TIER_6": 5,
     }.get(rarity, rarity)
-
-
-def replace_upper(text):
-    p1 = r"(.*)({[A-Z][_A-Z]+)(.*)"
-    pattern = re.compile(p1)
-    result = re.search(pattern, text)
-    if result:
-        text = result.group(1) + result.group(2).lower() + result.group(3)
-        text = replace_upper(text)
-    return text
-
-
-def replace_key(text):
-    p1 = r"(.*)\{([^\:\}]*)(.*)"
-    pattern = re.compile(p1)
-    result = re.search(pattern, text)
-    if result:
-        text = (
-            replace_key(result.group(1))
-            + "{"
-            + result.group(2).replace(".", "").replace("]", "").replace("[", "")
-            + replace_key(result.group(3))
-        )
-    return text
-
-
-# def replace_normal_number(text):
-#     p1 = r"(.*)\{([^\:\}]*)\}(.*)"
-#     pattern = re.compile(p1)
-#     result = re.search(pattern, text)
-#     if result:
-#         text = replace_key(result.group(1)) + '{' + result.group(2) + ':.0f}' + replace_key(result.group(3))
-#     return text
 
 
 # def replace_story_condition(text, num):

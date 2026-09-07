@@ -4,65 +4,8 @@ import re
 
 from ptilopsis.log import logger
 from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.richtext import HtmlRenderer
 from ptilopsis.utils.richTextStyles import RichTextStyles
-
-
-class RtsHtml:
-    richTextStyles_t = {}
-    termDescriptionDict_t = {}
-    richTextStyles = {}
-    termDescriptionDict = {}
-
-    def __init__(self, gamedata_const):
-        self.richTextStyles_t = gamedata_const["richTextStyles"]
-        self.termDescriptionDict_t = gamedata_const["termDescriptionDict"]
-        for s in self.richTextStyles_t:
-            temp = self.richTextStyles_t[s]
-            if temp.find("</color>") != -1:
-                self.richTextStyles[s] = (
-                    temp.replace("<color=", '<span style="color:')
-                    .replace("</color>", "</span>")
-                    .replace(">{", ';">{')
-                )
-            else:
-                self.richTextStyles[s] = "{0}"
-        for k in self.termDescriptionDict_t:
-            temp2 = self.termDescriptionDict_t[k]
-            result = ""
-            result += '<span class="mc-tooltips">'
-            result += "<span>{term}</span>"
-            result += "<span>{description}</span>".format(
-                description=remove_term(temp2["description"])
-            )
-            result += "</span>"
-            self.termDescriptionDict[k] = result
-
-    def tran1(self, matched):
-        code = matched.group(1)
-        if code.lower() in self.richTextStyles:
-            return self.richTextStyles[code.lower()].format(matched.group(2))
-        else:
-            return matched.group(2)
-
-    def tran2(self, matched):
-        code = matched.group(1)
-        if code in self.termDescriptionDict:
-            return self.termDescriptionDict[code].format(term=matched.group(2))
-        else:
-            return matched.group(2)
-
-    def compile(self, s):
-        pattern = re.compile(r"<@([^>]*)>(.*?)<\/>")
-        t = re.sub(pattern, self.tran1, s)
-        pattern = re.compile(r"<\$([^>]*)>(.*?)<\/>")
-        t = re.sub(pattern, self.tran2, t)
-        return t
-
-
-def remove_term(text):
-    pattern = re.compile(r"(<\$[^>]*>)")
-    t = re.sub(pattern, "", text)
-    return t.replace("</>", "")
 
 
 def format_abilityList(aList, rts, html=False):
@@ -495,7 +438,9 @@ def run(ctx: JobContext) -> None:
 def update_data(ctx: JobContext) -> None:
     enemy_handbook_table = ctx.getgd("excel/enemy_handbook_table.json")
     enemy_database = ctx.getgd("levels/enemydata/enemy_database.json")
-    rts_html = RtsHtml(ctx.getgd("excel/gamedata_const.json"))
+    rts_html = RichTextStyles(
+        ctx.getgd("excel/gamedata_const.json"), renderer=HtmlRenderer()
+    )
     new_enemy_table = []
 
     enemy_list = ctx.wiki.category("分类:敌人")
