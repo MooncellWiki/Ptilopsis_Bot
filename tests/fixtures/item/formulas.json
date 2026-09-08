@@ -1,0 +1,128 @@
+{
+  "item_key": "30001",
+  "item_table": {
+    "items": {
+      "30001": {
+        "itemId": "30001",
+        "name": "测试材料 ",
+        "description": null,
+        "rarity": "TIER_4",
+        "iconId": null,
+        "sortId": 42,
+        "usage": "用于测试",
+        "obtainApproach": "活动获取",
+        "hideInItemGet": false,
+        "itemType": "MATERIAL",
+        "buildingProductList": [
+          {"roomType": "MANUFACTURE", "formulaId": "manufact_test"},
+          {"roomType": "WORKSHOP", "formulaId": "workshop_test"},
+          {"roomType": "MANUFACTURE", "formulaId": "manufact_second"}
+        ]
+      },
+      "material_a": {
+        "itemId": "material_a",
+        "name": "原料甲 ",
+        "description": "",
+        "rarity": "TIER_1",
+        "iconId": "material_a",
+        "sortId": 1,
+        "usage": "",
+        "obtainApproach": null,
+        "hideInItemGet": true,
+        "itemType": "MATERIAL",
+        "buildingProductList": []
+      },
+      "material_b": {
+        "itemId": "material_b",
+        "name": "原料乙",
+        "description": "",
+        "rarity": "TIER_1",
+        "iconId": "material_b",
+        "sortId": 2,
+        "usage": "",
+        "obtainApproach": null,
+        "hideInItemGet": true,
+        "itemType": "MATERIAL",
+        "buildingProductList": []
+      },
+      "byproduct_a": {
+        "itemId": "byproduct_a",
+        "name": "副产物甲 ",
+        "description": "",
+        "rarity": "TIER_1",
+        "iconId": "byproduct_a",
+        "sortId": 3,
+        "usage": "",
+        "obtainApproach": null,
+        "hideInItemGet": true,
+        "itemType": "MATERIAL",
+        "buildingProductList": []
+      },
+      "byproduct_b": {
+        "itemId": "byproduct_b",
+        "name": "副产物乙",
+        "description": "",
+        "rarity": "TIER_1",
+        "iconId": "byproduct_b",
+        "sortId": 4,
+        "usage": "",
+        "obtainApproach": null,
+        "hideInItemGet": true,
+        "itemType": "MATERIAL",
+        "buildingProductList": []
+      }
+    }
+  },
+  "building_data": {
+    "manufactFormulas": {
+      "manufact_test": {
+        "formulaId": "manufact_test",
+        "itemId": "30001",
+        "count": 2,
+        "weight": 3,
+        "costPoint": 3661,
+        "costs": [
+          {"id": "material_a", "count": 4, "type": "MATERIAL"},
+          {"id": "material_b", "count": 5, "type": "MATERIAL"}
+        ],
+        "requireRooms": [{"roomId": "MANUFACTURE", "roomLevel": 2}],
+        "requireStages": []
+      },
+      "manufact_second": {
+        "formulaId": "manufact_second",
+        "itemId": "30001",
+        "count": 1,
+        "weight": 1,
+        "costPoint": 59,
+        "costs": [],
+        "requireRooms": [{"roomId": "MANUFACTURE", "roomLevel": 1}],
+        "requireStages": []
+      }
+    },
+    "workshopFormulas": {
+      "workshop_test": {
+        "sortId": 1,
+        "formulaId": "workshop_test",
+        "itemId": "30001",
+        "count": 1,
+        "goldCost": 200,
+        "apCost": 540000,
+        "extraOutcomeRate": 0.18,
+        "extraOutcomeGroup": [
+          {"weight": 1, "itemId": "byproduct_a", "itemCount": 1},
+          {"weight": 3, "itemId": "byproduct_b", "itemCount": 1}
+        ],
+        "costs": [
+          {"id": "material_a", "count": 2, "type": "MATERIAL"}
+        ],
+        "requireRooms": [{"roomId": "WORKSHOP", "roomLevel": 3}],
+        "requireStages": [{"stageId": "stage_test", "rank": 3}]
+      }
+    }
+  },
+  "stage_table": {
+    "stages": {
+      "stage_test": {"code": "1-1", "name": "测试关卡"}
+    }
+  }
+}
