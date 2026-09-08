@@ -1,5 +1,4 @@
 import copy
-import os
 
 from ptilopsis.log import logger
 from ptilopsis.utils.job import JobContext, job
@@ -330,21 +329,9 @@ def run(ctx: JobContext) -> None:
     stage_table = ctx.getgd("excel/stage_table.json")
     enemy_db = ctx.getgd("levels/enemydata/enemy_database.json")
 
-    filelist = []
-    base_dir = "./Unpacker/zh_CN/gameData/"
     path = "levels/obt/roguelike/ro3/level_rogue3_5-1.json"
     # path = 'levels/activities'
-
-    def get_files(curr_path):
-        if ".DS_Store" in curr_path:
-            return
-        if os.path.isfile(os.path.join(base_dir, curr_path)):
-            filelist.append(curr_path)
-        else:
-            for f in os.listdir(os.path.join(base_dir, curr_path)):
-                get_files(os.path.join(curr_path, f))
-
-    get_files(path)
+    filelist = ctx.gamedata.list_files(path)
 
     for file in filelist:
         # stage_id = os.path.splitext(os.path.split(file)[1])[0]

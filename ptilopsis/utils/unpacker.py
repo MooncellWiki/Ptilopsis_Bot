@@ -9,17 +9,30 @@ import requests
 from retrying import retry
 
 from ptilopsis.log import logger
+from ptilopsis.utils.torappu import TorappuClient
 
 if TYPE_CHECKING:
     from ptilopsis.config import Config
 
 
 class Unpacker:
-    def __init__(self, config: "Config", region="CN"):
+    """各服版本号的检查与记录。
+
+    国服版本以 torappu 上「gamedata 已解包完成」的最新版本为准,这样官方刚推送
+    但 torappu 还没解完的版本不会被误判成可用;海外服仍直接查官方 CDN。
+    """
+
+    def __init__(
+        self,
+        config: "Config",
+        torappu: TorappuClient | None = None,
+        region="CN",
+    ):
         self.ua = {
             "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 6.0.1; vivo X9L Build/MMB29M)"
         }
         self.config = config.server_list
+        self.torappu = torappu or TorappuClient(config.torappu_url)
         self.version_dir = config.version
         with open(self.version_dir) as f:
             self.version = json.load(f)
@@ -32,20 +45,14 @@ class Unpacker:
     def check_update(self, region="CN"):
         local_version = self.version[region]["resVersion"]
         if local_version != self.get_version(region):
+            logger.info(f"[{region} UPDATE] New version detected.")
             if region == "CN":
-                logger.info(f"[{region} UPDATE] New version detected. Start to update.")
-                self.get_update_list(region)
-                # self.load_idx(region)
-                # self.get_all_ab(region)
-                # logger.info('Finish download all AB.')
                 logger.info(
                     self.config[region].update_msg.format(
                         self.version[region]["clientVersion"],
                         self.version[region]["resVersion"],
                     )
                 )
-            else:
-                logger.info(f"[{region} UPDATE] New version detected.")
             return True
         return False
 
@@ -57,13 +64,27 @@ class Unpacker:
                 flag ^= self.check_update(region=r)
         return flag
 
-    @retry(stop_max_attempt_number=3)
     def get_version(self, region="CN"):
         """拉取远端版本号，只更新内存状态，落盘需显式调用 commit_version()。
 
         推迟落盘是为了避免「版本号已推进但后续步骤失败」时状态被写死：
         下一次运行会因为本地版本已等于远端而误判为无更新，从而静默跳过一轮更新。
         """
+        if region == "CN":
+            return self._get_version_torappu(region)
+        return self._get_version_official(region)
+
+    def _get_version_torappu(self, region: str) -> str:
+        """国服:torappu 上 gamedata 已就绪的最新版本(funcVer 不再维护)。"""
+        latest = self.torappu.latest_version()
+        self.version[region]["resVersion"] = latest.res_version
+        self.version[region]["clientVersion"] = latest.client_version
+        self._version_dirty = True
+        return latest.res_version
+
+    @retry(stop_max_attempt_number=3)
+    def _get_version_official(self, region: str) -> str:
+        """海外服:官方 CDN 的 version 与 network_config。"""
         version = self.version
         # version
         url = self.config[region].config_url + "Android/version"

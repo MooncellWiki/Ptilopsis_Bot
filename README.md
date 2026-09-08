@@ -7,9 +7,9 @@
 ## 功能概览
 
 - **多服支持**：CN（官服）、JP / US / KR（YoStar 海外服）、TW。
-- **资源拉取**：直接从官方 CDN 下载并解包 `hot_update_list`、`ResourceManifest`，使用 [`flatc`](https://github.com/google/flatbuffers) 解析 FlatBuffers 资源，无需依赖 UnityPy。
-- **数据来源切换**：可使用本地解包 (`Unpacker`) 或开源仓库 [`ArknightsGameData`](https://github.com/Kengxxiao/ArknightsGameData) / [`ArknightsGameData_YoStar`](https://github.com/Kengxxiao/ArknightsGameData_YoStar) 作为输入。
-- **版本对比**：仅在检测到 `resVersion` 变化时执行更新。
+- **国服数据来源**：直接从 Mooncell 自建的资源仓库 [torappu](https://torappu.prts.wiki)（[API 文档](https://torappu.prts.wiki/api/v1/scalar)）按 `resVersion` 在线读取解包好的 gamedata，不再依赖 GitHub 上的 `ArknightsGameData` 仓库；下载过的文件缓存在 `.cache/torappu/<resVersion>/`。
+- **海外服数据来源**：开源仓库 [`ArknightsGameData_YoStar`](https://github.com/Kengxxiao/ArknightsGameData_YoStar)（子模块）。
+- **版本对比**：国服以 torappu 上 gamedata 已解包完成的最新版本为准，海外服查官方 CDN；仅在检测到 `resVersion` 变化时执行更新。
 - **Wiki 写入**：封装 MediaWiki API 提供 `edit` / `read` / `category` / `protect` / `upload` 等操作，自动登录并带重试。
 - **错误追踪**：通过 Sentry 上报运行异常。
 
@@ -42,15 +42,15 @@ ptilopsis/
 │   ├── params.py          # job 可注入的现成依赖（gamedata / RichText / CharIdTable …）
 │   └── ...
 └── utils/
-    ├── data.py            # GameData，统一访问解包/仓库数据
-    ├── unpacker.py        # 官方资源下载 + FlatBuffers 解析
+    ├── data.py            # GameData，统一访问 torappu（国服）/ 子模块（海外服）数据
+    ├── torappu.py         # torappu HTTP 客户端：版本列表、文件下载、目录列举
+    ├── unpacker.py        # 各服版本号检查与记录（附官方 CDN 资源下载工具）
     ├── wiki.py            # MediaWiki API 客户端（带 retry）
     ├── di.py              # 依赖注入：Depends / analyze / Resolver
     ├── job.py             # @job 注册表、JobContext、按名字调度
     └── richTextStyles.py  # 游戏富文本 → Wiki 模板转换
 thirdparty/
-├── OpenArknightsFBS/         # FlatBuffers schema (submodule)
-├── ArknightsGameData/        # 国服游戏数据 (submodule)
+├── OpenArknightsFBS/         # FlatBuffers schema (submodule，仅生成模型时用)
 └── ArknightsGameData_YoStar/ # 海外服游戏数据 (submodule)
 .github/workflows/         # GitHub Actions 定时 / 手动触发
 config.json                # 非敏感配置：各服 CDN 地址、FlatBuffers 表名等
@@ -65,7 +65,7 @@ version_remote.json        # 通过 --remote 拉取时使用的版本记录
 
 | 内容 | 位置 | 说明 |
 | --- | --- | --- |
-| 各服 CDN 地址、FlatBuffers 表名、chatMask 等 | `config.json` | 随仓库提交，由 `ptilopsis/config.py` 中的 pydantic 模型校验；字段名以 camelCase 书写，多余或缺失字段会直接报错 |
+| torappu 地址、各服 CDN 地址、FlatBuffers 表名、chatMask 等 | `config.json` | 随仓库提交，由 `ptilopsis/config.py` 中的 pydantic 模型校验；字段名以 camelCase 书写，多余或缺失字段会直接报错 |
 | Wiki 登录凭据、Sentry DSN | 环境变量 | 本地开发用 `.env`（已被 `.gitignore` 忽略），CI 用 GitHub Actions Secrets |
 
 需要的环境变量：
@@ -118,10 +118,10 @@ ptil [flags] [modes ...]
 
 | 参数 | 作用 |
 | --- | --- |
-| `--check` | 检查 CN 服是否有新版本，无更新则退出 |
+| `--check` | 检查 torappu 上是否有 gamedata 已就绪的新 CN 版本，无更新则退出 |
 | `--check-jp` | 检查 JP / US / KR 服是否有新版本 |
 | `--check-global` | 检查所有海外服版本后退出 |
-| `--remote` | 使用 `ArknightsGameData` 仓库作为数据源，自动 `git submodule update --remote` 并在结束后提交推送 |
+| `--remote` | CI 模式：版本记录改用 `version_remote.json`，自动更新海外服数据子模块，并在结束后提交推送 |
 | `--force` | 即便没有新版本也强制运行 |
 | `--dev` | Wiki 客户端进入预览模式，仅打印将要提交的内容，不实际写入 |
 | `-h`, `--help` | 显示完整帮助 |
@@ -143,7 +143,7 @@ ptil [flags] [modes ...]
 # 仅检查 CN 服并执行常规更新
 ptil --check regular
 
-# 通过远程数据仓库拉取最新数据，跑完 new + regular + special 并提交
+# CI 模式：跑完 new + regular + special 并提交版本记录
 ptil --check --remote new regular special
 
 # 检查并更新 JP 服
@@ -186,7 +186,8 @@ FlatBuffers 里 string / table / vector 字段都可能缺失，生成的模型�
 
 ### 页面比对
 
-改动 `basic` / `char_attr` 的渲染逻辑后，用 `scripts/parity_basic.py` 把重构前后的页面落盘做 diff：
+改动 `basic` / `char_attr` 的渲染逻辑后，用 `scripts/parity_basic.py` 把重构前后的页面落盘做 diff
+（数据按 `version_local.json` 里的国服版本从 torappu 读取）：
 
 ```bash
 PYTHONHASHSEED=0 uv run python scripts/parity_basic.py out/before
@@ -235,6 +236,6 @@ def run(
 
 ## 致谢
 
+- [torappu](https://torappu.prts.wiki) — Mooncell 自建的明日方舟资源仓库，国服游戏数据来源
 - [MooncellWiki/OpenArknightsFBS](https://github.com/MooncellWiki/OpenArknightsFBS) — FlatBuffers schema
-- [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData) — 国服游戏数据
 - [Kengxxiao/ArknightsGameData_YoStar](https://github.com/Kengxxiao/ArknightsGameData_YoStar) — 海外服游戏数据
