@@ -214,7 +214,7 @@
         {
           "tileKey": "tile_test",
           "blackboard": [
-            {"key": "power", "value": 2, "valueStr": null}
+            {"key": "power", "value": 2.0, "valueStr": null}
           ]
         }
       ],
@@ -236,7 +236,7 @@
         "professionMask": 1,
         "key": "test_rune",
         "blackboard": [
-          {"key": "value", "value": 2, "valueStr": "二"}
+          {"key": "value", "value": 2.0, "valueStr": "二"}
         ]
       }
     ],
