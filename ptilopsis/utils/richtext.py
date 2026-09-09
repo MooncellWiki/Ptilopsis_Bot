@@ -44,11 +44,19 @@ class TermDescription:
     description: str
 
     @classmethod
-    def from_raw(cls, raw: Mapping[str, Any]) -> "TermDescription":
+    def from_raw(cls, raw: Any) -> "TermDescription":
+        """接受原始 dict 或 ``gamedata_const.TermDescriptionData`` 模型。"""
+
+        if isinstance(raw, Mapping):
+            return cls(
+                term_id=raw.get("termId") or "",
+                term_name=raw.get("termName") or "",
+                description=raw.get("description") or "",
+            )
         return cls(
-            term_id=raw.get("termId") or "",
-            term_name=raw.get("termName") or "",
-            description=raw.get("description") or "",
+            term_id=getattr(raw, "term_id", None) or "",
+            term_name=getattr(raw, "term_name", None) or "",
+            description=getattr(raw, "description", None) or "",
         )
 
 
@@ -205,7 +213,8 @@ class RichText:
     """按客户端规则解析富文本,渲染交给 :class:`Renderer`。
 
     ``styles`` 是 ``gamedata_const.richTextStyles``,``terms`` 是
-    ``gamedata_const.termDescriptionDict``(原始 dict 或 :class:`TermDescription`)。
+    ``gamedata_const.termDescriptionDict``(原始 dict、``TermDescriptionData`` 模型
+    或 :class:`TermDescription` 都可以)。
     """
 
     def __init__(
@@ -229,14 +238,16 @@ class RichText:
             bind(self)
 
     @classmethod
-    def from_gamedata_const(
-        cls, gamedata_const: Mapping[str, Any], renderer: Renderer
-    ) -> "RichText":
-        return cls(
-            gamedata_const.get("richTextStyles") or {},
-            gamedata_const.get("termDescriptionDict") or {},
-            renderer,
-        )
+    def from_gamedata_const(cls, gamedata_const: Any, renderer: Renderer) -> "RichText":
+        """``gamedata_const`` 是 ``gamedata_const.GameDataConsts`` 模型或原始 dict。"""
+
+        if isinstance(gamedata_const, Mapping):
+            styles = gamedata_const.get("richTextStyles")
+            terms = gamedata_const.get("termDescriptionDict")
+        else:
+            styles = getattr(gamedata_const, "rich_text_styles", None)
+            terms = getattr(gamedata_const, "term_description_dict", None)
+        return cls(styles or {}, terms or {}, renderer)
 
     def compile(self, text: str | None, *, convert_newline: bool = True) -> str:
         """渲染整段文本;``None`` 视为空串。

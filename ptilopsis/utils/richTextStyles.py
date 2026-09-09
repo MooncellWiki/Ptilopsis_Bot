@@ -5,17 +5,23 @@
 需要一步到位的新代码直接用 :class:`~ptilopsis.utils.richtext.RichText`。
 """
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ptilopsis.utils.richtext import Renderer, RichText, WikiRenderer
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from ptilopsis.gamedata.gamedata_const import GameDataConsts
 
 __all__ = ["RichTextStyles"]
 
 
 class RichTextStyles:
     def __init__(
-        self, gamedata_const: Mapping[str, Any], renderer: Renderer | None = None
+        self,
+        gamedata_const: "GameDataConsts | Mapping[str, Any]",
+        renderer: Renderer | None = None,
     ) -> None:
         self.rich_text = RichText.from_gamedata_const(
             gamedata_const, renderer or WikiRenderer()
