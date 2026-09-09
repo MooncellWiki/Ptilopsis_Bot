@@ -1,255 +1,160 @@
-import copy
+"""关卡路线与出怪表(试验性,输出到用户页)。"""
 
+from collections.abc import Sequence
+from typing import Any
+
+from ptilopsis.gamedata.enemy_handbook_table import EnemyHandBookData
+from ptilopsis.gamedata.level_data import (
+    GridPosition,
+    LevelDataWaveData,
+    LevelDataWaveDataFragmentDataActionData,
+    RouteData,
+    RouteDataCheckpointData,
+    UnityEngineVector2,
+)
+from ptilopsis.jobs.params import EnemyHandbookTable, Levels
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
+
+WAVE_TABLE_HEAD = (
+    '{|class="wikitable sortable" '
+    'style="text-align:center; width:800px; display:table; white-space:normal;"'
+    "\n!No.!!头像!!名字!!总时间!!当前波次时间"
+)
+WAVE_TABLE_ROUTE_ROW = (
+    '\n|- class="expand-child" '
+    'style="font-size:85%; line-height:1.2; color:gray;"'
+    '\n|colspan="5"|{}'
+)
 
 
-def format_time(time):
+def format_time(time: float) -> str:
     return f"{int(time / 60)}分{time % 60:.1f}秒"
 
 
-def parse_checkpoint(checkpoint):
-    if checkpoint["randomizeReachOffset"] == True:
+def parse_checkPointType(checkpoint_type: str, time: float, x: str, y: str) -> str:
+    return {
+        "MOVE": f"→({x}, {y})",
+        "WAIT_FOR_SECONDS": f"(WAIT: {time}s)",
+        "WAIT_FOR_PLAY_TIME": f"(WAIT_PLAY: {time}s)",
+        "WAIT_CURRENT_FRAGMENT_TIME": f"(WAIT_FRAGMENT: {time}s)",
+        "WAIT_CURRENT_WAVE_TIME": f"(WAIT_WAVE: {time}s)",
+        "DISAPPEAR": "→通道",
+        "APPEAR_AT_POS": f"→({x}, {y})",
+    }.get(checkpoint_type, "(UNKNOWN)")
+
+
+def parse_checkpoint(checkpoint: RouteDataCheckpointData) -> str:
+    if checkpoint.randomize_reach_offset:
         logger.info("randomizeReachOffset = True")
-    if checkpoint["reachDistance"] != 0.0:
-        logger.info("reachDistance =", checkpoint["reachDistance"])
+    if checkpoint.reach_distance != 0.0:
+        logger.info(f"reachDistance = {checkpoint.reach_distance}")
 
-    if checkpoint["reachOffset"]["x"] == 0.0:
-        x_pos = "{}".format(checkpoint["position"]["col"])
-    else:
-        x_pos = "{}".format(
-            checkpoint["position"]["col"] + checkpoint["reachOffset"]["x"]
-        )
-    if checkpoint["reachOffset"]["y"] == 0.0:
-        y_pos = "{}".format(checkpoint["position"]["row"])
-    else:
-        y_pos = "{}".format(
-            checkpoint["position"]["row"] + checkpoint["reachOffset"]["y"]
-        )
-    text = parse_checkPointType(checkpoint["type"], checkpoint["time"], x_pos, y_pos)
-    return text
+    position = checkpoint.position or GridPosition()
+    offset = checkpoint.reach_offset or UnityEngineVector2()
+    x_pos = f"{position.col}" if offset.x == 0.0 else f"{position.col + offset.x}"
+    y_pos = f"{position.row}" if offset.y == 0.0 else f"{position.row + offset.y}"
+    return parse_checkPointType(checkpoint.type, checkpoint.time, x_pos, y_pos)
 
 
-def parse_route(route):
-    if not route:
+def parse_route(route: RouteData | None) -> str | None:
+    """路线写成 ``(起点)→(检查点)…→(终点)``;起点带随机范围 / 偏移。"""
+
+    if route is None:
         return None
-    route_result = ""
-    start_x = "{}".format(route["startPosition"]["col"])
-    if route["spawnRandomRange"]["x"] != 0.0:
-        start_x += "±{}".format(route["spawnRandomRange"]["x"])
-    if route["spawnOffset"]["x"] != 0.0:
-        start_x += "+{}".format(route["spawnOffset"]["x"])
-    start_y = "{}".format(route["startPosition"]["row"])
-    if route["spawnRandomRange"]["y"] != 0.0:
-        start_y += "±{}".format(route["spawnRandomRange"]["y"])
-    if route["spawnOffset"]["y"] != 0.0:
-        start_y += "+{}".format(route["spawnOffset"]["y"])
-    route_result += f"({start_x}, {start_y})"
-    if route["checkpoints"] is not None:
-        for checkpoint in route["checkpoints"]:
-            route_result += parse_checkpoint(checkpoint)
-    route_result += "→({}, {})".format(
-        route["endPosition"]["col"], route["endPosition"]["row"]
-    )
+    start = route.start_position or GridPosition()
+    end = route.end_position or GridPosition()
+    random_range = route.spawn_random_range or UnityEngineVector2()
+    spawn_offset = route.spawn_offset or UnityEngineVector2()
+
+    start_x = f"{start.col}"
+    if random_range.x != 0.0:
+        start_x += f"±{random_range.x}"
+    if spawn_offset.x != 0.0:
+        start_x += f"+{spawn_offset.x}"
+    start_y = f"{start.row}"
+    if random_range.y != 0.0:
+        start_y += f"±{random_range.y}"
+    if spawn_offset.y != 0.0:
+        start_y += f"+{spawn_offset.y}"
+    route_result = f"({start_x}, {start_y})"
+    for checkpoint in route.checkpoints or []:
+        route_result += parse_checkpoint(checkpoint)
+    route_result += f"→({end.col}, {end.row})"
     return route_result
 
 
-def parse_motionMode(motionMode):
-    try:
-        return {
-            0: "WALK",
-            1: "FLY",
-        }[motionMode]
-    except:
-        # logger.info('Unexpected motionMode {}.'.format(motionMode))
-        # return 'E_NUM' if motionMode == 2 else 'UNKNOWN'
-        logger.info("Unexpected motionMode.")
-        return "E_NUM"
-
-
-def parse_actionType(action_count, key, actionType):
-    if not isinstance(actionType, int):
-        logger.info(f"No.{action_count} {key} actionType: {actionType}")
-    if actionType == 0:
-        pass
-    elif actionType == 1:
-        logger.info(
-            "No.{} {} actionType: {}".format(action_count, key, "PREVIEW_CURSOR")
-        )
-    elif actionType == 2:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "STORY"))
-    elif actionType == 3:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "TUTORIAL"))
-    elif actionType == 4:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "PLAY_BGM"))
-    elif actionType == 5:
-        logger.info(
-            "No.{} {} actionType: {}".format(action_count, key, "DISPLAY_ENEMY_INFO")
-        )
-    elif actionType == 6:
-        logger.info(
-            "No.{} {} actionType: {}".format(action_count, key, "ACTIVATE_PREDEFINED")
-        )
-    elif actionType == 7:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "E_NUM"))
-    else:
-        logger.info("No.{} {} actionType: {}".format(action_count, key, "UNKNOWN"))
-
-
-def parse_checkPointType(checkpoint_type, time, x, y):
-    try:
-        return {
-            "MOVE": f"→({x}, {y})",
-            "WAIT_FOR_SECONDS": f"(WAIT: {time}s)",
-            "WAIT_FOR_PLAY_TIME": f"(WAIT_PLAY: {time}s)",
-            "WAIT_CURRENT_FRAGMENT_TIME": f"(WAIT_FRAGMENT: {time}s)",
-            "WAIT_CURRENT_WAVE_TIME": f"(WAIT_WAVE: {time}s)",
-            "DISAPPEAR": "→通道",
-            "APPEAR_AT_POS": f"→({x}, {y})",
-        }[checkpoint_type]
-    except:
-        return "(UNKNOWN)"
-
-
-def get_routes(level_routes):
+def get_routes(level_routes: Sequence[RouteData | None]) -> list[str | None]:
     return [parse_route(route) for route in level_routes]
-    # route_id = -1
-    # for route in level_routes:
-    #     route_id += 1
-    #     if route == None:
-    #         continue
-    #     logger.info('%d: ' % route_id)
-    #     logger.info('motionMode:', parse_motionMode(route['motionMode']))
-    #     if route['allowDiagonalMove'] == False:
-    #         logger.info('ADM = False')
-    #     if route['visitEveryTileCenter'] == True:
-    #         logger.info('VETC = True')
-    #     if route['visitEveryNodeCenter'] == True:
-    #         logger.info('VENC = True')
-    #     logger.info(parse_route(route))
 
 
-def get_waves(level_waves):
-    wave_count = -1
+def action_span(action: LevelDataWaveDataFragmentDataActionData) -> float:
+    """一个动作从片段开始到最后一次出怪的时间。"""
+
+    return action.pre_delay + (action.count - 1) * action.interval
+
+
+def get_waves(level_waves: list[LevelDataWaveData]) -> None:
+    """记录按 preDelay / interval 推算的最短通关时间。"""
+
     min_time = 0.0
-    spawn_group = {}
     for wave in level_waves:
-        wave_count += 1
-        # logger.info('wave {} name: {}'.format(wave_count, wave['name']))
-        min_time += wave["preDelay"]
-        fragment_count = -1
-        for fragment in wave["fragments"]:
-            fragment_count += 1
-            # logger.info('fragment {} name: {}'.format(fragment_count, fragment['name']))
-            min_time += fragment["preDelay"]
-            # min_time += max([action['preDelay'] + (action['count']-1) * action['interval'] + int(action['autoPreviewRoute'])*1.5 for action in fragment['actions']])
-            min_time += max(
-                [
-                    action["preDelay"] + (action["count"] - 1) * action["interval"]
-                    for action in fragment["actions"]
-                ]
-            )
-            action_count = -1
-            for action in fragment["actions"]:
-                if action["actionType"] != 0:
-                    continue
-                action_count += 1
-                # parse_actionType(action_count, action['key'], action['actionType'])
-                # if action['managedByScheduler'] == False:
-                #     logger.info('No.{} {} managedByScheduler = False.'.format(action_count, action['key']))
-                # if action['blockFragment'] == True:
-                #     logger.info('No.{} {} blockFragment = True.'.format(action_count, action['key']))
-                # if action['autoPreviewRoute'] == False:
-                #     logger.info('No.{} {} autoPreviewRoute = False.'.format(action_count, action['key']))
-                # if action['isUnharmfulAndAlwaysCountAsKilled'] == True:
-                #     logger.info('No.{} {} isUnharmfulAndAlwaysCountAsKilled = True.'.format(action_count, action['key']))
-                # if 'hiddenGroup' in action and action['hiddenGroup'] != None:
-                #     logger.info('No.{} {} hiddenGroup = {}.'.format(action_count, action['key'], action['hiddenGroup']))
-                # if action['actionType'] != 0 and 'randomSpawnGroupKey' in action and action['randomSpawnGroupKey'] != None:
-                #     if action['weight'] - action['weightValue'] != 0.0:
-                #     logger.info('No.{} {} group = {}, weight = {}, num = {}.'.format(action_count, action['key'], action['randomSpawnGroupKey'], action['weight'], action['count']))
-            # min_time += 0.3
-        min_time += wave["postDelay"]
-        # min_time += 0.5
+        min_time += wave.pre_delay
+        for fragment in wave.fragments or []:
+            min_time += fragment.pre_delay
+            min_time += max(action_span(action) for action in fragment.actions or [])
+        min_time += wave.post_delay
     logger.info(format_time(min_time))
 
 
-def count_enemy(level_waves):
+def count_enemy(level_waves: list[LevelDataWaveData]) -> None:
+    """记录敌人总数与最短时间;随机出怪组分别按最少 / 最多统计。"""
+
     e_num = 0
     e_low = 0
     e_high = 0
-    wave_count = -1
-    min_time = 0.0
     min_time_low = 0.0
     min_time_high = 0.0
     for wave in level_waves:
-        wave_count += 1
-        min_time += wave["preDelay"]
-        min_time_low += wave["preDelay"]
-        min_time_high += wave["preDelay"]
-        fragment_count = -1
-        for fragment in wave["fragments"]:
-            fragment_count += 1
-            min_time += fragment["preDelay"]
-            min_time_low += fragment["preDelay"]
-            min_time_high += fragment["preDelay"]
-            temp1 = [
-                action["preDelay"] + (action["count"] - 1) * action["interval"]
-                for action in fragment["actions"]
+        min_time_low += wave.pre_delay
+        min_time_high += wave.pre_delay
+        for fragment in wave.fragments or []:
+            actions = fragment.actions or []
+            min_time_low += fragment.pre_delay
+            min_time_high += fragment.pre_delay
+            spans_low = [
+                action_span(action)
+                for action in actions
+                if action.random_spawn_group_key is None
             ]
-            temp2_1 = [
-                action["preDelay"] + (action["count"] - 1) * action["interval"]
-                for action in fragment["actions"]
-                if "randomSpawnGroupKey" not in action
-                or action["randomSpawnGroupKey"] == None
-            ]
-            temp2_2 = copy.deepcopy(temp2_1)
-            min_time += max(temp1)
+            spans_high = list(spans_low)
 
-            spawn_groups = {}
-            for action in fragment["actions"]:
-                if action["actionType"] == 0:
-                    if (
-                        "randomSpawnGroupKey" in action
-                        and action["randomSpawnGroupKey"] != None
-                    ):
-                        if action["randomSpawnGroupKey"] not in spawn_groups:
-                            spawn_groups[action["randomSpawnGroupKey"]] = []
-                        spawn_groups[action["randomSpawnGroupKey"]].append(action)
-                    else:
-                        e_num += action["count"]
-            for s_group in spawn_groups:
-                e_low += min(
-                    [a["count"] if a["key"] != "" else 0 for a in spawn_groups[s_group]]
-                )
-                e_high += max(
-                    [a["count"] if a["key"] != "" else 0 for a in spawn_groups[s_group]]
-                )
-                temp2_1.append(
-                    min(
-                        [
-                            a["preDelay"] + (a["count"] - 1) * a["interval"]
-                            for a in spawn_groups[s_group]
-                        ]
+            spawn_groups: dict[str, list[LevelDataWaveDataFragmentDataActionData]] = {}
+            for action in actions:
+                if action.action_type != "SPAWN":
+                    continue
+                if action.random_spawn_group_key is not None:
+                    spawn_groups.setdefault(action.random_spawn_group_key, []).append(
+                        action
                     )
-                )
-                temp2_2.append(
-                    max(
-                        [
-                            a["preDelay"] + (a["count"] - 1) * a["interval"]
-                            for a in spawn_groups[s_group]
-                        ]
-                    )
-                )
+                else:
+                    e_num += action.count
+            for group in spawn_groups.values():
+                counts = [a.count if a.key != "" else 0 for a in group]
+                spans = [action_span(a) for a in group]
+                e_low += min(counts)
+                e_high += max(counts)
+                spans_low.append(min(spans))
+                spans_high.append(max(spans))
 
-            if temp2_1 != []:
-                min_time_low += max(temp2_1)
-            if temp2_2 != []:
-                min_time_high += max(temp2_2)
+            if spans_low:
+                min_time_low += max(spans_low)
+            if spans_high:
+                min_time_high += max(spans_high)
 
-        min_time += wave["postDelay"]
-        min_time_low += wave["postDelay"]
-    if e_low + e_num != e_high + e_num:
+        min_time_low += wave.post_delay
+    if e_low != e_high:
         logger.info(f"num: {e_low + e_num}~{e_high + e_num}")
     else:
         logger.info(f"num: {e_low + e_num}")
@@ -259,55 +164,49 @@ def count_enemy(level_waves):
         logger.info(f"time: {format_time(min_time_low)}")
 
 
-def get_waves_table(level_waves, routes, enemy_table):
-    wave_table = '{|class="wikitable sortable" style="text-align:center; width:800px; display:table; white-space:normal;"\n!No.!!头像!!名字!!总时间!!当前波次时间'
+def get_waves_table(
+    level_waves: list[LevelDataWaveData],
+    routes: list[str | None],
+    enemy_table: dict[str, EnemyHandBookData],
+) -> str:
+    """按出场时间排序的出怪表,每行下面附一行路线。"""
+
     total_time = 0.0
-    enemy_dict = []
+    spawns: list[dict[str, Any]] = []
     for wave in level_waves:
-        wave_time = wave["preDelay"]
-        total_time += wave["preDelay"]
-        for fragment in wave["fragments"]:
-            wave_time += fragment["preDelay"]
-            total_time += fragment["preDelay"]
-            for action in fragment["actions"]:
-                if action["actionType"] != "SPAWN":
+        wave_time = wave.pre_delay
+        total_time += wave.pre_delay
+        for fragment in wave.fragments or []:
+            actions = fragment.actions or []
+            wave_time += fragment.pre_delay
+            total_time += fragment.pre_delay
+            for action in actions:
+                if action.action_type != "SPAWN":
                     continue
-                for action_count in range(action["count"]):
-                    if action["key"] not in enemy_table:
-                        name = "未知"
-                    else:
-                        name = enemy_table[action["key"]]["name"]
-                    enemy_dict.append(
+                handbook = (
+                    enemy_table.get(action.key) if action.key is not None else None
+                )
+                name = handbook.name if handbook is not None else "未知"
+                for action_count in range(action.count):
+                    spawns.append(
                         {
                             "time_w": wave_time
-                            + action["preDelay"]
-                            + action_count * action["interval"],
+                            + action.pre_delay
+                            + action_count * action.interval,
                             "time_t": total_time
-                            + action["preDelay"]
-                            + action_count * action["interval"],
+                            + action.pre_delay
+                            + action_count * action.interval,
                             "name": name,
-                            "route": routes[action["routeIndex"]],
+                            "route": routes[action.route_index],
                         }
                     )
-            wave_time += max(
-                [
-                    action["preDelay"] + (action["count"] - 1) * action["interval"]
-                    for action in fragment["actions"]
-                ]
-            )
-            total_time += max(
-                [
-                    action["preDelay"] + (action["count"] - 1) * action["interval"]
-                    for action in fragment["actions"]
-                ]
-            )
-        total_time += wave["postDelay"]
+            span = max(action_span(action) for action in actions)
+            wave_time += span
+            total_time += span
+        total_time += wave.post_delay
 
-    sorted_enemy = sorted(enemy_dict, key=lambda x: x["time_t"])
-
-    count = 0
-    for enemy in sorted_enemy:
-        count += 1
+    wave_table = WAVE_TABLE_HEAD
+    for count, enemy in enumerate(sorted(spawns, key=lambda x: x["time_t"]), 1):
         wave_table += "\n|-\n|{}\n|{{{{敌人头像|{}|px=50}}}}\n|{}\n|{}\n|{}".format(
             count,
             enemy["name"],
@@ -315,41 +214,31 @@ def get_waves_table(level_waves, routes, enemy_table):
             format_time(enemy["time_t"]),
             format_time(enemy["time_w"]),
         )
-        wave_table += '\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="5"|{}'.format(
-            enemy["route"]
-        )
+        wave_table += WAVE_TABLE_ROUTE_ROW.format(enemy["route"])
     wave_table += "\n|}"
 
     return wave_table
 
 
 @job
-def run(ctx: JobContext) -> None:
-    enemy_table = ctx.getgd("excel/enemy_handbook_table.json")
-    stage_table = ctx.getgd("excel/stage_table.json")
-    enemy_db = ctx.getgd("levels/enemydata/enemy_database.json")
+def run(wiki: Wiki, enemy_handbook_table: EnemyHandbookTable, levels: Levels) -> None:
+    """把指定关卡的出怪表写到 ``用户:Seniorious/route``(调试用)。"""
 
     path = "levels/obt/roguelike/ro3/level_rogue3_5-1.json"
-    # path = 'levels/activities'
-    filelist = ctx.gamedata.list_files(path)
+    # path = "levels/activities"
+    enemy_data = enemy_handbook_table.enemy_data or {}
 
-    for file in filelist:
-        # stage_id = os.path.splitext(os.path.split(file)[1])[0]
-        level_table = ctx.getgd(file.lower())
-        routes = get_routes(level_table["routes"])
-        get_waves(level_table["waves"])
-        wave_table = get_waves_table(
-            level_table["waves"], routes, enemy_table["enemyData"]
-        )
+    for level_id in levels.list_ids(path):
+        level = levels(level_id)
+        routes = get_routes(level.routes or [])
+        get_waves(level.waves or [])
+        wave_table = get_waves_table(level.waves or [], routes, enemy_data)
 
-        # roguelike_table = ctx.getgd('excel/roguelike_table.json')
-        # for stage in roguelike_table['stages']:
-        #     levelId = roguelike_table['stages'][stage]['levelId']
-        #     if levelId != None and roguelike_table['stages'][stage]['difficulty'] != 'FOUR_STAR':
-        #         logger.info('==={} {}==='.format(roguelike_table['stages'][stage]['code'], roguelike_table['stages'][stage]['name']))
-        #         level_table = ctx.getgd('levels/' + levelId + '.json')
-        #         count_enemy(level_table['waves'])
+        # 统计初代肉鸽各关的敌人数与最短时间(roguelike_table: RoguelikeTable):
+        # for stage in (roguelike_table.stages or {}).values():
+        #     if stage.level_id and stage.difficulty != "FOUR_STAR":
+        #         logger.info(f"==={stage.code} {stage.name}===")
+        #         count_enemy(levels(stage.level_id).waves or [])
 
-        ctx.wiki.edit(title="用户:Seniorious/route", text=wave_table, summary="update")
-        # logger.info(wave_table)
-        logger.info("Updated: {}.".format("用户:Seniorious/route"))
+        wiki.edit(title="用户:Seniorious/route", text=wave_table, summary="update")
+        logger.info("Updated: 用户:Seniorious/route.")
