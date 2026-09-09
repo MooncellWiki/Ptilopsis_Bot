@@ -212,6 +212,18 @@ PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/after
 diff -r out/before out/after
 ```
 
+脚本默认使用自身所在仓库的 `.cache/` 和 `thirdparty/ArknightsGameData_YoStar/`。
+跨 worktree 共用数据时，由调用方通过 `--data-root` 指定这两个目录所在的根目录。
+例如，主工作区使用常规 `.git/` 目录的仓库，可以在 worktree 中这样调用：
+
+```bash
+PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/after \
+  --data-root "$(git rev-parse --path-format=absolute --git-common-dir)/.."
+```
+
+脚本本身不调用 Git；也可以直接传入 `--data-root /path/to/shared-data`。
+国服版本仍由当前运行目录的 `version_local.json` 决定。
+
 `scripts/parity_basic.py` 是只针对 `basic` / `char_attr` 渲染函数的旧版本，用法相同。
 
 仓库已配置 `pre-commit`，建议本地启用：

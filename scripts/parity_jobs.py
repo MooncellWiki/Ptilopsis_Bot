@@ -12,6 +12,7 @@ REAL_CATEGORY_JOBS)。
 
 每个 job 用全新的 GameData,避免 job 之间通过共享的表互相污染。
 数据按 version_local.json 里的国服版本从 torappu 读取(有本地缓存)。
+缓存与海外服子模块默认位于脚本所在仓库;跨 worktree 共用时由调用方传入 --data-root。
 """
 
 import argparse
@@ -33,12 +34,6 @@ from ptilopsis.utils.data import GameData
 from ptilopsis.utils.job import JobContext, get_job, registered_jobs
 
 ROOT = Path(__file__).resolve().parent.parent
-# 缓存与海外服子模块都用主仓库里的那份,worktree 里跑也一样
-MAIN_ROOT = Path("/Users/starheart/Documents/PythonWorkspace/Ptilopsis_Bot")
-CACHE_ROOT = MAIN_ROOT / ".cache"
-YOSTAR_DIR = MAIN_ROOT / "thirdparty" / "ArknightsGameData_YoStar"
-WIKI_CACHE = CACHE_ROOT / "wiki"
-TORAPPU_CACHE = CACHE_ROOT / "torappu"
 
 REAL_CATEGORY_JOBS = {"enemy.update_immune"}
 """category 返回真实成员的 job(其余返回空列表以覆盖全部条目)。"""
@@ -53,8 +48,9 @@ def _safe_name(title: str) -> str:
 
 
 class RecordingWiki:
-    def __init__(self, api_url: str) -> None:
+    def __init__(self, api_url: str, cache_dir: Path) -> None:
         self.api_url = api_url
+        self.cache_dir = cache_dir
         self.session = requests.Session()
         self.session.headers["User-Agent"] = "Ptilopsis parity (read only)"
         self.edits: list[dict[str, Any]] = []
@@ -83,7 +79,7 @@ class RecordingWiki:
         return fetch()
 
     def _cached(self, kind: str, key: str, fetch) -> Any:
-        path = WIKI_CACHE / kind / (_safe_name(key) + ".json")
+        path = self.cache_dir / kind / (_safe_name(key) + ".json")
         if path.is_file():
             return json.loads(path.read_text(encoding="utf-8"))
         value = self._retry(fetch)
@@ -161,15 +157,20 @@ def dump_edits(wiki: RecordingWiki, out_dir: Path) -> None:
         )
 
 
-def run(out_dir: Path, names: list[str]) -> None:
+def run(out_dir: Path, names: list[str], *, data_root: Path = ROOT) -> None:
+    data_root = data_root.expanduser().resolve()
+    cache_root = data_root / ".cache"
+    logger.info(f"[parity] data and caches from {data_root}")
     out_dir.mkdir(parents=True, exist_ok=True)
     status: dict[str, str] = {}
     for name in names:
         job = get_job(name)
-        wiki = RecordingWiki(config.api_url)
+        wiki = RecordingWiki(config.api_url, cache_root / "wiki")
         wiki.real_categories = name in REAL_CATEGORY_JOBS
         gamedata = GameData(
-            config=config, yostar_dir=YOSTAR_DIR, cache_dir=TORAPPU_CACHE
+            config=config,
+            yostar_dir=data_root / "thirdparty" / "ArknightsGameData_YoStar",
+            cache_dir=cache_root / "torappu",
         )
         started = time.time()
         try:
@@ -192,13 +193,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("out_dir", type=Path)
     parser.add_argument("--jobs", nargs="*", default=None)
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=ROOT,
+        help="数据根目录(包含 .cache/ 和 thirdparty/),默认使用脚本所在仓库",
+    )
     args = parser.parse_args()
     logger.info(f"[parity] ptilopsis from {Path(ptilopsis.__file__).parent}")
     discover_jobs()
     names = args.jobs or sorted(
         job.name for job in registered_jobs() if job.name not in SKIP_JOBS
     )
-    run(args.out_dir, names)
+    run(args.out_dir, names, data_root=args.data_root)
 
 
 if __name__ == "__main__":
