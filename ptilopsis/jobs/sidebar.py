@@ -1,14 +1,20 @@
 import re
-from typing import Annotated
+from typing import Annotated, Any
 
-from ptilopsis.jobs.params import CharIdTable, RawCharacterTable, category
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.jobs.params import CharacterTable, CharIdTable, category
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
 
-def update_menusidebar(wiki, old_num, id_table, character_table):
-    char_list = [character_table[char]["name"] for char in character_table]
+def update_menusidebar(
+    wiki: Wiki,
+    old_num: int,
+    id_table: dict[str, dict[str, Any]],
+    character_table: dict[str, CharacterData],
+) -> None:
+    char_list = [char.name for char in character_table.values()]
     new_num = max([id_table[char]["id"] for char in id_table if char in char_list])
     if new_num <= old_num:
         return
@@ -37,7 +43,7 @@ def update_menusidebar(wiki, old_num, id_table, character_table):
     logger.info("Update: {}.".format("MediaWiki:MenuSidebar"))
 
 
-def update_mainpage(wiki, old_num, id_table):
+def update_mainpage(wiki: Wiki, old_num: int, id_table: dict[str, dict[str, Any]]):
     # 已弃用
 
     fin2 = wiki.read("首页")
@@ -56,8 +62,13 @@ def update_mainpage(wiki, old_num, id_table):
     logger.info("Update: {}.".format("首页"))
 
 
-def update_gameinfo(wiki, old_num, id_table, character_table):
-    char_list = [character_table[char]["name"] for char in character_table]
+def update_gameinfo(
+    wiki: Wiki,
+    old_num: int,
+    id_table: dict[str, dict[str, Any]],
+    character_table: dict[str, CharacterData],
+) -> None:
+    char_list = [char.name for char in character_table.values()]
     new_num = max([id_table[char]["id"] for char in id_table if char in char_list])
     if new_num <= old_num:
         return
@@ -84,12 +95,12 @@ def update_gameinfo(wiki, old_num, id_table, character_table):
 def update(
     wiki: Wiki,
     id_table: CharIdTable,
-    character_table: RawCharacterTable,
+    character_table: CharacterTable,
     char_list: Annotated[list[str], category("分类:干员")],
 ) -> None:
     old_num = -1
-    for char_key in character_table:
-        name = character_table[char_key]["name"]
+    for char in character_table.values():
+        name = char.name or ""
         if name in id_table and name in char_list and id_table[name]["id"] > old_num:
             old_num = id_table[name]["id"]
     update_menusidebar(wiki, old_num, id_table, character_table)

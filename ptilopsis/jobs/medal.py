@@ -1,21 +1,22 @@
 from collections.abc import Callable
-from typing import Annotated, Any
+from dataclasses import dataclass
+from typing import Annotated
 
 from pydantic import BaseModel
 
-from ptilopsis.gamedata.medal import (
+from ptilopsis.gamedata.building_data import (
+    BuildingData,
+    BuildingDataCustomDataFurnitureData,
+)
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.gamedata.item_table import InventoryData, ItemData
+from ptilopsis.gamedata.medal_table import (
     ItemBundle,
     MedalData,
     MedalPerData,
     MedalRarity,
 )
-from ptilopsis.jobs.params import (
-    RawBuildingData,
-    RawCharacterTable,
-    RawItemTable,
-    RichText,
-    gamedata,
-)
+from ptilopsis.jobs.params import CharacterTable, ItemTable, MedalTable, RichText, table
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
@@ -57,31 +58,47 @@ class SectionView(BaseModel):
     groups: list[GroupView]
 
 
-def parse_reward_item(
-    item: ItemBundle, character_table: dict, building_data: dict, item_table: dict
-) -> RewardView | None:
+@dataclass(frozen=True)
+class RewardSources:
+    """解析奖励名称要查的三张表:干员、家具、道具。"""
+
+    character_table: dict[str, CharacterData]
+    furnitures: dict[str, BuildingDataCustomDataFurnitureData]
+    items: dict[str, ItemData]
+
+    @classmethod
+    def from_tables(
+        cls,
+        character_table: dict[str, CharacterData],
+        building_data: BuildingData,
+        item_table: InventoryData,
+    ) -> "RewardSources":
+        custom_data = building_data.custom_data
+        return cls(
+            character_table=character_table,
+            furnitures=(custom_data.furnitures if custom_data else None) or {},
+            items=item_table.items or {},
+        )
+
+
+def parse_reward_item(item: ItemBundle, sources: RewardSources) -> RewardView | None:
+    item_id = item.id or ""
     if item.type == "CHAR":
-        return RewardView(name=character_table[item.id]["name"])
+        return RewardView(name=sources.character_table[item_id].name or "")
     if item.type == "FURN":
-        furnitures = building_data["customData"]["furnitures"]
-        return RewardView(name=furnitures[item.id]["name"])
-    if item.id in item_table["items"]:
-        item_name = item_table["items"][item.id]["name"]
+        return RewardView(name=sources.furnitures[item_id].name or "")
+    if item_id in sources.items:
+        item_name = sources.items[item_id].name or ""
         return RewardView(name=item_name.rstrip(), count=item.count)
     logger.info(f"Unknown reward item {item.id}.")
     return None
 
 
-def build_rewards(
-    medal: MedalPerData,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
-) -> list[RewardView]:
+def build_rewards(medal: MedalPerData, sources: RewardSources) -> list[RewardView]:
     rewards = []
-    for reward_group in medal.medal_reward_group:
-        for item in reward_group.item_list:
-            reward = parse_reward_item(item, character_table, building_data, item_table)
+    for reward_group in medal.medal_reward_group or []:
+        for item in reward_group.item_list or []:
+            reward = parse_reward_item(item, sources)
             if reward is not None:
                 rewards.append(reward)
     return rewards
@@ -89,9 +106,7 @@ def build_rewards(
 
 def build_medal(
     medal: MedalPerData,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
+    sources: RewardSources,
     compile_rich_text: Callable[[str], str],
 ) -> MedalView:
     description = ""
@@ -104,12 +119,12 @@ def build_medal(
         rarity = medal.rarity
 
     return MedalView(
-        name=medal.medal_name,
+        name=medal.medal_name or "",
         rarity=rarity,
         description=description,
         get_method=medal.get_method or "",
         has_advanced=bool(medal.advanced_medal),
-        rewards=build_rewards(medal, character_table, building_data, item_table),
+        rewards=build_rewards(medal, sources),
     )
 
 
@@ -136,10 +151,11 @@ def build_sections(
     views: dict[str, MedalView],
 ) -> list[SectionView]:
     sections = []
-    for type_key, type_data in medal_table.medal_type_data.items():
-        for medal_group in type_data.group_data:
-            for medal_id in medal_group.medal_id:
-                views[medal_id].group = medal_group.group_name
+    for type_key, type_data in (medal_table.medal_type_data or {}).items():
+        group_data = type_data.group_data or []
+        for medal_group in group_data:
+            for medal_id in medal_group.medal_id or []:
+                views[medal_id].group = medal_group.group_name or ""
 
         standalone = []
         for medal_id, raw in raw_medals.items():
@@ -151,20 +167,21 @@ def build_sections(
 
         groups = []
         # 页面上套组按数据中的倒序排列(新套组在前)
-        for medal_group in reversed(type_data.group_data):
-            medals = [views[medal_id] for medal_id in medal_group.medal_id]
+        for medal_group in reversed(group_data):
+            group_name = medal_group.group_name or ""
+            medals = [views[medal_id] for medal_id in medal_group.medal_id or []]
             groups.append(
                 GroupView(
-                    name=medal_group.group_name.replace("蚀刻章套组", ""),
-                    title=medal_group.group_name,
-                    description=medal_group.group_desc.replace("\n", "<br/>"),
+                    name=group_name.replace("蚀刻章套组", ""),
+                    title=group_name,
+                    description=(medal_group.group_desc or "").replace("\n", "<br/>"),
                     medals=medals,
                     plated=any(medal.has_advanced for medal in medals),
                 )
             )
         sections.append(
             SectionView(
-                name=type_data.medal_name,
+                name=type_data.medal_name or "",
                 standalone=standalone,
                 groups=groups,
             )
@@ -223,32 +240,30 @@ def render_page(sections: list[SectionView]) -> str:
 
 
 def update_medal(
-    medal_table: dict,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
+    medal_table: MedalData,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
     compile_rich_text: Callable[[str], str],
 ) -> str:
-    table = MedalData.model_validate(medal_table)
-    raw_medals = {medal.medal_id: medal for medal in table.medal_list}
+    sources = RewardSources.from_tables(character_table, building_data, item_table)
+    raw_medals = {medal.medal_id or "": medal for medal in medal_table.medal_list or []}
     views = {
-        medal_id: build_medal(
-            raw, character_table, building_data, item_table, compile_rich_text
-        )
+        medal_id: build_medal(raw, sources, compile_rich_text)
         for medal_id, raw in raw_medals.items()
     }
     resolve_medal_references(raw_medals, views)
-    sections = build_sections(table, raw_medals, views)
+    sections = build_sections(medal_table, raw_medals, views)
     return render_page(sections)
 
 
 @job
 def run(
     wiki: Wiki,
-    medal_table: Annotated[dict[str, Any], gamedata("excel/medal_table.json")],
-    item_table: RawItemTable,
-    building_data: RawBuildingData,
-    character_table: RawCharacterTable,
+    medal_table: MedalTable,
+    item_table: ItemTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    character_table: CharacterTable,
     rts: RichText,
 ) -> None:
     content = update_medal(

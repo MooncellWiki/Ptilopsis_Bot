@@ -1,19 +1,17 @@
+from typing import Annotated
+
+from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.gamedata.item_table import ItemData
+from ptilopsis.jobs.params import ItemTable, StageTable, category, table
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
-def find(j, name, p):
-    for item in j:
-        if j[item][name] == p:
-            return item
-        else:
-            return None
+def item_name(items: dict[str, ItemData], item_id: str | None) -> str:
+    """道具名(去掉尾随空白;个别老道具名带空格)。"""
 
-
-def get_id_by_name(item_table, name):
-    for item in item_table["items"]:
-        if item_table["items"][item]["name"].rstrip() == name:
-            return item_table["items"][item]["itemId"]
+    return (items[item_id or ""].name or "").rstrip()
 
 
 def build_time(sec):
@@ -52,46 +50,53 @@ basic_wf = (
 
 
 @job
-def run(ctx: JobContext) -> None:
-    stage_table = ctx.getgd("excel/stage_table.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    building_data = ctx.getgd("excel/building_data.json")
-    items = ctx.wiki.category("分类:道具")
-    u_items = ctx.wiki.category("分类:未实装道具")
-    for item in item_table["items"]:
-        citem = item_table["items"][item]
-        if citem["name"].strip() in u_items:
+def run(
+    wiki: Wiki,
+    stage_table: StageTable,
+    item_table: ItemTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_pages: Annotated[list[str], category("分类:道具")],
+    unreleased_pages: Annotated[list[str], category("分类:未实装道具")],
+) -> None:
+    items = item_table.items or {}
+    stages = stage_table.stages or {}
+    manufact_formulas = building_data.manufact_formulas or {}
+    workshop_formulas = building_data.workshop_formulas or {}
+    for item, citem in items.items():
+        name = citem.name or ""
+        item_id = citem.item_id or ""
+        if name.strip() in unreleased_pages:
             continue
-        if citem["name"].strip() in items:
+        if name.strip() in item_pages:
             continue
-        if citem.get("hideInItemGet"):
+        if citem.hide_in_item_get:
             continue
-        if citem["itemId"].endswith("bossrush_relic_04"):
+        if item_id.endswith("bossrush_relic_04"):
             continue
         if (
-            citem["itemId"].startswith("act1vhalfidle_")
-            and citem["itemId"] != "act1vhalfidle_token_point"
+            item_id.startswith("act1vhalfidle_")
+            and item_id != "act1vhalfidle_token_point"
         ):
             continue
-        if citem["itemId"] in [
+        if item_id in [
             "act13side_prestige_armorless",
             "LINKAGE_TKT_GACHA_10_1701",
             "LINKAGE_TKT_GACHA_10_4801",
         ]:
             continue
-        if citem["itemType"] == "EMOTICON_SET":
+        if citem.item_type == "EMOTICON_SET":
             continue
-        if citem["name"].find("的信物") != -1:
+        if name.find("的信物") != -1:
             sort = "信物"
-        elif citem["name"].find("的中坚信物") != -1:
+        elif name.find("的中坚信物") != -1:
             sort = "中坚信物"
-        elif citem["name"].find("信物") != -1:
+        elif name.find("信物") != -1:
             sort = "通用信物"
-        elif citem["name"].find("芯片组") > 0:
+        elif name.find("芯片组") > 0:
             sort = "芯片组"
-        elif citem["name"].find("双芯片") > 0:
+        elif name.find("双芯片") > 0:
             sort = "双芯片"
-        elif citem["name"].find("芯片") > 0:
+        elif name.find("芯片") > 0:
             sort = "芯片"
         else:
             try:
@@ -105,9 +110,9 @@ def run(ctx: JobContext) -> None:
                 sort = "其他道具"
         # 收集制造站/加工站配方信息
         recipe_approaches = []
-        if citem.get("buildingProductList"):
-            for d in citem["buildingProductList"]:
-                room_type = d["roomType"]
+        if citem.building_product_list:
+            for d in citem.building_product_list:
+                room_type = d.room_type
                 if room_type == "MANUFACTURE":
                     recipe_approaches.append("制造站")
                 elif room_type == "WORKSHOP":
@@ -121,7 +126,7 @@ def run(ctx: JobContext) -> None:
                     unique_approaches.append(a)
             recipe_approaches = unique_approaches
 
-        original_obtain = citem.get("obtainApproach", "") or ""
+        original_obtain = citem.obtain_approach or ""
         if recipe_approaches:
             recipe_str = "、".join(recipe_approaches)
             if original_obtain:
@@ -133,126 +138,110 @@ def run(ctx: JobContext) -> None:
 
         if obtainApproach:
             tbasic_info = basic_info4.format(
-                name=citem["name"].strip(),
-                itemId=citem["itemId"],
-                iconId=citem["iconId"] if citem["iconId"] is not None else "",
-                description=citem["description"]
-                if citem["description"] is not None
-                else "",
-                usage=citem["usage"] if citem["usage"] is not None else "",
+                name=name.strip(),
+                itemId=citem.item_id,
+                iconId=citem.icon_id if citem.icon_id is not None else "",
+                description=citem.description if citem.description is not None else "",
+                usage=citem.usage if citem.usage is not None else "",
                 obtainApproach=obtainApproach,
-                rarity=trans_rarity(citem["rarity"]),
-                id=citem["sortId"],
+                rarity=trans_rarity(citem.rarity),
+                id=citem.sort_id,
                 sort=sort,
             )
         else:
             tbasic_info = basic_info3.format(
-                name=citem["name"].strip(),
-                itemId=citem["itemId"],
-                iconId=citem["iconId"] if citem["iconId"] is not None else "",
-                description=citem["description"]
-                if citem["description"] is not None
-                else "",
-                usage=citem["usage"] if citem["usage"] is not None else "",
-                rarity=trans_rarity(citem["rarity"]),
-                id=citem["sortId"],
+                name=name.strip(),
+                itemId=citem.item_id,
+                iconId=citem.icon_id if citem.icon_id is not None else "",
+                description=citem.description if citem.description is not None else "",
+                usage=citem.usage if citem.usage is not None else "",
+                rarity=trans_rarity(citem.rarity),
+                id=citem.sort_id,
                 sort=sort,
             )
-        if citem["buildingProductList"]:
+        if citem.building_product_list:
             tmf = ""
             twf = ""
-            for d in citem["buildingProductList"]:
-                cRoomType = d["roomType"]
-                cFormulaId = d["formulaId"]
+            for d in citem.building_product_list:
+                cRoomType = d.room_type
+                cFormulaId = d.formula_id or ""
                 if cRoomType == "MANUFACTURE":
-                    cf = building_data["manufactFormulas"][cFormulaId]
+                    cf = manufact_formulas[cFormulaId]
                     tmf += basic_mf.format(
-                        name=item_table["items"][cf["itemId"]]["name"].rstrip(),
-                        count=cf["count"],
-                        weight=cf["weight"],
-                        costPoint=build_time(cf["costPoint"]),
-                        roomLevel=cf["requireRooms"][0]["roomLevel"],
+                        name=item_name(items, cf.item_id),
+                        count=cf.count,
+                        weight=cf.weight,
+                        costPoint=build_time(cf.cost_point),
+                        roomLevel=(cf.require_rooms or [])[0].room_level,
                     )
                     tstr = ""
-                    for i in range(0, cf["costs"].__len__()):
+                    for i, cost in enumerate(cf.costs or []):
                         tstr = (
                             tstr
                             + "|原料"
                             + str(i)
                             + "="
-                            + item_table["items"][cf["costs"][i]["id"]]["name"].rstrip()
+                            + item_name(items, cost.id)
                             + "\n|原料"
                             + str(i)
                             + "数量="
-                            + str(cf["costs"][i]["count"])
+                            + str(cost.count)
                             + "\n"
                         )
                     tmf = tmf + tstr
                     tmf = tmf + "}}"
                 elif cRoomType == "WORKSHOP":
-                    cf = building_data["workshopFormulas"][cFormulaId]
+                    cf = workshop_formulas[cFormulaId]
                     twf += basic_wf.format(
-                        name=item_table["items"][cf["itemId"]]["name"].rstrip(),
-                        count=cf["count"],
-                        goldCost=cf["goldCost"],
-                        apCost=cf["apCost"] / 360000,
-                        roomLevel=cf["requireRooms"][0]["roomLevel"],
-                        extraOutcomeRate=cf["extraOutcomeRate"] * 100,
+                        name=item_name(items, cf.item_id),
+                        count=cf.count,
+                        goldCost=cf.gold_cost,
+                        apCost=cf.ap_cost / 360000,
+                        roomLevel=(cf.require_rooms or [])[0].room_level,
+                        extraOutcomeRate=cf.extra_outcome_rate * 100,
                     )
                     tstr = ""
-                    for i in range(0, cf["costs"].__len__()):
+                    for i, cost in enumerate(cf.costs or []):
                         tstr = (
                             tstr
                             + "|原料"
                             + str(i + 1)
                             + "="
-                            + item_table["items"][cf["costs"][i]["id"]]["name"].rstrip()
+                            + item_name(items, cost.id)
                             + "\n|原料"
                             + str(i + 1)
                             + "数量="
-                            + str(cf["costs"][i]["count"])
+                            + str(cost.count)
                             + "\n"
                         )
+                    extra_outcome_group = cf.extra_outcome_group or []
                     totalWeight = 0
-                    for oc in cf["extraOutcomeGroup"]:
-                        totalWeight += oc["weight"]
-                    for i in range(0, cf["extraOutcomeGroup"].__len__()):
+                    for oc in extra_outcome_group:
+                        totalWeight += oc.weight
+                    for i, oc in enumerate(extra_outcome_group):
                         tstr = (
                             tstr
                             + "|副产物"
                             + str(i + 1)
                             + "="
-                            + item_table["items"][cf["extraOutcomeGroup"][i]["itemId"]][
-                                "name"
-                            ].rstrip()
+                            + item_name(items, oc.item_id)
                             + "\n|副产物"
                             + str(i + 1)
                             + "掉率="
-                            + str(
-                                round(
-                                    (
-                                        cf["extraOutcomeGroup"][i]["weight"]
-                                        / totalWeight
-                                        * 100
-                                    ),
-                                    1,
-                                )
-                            )
+                            + str(round(oc.weight / totalWeight * 100, 1))
                             + "\n"
                         )
-                    if cf["requireStages"]:
+                    if cf.require_stages:
+                        require_stage = cf.require_stages[0]
+                        stage = stages[require_stage.stage_id or ""]
                         twf = (
                             twf
                             + "|通关评价="
-                            + str(cf["requireStages"][0]["rank"])
+                            + str(require_stage.rank)
                             + "\n|关卡="
-                            + stage_table["stages"][cf["requireStages"][0]["stageId"]][
-                                "code"
-                            ]
+                            + (stage.code or "")
                             + "\n|通关条件="
-                            + stage_table["stages"][cf["requireStages"][0]["stageId"]][
-                                "name"
-                            ]
+                            + (stage.name or "")
                             + "\n"
                         )
                     twf = twf + tstr + "}}"
@@ -266,7 +255,7 @@ def run(ctx: JobContext) -> None:
                 tbasic_info = tbasic_info + "==材料掉落=="
             # 更新副产物
             # if twf:
-            #     old = ctx.wiki.read(citem['name'].rstrip())
+            #     old = wiki.read(citem['name'].rstrip())
             #     result = re.search(r"==加工站==\n([\s\S]*?)\n+==", old)
             #     if result:
             #         new = old.replace(result.group(1), twf)
@@ -274,18 +263,18 @@ def run(ctx: JobContext) -> None:
             #         new = old
             #     if new != old and citem['name'] != '家具零件':
             #         # logger.info(new)
-            #         ctx.wiki.edit(title=citem['name'].rstrip(), text=new)
+            #         wiki.edit(title=citem['name'].rstrip(), text=new)
             #         logger.info("edit", citem['name'].rstrip())
             #     else:
             #         logger.info(citem['name'].rstrip(), 'same')
         fin = "{{Navigator|道具一览}}\n" + tbasic_info + "\n{{道具导航}}"
         # logger.info(fin)
         try:
-            ctx.wiki.edit(
-                title=citem["name"].rstrip(),
+            wiki.edit(
+                title=name.rstrip(),
                 text=fin,
                 summary="item init",
                 createonly=True,
             )
-        except:
-            logger.info("Fail editing Page:", citem["name"])
+        except Exception:
+            logger.info(f"Fail editing Page: {name}")

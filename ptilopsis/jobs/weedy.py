@@ -4,10 +4,11 @@ import pytz
 import requests
 
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
-def update_yellow(wiki):
+def update_yellow(wiki: Wiki) -> None:
     template = """<noinclude>{{{{cbox2|lv=1|title=该页面可能与实际情况不符，<br>如有差错可以随时进行编辑<br>PRTS的建设离不开每一位用户的建设与支持}}}}</noinclude>{{{{高级凭证区商品一览
 |当期6星={star6}
 |当期5星={star5}
@@ -58,7 +59,7 @@ def update_yellow(wiki):
     logger.info("Updated: {}.".format("高级凭证区"))
 
 
-def update_rune(wiki):
+def update_rune(wiki: Wiki) -> None:
     template = """<section begin={date} />
 ===={date}====
 {{|class="wikitable mw-collapsible mw-collapsed mw-collapsible-dark" style="display:table; text-align:center; width:500px;"
@@ -150,7 +151,7 @@ def update_rune(wiki):
 
 
 @job
-def run(ctx: JobContext) -> None:
+def run(wiki: Wiki) -> None:
     # if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
-    #     update_yellow(ctx.wiki)
-    update_rune(ctx.wiki)
+    #     update_yellow(wiki)
+    update_rune(wiki)

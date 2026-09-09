@@ -1,15 +1,15 @@
-from ptilopsis.jobs.params import RawGamedataConst, RichText
+from ptilopsis.jobs.params import GamedataConst, RichText
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(wiki: Wiki, gamedata_const: RawGamedataConst, rts: RichText) -> None:
+def run(wiki: Wiki, gamedata_const: GamedataConst, rts: RichText) -> None:
     term_list = []
-    for t in gamedata_const["termDescriptionDict"].values():
-        desc = rts.compile(t["description"]).replace("\n", "<br>")
-        term_list.append(f"{{{{术语释义|{t['termName']}|{desc}|id={t['termId']}}}}}")
+    for t in (gamedata_const.term_description_dict or {}).values():
+        desc = rts.compile(t.description).replace("\n", "<br>")
+        term_list.append(f"{{{{术语释义|{t.term_name}|{desc}|id={t.term_id}}}}}")
 
     content = "\n\n".join(term_list)
 

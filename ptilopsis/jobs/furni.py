@@ -1,21 +1,75 @@
+from collections import Counter
+from typing import Annotated
+
+from ptilopsis.gamedata.building_data import (
+    BuildingData,
+    BuildingDataCustomData,
+)
+from ptilopsis.gamedata.item_table import InventoryData, ItemData
+from ptilopsis.gamedata.shop_client_table import ShopClientData
+from ptilopsis.jobs.params import ItemTable, ShopClientTable, table
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
 
-def update_furni(wiki, building_data, item_table):
-    for furni in building_data["customData"]["furnitures"]:
-        furni_data = building_data["customData"]["furnitures"][furni]
-        furni_data["name"] = furni_data["name"].strip()
-        page_name = furni_data["name"]
-        if page_name in duplicate_list:
-            themes = ""
-            for groupsId in building_data["customData"]["groups"]:
-                groupsData = building_data["customData"]["groups"][groupsId]
-                if furni_data["id"] in groupsData["furniture"]:
-                    themes = building_data["customData"]["themes"][
-                        groupsData["themeId"]
-                    ]["name"]
-                    break
+def custom_data(building_data: BuildingData) -> BuildingDataCustomData:
+    """家具 / 套装 / 主题等自定义数据;表里没有时按空表处理。"""
+
+    return building_data.custom_data or BuildingDataCustomData()
+
+
+def item_name(items: dict[str, ItemData], item_id: str | None) -> str:
+    return (items[item_id or ""].name or "").rstrip()
+
+
+def find_duplicates(building_data: BuildingData) -> set[str]:
+    """同名家具(不同主题各有一款)的名字,它们的页面名要加主题后缀区分。"""
+
+    furnitures = custom_data(building_data).furnitures or {}
+    counts = Counter(furni.name or "" for furni in furnitures.values())
+    return {name for name, count in counts.items() if count > 1}
+
+
+def furni_theme_name(building_data: BuildingData, furni_id: str | None) -> str:
+    """家具所属套件的主题名,散件返回空串。"""
+
+    data = custom_data(building_data)
+    themes = data.themes or {}
+    for group in (data.groups or {}).values():
+        if furni_id in (group.furniture or []):
+            return themes[group.theme_id or ""].name or ""
+    return ""
+
+
+def furni_destroy_text(furni_data, items: dict[str, ItemData]) -> str:
+    if furni_data.can_be_destroy:
+        product = item_name(items, furni_data.processed_product_id)
+        return f"{{{{材料消耗|{product}|{furni_data.processed_product_count}}}}}"
+    return "不可分解"
+
+
+def furni_sub_type_text(building_data: BuildingData, sub_type: str) -> str:
+    sub_types = custom_data(building_data).sub_types or {}
+    if sub_type in sub_types:
+        return f"\n|子类型={sub_types[sub_type].name}"
+    return ""
+
+
+def update_furni(
+    wiki: Wiki,
+    building_data: BuildingData,
+    item_table: InventoryData,
+    duplicates: set[str],
+) -> None:
+    data = custom_data(building_data)
+    items = item_table.items or {}
+    types = data.types or {}
+    for furni_data in (data.furnitures or {}).values():
+        furni_data.name = (furni_data.name or "").strip()
+        page_name = furni_data.name
+        if page_name in duplicates:
+            themes = furni_theme_name(building_data, furni_data.id)
             if themes == "":
                 themes = "散件"
             page_name += f"（{themes}）"
@@ -26,41 +80,27 @@ def update_furni(wiki, building_data, item_table):
         num2 = origin_text.find("|", num1 + 4)
         new_text = (
             origin_text[:num1]
-            + "|描述={}\n".format(furni_data["description"].replace("\n", "<br>"))
+            + "|描述={}\n".format((furni_data.description or "").replace("\n", "<br>"))
             + origin_text[num2:]
         )
 
-        if furni_data["canBeDestroy"] == True:
-            furni_destroy = "{{{{材料消耗|{name}|{number}}}}}".format(
-                name=item_table["items"][furni_data["processedProductId"]][
-                    "name"
-                ].rstrip(),
-                number=furni_data["processedProductCount"],
-            )
-        else:
-            furni_destroy = "不可分解"
+        furni_destroy = furni_destroy_text(furni_data, items)
 
         num1 = origin_text.find("|类型=")
         num2 = origin_text.find("|描述=")
-        if furni_data["subType"] in building_data["customData"]["subTypes"]:
-            sub_type = "\n|子类型={}".format(
-                building_data["customData"]["subTypes"][furni_data["subType"]]["name"]
-            )
-        else:
-            sub_type = ""
         new_text = (
             new_text[:num1]
             + "|类型={type}{subType}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n".format(
-                type=building_data["customData"]["types"][furni_data["type"]]["name"],
-                subType=sub_type,
-                rarity=furni_data["rarity"],
-                comfort=furni_data["comfort"],
+                type=types[furni_data.type].name,
+                subType=furni_sub_type_text(building_data, furni_data.sub_type),
+                rarity=furni_data.rarity,
+                comfort=furni_data.comfort,
                 destroyObtain=furni_destroy,
-                size=str(furni_data["width"])
+                size=str(furni_data.width)
                 + "×"
-                + str(furni_data["depth"])
+                + str(furni_data.depth)
                 + "×"
-                + str(furni_data["height"]),
+                + str(furni_data.height),
             )
             + new_text[num2:]
         )
@@ -73,7 +113,12 @@ def update_furni(wiki, building_data, item_table):
             logger.info(f"Same: {page_name}.")
 
 
-def create_furni(wiki, building_data, item_table):
+def create_furni(
+    wiki: Wiki,
+    building_data: BuildingData,
+    item_table: InventoryData,
+    duplicates: set[str],
+) -> None:
     furni_list = wiki.category("分类:家具")
 
     furni_format = """{{{{家具信息
@@ -92,76 +137,58 @@ def create_furni(wiki, building_data, item_table):
 }}}}"""
     individual_furni = []
 
-    for furni in building_data["customData"]["furnitures"]:
-        furni_data = building_data["customData"]["furnitures"][furni]
-        furni_data["name"] = furni_data["name"].strip()
-        if furni_data["name"] in ["taptap街机", "bilibili地毯"]:
+    data = custom_data(building_data)
+    items = item_table.items or {}
+    types = data.types or {}
+    themes_data = data.themes or {}
+    for furni_data in (data.furnitures or {}).values():
+        furni_data.name = (furni_data.name or "").strip()
+        if furni_data.name in ["taptap街机", "bilibili地毯"]:
             continue
-        if (
-            furni_data["name"] in furni_list
-            and furni_data["name"] not in duplicate_list
-        ):
+        if furni_data.name in furni_list and furni_data.name not in duplicates:
             continue
-        if furni_data["canBeDestroy"] == True:
-            furni_destroy = "{{{{材料消耗|{name}|{number}}}}}".format(
-                name=item_table["items"][furni_data["processedProductId"]][
-                    "name"
-                ].rstrip(),
-                number=furni_data["processedProductCount"],
-            )
-        else:
-            furni_destroy = "不可分解"
+        furni_destroy = furni_destroy_text(furni_data, items)
 
         groups = ""
         themes = ""
-        for groupsId in building_data["customData"]["groups"]:
-            groupsData = building_data["customData"]["groups"][groupsId]
-            if furni_data["id"] in groupsData["furniture"]:
-                groups = groupsData["name"]
-                themes = building_data["customData"]["themes"][groupsData["themeId"]][
-                    "name"
-                ]
+        for group in (data.groups or {}).values():
+            if furni_data.id in (group.furniture or []):
+                groups = group.name or ""
+                themes = themes_data[group.theme_id or ""].name or ""
                 break
 
         if groups == "":
-            individual_furni.append("{{{{家具|{}}}}}".format(furni_data["name"]))
-
-        if furni_data["subType"] in building_data["customData"]["subTypes"]:
-            sub_type = "\n|子类型={}".format(
-                building_data["customData"]["subTypes"][furni_data["subType"]]["name"]
-            )
-        else:
-            sub_type = ""
+            individual_furni.append(f"{{{{家具|{furni_data.name}}}}}")
 
         furni_info = furni_format.format(
-            name=furni_data["name"],
-            id=furni_data["id"],
-            type=building_data["customData"]["types"][furni_data["type"]]["name"],
-            subType=sub_type,
-            rarity=furni_data["rarity"],
-            comfort=furni_data["comfort"],
+            name=furni_data.name,
+            id=furni_data.id,
+            type=types[furni_data.type].name,
+            subType=furni_sub_type_text(building_data, furni_data.sub_type),
+            rarity=furni_data.rarity,
+            comfort=furni_data.comfort,
             destroyObtain=furni_destroy,
-            size=str(furni_data["width"])
+            size=str(furni_data.width)
             + "×"
-            + str(furni_data["depth"])
+            + str(furni_data.depth)
             + "×"
-            + str(furni_data["height"]),
-            description=furni_data["description"].replace("\n", "<br>"),
-            usage=furni_data["usage"],
-            obtainApproach=furni_data["obtainApproach"],
+            + str(furni_data.height),
+            description=(furni_data.description or "").replace("\n", "<br>"),
+            usage=furni_data.usage,
+            obtainApproach=furni_data.obtain_approach,
             themes=themes,
             groups=groups,
         )
 
-        if furni_data["name"] in duplicate_list:
+        if furni_data.name in duplicates:
             if themes == "":
                 themes = "散件"
-            page_name = furni_data["name"] + f"（{themes}）"
+            page_name = furni_data.name + f"（{themes}）"
             if page_name in furni_list:
                 continue
             furni_info = furni_info[:-2] + "|重指定=1\n}}"
         else:
-            page_name = furni_data["name"]
+            page_name = furni_data.name
 
         wiki.edit(title=page_name, text=furni_info, createonly=True, summary="init")
         # logger.info(furni_info)
@@ -179,7 +206,27 @@ def create_furni(wiki, building_data, item_table):
         logger.info("Updated: {}.".format("首页/新增单件"))
 
 
-def create_themes(wiki, building_data, shop_client_table):
+def theme_preview_pic(shop_client_table: ShopClientData, theme_id: str | None) -> str:
+    """商店推荐位里该主题的总览图参数;没有对应推荐位时为空串。"""
+
+    for shop_furni in shop_client_table.recommend_list or []:
+        if shop_furni.template_type != "NORFURN":
+            continue
+        template_param = shop_furni.template_param
+        furn_param = template_param.normal_furn_param if template_param else None
+        if furn_param is None or furn_param.furn_pack_id != theme_id:
+            continue
+        group_list = shop_furni.group_list or []
+        data_list = (group_list[0].data_list if group_list else None) or []
+        if not data_list or data_list[0].param_1 is None:
+            continue
+        return "|总览图片=" + data_list[0].param_1
+    return ""
+
+
+def create_themes(
+    wiki: Wiki, building_data: BuildingData, shop_client_table: ShopClientData
+) -> None:
     themes_list = wiki.category("分类:家具主题")
 
     themes_info = """{{{{pathnav2|家具一览}}}}
@@ -216,10 +263,11 @@ def create_themes(wiki, building_data, shop_client_table):
 
     new_theme = []
 
-    for themes in building_data["customData"]["themes"]:
-        themesData = building_data["customData"]["themes"][themes]
-        themesData["name"] = themesData["name"].strip()
-        if themesData["name"] in themes_list:
+    data = custom_data(building_data)
+    furnitures = data.furnitures or {}
+    for themes, themesData in (data.themes or {}).items():
+        themesData.name = (themesData.name or "").strip()
+        if themesData.name in themes_list:
             continue
         # if themesData['name'] != '神农祭庙会':
         #     continue
@@ -231,24 +279,22 @@ def create_themes(wiki, building_data, shop_client_table):
         refFlag = False
         refContent = ""
         furniComfort = groupsComfort = 0
-        quickSetupDict = {}
+        quickSetupDict: dict[str, int] = {}
 
-        for quickFurni in themesData["quickSetup"]:
-            if quickFurni["furnitureId"] in quickSetupDict:
-                quickSetupDict[quickFurni["furnitureId"]] += 1
+        for quickFurni in themesData.quick_setup or []:
+            furniture_id = quickFurni.furniture_id or ""
+            if furniture_id in quickSetupDict:
+                quickSetupDict[furniture_id] += 1
             else:
-                quickSetupDict[quickFurni["furnitureId"]] = 1
+                quickSetupDict[furniture_id] = 1
 
         for quickFurniId in quickSetupDict:
-            quickFurniComfort = building_data["customData"]["furnitures"][quickFurniId][
-                "comfort"
-            ]
+            quickFurniComfort = furnitures[quickFurniId].comfort
             quickFurniComfort = quickFurniComfort * min(6, quickSetupDict[quickFurniId])
             furniComfort += quickFurniComfort
-            quickSetupFurni += "\n|-\n|[[{name}]]\n|{count}\n|{comfort}".format(
-                name=building_data["customData"]["furnitures"][quickFurniId]["name"],
-                count=quickSetupDict[quickFurniId],
-                comfort=quickFurniComfort,
+            quickSetupFurni += (
+                f"\n|-\n|[[{furnitures[quickFurniId].name}]]"
+                f"\n|{quickSetupDict[quickFurniId]}\n|{quickFurniComfort}"
             )
             if quickSetupDict[quickFurniId] > 6:
                 quickSetupFurni += (
@@ -259,51 +305,28 @@ def create_themes(wiki, building_data, shop_client_table):
         if refFlag:
             refContent = "<references />\n"
 
-        for groups in building_data["customData"]["groups"]:
+        for groups, groupsData in (data.groups or {}).items():
             if themes in groups:
-                groupsData = building_data["customData"]["groups"][groups]
-                groupsContent += "\n'''{name}'''\n".format(name=groupsData["name"])
-                groupsComfort += groupsData["comfort"]
-                quickSetupGroups += "\n|-\n|{name}\n|{count}\n|{comfort}".format(
-                    name=groupsData["name"],
-                    count=groupsData["count"],
-                    comfort=groupsData["comfort"],
+                groupsContent += f"\n'''{groupsData.name}'''\n"
+                groupsComfort += groupsData.comfort
+                quickSetupGroups += (
+                    f"\n|-\n|{groupsData.name}\n|{groupsData.count}"
+                    f"\n|{groupsData.comfort}"
                 )
-                for groupFurni in groupsData["furniture"]:
-                    if groupFurni not in building_data["customData"]["furnitures"]:
+                for groupFurni in groupsData.furniture or []:
+                    if groupFurni not in furnitures:
                         continue
-                    groupsContent += "{{{{家具|{name}}}}}".format(
-                        name=building_data["customData"]["furnitures"][groupFurni][
-                            "name"
-                        ]
-                    )
+                    groupsContent += f"{{{{家具|{furnitures[groupFurni].name}}}}}"
 
         totalComfort = furniComfort + groupsComfort
 
-        preview_pic = ""
-        for shop_furni in filter(
-            lambda x: x["templateType"] == "NORFURN", shop_client_table["recommendList"]
-        ):
-            try:
-                if (
-                    shop_furni["templateParam"]["normalFurnParam"]["furnPackId"]
-                    == building_data["customData"]["themes"][themes]["id"]
-                ):
-                    preview_pic = (
-                        "|总览图片="
-                        + shop_furni["groupList"][0]["dataList"][0]["param1"]
-                    )
-                    break
-            except:
-                continue
+        preview_pic = theme_preview_pic(shop_client_table, themesData.id)
 
         themesContent = themes_info.format(
-            themesName=building_data["customData"]["themes"][themes]["name"].replace(
-                "/", ""
-            ),
-            themeId=building_data["customData"]["themes"][themes]["id"],
+            themesName=themesData.name.replace("/", ""),
+            themeId=themesData.id,
             previewPic=preview_pic,
-            description=building_data["customData"]["themes"][themes]["desc"],
+            description=themesData.desc,
             quickSetupFurni=quickSetupFurni,
             furniComfort=furniComfort,
             quickSetupGroups=quickSetupGroups,
@@ -314,11 +337,11 @@ def create_themes(wiki, building_data, shop_client_table):
         )
 
         new_theme.append(
-            "{{{{家具主题|{name}}}}}".format(name=themesData["name"].replace("/", ""))
+            "{{{{家具主题|{name}}}}}".format(name=themesData.name.replace("/", ""))
         )
 
         wiki.edit(
-            title=themesData["name"],
+            title=themesData.name,
             text=themesContent,
             summary="init",
             createonly=True,
@@ -326,7 +349,7 @@ def create_themes(wiki, building_data, shop_client_table):
             minor=True,
         )
         # logger.info(themesContent)
-        logger.info("Created: {}.".format(themesData["name"]))
+        logger.info(f"Created: {themesData.name}.")
 
     if new_theme != []:
         wiki.edit(
@@ -340,37 +363,23 @@ def create_themes(wiki, building_data, shop_client_table):
         logger.info("Updated: {}.".format("首页/新增主题"))
 
 
-duplicate_list = []
+@job
+def run(
+    wiki: Wiki,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+    shop_client_table: ShopClientTable,
+) -> None:
+    # 先算重名家具再建页,主题页里引用的家具名要和家具页一致
+    duplicates = find_duplicates(building_data)
+    create_themes(wiki, building_data, shop_client_table)
+    create_furni(wiki, building_data, item_table, duplicates)
 
 
 @job
-def run(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    shop_client_table = ctx.getgd("excel/shop_client_table.json")
-
-    check_duplicate(ctx)
-    create_themes(ctx.wiki, building_data, shop_client_table)
-    create_furni(ctx.wiki, building_data, item_table)
-
-
-@job
-def update(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-
-    update_furni(ctx.wiki, building_data, item_table)
-
-
-def check_duplicate(ctx: JobContext):
-    building_data = ctx.getgd("excel/building_data.json")
-
-    furni_dict = {}
-    furnitures = building_data["customData"]["furnitures"]
-    for furni in furnitures.values():
-        if furni["name"] not in furni_dict:
-            furni_dict[furni["name"]] = []
-        furni_dict[furni["name"]].append(furni["id"])
-    for name, f_list in furni_dict.items():
-        if len(f_list) > 1:
-            duplicate_list.append(name)
+def update(
+    wiki: Wiki,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+) -> None:
+    update_furni(wiki, building_data, item_table, find_duplicates(building_data))

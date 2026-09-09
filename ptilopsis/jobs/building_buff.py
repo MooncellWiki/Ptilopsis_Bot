@@ -1,6 +1,10 @@
-from ptilopsis.jobs.params import RawBuildingData, RichText
+from typing import Annotated, Any
+
+from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.jobs.params import RichText, table
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
+from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 # def special_buff(buff_name, description):
@@ -15,7 +19,7 @@ from ptilopsis.utils.wiki import Wiki
 #     return description
 
 
-def get_building_buff(building_data, rts):
+def get_building_buff(building_data: BuildingData, rts: RichTextStyles) -> str:
     buff_format = """{{{{后勤技能信息/store
 |技能名={name}
 |房间={room}
@@ -33,13 +37,13 @@ def get_building_buff(building_data, rts):
 |-
 {buffInfoAll}
 |}}"""
-    buff_text = {}
-    for room in building_data["rooms"]:
+    rooms = building_data.rooms or {}
+    buff_text: dict[str, dict[str, dict[str, Any]]] = {}
+    for room in rooms:
         buff_text[room] = {}
 
-    for buff in building_data["buffs"]:
-        buff_data = building_data["buffs"][buff]
-        buff_name = buff_data["buffName"]
+    for buff_data in (building_data.buffs or {}).values():
+        buff_name = buff_data.buff_name or ""
         buff_name = {
             "control_dorm_rec[000]": "领袖(控制中枢)",
             "dorm_rec_all[013]": "领袖(宿舍)",
@@ -54,16 +58,16 @@ def get_building_buff(building_data, rts):
             "power_rec_spd[008]": "澎湃紊流(精英0)",
             "power_rec_spd[009]": "澎湃紊流(精英1)",
             "meet_spd[1020]": "线索搜集·β(行箸)",
-        }.get(buff_data["buffId"], buff_name)
-        if buff_name not in buff_text[buff_data["roomType"]]:
-            buff_text[buff_data["roomType"]][buff_name] = {
-                "sortId": buff_data["sortId"],
+        }.get(buff_data.buff_id or "", buff_name)
+        if buff_name not in buff_text[buff_data.room_type]:
+            buff_text[buff_data.room_type][buff_name] = {
+                "sortId": buff_data.sort_id,
                 "text": buff_format.format(
                     name=buff_name,
-                    room=building_data["rooms"][buff_data["roomType"]]["name"],
-                    icon=buff_data["skillIcon"],
+                    room=rooms[buff_data.room_type].name,
+                    icon=buff_data.skill_icon,
                     # description = special_buff(buff_name, rts.compile(buff_data['description']))
-                    description=rts.compile(buff_data["description"]),
+                    description=rts.compile(buff_data.description),
                 ),
             }
 
@@ -72,7 +76,7 @@ def get_building_buff(building_data, rts):
         if buff_text[room_id] != {}:
             content += (
                 room_format.format(
-                    roomName=building_data["rooms"][room_id]["name"],
+                    roomName=rooms[room_id].name,
                     buffInfoAll="\n|-\n".join(
                         [
                             buff_data["text"]
@@ -90,7 +94,11 @@ def get_building_buff(building_data, rts):
 
 
 @job
-def run(wiki: Wiki, building_data: RawBuildingData, rts: RichText) -> None:
+def run(
+    wiki: Wiki,
+    building_data: Annotated[BuildingData, table("building_data")],
+    rts: RichText,
+) -> None:
     origin_text = wiki.read("后勤技能一览/store")
     flag = origin_text.find("==控制中枢==")
     head = origin_text[:flag].rstrip()
