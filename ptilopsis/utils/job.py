@@ -2,17 +2,17 @@
 
 一个 job 就是一个用 :func:`job` 装饰的普通函数,参数按注解注入::
 
-    from ptilopsis.jobs.params import RawItemTable, RichText
+    from ptilopsis.jobs.params import ItemTable, RichText
     from ptilopsis.utils.job import job
     from ptilopsis.utils.wiki import Wiki
 
     @job
-    def run(wiki: Wiki, item_table: RawItemTable, rts: RichText) -> None:
+    def run(wiki: Wiki, item_table: ItemTable, rts: RichText) -> None:
         ...
 
 ``Wiki`` / ``GameData`` / ``Config`` / ``JobContext`` 按类型直接提供,其余参数
-用 ``Depends`` 标记(常用的在 :mod:`ptilopsis.jobs.params`),同一次运行里
-相同的依赖只解析一次。旧写法 ``def run(ctx: JobContext)`` 仍然可用。
+用 ``Depends`` 标记(各表的类型化模型等都在 :mod:`ptilopsis.jobs.params`),
+同一次运行里相同的依赖只解析一次。
 
 job 名默认是 ``<模块名>.<函数名>``(如 ``basic.run``),``__main__`` 用它编排
 各模式下的执行顺序。依赖或 job 本身抛 :class:`SkipJob` 表示这次没事可做,
@@ -47,8 +47,8 @@ __all__ = [
 class JobContext:
     """一次运行共享的上下文:Wiki 客户端 + 游戏数据源。
 
-    新 job 直接注入 ``Wiki`` / ``GameData`` 或 params 里的依赖即可;
-    这个类留给尚未改写签名的 job(``def run(ctx: JobContext)``)。
+    job 直接注入 ``Wiki`` / ``GameData`` 或 params 里的依赖即可;
+    这个类是调度器传给 :class:`Job` 的入口,也可以整个注入。
     """
 
     wiki: Wiki
