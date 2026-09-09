@@ -100,13 +100,6 @@ __all__ = [
     "MedalTable",
     "MissionTable",
     "RangeTable",
-    "RawBuildingData",
-    "RawCharacterTable",
-    "RawGamedataConst",
-    "RawItemTable",
-    "RawSkillTable",
-    "RawSkinTable",
-    "RawUniEquipTable",
     "RichText",
     "RichTextHtml",
     "RoguelikeTable",
@@ -408,15 +401,3 @@ def category(name: str) -> Any:
 
     dependency.__qualname__ = f"category({name!r})"
     return Depends(dependency)
-
-
-# ---- 过渡期别名 --------------------------------------------------------
-# 尚未改写的 job 还在读原始 dict,各 job 迁移到上面的类型化依赖后删除。
-
-RawCharacterTable = Annotated[dict[str, Any], gamedata("excel/character_table.json")]
-RawSkillTable = Annotated[dict[str, Any], gamedata("excel/skill_table.json")]
-RawItemTable = Annotated[dict[str, Any], gamedata("excel/item_table.json")]
-RawBuildingData = Annotated[dict[str, Any], gamedata("excel/building_data.json")]
-RawSkinTable = Annotated[dict[str, Any], gamedata("excel/skin_table.json")]
-RawUniEquipTable = Annotated[dict[str, Any], gamedata("excel/uniequip_table.json")]
-RawGamedataConst = Annotated[dict[str, Any], gamedata("excel/gamedata_const.json")]
