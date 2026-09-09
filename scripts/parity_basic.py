@@ -14,13 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from ptilopsis.config import config
-from ptilopsis.gamedata.battle_equip_table import BattleEquipTable
-from ptilopsis.gamedata.character_table import CharacterTable
-from ptilopsis.gamedata.gamedata_const import GameDataConsts
-from ptilopsis.gamedata.handbook_team_table import HandbookTeamTable
-from ptilopsis.gamedata.skill_table import SkillTable
-from ptilopsis.gamedata.uniequip_table import UniEquipTable
 from ptilopsis.jobs import basic, char_attr
+from ptilopsis.jobs.params import TABLES
 from ptilopsis.utils.data import GameData
 from ptilopsis.utils.richTextStyles import RichTextStyles
 
@@ -42,25 +37,28 @@ class RecordingWiki:
 
 
 def load(name: str) -> Any:
-    return GAMEDATA.get(f"excel/{name}.json", "CN")
+    """按 ``params.TABLES`` 里登记的路径读取并校验成模型。"""
+
+    spec = TABLES[name]
+    validate = getattr(spec.model, "validate_python", None) or spec.model.model_validate
+    return validate(GAMEDATA.get(spec.path, "CN"))
 
 
 def main(out_dir: Path) -> None:
-    character_table = CharacterTable.validate_python(load("character_table"))
-    uniequip_table = UniEquipTable.model_validate(load("uniequip_table"))
-    battle_equip_table = BattleEquipTable.validate_python(load("battle_equip_table"))
-    skill_table = SkillTable.validate_python(load("skill_table"))
+    character_table = load("character_table")
+    uniequip_table = load("uniequip_table")
+    battle_equip_table = load("battle_equip_table")
+    skill_table = load("skill_table")
     building_data = load("building_data")
     item_table = load("item_table")
-    team_table = HandbookTeamTable.validate_python(load("handbook_team_table"))
+    team_table = load("handbook_team_table")
     stories_table = load("handbook_info_table")
     skin_table = load("skin_table")
-    gamedata_const_raw = load("gamedata_const")
-    gamedata_const = GameDataConsts.model_validate(gamedata_const_raw)
+    gamedata_const = load("gamedata_const")
     charword_table = load("charword_table")
     medal_table = load("medal_table")
     id_table: dict[str, Any] = {}
-    rts = RichTextStyles(gamedata_const_raw)
+    rts = RichTextStyles(gamedata_const)
     wiki = RecordingWiki()
 
     chars_dir = out_dir / "chars"
@@ -89,7 +87,7 @@ def main(out_dir: Path) -> None:
             talents=basic.get_talent_list(char, rts),
             potential=basic.get_potential_list(char),
             skill=basic.get_skill_list(char, skill_table, rts),
-            building=basic.get_building_skill(building_data, char_key, rts),
+            building=basic.get_building_skill(building_data, char_key),
             token_info=basic.get_token_info(
                 wiki, char, False, character_table, skill_table, rts
             ),

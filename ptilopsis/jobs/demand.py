@@ -1,115 +1,99 @@
-import csv
-import io
+from collections.abc import Iterable, Iterator
 
+from ptilopsis.gamedata.character_table import CharacterData, ItemBundle
+from ptilopsis.gamedata.character_util import rarity_stars
+from ptilopsis.gamedata.item_table import InventoryData
+from ptilopsis.jobs import params
+from ptilopsis.jobs.basic import item_name
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 
-mat_dic = {}
+# {材料 id: {干员 id: {需求类型: 数量}}}
+# 需求类型:1 精英化、2 技能 1→7、3/4/5 一/二/三技能专精
+MaterialDemand = dict[str, dict[str, dict[str, int]]]
 
 
-def trans_rarity(rarity):
+def trans_rarity(rarity: int) -> str:
+    """稀有度下标(0 起)→ 页面上的 tab 名。"""
+
     return {0: "一星", 1: "二星", 2: "三星", 3: "四星", 4: "五星", 5: "六星"}[rarity]
 
 
-def mat_add(mat_type, material, char_name, amount):
-    if material not in mat_dic:
-        mat_dic[material] = {}
-    if char_name not in mat_dic[material]:
-        mat_dic[material][char_name] = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
-    mat_dic[material][char_name][str(mat_type)] += amount
+def rarity_index(char: CharacterData) -> int:
+    """``TIER_n`` → ``n - 1``,与旧数据里的数字稀有度一致。"""
+
+    return rarity_stars(char.rarity) - 1
 
 
-def update_mat_demand(wiki, character_table, item_table):
-    for char in character_table:
-        char_detail = character_table[char]
-        if char_detail["profession"] == "TRAP" or char_detail["profession"] == "TOKEN":
+def iter_costs(bundles: Iterable[ItemBundle] | None) -> Iterator[tuple[str, int]]:
+    """``(材料 id, 数量)``;没有 id 的条目跳过。"""
+
+    for bundle in bundles or []:
+        if bundle.id is not None:
+            yield bundle.id, bundle.count
+
+
+def mat_add(
+    mat_dic: MaterialDemand, mat_type: int, material: str, char_name: str, amount: int
+) -> None:
+    char_demand = mat_dic.setdefault(material, {}).setdefault(
+        char_name, {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+    )
+    char_demand[str(mat_type)] += amount
+
+
+def collect_demand(character_table: dict[str, CharacterData]) -> MaterialDemand:
+    """统计每种材料被哪些干员的精英化 / 技能升级 / 专精需要多少。"""
+
+    mat_dic: MaterialDemand = {}
+    for char_key, char in character_table.items():
+        if char.profession in ("TRAP", "TOKEN"):
             continue
 
-        for phase_id in range(1, len(char_detail["phases"])):
-            if char_detail["phases"][phase_id]["evolveCost"]:
-                for material_id in range(
-                    len(char_detail["phases"][phase_id]["evolveCost"])
-                ):
-                    mat_add(
-                        1,
-                        char_detail["phases"][phase_id]["evolveCost"][material_id][
-                            "id"
-                        ],
-                        char,
-                        char_detail["phases"][phase_id]["evolveCost"][material_id][
-                            "count"
-                        ],
-                    )
+        for phase in (char.phases or [])[1:]:
+            for material, count in iter_costs(phase.evolve_cost):
+                mat_add(mat_dic, 1, material, char_key, count)
 
-        if char_detail["skills"]:
-            for allSkillLvlup_id in range(len(char_detail["allSkillLvlup"])):
-                if char_detail["allSkillLvlup"][allSkillLvlup_id]["lvlUpCost"]:
-                    for common_material_id in range(
-                        len(char_detail["allSkillLvlup"][allSkillLvlup_id]["lvlUpCost"])
-                    ):
-                        mat_add(
-                            2,
-                            char_detail["allSkillLvlup"][allSkillLvlup_id]["lvlUpCost"][
-                                common_material_id
-                            ]["id"],
-                            char,
-                            char_detail["allSkillLvlup"][allSkillLvlup_id]["lvlUpCost"][
-                                common_material_id
-                            ]["count"],
-                        )
+        if char.skills:
+            for level_cost in char.all_skill_lvlup or []:
+                for material, count in iter_costs(level_cost.lvl_up_cost):
+                    mat_add(mat_dic, 2, material, char_key, count)
 
-            for skill_id in range(len(char_detail["skills"])):
-                if char_detail["skills"][skill_id]["levelUpCostCond"]:
+            for skill_id, skill in enumerate(char.skills):
+                if skill.level_up_cost_cond:
                     for i in [8, 9, 10]:
-                        skill_levelup_material = char_detail["skills"][skill_id][
-                            "levelUpCostCond"
-                        ][i - 8]["levelUpCost"]
-                        if skill_levelup_material:
-                            for material_id in range(len(skill_levelup_material)):
-                                mat_add(
-                                    skill_id + 3,
-                                    skill_levelup_material[material_id]["id"],
-                                    char,
-                                    skill_levelup_material[material_id]["count"],
-                                )
+                        for material, count in iter_costs(
+                            skill.level_up_cost_cond[i - 8].level_up_cost
+                        ):
+                            mat_add(mat_dic, skill_id + 3, material, char_key, count)
+    return mat_dic
 
+
+def update_mat_demand(
+    wiki: Wiki, character_table: dict[str, CharacterData], item_table: InventoryData
+) -> None:
+    mat_dic = collect_demand(character_table)
     for material in mat_dic:
-        origin_text = wiki.read(item_table["items"][material]["name"].rstrip())
+        origin_text = wiki.read(item_name(item_table, material).rstrip())
         count1 = count2 = count3 = 0
         mat_desc = ""
         mat_text = ["", "", "", "", "", ""]
-        for mat_char in mat_dic[material]:
-            count1 += mat_dic[material][mat_char]["1"]
-            count2 += mat_dic[material][mat_char]["2"]
-            sum3 = (
-                mat_dic[material][mat_char]["3"]
-                + mat_dic[material][mat_char]["4"]
-                + mat_dic[material][mat_char]["5"]
-            )
+        for mat_char, demand in mat_dic[material].items():
+            char = character_table[mat_char]
+            count1 += demand["1"]
+            count2 += demand["2"]
+            sum3 = demand["3"] + demand["4"] + demand["5"]
             count3 += sum3
             if sum3 == 0:
                 num3 = "0"
+            elif rarity_index(char) == 5 or char.name == "阿米娅":
+                num3 = "{}/{}/{}".format(demand["3"], demand["4"], demand["5"])
             else:
-                if (
-                    character_table[mat_char]["rarity"] == 5
-                    or character_table[mat_char]["name"] == "阿米娅"
-                ):
-                    num3 = "{}/{}/{}".format(
-                        mat_dic[material][mat_char]["3"],
-                        mat_dic[material][mat_char]["4"],
-                        mat_dic[material][mat_char]["5"],
-                    )
-                else:
-                    num3 = "{}/{}".format(
-                        mat_dic[material][mat_char]["3"],
-                        mat_dic[material][mat_char]["4"],
-                    )
-            mat_text[character_table[mat_char]["rarity"]] += (
+                num3 = "{}/{}".format(demand["3"], demand["4"])
+            mat_text[rarity_index(char)] += (
                 "\n|{char_name}|{num1}|{num2}|{num3}".format(
-                    char_name=character_table[mat_char]["name"],
-                    num1=mat_dic[material][mat_char]["1"],
-                    num2=mat_dic[material][mat_char]["2"],
-                    num3=num3,
+                    char_name=char.name, num1=demand["1"], num2=demand["2"], num3=num3
                 )
             )
         for i in reversed(range(len(mat_text))):
@@ -140,7 +124,8 @@ def update_mat_demand(wiki, character_table, item_table):
         )
 
         # 新版，widget
-        mat_desc = f"==干员需求==\n{{{{#widget:ItemDemand|item={item_table['items'][material]['name'].strip()}}}}}\n"
+        title = item_name(item_table, material).strip()
+        mat_desc = f"==干员需求==\n{{{{#widget:ItemDemand|item={title}}}}}\n"
 
         num_flag1 = origin_text.find("==干员需求==")
         num_flag2 = origin_text.find("==材料掉落==")
@@ -155,51 +140,47 @@ def update_mat_demand(wiki, character_table, item_table):
 
         # edit wiki
         if origin_text != new_text:
-            wiki.edit(
-                title=item_table["items"][material]["name"].strip(),
-                text=new_text,
-                summary="update",
-            )
+            wiki.edit(title=title, text=new_text, summary="update")
             # logger.info(new_text)
-            logger.info(
-                "Update: {}.".format(item_table["items"][material]["name"].strip())
-            )
+            logger.info(f"Update: {title}.")
         # else:
-        #     logger.info('Same: {}.'.format(item_table['items'][material]['name'].strip()))
+        #     logger.info('Same: {}.'.format(title))
+
+
+def merge_patch_chars(
+    character_table: dict[str, CharacterData], char_patch_table: params.CharPatchTable
+) -> dict[str, CharacterData]:
+    """把升变干员并进干员表;阿米娅(近卫)沿用近卫阿米娅的精英化与技能升级材料。"""
+
+    for key, patch in (char_patch_table.patch_chars or {}).items():
+        # char_patch_table 里的 CharacterData 是另一份同构模型,转成干员表的
+        character_table[key] = CharacterData.model_validate(
+            patch.model_dump(by_alias=True)
+        )
+    amiya2 = character_table["char_1001_amiya2"]
+    aguard = character_table["char_508_aguard"]
+    amiya2.name = "阿米娅(近卫)"
+    amiya2.phases = aguard.phases
+    amiya2.all_skill_lvlup = aguard.all_skill_lvlup
+    return character_table
 
 
 @job
-def run(ctx: JobContext) -> None:
-    character_table = ctx.getgd("excel/character_table.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    char_patch_table = ctx.getgd("excel/char_patch_table.json")
-    id_csv, id_table = ctx.wiki.read("干员一览/干员id‎‎"), {}
-    reader = csv.DictReader(io.StringIO(id_csv))
-    for row in reader:
-        id_table[row["name"]] = {
-            "id": int(row["sortId"]),
-            "approach": row["approach"],
-            "date": row["date"],
-        }
+def run(
+    wiki: Wiki,
+    character_table: params.CharacterTable,
+    item_table: params.ItemTable,
+    char_patch_table: params.CharPatchTable,
+    id_table: params.CharIdTable,
+) -> None:
+    character_table = merge_patch_chars(character_table, char_patch_table)
 
-    def sort_id(k, l, i):
-        n = l[k]["name"]
-        return i[n]["id"] if n in i else 9999
+    def sort_id(key: str) -> int:
+        name = character_table[key].name
+        return id_table[name]["id"] if name in id_table else 9999
 
-    for k in char_patch_table["patchChars"]:
-        character_table[k] = char_patch_table["patchChars"][k]
-    character_table["char_1001_amiya2"]["name"] = "阿米娅(近卫)"
-    character_table["char_1001_amiya2"]["phases"] = character_table["char_508_aguard"][
-        "phases"
-    ]
-    character_table["char_1001_amiya2"]["allSkillLvlup"] = character_table[
-        "char_508_aguard"
-    ]["allSkillLvlup"]
     character_table_new = {
-        k: character_table[k]
-        for k in sorted(
-            character_table, key=lambda x: sort_id(x, character_table, id_table)
-        )
+        k: character_table[k] for k in sorted(character_table, key=sort_id)
     }
 
-    update_mat_demand(ctx.wiki, character_table_new, item_table)
+    update_mat_demand(wiki, character_table_new, item_table)
