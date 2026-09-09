@@ -1,10 +1,24 @@
 import copy
 import json
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import pytest
+from pydantic import TypeAdapter
 
-from ptilopsis.gamedata.stage import StageTable
+from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.gamedata.character_table import CharacterData, CharacterTable
+from ptilopsis.gamedata.enemy_database import EnemyDatabase, EnemyDatabaseEnemyLevel
+from ptilopsis.gamedata.enemy_handbook_table import EnemyHandBookData
+from ptilopsis.gamedata.enemy_util import index_enemy_levels
+from ptilopsis.gamedata.item_table import InventoryData
+from ptilopsis.gamedata.level_data import LevelData
+from ptilopsis.gamedata.roguelike_topic_table import RoguelikeGameStageData
+from ptilopsis.gamedata.sandbox_perm_table import SandboxV2StageData
+from ptilopsis.gamedata.skill_table import SkillDataBundle, SkillTable
+from ptilopsis.gamedata.stage_table import StageData, StageTable
+from ptilopsis.gamedata.zone_table import ZoneTable
 from ptilopsis.jobs.stage import (
     BasicPageView,
     BasicStageView,
@@ -34,36 +48,73 @@ from ptilopsis.jobs.stage import (
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "stage"
 GOLDEN_DIR = Path(__file__).parent / "golden" / "stage"
 
+EnemyTable = TypeAdapter(dict[str, EnemyHandBookData])
+
 
 def stub_compile_rich_text(text: str) -> str:
     return f"[RTS]{text}"
 
 
-def load_fixture() -> dict:
-    return json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
+@dataclass
+class Fixture:
+    """basic.json 校验成生成模型后的各张表;raw 留给要先改写字段再校验的用例。"""
+
+    raw: dict[str, Any]
+    stage_table: StageTable
+    zone_table: ZoneTable
+    character_table: dict[str, CharacterData]
+    skill_table: dict[str, SkillDataBundle]
+    building_data: BuildingData
+    item_table: InventoryData
+    enemy_table: dict[str, EnemyHandBookData]
+    enemy_levels: dict[str, list[EnemyDatabaseEnemyLevel]]
+    level: LevelData
 
 
-def typed_table(fixture: dict, **overrides) -> StageTable:
+def load_fixture() -> Fixture:
+    raw = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
+    return Fixture(
+        raw=raw,
+        stage_table=StageTable.model_validate(raw["stage_table"]),
+        zone_table=ZoneTable.model_validate(raw["zone_table"]),
+        character_table=CharacterTable.validate_python(raw["character_table"]),
+        skill_table=SkillTable.validate_python(raw["skill_table"]),
+        building_data=BuildingData.model_validate(raw["building_data"]),
+        item_table=InventoryData.model_validate(raw["item_table"]),
+        enemy_table=EnemyTable.validate_python(raw["enemy_table"]),
+        enemy_levels=index_enemy_levels(
+            EnemyDatabase.model_validate(raw["enemy_database"])
+        ),
+        level=LevelData.model_validate(raw["level_table"]),
+    )
+
+
+def stage_of(table: StageTable, key: str) -> StageData:
+    assert table.stages is not None
+    return table.stages[key]
+
+
+def typed_table(fixture: Fixture, **overrides) -> StageTable:
     """按 overrides 改写普通关卡后校验成 StageTable。"""
 
-    stage_table = copy.deepcopy(fixture["stage_table"])
+    stage_table = copy.deepcopy(fixture.raw["stage_table"])
     stage_table["stages"]["normal"].update(overrides)
     return StageTable.model_validate(stage_table)
 
 
-def normal_stage_with(fixture: dict, **overrides) -> str:
+def normal_stage_with(fixture: Fixture, **overrides) -> str:
     """按 overrides 改写普通关卡后渲染,用于逐参数比对。"""
 
     table = typed_table(fixture, **overrides)
     return render_basic_stage(
         build_normal_stage(
-            table.stages["normal"],
+            stage_of(table, "normal"),
             table,
-            fixture["zone_table"],
-            fixture["character_table"],
-            fixture["building_data"],
-            fixture["item_table"],
-            fixture["level_table"],
+            fixture.zone_table,
+            fixture.character_table,
+            fixture.building_data,
+            fixture.item_table,
+            fixture.level,
             {},
             stub_compile_rich_text,
         )
@@ -71,44 +122,43 @@ def normal_stage_with(fixture: dict, **overrides) -> str:
 
 
 def test_stage_rendering_matches_golden() -> None:
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
-    level = fixture["level_table"]
-    stage_table = StageTable.model_validate(fixture["stage_table"])
+    fixture = load_fixture()
+    stage_table = fixture.stage_table
 
     page = NormalPageView(
         normal=build_normal_stage(
-            stage_table.stages["normal"],
+            stage_of(stage_table, "normal"),
             stage_table,
-            fixture["zone_table"],
-            fixture["character_table"],
-            fixture["building_data"],
-            fixture["item_table"],
-            level,
+            fixture.zone_table,
+            fixture.character_table,
+            fixture.building_data,
+            fixture.item_table,
+            fixture.level,
             {},
             stub_compile_rich_text,
             map_override="map_override",
         ),
         assault=build_4star_stage(
-            stage_table.stages["hard"],
+            stage_of(stage_table, "hard"),
             stage_table,
-            fixture["zone_table"],
-            fixture["character_table"],
-            fixture["building_data"],
-            fixture["item_table"],
-            level,
+            fixture.zone_table,
+            fixture.character_table,
+            fixture.building_data,
+            fixture.item_table,
+            fixture.level,
             stub_compile_rich_text,
         ),
         enemies=build_enemies(
-            level,
-            fixture["enemy_table"],
-            fixture["enemy_database"],
+            fixture.level,
+            fixture.enemy_table,
+            fixture.enemy_levels,
             False,
         ),
         squads=build_squad_sections(
-            level,
+            fixture.level,
             "T-1 测试关卡",
-            fixture["character_table"],
-            fixture["skill_table"],
+            fixture.character_table,
+            fixture.skill_table,
         ),
         material_drop=True,
     )
@@ -126,21 +176,23 @@ def test_zone_without_names_still_emits_the_parameter() -> None:
     这些关卡的 |所属区域= 必须照旧输出字面量 None,而不能让整个参数消失 ——
     MediaWiki 模板对「参数缺失」和「参数为 None」的处理不同。
     """
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
-    zone_table = {"zones": {"zone_1": {"zoneNameFirst": None, "zoneNameSecond": None}}}
-    raw_table = fixture["stage_table"]
+    fixture = load_fixture()
+    zone_table = ZoneTable.model_validate(
+        {"zones": {"zone_1": {"zoneNameFirst": None, "zoneNameSecond": None}}}
+    )
+    raw_table = fixture.raw["stage_table"]
     raw_table["stages"]["normal"]["zoneId"] = "zone_1"
     raw_table["stages"]["hard"]["zoneId"] = "zone_1"
     stage_table = StageTable.model_validate(raw_table)
 
     normal = build_normal_stage(
-        stage_table.stages["normal"],
+        stage_of(stage_table, "normal"),
         stage_table,
         zone_table,
-        fixture["character_table"],
-        fixture["building_data"],
-        fixture["item_table"],
-        fixture["level_table"],
+        fixture.character_table,
+        fixture.building_data,
+        fixture.item_table,
+        fixture.level,
         {},
         stub_compile_rich_text,
     )
@@ -148,13 +200,13 @@ def test_zone_without_names_still_emits_the_parameter() -> None:
 
     # 突袭关卡的 AssaultStageView.zone 声明为 str，None 会直接 ValidationError
     assault = build_4star_stage(
-        stage_table.stages["hard"],
+        stage_of(stage_table, "hard"),
         stage_table,
         zone_table,
-        fixture["character_table"],
-        fixture["building_data"],
-        fixture["item_table"],
-        fixture["level_table"],
+        fixture.character_table,
+        fixture.building_data,
+        fixture.item_table,
+        fixture.level,
         stub_compile_rich_text,
     )
     assert assault.zone == "None"
@@ -165,43 +217,38 @@ def test_zone_without_names_still_emits_the_parameter() -> None:
 
 def test_stage_table_tolerates_a_stage_with_missing_fields() -> None:
     """单个关卡的 schema 漂移不能让整张表校验失败,否则全部关卡都产不出来。"""
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
-    stage_table = fixture["stage_table"]
+    fixture = load_fixture()
+    stage_table = fixture.raw["stage_table"]
     del stage_table["stages"]["normal"]["dangerLevel"]
 
     table = StageTable.model_validate(stage_table)
 
-    assert table.stages["normal"].danger_level is None
-    assert table.stages["hard"].code == "T-1"
+    assert stage_of(table, "normal").danger_level is None
+    assert stage_of(table, "hard").code == "T-1"
 
 
-def test_stage_table_tolerates_a_field_turning_null() -> None:
-    """上游把字段改成 null 比整个删掉更常见,退化路径要和缺失一致。"""
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
-    stage_table = fixture["stage_table"]
-    stage_table["stages"]["normal"]["apCost"] = None
-    stage_table["stages"]["normal"]["appearanceStyle"] = None
-    stage_table["stages"]["normal"]["stageDropInfo"] = None
+def test_stage_table_tolerates_a_null_drop_info() -> None:
+    """stageDropInfo 为 null 的关卡按没有掉落处理,不能让整张表校验失败。"""
+    fixture = load_fixture()
 
-    table = StageTable.model_validate(stage_table)
+    rendered = normal_stage_with(fixture, stageDropInfo=None)
 
-    assert table.stages["normal"].ap_cost == 0
-    assert table.stages["normal"].appearance_style == ""
-    assert table.stages["normal"].stage_drop_info.display_detail_rewards == []
-    assert table.stages["hard"].code == "T-1"
+    assert "|首次掉落=" not in rendered
+    assert "|常规掉落=" not in rendered
+    assert "|额外物资=" not in rendered
 
 
 def test_stage_table_keeps_null_for_optional_fields() -> None:
     """值为 null 的可选字段仍然是 None,不能被默认值悄悄改写成别的东西。"""
-    fixture = json.loads((FIXTURE_DIR / "basic.json").read_text(encoding="utf-8"))
-    stage_table = fixture["stage_table"]
+    fixture = load_fixture()
+    stage_table = fixture.raw["stage_table"]
     stage_table["stages"]["normal"]["dangerLevel"] = None
     stage_table["stages"]["normal"]["levelId"] = None
 
     table = StageTable.model_validate(stage_table)
 
-    assert table.stages["normal"].danger_level is None
-    assert table.stages["normal"].level_id is None
+    assert stage_of(table, "normal").danger_level is None
+    assert stage_of(table, "normal").level_id is None
 
 
 def test_campaign_entry_template_renders_the_complete_page() -> None:
@@ -294,6 +341,7 @@ def test_empty_enemy_list_still_renders_the_section_when_level_exists() -> None:
         ({"description": None}, "|关卡描述=\n"),
         ({"description": ""}, "|关卡描述=\n"),
         ({"unlockCondition": []}, "|解锁条件=\n"),
+        ({"unlockCondition": None}, "|解锁条件=\n"),
         ({"difficulty": ""}, "|关卡难度=\n"),
     ],
 )
@@ -305,19 +353,19 @@ def test_empty_values_still_emit_the_parameter(
 
 def test_assault_recommended_level_survives_an_empty_danger_level() -> None:
     fixture = load_fixture()
-    raw_table = copy.deepcopy(fixture["stage_table"])
+    raw_table = copy.deepcopy(fixture.raw["stage_table"])
     raw_table["stages"]["hard"]["dangerLevel"] = ""
     stage_table = StageTable.model_validate(raw_table)
 
     rendered = render_assault_stage(
         build_4star_stage(
-            stage_table.stages["hard"],
+            stage_of(stage_table, "hard"),
             stage_table,
-            fixture["zone_table"],
-            fixture["character_table"],
-            fixture["building_data"],
-            fixture["item_table"],
-            fixture["level_table"],
+            fixture.zone_table,
+            fixture.character_table,
+            fixture.building_data,
+            fixture.item_table,
+            fixture.level,
             stub_compile_rich_text,
         )
     )
@@ -339,16 +387,16 @@ def test_pages_without_a_parameter_keep_it_absent() -> None:
 
     fixture = load_fixture()
     stage = build_sandbox_v2_stage(
-        {
-            "code": "SV-1",
-            "name": "测试演算",
-            "stageId": "sandbox_1",
-            "levelId": "Obt/Test/level_normal",
-            "description": "描述",
-            "actionCost": 3,
-        },
+        SandboxV2StageData(
+            code="SV-1",
+            name="测试演算",
+            stage_id="sandbox_1",
+            level_id="Obt/Test/level_normal",
+            description="描述",
+            action_cost=3,
+        ),
         stub_compile_rich_text,
-        fixture["level_table"],
+        fixture.level,
         {},
     )
     rendered = render_basic_stage(stage)
@@ -362,13 +410,13 @@ def test_assault_comment_stays_tight_without_intelligence() -> None:
     """没有 ebuff 符文时注释里不留空行。"""
 
     fixture = load_fixture()
-    level_table = copy.deepcopy(fixture["level_table"])
-    level_table["runes"] = []
+    raw_level = copy.deepcopy(fixture.raw["level_table"])
+    raw_level["runes"] = []
 
     rendered = render_assault_stage(
         build_roguelike_4star_stage(
-            {"code": "RL-1", "name": "测试紧急", "eliteDesc": "描述"},
-            level_table,
+            RoguelikeGameStageData(code="RL-1", name="测试紧急", elite_desc="描述"),
+            LevelData.model_validate(raw_level),
             stub_compile_rich_text,
         )
     )
@@ -394,27 +442,31 @@ def test_sandbox_page_keeps_its_table_of_contents() -> None:
 def test_squad_section_is_dropped_but_the_job_survives_broken_data() -> None:
     """单个干员数据缺字段只该丢掉这一关的固定编队,不能让异常冒泡。"""
 
-    level_table = {
-        "predefines": {
-            "characterCards": [
-                {
-                    "inst": {
-                        "characterKey": "char_1",
-                        "phase": "PHASE_2",
-                        "level": 50,
-                        "potentialRank": 0,
-                        "favorPoint": 50,
-                    },
-                    "skillIndex": -1,
-                    "mainSkillLvl": 7,
-                }
-            ]
+    level = LevelData.model_validate(
+        {
+            "predefines": {
+                "characterCards": [
+                    {
+                        "inst": {
+                            "characterKey": "char_1",
+                            "phase": "PHASE_2",
+                            "level": 50,
+                            "potentialRank": 0,
+                            "favorPoint": 50,
+                        },
+                        "skillIndex": -1,
+                        "mainSkillLvl": 7,
+                    }
+                ]
+            }
         }
-    }
-    # name 为 null 会让 SquadUnitView 抛 ValidationError
-    character_table = {"char_1": {"name": None, "skills": []}}
+    )
+    # 干员名为 null:模型里是 None,编队单位没法渲染,整节丢掉
+    character_table = CharacterTable.validate_python(
+        {"char_1": {"name": None, "skills": []}}
+    )
 
-    assert build_squad_sections(level_table, "T-1 测试关卡", character_table, {}) == []
+    assert build_squad_sections(level, "T-1 测试关卡", character_table, {}) == []
 
 
 def test_roguelike_page_matches_golden() -> None:
@@ -423,26 +475,26 @@ def test_roguelike_page_matches_golden() -> None:
     fixture = load_fixture()
     page = RoguelikePageView(
         normal=build_roguelike_stage(
-            {
-                "id": "rogue_1",
-                "code": "RL-1",
-                "name": "测试关卡",
-                "levelId": "Obt/Test/level_normal",
-                "description": "第一行\\n第二行",
-            },
-            fixture["level_table"],
+            RoguelikeGameStageData(
+                id="rogue_1",
+                code="RL-1",
+                name="测试关卡",
+                level_id="Obt/Test/level_normal",
+                description="第一行\\n第二行",
+            ),
+            fixture.level,
             {},
             stub_compile_rich_text,
         ),
         assault=build_roguelike_4star_stage(
-            {"code": "RL-1", "name": "测试关卡", "eliteDesc": "紧急描述"},
-            fixture["level_table"],
+            RoguelikeGameStageData(code="RL-1", name="测试关卡", elite_desc="紧急描述"),
+            fixture.level,
             stub_compile_rich_text,
         ),
         enemies=build_enemies(
-            fixture["level_table"],
-            fixture["enemy_table"],
-            fixture["enemy_database"],
+            fixture.level,
+            fixture.enemy_table,
+            fixture.enemy_levels,
             False,
         ),
     )
@@ -459,29 +511,29 @@ def test_sandbox_page_matches_golden() -> None:
     fixture = load_fixture()
     page = BasicPageView(
         stage=build_sandbox_v2_stage(
-            {
-                "code": "SV-1",
-                "name": "测试演算",
-                "stageId": "sandbox_1",
-                "levelId": "Obt/Test/level_normal",
-                "description": "第一行\\n第二行",
-                "actionCost": 3,
-            },
+            SandboxV2StageData(
+                code="SV-1",
+                name="测试演算",
+                stage_id="sandbox_1",
+                level_id="Obt/Test/level_normal",
+                description="第一行\\n第二行",
+                action_cost=3,
+            ),
             stub_compile_rich_text,
-            fixture["level_table"],
+            fixture.level,
             {},
         ),
         enemies=build_enemies(
-            fixture["level_table"],
-            fixture["enemy_table"],
-            fixture["enemy_database"],
+            fixture.level,
+            fixture.enemy_table,
+            fixture.enemy_levels,
             False,
         ),
         squads=build_squad_sections(
-            fixture["level_table"],
+            fixture.level,
             "SV-1 测试演算",
-            fixture["character_table"],
-            fixture["skill_table"],
+            fixture.character_table,
+            fixture.skill_table,
         ),
     )
 
@@ -491,20 +543,11 @@ def test_sandbox_page_matches_golden() -> None:
     assert render_basic_page(page) == expected
 
 
-def test_tile_effect_tolerates_a_non_numeric_blackboard_value() -> None:
-    """黑板值只会被 str() 进注释,类型异常不该炸掉整个关卡。"""
+def test_tile_effects_tolerate_a_level_without_tiles() -> None:
+    """mapData 或 tiles 为 null 的关卡没有特殊地形,不能在这里炸掉。"""
 
-    level_table = {
-        "mapData": {
-            "tiles": [
-                {
-                    "tileKey": "tile_test",
-                    "blackboard": [{"key": "attr", "value": None, "valueStr": None}],
-                }
-            ]
-        }
-    }
-
-    tiles = build_tile_effects(level_table, {})
-
-    assert tiles[0].blackboards[0][0].value is None
+    assert build_tile_effects(LevelData.model_validate({"mapData": None}), {}) == []
+    assert (
+        build_tile_effects(LevelData.model_validate({"mapData": {"tiles": None}}), {})
+        == []
+    )

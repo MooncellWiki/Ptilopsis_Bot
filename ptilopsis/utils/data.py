@@ -8,7 +8,7 @@
 import json
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ptilopsis.log import logger
 from ptilopsis.utils.torappu import TorappuClient
@@ -28,7 +28,7 @@ class GameData:
         yostar_dir: str | os.PathLike[str] = YOSTAR_DIR,
         cache_dir: str | os.PathLike[str] = CACHE_DIR,
     ) -> None:
-        self.data: dict[tuple[str, str], object] = {}
+        self.data: dict[tuple[str, str], Any] = {}
         """跨 job 的内存缓存,只放 excel 表。"""
         self.config = config
         self.torappu = TorappuClient(config.torappu_url)
@@ -39,7 +39,7 @@ class GameData:
 
     # ----- 对外接口 -----
 
-    def get(self, path: str, region: str = "CN"):
+    def get(self, path: str, region: str = "CN") -> Any:
         """``gamedata/<path>`` 解码后的 JSON。"""
         key = (region, path)
         if key in self.data:

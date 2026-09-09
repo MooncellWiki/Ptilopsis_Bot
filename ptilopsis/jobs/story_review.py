@@ -1,10 +1,18 @@
-from typing import Annotated, Any
+from typing import Annotated
 
+from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.gamedata.item_table import InventoryData
+from ptilopsis.gamedata.story_review_table import (
+    ItemBundle,
+    StoryReviewGroupClientData,
+)
+from ptilopsis.gamedata.zone_table import ZoneTable
 from ptilopsis.jobs.params import (
-    RawBuildingData,
-    RawCharacterTable,
-    RawItemTable,
-    gamedata,
+    CharacterTable,
+    ItemTable,
+    StoryReviewTable,
+    table,
 )
 from ptilopsis.log import logger
 from ptilopsis.utils.data import GameData
@@ -12,24 +20,38 @@ from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
 
-def parse_item(item, character_table, building_data, item_table):
-    if item["type"] == "CHAR":
-        return character_table[item["id"]]["name"]
-    elif item["type"] == "FURN":
-        return building_data["customData"]["furnitures"][item["id"]]["name"]
-    elif item["id"] in item_table["items"]:
+def parse_item(
+    item: ItemBundle,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+) -> str:
+    item_id = item.id or ""
+    if item.type == "CHAR":
+        return character_table[item_id].name or ""
+    elif item.type == "FURN":
+        custom_data = building_data.custom_data
+        furnitures = (custom_data.furnitures if custom_data else None) or {}
+        return furnitures[item_id].name or ""
+    items = item_table.items or {}
+    if item_id in items:
         return "{{{{材料消耗|{}|{}}}}}".format(
-            item_table["items"][item["id"]]["name"].rstrip(), item["count"]
+            (items[item_id].name or "").rstrip(), item.count
         )
-    else:
-        logger.info("Unknown reward item {}.".format(item["id"]))
+    logger.info(f"Unknown reward item {item.id}.")
+    return ""
 
 
 def update_story_review(
-    gamedata, story_review_table, character_table, building_data, item_table, zone_table
-):
+    gamedata: GameData,
+    story_review_table: dict[str, StoryReviewGroupClientData],
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+    zone_table: ZoneTable,
+) -> str:
     content = "__TOC__\n"
-    content_dict = {
+    content_dict: dict[str, list[str]] = {
         "ACTIVITY_STORY": [],
         "MINI_STORY": [],
         "MAIN_STORY": [],
@@ -59,88 +81,63 @@ def update_story_review(
 |<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
 {{|
 """
-    memory_title = """{{{{锚点|{name2}}}}}
-{{| class="wikitable" style="position:relative; text-align:center; width:100%; max-width:1000px; display:table; font-size:14px;"
-! colspan="2" style="text-align:center;"|<big><big>{name1}</big></big>
-|-
-! class="nomobile"|[[文件:章节名称 {name2}.png|160px|link=关卡一览#主线关卡一览]]
-|<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
-{{|
-"""
-    for event in story_review_table:
+    zones = zone_table.zones or {}
+    mainline_zone_ids = zone_table.mainline_zone_id_list or []
+    for group in story_review_table.values():
         event_table = ""
-        if story_review_table[event]["actType"] == "ACTIVITY_STORY":
-            event_table += activity_table_title.format(
-                name=story_review_table[event]["name"]
-            )
-        elif story_review_table[event]["actType"] == "MINI_STORY":
-            event_table += mini_table_title.format(
-                name=story_review_table[event]["name"]
-            )
-        elif story_review_table[event]["actType"] == "MAIN_STORY":
+        if group.act_type == "ACTIVITY_STORY":
+            event_table += activity_table_title.format(name=group.name)
+        elif group.act_type == "MINI_STORY":
+            event_table += mini_table_title.format(name=group.name)
+        elif group.act_type == "MAIN_STORY":
+            # 老的主线 id 是 main_<序号>,按序号换成 zone_table 里的章节 id;
+            # 换不到章节的(如尚未开放)直接跳过
             try:
-                if story_review_table[event]["id"] not in zone_table["zones"]:
-                    story_review_table[event]["id"] = zone_table["mainlineZoneIdList"][
-                        int(story_review_table[event]["id"][5:])
-                    ]
-                event_table += main_table_title.format(
-                    name1=zone_table["zones"][story_review_table[event]["id"]][
-                        "zoneNameFirst"
-                    ]
-                    + " "
-                    + zone_table["zones"][story_review_table[event]["id"]][
-                        "zoneNameSecond"
-                    ],
-                    name2=zone_table["zones"][story_review_table[event]["id"]][
-                        "zoneNameFirst"
-                    ],
-                )
-            except:
+                zone_id = group.id
+                if zone_id is None or zone_id not in zones:
+                    zone_id = mainline_zone_ids[int((zone_id or "")[5:])]
+                    group.id = zone_id
+                zone = zones[zone_id]
+            except Exception:
                 continue
-        elif story_review_table[event]["actType"] == "NONE":
+            if zone.zone_name_first is None or zone.zone_name_second is None:
+                continue
+            event_table += main_table_title.format(
+                name1=zone.zone_name_first + " " + zone.zone_name_second,
+                name2=zone.zone_name_first,
+            )
+        elif group.act_type == "NONE":
             continue
         else:
-            logger.info(
-                "Unknown actType {} for {}".format(
-                    story_review_table[event]["actType"],
-                    story_review_table[event]["name"],
-                )
-            )
+            logger.info(f"Unknown actType {group.act_type} for {group.name}")
             continue
 
         story_list = []
-        for story in story_review_table[event]["infoUnlockDatas"]:
-            if story["storyInfo"]:
+        for story in group.info_unlock_datas or []:
+            if story.story_info:
+                path = "story/[uc]" + story.story_info + ".txt"
                 try:
                     story_info = (
-                        gamedata.get_txt(
-                            "story/[uc]" + story["storyInfo"] + ".txt", "CN"
-                        )
-                        .rstrip()
-                        .replace("\n", "<br/>")
+                        gamedata.get_txt(path, "CN").rstrip().replace("\n", "<br/>")
                     )
-                except:
-                    logger.info(
-                        "路径名错误：", "story/[uc]" + story["storyInfo"] + ".txt"
-                    )
+                except Exception:
+                    logger.info(f"路径名错误：{path}")
                     story_info = "{{color|red|剧情简介文件路径错误}}"
             else:
                 story_info = ""
             story_list.append(
-                "{{{{剧情简介|{}|{}|{}|{}}}}}".format(
-                    story["storyCode"], story["storyName"], story["avgTag"], story_info
-                )
+                f"{{{{剧情简介|{story.story_code}|{story.story_name}|{story.avg_tag}|{story_info}}}}}"
             )
         event_table += "\n|-\n".join(story_list) + "\n|}</div>"
-        if story_review_table[event]["rewards"]:
+        if group.rewards:
             event_table += "\n|-\n!解锁报酬\n|" + "".join(
                 [
                     parse_item(item, character_table, building_data, item_table)
-                    for item in story_review_table[event]["rewards"]
+                    for item in group.rewards
                 ]
             )
         event_table += "\n|}\n"
-        content_dict[story_review_table[event]["actType"]].append(event_table)
+        content_dict[group.act_type].append(event_table)
     content += "==公共事务实录==\n" + "".join(content_dict["ACTIVITY_STORY"])
     content += "==特别行动记述==\n" + "".join(content_dict["MINI_STORY"])
     content += "==主线剧情==\n" + "".join(content_dict["MAIN_STORY"])
@@ -152,13 +149,11 @@ def update_story_review(
 def run(
     wiki: Wiki,
     data: GameData,
-    story_review_table: Annotated[
-        dict[str, Any], gamedata("excel/story_review_table.json")
-    ],
-    character_table: RawCharacterTable,
-    building_data: RawBuildingData,
-    item_table: RawItemTable,
-    zone_table: Annotated[dict[str, Any], gamedata("excel/zone_table.json")],
+    story_review_table: StoryReviewTable,
+    character_table: CharacterTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+    zone_table: Annotated[ZoneTable, table("zone_table")],
 ) -> None:
     content = update_story_review(
         data,

@@ -19,7 +19,7 @@
 ptilopsis/
 ├── __main__.py        # 入口，按命令行参数分派任务
 ├── config.py          # config.json 的 pydantic 模型 + 环境变量读取
-├── gamedata/          # 各表的 pydantic 模型（由 FBS 生成）+ 客户端展示规则
+├── gamedata/          # 各表的 pydantic 模型（由 FBS 生成，见下文「数据模型」）+ 客户端展示规则
 ├── jobs/              # 各类 Wiki 更新任务
 │   ├── basic.py           # 干员基础信息
 │   ├── sidebar.py         # 侧边栏干员一览
@@ -39,7 +39,7 @@ ptilopsis/
 │   ├── term.py            # 术语
 │   ├── update_jp.py       # JP 服增量更新
 │   ├── weedy.py           # 高规格自动任务
-│   ├── params.py          # job 可注入的现成依赖（gamedata / RichText / CharIdTable …）
+│   ├── params.py          # job 可注入的现成依赖：各表的类型化模型、关卡加载器、RichText、CharIdTable …
 │   └── ...
 └── utils/
     ├── data.py            # GameData，统一访问 torappu（国服）/ 子模块（海外服）数据
@@ -52,6 +52,10 @@ ptilopsis/
 thirdparty/
 ├── OpenArknightsFBS/         # FlatBuffers schema (submodule，仅生成模型时用)
 └── ArknightsGameData_YoStar/ # 海外服游戏数据 (submodule)
+scripts/
+├── gen_gamedata_models.py     # 从 FBS 生成 ptilopsis/gamedata 下的模型
+├── parity_jobs.py             # 把各 job 生成的页面落盘，供重构前后 diff
+└── parity_basic.py            # 同上，只针对 basic / char_attr 的渲染函数
 .github/workflows/         # GitHub Actions 定时 / 手动触发
 config.json                # 非敏感配置：各服 CDN 地址、FlatBuffers 表名等
 .env.example               # 敏感配置的环境变量样例
@@ -174,27 +178,53 @@ uv run ruff format .
 
 ### 数据模型
 
-`ptilopsis/gamedata/` 下的整表模型由 `thirdparty/OpenArknightsFBS/FBS/*.fbs` 生成，
-FBS 更新后重新生成对应的表即可：
+job 读到的 gamedata 全部是 pydantic 模型，不再直接操作 dict。`ptilopsis/gamedata/` 下的整表模型由
+`thirdparty/OpenArknightsFBS/FBS/*.fbs` 生成，FBS 更新后重新生成即可：
 
 ```bash
-uv run python scripts/gen_gamedata_models.py character_table skill_table
+uv run python scripts/gen_gamedata_models.py --all              # 项目用到的全部表
+uv run python scripts/gen_gamedata_models.py character_table    # 只生成指定表
 ```
 
-FlatBuffers 里 string / table / vector 字段都可能缺失，生成的模型把它们一律声明成
-`T | None`，未判空的访问会被 pyright 指出；标量按 FBS 默认值填充，枚举字段保留成员名字符串。
+- 生成规则：`table clz_Torappu_X` → `class X(GameDataModel)`，字段名转 snake_case
+  （`def` → `def_`、`dict` → `dict_` 这类与关键字 / 类型名撞车的加下划线并给 alias）；
+  `[dict__K__V]` → `dict[K, V]`；`kvp__K__V` → 带 `key` / `value` 的类；
+  `enum__X` 字段保留成员名字符串，同时生成 `IntEnum` 供比较顺序；
+  `SimpleKVTable` 根表 → `TypeAdapter(dict[str, X])`。
+- FlatBuffers 里 string / table / vector 字段都可能缺失，生成的模型把它们一律声明成
+  `T | None`，未判空的访问会被 pyright 指出；标量按 FBS 默认值填充。
+- `levels/*.json`（关卡地图、波次、预设编队）的模型在 `level_data.py`，来自 `prts___levels.fbs`。
+- `range_table` / `battle_misc_table` / `roguelike_table` 没有 FBS schema，是按同样约定手写的。
+- 新表生成好模型后，在 `ptilopsis/jobs/params.py` 的 `TABLES` 里登记路径与模型，
+  再加一个 `XxxTable` 别名即可注入。
 
 ### 页面比对
 
-改动 `basic` / `char_attr` 的渲染逻辑后，用 `scripts/parity_basic.py` 把重构前后的页面落盘做 diff
-（数据按 `version_local.json` 里的国服版本从 torappu 读取）：
+改动 job 的渲染逻辑后，用 `scripts/parity_jobs.py` 把各 job 生成的页面落盘做 diff。它不登录 wiki：
+`edit` 只记录不提交，`read` 匿名读取真实页面并缓存到 `.cache/wiki/`，`category` 返回空列表以便把
+"只处理未建页条目"的 job 全量跑一遍（数据按 `version_local.json` 里的国服版本从 torappu 读取）：
 
 ```bash
-PYTHONHASHSEED=0 uv run python scripts/parity_basic.py out/before
+PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/before            # 全部 job
+PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/before --jobs stage.run item.run
 # 切换分支后
-PYTHONHASHSEED=0 uv run python scripts/parity_basic.py out/after
+PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/after
 diff -r out/before out/after
 ```
+
+脚本默认使用自身所在仓库的 `.cache/` 和 `thirdparty/ArknightsGameData_YoStar/`。
+跨 worktree 共用数据时，由调用方通过 `--data-root` 指定这两个目录所在的根目录。
+例如，主工作区使用常规 `.git/` 目录的仓库，可以在 worktree 中这样调用：
+
+```bash
+PYTHONHASHSEED=0 uv run python scripts/parity_jobs.py out/after \
+  --data-root "$(git rev-parse --path-format=absolute --git-common-dir)/.."
+```
+
+脚本本身不调用 Git；也可以直接传入 `--data-root /path/to/shared-data`。
+国服版本仍由当前运行目录的 `version_local.json` 决定。
+
+`scripts/parity_basic.py` 是只针对 `basic` / `char_attr` 渲染函数的旧版本，用法相同。
 
 仓库已配置 `pre-commit`，建议本地启用：
 
@@ -205,12 +235,15 @@ uv run pre-commit install
 ### 编写 job
 
 job 是用 `@job` 注册的普通函数，参数按注解注入（实现见 `ptilopsis/utils/di.py`，
-借鉴 torappu 的 task 写法）：
+借鉴 torappu 的 task 写法）；gamedata 一律以 `ptilopsis/gamedata/` 里的模型注入：
 
 ```python
-from typing import Annotated, Any
+from typing import Annotated
 
-from ptilopsis.jobs.params import CharIdTable, RawItemTable, RichText, category, gamedata
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.jobs.params import (
+    CharacterTable, CharIdTable, ItemTable, Levels, RichText, StageTable, category, table,
+)
 from ptilopsis.utils.job import SkipJob, job
 from ptilopsis.utils.wiki import Wiki
 
@@ -218,21 +251,30 @@ from ptilopsis.utils.wiki import Wiki
 @job
 def run(
     wiki: Wiki,
-    item_table: RawItemTable,
-    stage_table: Annotated[dict[str, Any], gamedata("excel/stage_table.json")],
+    item_table: ItemTable,                      # InventoryData
+    stage_table: StageTable,                    # StageTable
+    character_table_jp: Annotated[
+        dict[str, CharacterData], table("character_table", "JP")
+    ],                                          # 海外服数据指定 region
+    levels: Levels,                             # levels(level_id) -> LevelData
     id_table: CharIdTable,
     rts: RichText,
     pages: Annotated[list[str], category("分类:道具")],
 ) -> None:
+    for stage in stage_table.stages.values():
+        if stage.level_id:
+            level = levels(stage.level_id)
     ...
 ```
 
 - `Wiki` / `GameData` / `Config` / `JobContext` 直接按类型注入，其余依赖用 `Depends`
-  标记；`params.py` 里放着各 job 共用的表、富文本转换器、干员序号表等。
+  标记；`params.py` 里放着各表的类型化别名（`CharacterTable`、`ItemTable` …）、
+  关卡加载器 `Levels`、敌人数据库索引 `EnemyLevels`、富文本转换器 `RichText` /
+  `RichTextHtml`、干员序号表 `CharIdTable` 等。
 - 同一次运行里相同的依赖只解析一次；依赖或 job 抛 `SkipJob` 表示这次没事可做。
 - job 名默认是 `<模块>.<函数>`，`__main__.py` 的 `MODE_JOBS` 用它编排各模式的执行顺序。
   签名有问题（参数注不进去）会在导入时就报错。
-- 旧写法 `def run(ctx: JobContext)` 仍然可用，逐个改写即可。
+- 模型字段都可能为 `None`（见「数据模型」），改渲染逻辑后用 `scripts/parity_jobs.py` 比对页面。
 
 ## 致谢
 

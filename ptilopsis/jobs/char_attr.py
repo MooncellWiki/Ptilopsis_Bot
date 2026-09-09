@@ -1,6 +1,6 @@
-from typing import Annotated, Any
+from typing import Any
 
-from ptilopsis.gamedata.character_table import CharacterData, CharacterTable
+from ptilopsis.gamedata.character_table import CharacterData
 from ptilopsis.gamedata.character_util import (
     MAX_POTENTIAL_RANK,
     is_talent_hidden_on_ui,
@@ -8,13 +8,13 @@ from ptilopsis.gamedata.character_util import (
     select_candidate,
 )
 from ptilopsis.gamedata.uniequip_table import UniEquipTable
+from ptilopsis.jobs import params
 from ptilopsis.jobs.basic import (
     favor_attributes,
     phase_attributes,
     sub_profession_name,
     trans_profession,
 )
-from ptilopsis.jobs.params import CharIdTable, RichText, gamedata
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.richTextStyles import RichTextStyles
@@ -89,9 +89,8 @@ def get_char_attr(
                 key = POTENTIAL_ATTRIBUTES.get(modifier.attribute_type)
                 if key is None:
                     logger.info(
-                        "Error! Char {name} attributeType {num} don't know!".format(
-                            name=char.name, num=modifier.attribute_type
-                        )
+                        f"Error! Char {char.name} attributeType "
+                        f"{modifier.attribute_type} don't know!"
                     )
                     continue
                 panel[key] += modifier.value
@@ -136,15 +135,10 @@ def get_char_attr(
 @job
 def run(
     wiki: Wiki,
-    character_table: Annotated[
-        dict[str, CharacterData],
-        gamedata("excel/character_table.json", CharacterTable),
-    ],
-    uniequip_table: Annotated[
-        UniEquipTable, gamedata("excel/uniequip_table.json", UniEquipTable)
-    ],
-    id_table: CharIdTable,
-    rts: RichText,
+    character_table: params.CharacterTable,
+    uniequip_table: params.UniEquipTable,
+    id_table: params.CharIdTable,
+    rts: params.RichText,
 ) -> None:
     content = get_char_attr(character_table, uniequip_table, id_table, rts)
 

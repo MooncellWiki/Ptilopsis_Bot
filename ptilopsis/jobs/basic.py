@@ -1,15 +1,15 @@
-import csv
-import io
 import re
-from typing import Any
+from collections.abc import Iterable
+from typing import Annotated, Any
 
-from ptilopsis.gamedata.battle_equip_table import BattleEquipPack, BattleEquipTable
+from ptilopsis.gamedata.battle_equip_table import BattleEquipPack
+from ptilopsis.gamedata.building_data import BuildingData
 from ptilopsis.gamedata.character_table import (
     AttributesData,
     AttributesDeltaData,
     CharacterData,
     CharacterDataPhaseData,
-    CharacterTable,
+    ItemBundle,
 )
 from ptilopsis.gamedata.character_util import (
     MAX_POTENTIAL_RANK,
@@ -18,18 +18,28 @@ from ptilopsis.gamedata.character_util import (
     trait_description,
     visible_talent_candidates,
 )
+from ptilopsis.gamedata.charword_table import CharWordTable
 from ptilopsis.gamedata.gamedata_const import GameDataConsts
-from ptilopsis.gamedata.handbook_team_table import HandbookTeamData, HandbookTeamTable
-from ptilopsis.gamedata.skill_table import SkillDataBundle, SkillTable
+from ptilopsis.gamedata.handbook_info_table import (
+    HandbookInfoTable,
+    HandBookStoryViewData,
+)
+from ptilopsis.gamedata.handbook_team_table import HandbookTeamData
+from ptilopsis.gamedata.item_table import InventoryData
+from ptilopsis.gamedata.medal_table import MedalData
+from ptilopsis.gamedata.skill_table import SkillDataBundle
+from ptilopsis.gamedata.skin_table import CharSkinDataDisplaySkin, SkinTable
 from ptilopsis.gamedata.uniequip_table import UniEquipTable
+from ptilopsis.jobs import params
 from ptilopsis.log import logger
 from ptilopsis.utils.blackboard import blackboard_values, format_paramed_text
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
 from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.wiki import Wiki
 
-# 尚未建模的表(skin / charword / handbook / building / item / medal)仍按原始 dict 访问
-RawTable = dict[str, Any]
 TeamTable = dict[str, HandbookTeamData]
+IdTable = dict[str, dict[str, Any]]
+"""wiki 上的干员序号表 ``{干员名: {id, approach, date}}``,见 ``params.CharIdTable``。"""
 
 
 def phase_attributes(phase: CharacterDataPhaseData) -> list[AttributesData]:
@@ -72,15 +82,78 @@ def sub_profession_name(uniequip_table: UniEquipTable, sub_profession_id: str | 
     return sub_prof.sub_profession_name or ""
 
 
+def item_name(item_table: InventoryData, item_id: str | None) -> str:
+    """道具名(未去空白);道具不存在时与旧代码一样抛 ``KeyError``。"""
+
+    if item_id is None or item_table.items is None:
+        raise KeyError(item_id)
+    return item_table.items[item_id].name or ""
+
+
+def skin_display(
+    skin_table: SkinTable, skin_id: str | None
+) -> CharSkinDataDisplaySkin | None:
+    """``charSkins[skin_id].displaySkin``,皮肤不存在时为 None。"""
+
+    skin = (skin_table.char_skins or {}).get(skin_id or "")
+    return skin.display_skin if skin is not None else None
+
+
+def phase_drawers(skin_table: SkinTable, char_key: str) -> tuple[str, str, bool]:
+    """各精英阶段立绘的画师。
+
+    返回 ``(精英0画师, 与之不同阶段的追加行, 是否完整)``。旧实现靠异常中断:
+    某阶段皮肤缺画师列表时就停在那里,保留已经拼好的部分;这里维持同样的语义,
+    ``完整`` 为 False 表示中途停下。
+    """
+
+    drawer, drawer_append = "", ""
+    for skin_p, skin_k in (
+        (skin_table.buildin_evolve_map or {}).get(char_key, {}).items()
+    ):
+        display = skin_display(skin_table, skin_k)
+        if display is None or display.drawer_list is None:
+            return drawer, drawer_append, False
+        drawer_temp = ",".join(display.drawer_list)
+        if drawer == "":
+            drawer = drawer_temp
+        elif drawer != drawer_temp:
+            drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
+    return drawer, drawer_append, True
+
+
+def format_cv(charword_table: CharWordTable, char_key: str) -> str:
+    """各语言配音的 ``|xx配音=`` 行;没有配音数据时退化成空的日文配音行。
+
+    旧实现同样靠异常中断:某语言缺声优列表时保留已拼好的行再补一个空的日文配音行。
+    """
+
+    voice = (charword_table.voice_lang_dict or {}).get(char_key)
+    cv_dict = voice.dict_ if voice is not None else None
+    if cv_dict is None:
+        return "\n|日文配音="
+    lang_dict: dict[str, str | None] = {
+        k: v.name for k, v in (charword_table.voice_lang_type_dict or {}).items()
+    }
+    lang_dict["CN_MANDARIN"], lang_dict["CN_TOPOLECT"] = "中文", "中文方言"
+    text = ""
+    for k, info in cv_dict.items():
+        if info.cv_name is None:
+            return text + "\n|日文配音="
+        lang = lang_dict.get(k, "未知语言")
+        text += f"\n|{lang}配音={','.join(info.cv_name)}"
+    return text
+
+
 def get_basic_info(
     char: CharacterData,
     char_key: str,
-    id_table: RawTable,
+    id_table: IdTable,
     rts: RichTextStyles,
     uniequip_table: UniEquipTable,
     team_table: TeamTable,
-    skin_table: RawTable,
-    charword_table: RawTable,
+    skin_table: SkinTable,
+    charword_table: CharWordTable,
 ) -> str:
     name = char.name or ""
     basic_info = "{{CharinfoV2"
@@ -110,79 +183,49 @@ def get_basic_info(
     basic_info += f"\n|位置={trans_position(char.position)}"
     basic_info += f"\n|标签={' '.join(char.tag_list or [])}"
     # 画师
-    drawer, drawer_append = "", ""
-    try:
-        for skin_p, skin_k in skin_table["buildinEvolveMap"][char_key].items():
-            drawer_temp = ",".join(
-                skin_table["charSkins"][skin_k]["displaySkin"]["drawerList"]
-            )
-            if drawer == "":
-                drawer = drawer_temp
-            elif drawer != drawer_temp:
-                drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
-    except Exception:
-        pass
+    drawer, drawer_append, _complete = phase_drawers(skin_table, char_key)
     basic_info += f"\n|画师={drawer}" + drawer_append
     # 声优
-    try:
-        cv_dict = charword_table["voiceLangDict"][char_key]["dict"]
-        lang_dict = {
-            k: v["name"] for k, v in charword_table["voiceLangTypeDict"].items()
-        }
-        lang_dict["CN_MANDARIN"], lang_dict["CN_TOPOLECT"] = "中文", "中文方言"
-        for k in cv_dict:
-            lang = lang_dict.get(k, "未知语言")
-            basic_info += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
-    except Exception:
-        basic_info += "\n|日文配音="
+    basic_info += format_cv(charword_table, char_key)
     # 常规皮肤description
-    for phase_no in skin_table["buildinEvolveMap"][char_key]:
-        phase_desc = skin_table["charSkins"][
-            skin_table["buildinEvolveMap"][char_key][phase_no]
-        ]["displaySkin"]["content"]
-        phase_drawer_list = skin_table["charSkins"][
-            skin_table["buildinEvolveMap"][char_key]["0"]
-        ]["displaySkin"]["drawerList"]
-        if phase_drawer_list is not None:
-            phase_drawer = ",".join(phase_drawer_list)
-        else:
-            phase_drawer = ""
+    phase_skins = (skin_table.buildin_evolve_map or {})[char_key]
+    # 旧实现每个阶段都拿精英 0 的画师列表来比较,照旧
+    phase_0 = skin_display(skin_table, phase_skins.get(0))
+    phase_drawer = (
+        ",".join(phase_0.drawer_list)
+        if phase_0 is not None and phase_0.drawer_list is not None
+        else ""
+    )
+    for phase_no, skin_id in phase_skins.items():
+        display = skin_display(skin_table, skin_id)
+        phase_desc = display.content if display is not None else None
         phase_desc = phase_desc.replace("\n", "<br/>") if phase_desc is not None else ""
         basic_info += f"\n|精英{phase_no}介绍={phase_desc}"
         if phase_drawer != drawer:
             basic_info += f"\n|精英{phase_no}画师={phase_drawer}"
     # 时装
     skin_counter = 1
-
-    def skin_filter(x):
-        return (
-            x["charId"] == char_key and x["displaySkin"]["skinGroupName"] != "默认服装"
-        )
-
-    def order_func(x):
-        return x["displaySkin"]["onYear"] * 100 + x["displaySkin"]["onPeriod"]
-
-    for skin_content in sorted(
-        filter(skin_filter, skin_table["charSkins"].values()), key=order_func
-    ):
-        basic_info += (
-            f"\n|时装{skin_counter}名称={skin_content['displaySkin']['skinName']}"
-        )
-        if skin_content["displaySkin"]["drawerList"] is not None:
-            skin_drawer = ",".join(skin_content["displaySkin"]["drawerList"])
+    costumes = [
+        skin.display_skin
+        for skin in (skin_table.char_skins or {}).values()
+        if skin.char_id == char_key
+        and skin.display_skin is not None
+        and skin.display_skin.skin_group_name != "默认服装"
+    ]
+    for display in sorted(costumes, key=lambda x: x.on_year * 100 + x.on_period):
+        basic_info += f"\n|时装{skin_counter}名称={display.skin_name}"
+        if display.drawer_list is not None:
+            skin_drawer = ",".join(display.drawer_list)
         else:
             skin_drawer = ""
         if skin_drawer != drawer:
             basic_info += f"\n|时装{skin_counter}画师={skin_drawer}"
-        basic_info += (
-            f"\n|时装{skin_counter}系列={skin_content['displaySkin']['skinGroupName']}"
-        )
-        skin_color = skin_content["displaySkin"]["colorList"][0]
+        basic_info += f"\n|时装{skin_counter}系列={display.skin_group_name}"
+        skin_color = display.color_list[0] if display.color_list else ""
         if not skin_color.startswith("#") and len(skin_color) == 6:
             skin_color = "#" + skin_color
         basic_info += f"\n|时装{skin_counter}颜色={skin_color}"
-        skin_desc = skin_content["displaySkin"]["content"]
-        skin_desc = re.sub(r"<color name=[^>]*>", "", skin_desc)
+        skin_desc = re.sub(r"<color name=[^>]*>", "", display.content or "")
         skin_desc = (
             skin_desc.replace("</color>", "").replace("\r", "").replace("\n", "<br/>")
         )
@@ -190,21 +233,15 @@ def get_basic_info(
         skin_counter += 1
     basic_info += "\n<!--上方为自动更新部分，您的修改可能会被覆盖-->"
     # 原案
-    try:
-        designer_list = skin_table["charSkins"][
-            skin_table["buildinEvolveMap"][char_key]["0"]
-        ]["displaySkin"]["designerList"]
-        if designer_list is not None:
-            basic_info += f"\n|原案={','.join(designer_list)}"
-    except Exception:
-        pass
+    if phase_0 is not None and phase_0.designer_list is not None:
+        basic_info += f"\n|原案={','.join(phase_0.designer_list)}"
     if name in id_table and id_table[name]["approach"] in ["活动获得", "限定寻访"]:
         basic_info += "\n|限定=1"
     basic_info += "\n}}"
     return basic_info
 
 
-def get_char_approach(char: CharacterData, id_table: RawTable) -> str:
+def get_char_approach(char: CharacterData, id_table: IdTable) -> str:
     name = char.name or ""
     if name in id_table and id_table[name]["approach"]:
         item_obtain_approach = id_table[name]["approach"]
@@ -324,9 +361,7 @@ def get_phases_data(
                 potential_rank_data.append("")
                 potential_rank_type.append("")
                 logger.info(
-                    "Error! Char {name} attributeType {num} dont know!".format(
-                        name=char.name, num=attribute_type
-                    )
+                    f"Error! Char {char.name} attributeType {attribute_type} dont know!"
                 )
             else:
                 potential_rank_data.append(str(int(modifiers[0].value)))
@@ -336,7 +371,7 @@ def get_phases_data(
             potential_rank_type.append("")
     phases_data += favor_key_data
     if len(potential_ranks) > 0 and len(potential_ranks) < 5:
-        phases_data += "|潜能上限={}\n".format(len(potential_ranks) + 1)
+        phases_data += f"|潜能上限={len(potential_ranks) + 1}\n"
     elif len(potential_ranks) == 0:
         phases_data += "|潜能上限=1\n"
     if potential_rank_data != [] and any(potential_rank_data):
@@ -453,13 +488,7 @@ def get_skill_text(
         else:
             skill_num = str(idx + 1)
         sp_data = level_data.sp_data
-        skill_text += "\n|技能{num}描述={desc}\n|技能{num}初始={initSp}\n|技能{num}消耗={spCost}\n|技能{num}持续={duration}".format(
-            num=skill_num,
-            desc=skill_description,
-            initSp=sp_data.init_sp if sp_data else 0,
-            spCost=sp_data.sp_cost if sp_data else 0,
-            duration=skill_duration,
-        )
+        skill_text += f"\n|技能{skill_num}描述={skill_description}\n|技能{skill_num}初始={sp_data.init_sp if sp_data else 0}\n|技能{skill_num}消耗={sp_data.sp_cost if sp_data else 0}\n|技能{skill_num}持续={skill_duration}"
     skill_text += "\n}}"
     return skill_text
 
@@ -509,19 +538,15 @@ def get_token_info(
     for token_key in token_keys:
         if token_key not in character_table:
             continue
-        token_info += "\n{{{{参阅|{token_name}|该持有者的召唤物}}}}".format(
-            token_name=character_table[token_key].name
+        token_info += (
+            f"\n{{{{参阅|{character_table[token_key].name}|该持有者的召唤物}}}}"
         )
     for token_key in token_keys:
         token = character_table.get(token_key)
         if token is None:
             continue
         token_phases = token.phases or []
-        token_page = "==召唤物信息==\n{{{{召唤物信息\n|中文名称={name_cn}\n|外文名称={appellation}\n|持有者={owner}\n|使用条件=—".format(
-            name_cn=token.name,
-            appellation=token.appellation,
-            owner=char.name,
-        )
+        token_page = f"==召唤物信息==\n{{{{召唤物信息\n|中文名称={token.name}\n|外文名称={token.appellation}\n|持有者={char.name}\n|使用条件=—"
         token_page += "\n|部署位置="
         token_page += {"MELEE": "近战位", "RANGED": "远程位", "ALL": "全部位"}[
             token.position
@@ -531,29 +556,11 @@ def get_token_info(
             logger.info(f"召唤物{token.name} rangeId changes.")
         for phases_num, phase in enumerate(token_phases):
             frames = phase_attributes(phase)
-            token_page += "\n|精英{num}_1级_生命上限={hp}\n|精英{num}_1级_攻击={atk}\n|精英{num}_1级_防御={defence}\n|精英{num}_1级_法术抗性={magicResistance}".format(
-                num=phases_num,
-                hp=frames[0].max_hp,
-                atk=frames[0].atk,
-                defence=frames[0].def_,
-                magicResistance=int(frames[0].magic_resistance),
-            )
+            token_page += f"\n|精英{phases_num}_1级_生命上限={frames[0].max_hp}\n|精英{phases_num}_1级_攻击={frames[0].atk}\n|精英{phases_num}_1级_防御={frames[0].def_}\n|精英{phases_num}_1级_法术抗性={int(frames[0].magic_resistance)}"
             token_page += f"\n|精英{phases_num}_满级={phase.max_level}"
-            token_page += "\n|精英{num}_满级_生命上限={hp}\n|精英{num}_满级_攻击={atk}\n|精英{num}_满级_防御={defence}\n|精英{num}_满级_法术抗性={magicResistance}".format(
-                num=phases_num,
-                hp=frames[-1].max_hp,
-                atk=frames[-1].atk,
-                defence=frames[-1].def_,
-                magicResistance=int(frames[-1].magic_resistance),
-            )
+            token_page += f"\n|精英{phases_num}_满级_生命上限={frames[-1].max_hp}\n|精英{phases_num}_满级_攻击={frames[-1].atk}\n|精英{phases_num}_满级_防御={frames[-1].def_}\n|精英{phases_num}_满级_法术抗性={int(frames[-1].magic_resistance)}"
         final = phase_attributes(token_phases[0])[-1]
-        token_page += "\n|再部署时间={respawnTime}s\n|部署费用={cost}\n|阻挡数={blockCnt}\n|攻击间隔={baseAttackTime}s\n|嘲讽等级={tauntLevel}\n|部署占用数=?\n}}}}".format(
-            respawnTime=final.respawn_time,
-            cost=final.cost,
-            blockCnt=final.block_cnt,
-            baseAttackTime=final.base_attack_time,
-            tauntLevel=final.taunt_level,
-        )
+        token_page += f"\n|再部署时间={final.respawn_time}s\n|部署费用={final.cost}\n|阻挡数={final.block_cnt}\n|攻击间隔={final.base_attack_time}s\n|嘲讽等级={final.taunt_level}\n|部署占用数=?\n}}}}"
         skill_list, id_count = "\n==召唤物技能==", 0
         for skill_data in token.skills or []:
             if skill_data.skill_id is None:
@@ -585,73 +592,67 @@ def get_token_info(
                 summary="init",
                 createonly="1",
             )
-        logger.info("Created: {}.".format(token.name))
+        logger.info(f"Created: {token.name}.")
     return token_info
 
 
-def get_building_skill(building_data: RawTable, char_key: str, rts) -> str:
+# 同名后勤技能在 wiki 上按房间 / 精英阶段区分的显示名
+BUILDING_BUFF_NAME_OVERRIDES = {
+    "control_dorm_rec[000]": "领袖(控制中枢)",
+    "dorm_rec_all[013]": "领袖(宿舍)",
+    "train_spd_doubleProf[100]": "红龙之血(精英0)",
+    "train_spd_doubleProf[110]": "红龙之血(精英2)",
+    "control_token_prod_spd2[000]": "以身作则(控制中枢)",
+    "train_spd&profession2[440]": "以身作则(训练室)",
+    "manu_prod_spd&limit&cost[200]": "得心应手(制造站)",
+    "meet_spd_condChar[000]": "得心应手(会客室)",
+    "control_prod_bd_spd[000]": "丰富工作经验(精英0)",
+    "control_prod_bd_spd[010]": "丰富工作经验(精英2)",
+    "power_rec_spd[008]": "澎湃紊流(精英0)",
+    "power_rec_spd[009]": "澎湃紊流(精英1)",
+    "meet_spd[1020]": "线索搜集·β(行箸)",
+}
+
+
+def get_building_skill(building_data: BuildingData, char_key: str) -> str:
     building_skill = "{{后勤技能"
-    if char_key in building_data["chars"]:
-        char_building_skill = building_data["chars"][char_key]
-        for building_skill_id in range(len(char_building_skill["buffChar"])):
-            for building_skill_id_2 in range(
-                len(char_building_skill["buffChar"][building_skill_id]["buffData"])
-            ):
-                buff_count_text = (
-                    f"后勤技能{building_skill_id + 1}-{building_skill_id_2 + 1}"
-                )
-                temp = char_building_skill["buffChar"][building_skill_id]["buffData"][
-                    building_skill_id_2
-                ]
-                buff_data = building_data["buffs"][temp["buffId"]]
-                buff_name = buff_data["buffName"]
-                buff_name_extra = {
-                    "control_dorm_rec[000]": "领袖(控制中枢)",
-                    "dorm_rec_all[013]": "领袖(宿舍)",
-                    "train_spd_doubleProf[100]": "红龙之血(精英0)",
-                    "train_spd_doubleProf[110]": "红龙之血(精英2)",
-                    "control_token_prod_spd2[000]": "以身作则(控制中枢)",
-                    "train_spd&profession2[440]": "以身作则(训练室)",
-                    "manu_prod_spd&limit&cost[200]": "得心应手(制造站)",
-                    "meet_spd_condChar[000]": "得心应手(会客室)",
-                    "control_prod_bd_spd[000]": "丰富工作经验(精英0)",
-                    "control_prod_bd_spd[010]": "丰富工作经验(精英2)",
-                    "power_rec_spd[008]": "澎湃紊流(精英0)",
-                    "power_rec_spd[009]": "澎湃紊流(精英1)",
-                    "meet_spd[1020]": "线索搜集·β(行箸)",
-                }.get(temp["buffId"], None)
-                if buff_name_extra is not None:
-                    buff_name = (
-                        buff_name_extra + f"\n|{buff_count_text}显示名=" + buff_name
-                    )
-                building_skill += (
-                    "\n|{count_text}={name}\n|{count_text}阶段=精英{phase}".format(
-                        count_text=buff_count_text,
-                        name=buff_name,
-                        phase=trans_phase(temp["cond"]["phase"]),
-                    )
-                )
-                if temp["cond"]["level"] != 1:
-                    building_skill += "\n|{}等级={}级".format(
-                        buff_count_text, temp["cond"]["level"]
-                    )
-    else:
+    char_building_skill = (building_data.chars or {}).get(char_key)
+    if char_building_skill is None:
         return "该干员无后勤技能"
+    buffs = building_data.buffs or {}
+    for building_skill_id, slot in enumerate(char_building_skill.buff_char or []):
+        for building_skill_id_2, temp in enumerate(slot.buff_data or []):
+            buff_count_text = (
+                f"后勤技能{building_skill_id + 1}-{building_skill_id_2 + 1}"
+            )
+            if temp.buff_id is None:
+                raise KeyError(temp.buff_id)
+            buff_name = buffs[temp.buff_id].buff_name
+            buff_name_extra = BUILDING_BUFF_NAME_OVERRIDES.get(temp.buff_id)
+            if buff_name_extra is not None:
+                buff_name = f"{buff_name_extra}\n|{buff_count_text}显示名={buff_name}"
+            cond = temp.cond
+            phase = trans_phase(cond.phase) if cond is not None else 0
+            building_skill += (
+                f"\n|{buff_count_text}={buff_name}\n|{buff_count_text}阶段=精英{phase}"
+            )
+            if cond is not None and cond.level != 1:
+                building_skill += f"\n|{buff_count_text}等级={cond.level}级"
     if building_skill == "{{后勤技能":
         return "该干员无后勤技能"
     building_skill += "\n}}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->"
     return building_skill
 
 
-def material_cost(item_table: RawTable, costs) -> str:
+def material_cost(item_table: InventoryData, costs: Iterable[ItemBundle]) -> str:
     return " ".join(
-        f"{{{{材料消耗|{item_table['items'][cost.id]['name'].rstrip()}|{cost.count}}}}}"
+        f"{{{{材料消耗|{item_name(item_table, cost.id).rstrip()}|{cost.count}}}}}"
         for cost in costs
     )
 
 
 def get_phase_list(
-    char: CharacterData, gamedata_const: GameDataConsts, item_table: RawTable
+    char: CharacterData, gamedata_const: GameDataConsts, item_table: InventoryData
 ) -> str:
     phase_list = "{{精英化材料\n"
     phases = char.phases or []
@@ -677,7 +678,7 @@ def get_phase_list(
     return phase_list
 
 
-def get_skill_levelUp_list(char: CharacterData, item_table: RawTable) -> str:
+def get_skill_levelUp_list(char: CharacterData, item_table: InventoryData) -> str:
     skill_levelup_list = "{{技能升级材料\n"
     if char.skills:
         for level_id, level_cost in enumerate(char.all_skill_lvlup or []):
@@ -715,7 +716,7 @@ def get_battle_equip(
     char_key: str,
     battle_equip_table: dict[str, BattleEquipPack],
     uniequip_table: UniEquipTable,
-    item_table: RawTable,
+    item_table: InventoryData,
     rts: RichTextStyles,
 ) -> list[str]:
     equip_ids = (uniequip_table.char_equip or {}).get(char_key)
@@ -809,12 +810,12 @@ def get_battle_equip(
             for idx, lv_cost in enumerate((equip_info.item_cost or {}).values()):
                 item_temp = []
                 for i in lv_cost:
-                    item_name = item_table["items"][i.id]["name"]
+                    name = item_name(item_table, i.id)
                     if i.count < 10000:
-                        item_temp.append(f"{{{{材料消耗|{item_name}|{i.count}}}}}")
+                        item_temp.append(f"{{{{材料消耗|{name}|{i.count}}}}}")
                     else:
                         item_temp.append(
-                            f"{{{{材料消耗|{item_name}|{i.count / 10000:.0f}万}}}}"
+                            f"{{{{材料消耗|{name}|{i.count / 10000:.0f}万}}}}"
                         )
                 if item_temp != []:
                     item_cost += "\n|材料消耗{idx}={item}".format(
@@ -840,36 +841,34 @@ def get_battle_equip(
     return content
 
 
-def get_related_item(char: CharacterData, item_table: RawTable) -> str:
-    if char.potential_item_id and char.potential_item_id in item_table["items"]:
-        return "{{{{相关道具\n|干员简介={itemUsage}\n|干员简介补充={itemDesc}\n|信物用途={potentialUsage}\n|信物描述={potentialDesc}\n}}}}".format(
-            itemUsage=char.item_usage,
-            itemDesc=char.item_desc,
-            potentialDesc=item_table["items"][char.potential_item_id]["description"],
-            potentialUsage=item_table["items"][char.potential_item_id]["usage"],
-        )
+def get_related_item(char: CharacterData, item_table: InventoryData) -> str:
+    potential_item = (item_table.items or {}).get(char.potential_item_id or "")
+    if char.potential_item_id and potential_item is not None:
+        return f"{{{{相关道具\n|干员简介={char.item_usage}\n|干员简介补充={char.item_desc}\n|信物用途={potential_item.usage}\n|信物描述={potential_item.description}\n}}}}"
     else:
-        return "{{{{相关道具\n|干员简介={itemUsage}\n|干员简介补充={itemDesc}\n}}}}".format(
-            itemUsage=char.item_usage, itemDesc=char.item_desc
-        )
+        return f"{{{{相关道具\n|干员简介={char.item_usage}\n|干员简介补充={char.item_desc}\n}}}}"
+
+
+def first_story_text(view: HandBookStoryViewData) -> str:
+    """档案某一节的正文(每节只有一段)。"""
+
+    return (view.stories or [])[0].story_text or ""
 
 
 def get_stories_list(
-    char: CharacterData, stories_table: RawTable, char_key: str
+    char: CharacterData, stories_table: HandbookInfoTable, char_key: str
 ) -> tuple[str, str]:
-    if char_key not in stories_table["handbookDict"]:
+    handbook = (stories_table.handbook_dict or {}).get(char_key)
+    if handbook is None:
         return "", "该干员无人员档案"
     stories_list_set = "{{人员档案set\n"
-    stories1 = stories_table["handbookDict"][char_key]["storyTextAudio"][0]["stories"][
-        0
-    ]["storyText"]
-    stories2 = stories_table["handbookDict"][char_key]["storyTextAudio"][1]["stories"][
-        0
-    ]["storyText"]
+    story_views = handbook.story_text_audio or []
+    stories1 = first_story_text(story_views[0])
+    stories2 = first_story_text(story_views[1])
     stories3 = ""
-    for i in stories_table["handbookDict"][char_key]["storyTextAudio"]:
-        if i["storyTitle"] == "临床诊断分析":
-            stories3 = i["stories"][0]["storyText"]
+    for i in story_views:
+        if i.story_title == "临床诊断分析":
+            stories3 = first_story_text(i)
 
     _doc_exp, doc2 = replace_doc_exp(stories1)
     doc7 = replace_basic_doc(stories1, "矿石病感染情况")
@@ -900,20 +899,19 @@ def get_stories_list(
     )
 
     stories_list = "\n{{人员档案\n"
-    char_stories = stories_table["handbookDict"][char_key]
-    for stories_id in range(len(char_stories["storyTextAudio"])):
-        story = char_stories["storyTextAudio"][stories_id]["stories"][0]
-        story_text = story["storyText"].replace("\r\n", "\n")
+    for stories_id, view in enumerate(story_views):
+        story = (view.stories or [])[0]
+        story_text = (story.story_text or "").replace("\r\n", "\n")
         if char.name == "伊芙利特":
             story_text = handle_ifrit(story_text)
-        story_title = char_stories["storyTextAudio"][stories_id]["storyTitle"]
-        story_condition_id = story["unLockType"]
+        story_title = view.story_title
+        story_condition_id = story.un_lock_type
         if story_condition_id == "DIRECT":
             story_condition = "初始开放"
         elif story_condition_id == "AWAKE":
             story_condition = "提升至精英阶段2以查看"
         elif story_condition_id == "FAVOR":
-            story_condition = "提升信赖至{}%以查看".format(story["unLockParam"])
+            story_condition = f"提升信赖至{story.un_lock_param}%以查看"
         elif story_condition_id == "PATCH":
             story_condition = "升变解锁"
         else:
@@ -928,12 +926,13 @@ def get_stories_list(
 
 
 def get_handbook_avg(
-    char: CharacterData, stories_table: RawTable, char_key: str, medal_table: RawTable
+    char: CharacterData,
+    stories_table: HandbookInfoTable,
+    char_key: str,
+    medal_table: MedalData,
 ) -> str:
-    if (
-        char_key not in stories_table["handbookDict"]
-        or stories_table["handbookDict"][char_key]["handbookAvgList"] == []
-    ):
+    handbook = (stories_table.handbook_dict or {}).get(char_key)
+    if handbook is None or not handbook.handbook_avg_list:
         return ""
     avg_content = "\n==干员密录==\n{{干员密录|list="
     template = """\n{{{{干员密录/list
@@ -942,42 +941,40 @@ def get_handbook_avg(
 |信赖={favor}{medaloverride}
 |storySetName={name}{stories}
 }}}}"""
-    for avg in stories_table["handbookDict"][char_key]["handbookAvgList"]:
-        phase, lv, favor = -1, -1, -1
-        for p in avg["unlockParam"]:
-            if p["unlockType"] == "AWAKE":
-                phase = p["unlockParam1"]
-                lv = p["unlockParam2"]
-            elif p["unlockType"] == "FAVOR":
-                favor = p["unlockParam1"]
+    for avg in handbook.handbook_avg_list:
+        phase: int | str | None = -1
+        lv: int | str | None = -1
+        favor: int | str | None = -1
+        for p in avg.unlock_param or []:
+            if p.unlock_type == "AWAKE":
+                phase = p.unlock_param_1
+                lv = p.unlock_param_2
+            elif p.unlock_type == "FAVOR":
+                favor = p.unlock_param_1
             else:
-                logger.info(
-                    "Unknown handbook_avg unLock condition for {}.".format(char.name)
-                )
+                logger.info(f"Unknown handbook_avg unLock condition for {char.name}.")
         medal_override = ""
-        for i in filter(
-            lambda x: (
-                x["medalType"] == "storyMedal" and avg["storySetId"] in x["unlockParam"]
-            ),
-            medal_table["medalList"],
-        ):
-            if medal_override != "":
+        for medal in medal_table.medal_list or []:
+            if medal.medal_type == "storyMedal" and avg.story_set_id in (
+                medal.unlock_param or []
+            ):
+                medal_override = "\n|蚀刻章override=" + (medal.medal_id or "")
                 break
-            medal_override = "\n|蚀刻章override=" + i["medalId"]
         stories = ""
-        for idx, story in enumerate(avg["avgList"], start=1):
-            story_txt = "{}/干员密录/{}".format("{{FULLPAGENAME}}", avg["sortId"])
-            if len(avg["avgList"]) > 1:
-                story_txt += "-{}".format(story["storySort"])
-            stories += "\n|storyIntro{idx}={intro}\n|storyTxt{idx}={txt}".format(
-                idx=idx, intro=story["storyIntro"], txt=story_txt
+        avg_list = avg.avg_list or []
+        for idx, story in enumerate(avg_list, start=1):
+            story_txt = "{}/干员密录/{}".format("{{FULLPAGENAME}}", avg.sort_id)
+            if len(avg_list) > 1:
+                story_txt += f"-{story.story_sort}"
+            stories += (
+                f"\n|storyIntro{idx}={story.story_intro}\n|storyTxt{idx}={story_txt}"
             )
         avg_content += template.format(
             phase=phase,
             lv=lv,
             favor=favor,
             medaloverride=medal_override,
-            name=avg["storySetName"],
+            name=avg.story_set_name,
             stories=stories,
         )
     avg_content += "\n}}"
@@ -987,11 +984,12 @@ def get_handbook_avg(
 def get_handbook_stage(
     char: CharacterData,
     char_key: str,
-    stories_table: RawTable,
-    item_table: RawTable,
+    stories_table: HandbookInfoTable,
+    item_table: InventoryData,
     rts: RichTextStyles,
 ) -> str:
-    if char_key not in stories_table["handbookStageData"]:
+    stage_info = (stories_table.handbook_stage_data or {}).get(char_key)
+    if stage_info is None:
         return ""
     template = """
 ==悖论模拟==
@@ -1004,26 +1002,24 @@ def get_handbook_stage(
 |stageName={stageNameForShow}
 |picId={picId}{reward}
 }}}}"""
-    stage_info = stories_table["handbookStageData"][char_key]
-    if (
-        len(stage_info["unlockParam"]) != 1
-        or stage_info["unlockParam"][0]["unlockType"] != "AWAKE"
-    ):
-        logger.info("Unknown handbook_stage unLock condition for {}.".format(char.name))
+    unlock_params = stage_info.unlock_param or []
+    if len(unlock_params) != 1 or unlock_params[0].unlock_type != "AWAKE":
+        logger.info(f"Unknown handbook_stage unLock condition for {char.name}.")
         unlock_phase, unlock_lv = "", ""
     else:
-        unlock_phase = stage_info["unlockParam"][0]["unlockParam1"]
-        unlock_lv = stage_info["unlockParam"][0]["unlockParam2"]
+        unlock_phase = unlock_params[0].unlock_param_1
+        unlock_lv = unlock_params[0].unlock_param_2
     reward = ""
-    for idx, r in enumerate(stage_info["rewardItem"], start=1):
-        reward_name = item_table["items"][r["id"]]["name"].rstrip()
-        reward_count = r["count"]
+    reward_items = stage_info.reward_item or []
+    for idx, r in enumerate(reward_items, start=1):
+        reward_name = item_name(item_table, r.id).rstrip()
+        reward_count = r.count
         reward += f"\n|报酬内容{idx}={reward_name}\n|报酬数量{idx}={reward_count}"
-    if len(stage_info["rewardItem"]) > 1:
-        logger.info("Too many handbook_stage rewardItem for {}.".format(char.name))
-    desc = rts.compile(stage_info["description"]).replace("#FFFFFF", "#000000")
+    if len(reward_items) > 1:
+        logger.info(f"Too many handbook_stage rewardItem for {char.name}.")
+    desc = rts.compile(stage_info.description).replace("#FFFFFF", "#000000")
     return template.format(
-        stage_name=stage_info["name"],
+        stage_name=stage_info.name,
         stage_desc=desc,
         zoneNameForShow="",
         stageNameForShow="",
@@ -1183,18 +1179,6 @@ content = """{{{{干员页面名|{name}|{name}|{name}}}}}{{{{pathnav2|干员一�
 {{{{干员导航}}}}"""
 
 
-def load_id_table(ctx: JobContext) -> RawTable:
-    id_csv, id_table = ctx.wiki.read("干员一览/干员id"), {}
-    reader = csv.DictReader(io.StringIO(id_csv))
-    for row in reader:
-        id_table[row["name"]] = {
-            "id": int(row["sortId"]),
-            "approach": row["approach"],
-            "date": row["date"],
-        }
-    return id_table
-
-
 def iter_operators(character_table: dict[str, CharacterData]):
     """可获得的干员(去掉召唤物、装置和不可获得角色),名字去掉首尾空白。"""
 
@@ -1208,41 +1192,32 @@ def iter_operators(character_table: dict[str, CharacterData]):
 
 
 @job
-def run(ctx: JobContext) -> bool:
-    character_table = CharacterTable.validate_python(
-        ctx.getgd("excel/character_table.json")
-    )
-    uniequip_table = UniEquipTable.model_validate(
-        ctx.getgd("excel/uniequip_table.json")
-    )
-    battle_equip_table = BattleEquipTable.validate_python(
-        ctx.getgd("excel/battle_equip_table.json")
-    )
-    skill_table = SkillTable.validate_python(ctx.getgd("excel/skill_table.json"))
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    team_table = HandbookTeamTable.validate_python(
-        ctx.getgd("excel/handbook_team_table.json")
-    )
-    stories_table = ctx.getgd("excel/handbook_info_table.json")
-    skin_table = ctx.getgd("excel/skin_table.json")
-    gamedata_const = GameDataConsts.model_validate(
-        ctx.getgd("excel/gamedata_const.json")
-    )
-    charword_table = ctx.getgd("excel/charword_table.json")
-    medal_table = ctx.getgd("excel/medal_table.json")
-    id_table = load_id_table(ctx)
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def run(
+    wiki: Wiki,
+    character_table: params.CharacterTable,
+    uniequip_table: params.UniEquipTable,
+    battle_equip_table: params.BattleEquipTable,
+    skill_table: params.SkillTable,
+    building_data: params.BuildingData,
+    item_table: params.ItemTable,
+    team_table: params.HandbookTeamTable,
+    stories_table: params.HandbookInfoTable,
+    skin_table: params.SkinTable,
+    gamedata_const: params.GamedataConst,
+    charword_table: params.CharwordTable,
+    medal_table: params.MedalTable,
+    id_table: params.CharIdTable,
+    rts: params.RichText,
+    char_list: Annotated[list[str], params.category("分类:干员")],
+) -> bool:
     flag_new_char = False
-    char_list = ctx.wiki.category("分类:干员")
     update_token_page = False
 
     for char_key, char in iter_operators(character_table):
         if char.name in char_list:
             continue
         if char.name not in id_table:
-            logger.info("Unknown Character: {} {}.".format(char_key, char.name))
+            logger.info(f"Unknown Character: {char_key} {char.name}.")
 
         basic_info = get_basic_info(
             char,
@@ -1263,14 +1238,14 @@ def run(ctx: JobContext) -> bool:
         potential_list = get_potential_list(char)
         skill_list = get_skill_list(char, skill_table, rts)
         token_info = get_token_info(
-            ctx.wiki,
+            wiki,
             char,
             update_token_page,
             character_table,
             skill_table,
             rts,
         )
-        building_skill = get_building_skill(building_data, char_key, rts)
+        building_skill = get_building_skill(building_data, char_key)
         phase_list = get_phase_list(char, gamedata_const, item_table)
         skill_levelup_list = get_skill_levelUp_list(char, item_table)
         battle_equip = "".join(
@@ -1312,7 +1287,7 @@ def run(ctx: JobContext) -> bool:
         )
 
         flag_new_char = True
-        ctx.wiki.edit(
+        wiki.edit(
             title=char.name,
             text=char_info,
             summary="init",
@@ -1320,44 +1295,37 @@ def run(ctx: JobContext) -> bool:
             minor=True,
             createonly="1",
         )
-        ctx.wiki.protect(
+        wiki.protect(
             title=char.name,
             protections="edit=autoconfirmed|move=sysop",
             reason="protect",
         )
         if char.name != char.appellation:
-            redirect_text = "#redirect [[{}]]".format(char.name)
-            ctx.wiki.edit(
+            redirect_text = f"#redirect [[{char.name}]]"
+            wiki.edit(
                 title=char.appellation,
                 text=redirect_text,
                 summary="init",
                 createonly=True,
             )
-        logger.info("Created: {}.".format(char.name))
+        logger.info(f"Created: {char.name}.")
 
     return flag_new_char
 
 
 @job
-def update(ctx: JobContext) -> None:
-    character_table = CharacterTable.validate_python(
-        ctx.getgd("excel/character_table.json")
-    )
-    uniequip_table = UniEquipTable.model_validate(
-        ctx.getgd("excel/uniequip_table.json")
-    )
-    battle_equip_table = BattleEquipTable.validate_python(
-        ctx.getgd("excel/battle_equip_table.json")
-    )
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    team_table = HandbookTeamTable.validate_python(
-        ctx.getgd("excel/handbook_team_table.json")
-    )
-    skin_table = ctx.getgd("excel/skin_table.json")
-    charword_table = ctx.getgd("excel/charword_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def update(
+    wiki: Wiki,
+    character_table: params.CharacterTable,
+    uniequip_table: params.UniEquipTable,
+    battle_equip_table: params.BattleEquipTable,
+    building_data: params.BuildingData,
+    item_table: params.ItemTable,
+    team_table: params.HandbookTeamTable,
+    skin_table: params.SkinTable,
+    charword_table: params.CharwordTable,
+    rts: params.RichText,
+) -> None:
     for char_key, char in iter_operators(character_table):
         if char_key in [
             "char_512_aprot",
@@ -1368,11 +1336,11 @@ def update(ctx: JobContext) -> None:
             "char_513_apionr",
         ]:
             continue
-        origin_text = ctx.wiki.read(char.name)
+        origin_text = wiki.read(char.name)
         new_text = origin_text
 
         # 更新后勤技能
-        building_skill = get_building_skill(building_data, char_key, rts)
+        building_skill = get_building_skill(building_data, char_key)
         num1 = new_text.find("==后勤技能==")
         num2 = new_text.find("==召唤物信息==")
         if num2 == -1:
@@ -1416,50 +1384,28 @@ def update(ctx: JobContext) -> None:
         # 更新干员cv
         num1 = new_text.find("\n|画师=")
         num2 = new_text.find("\n|精英0介绍=")
-        cv, drawer = "", ""
-        try:
-            cv_dict = charword_table["voiceLangDict"][char_key]["dict"]
-            lang_dict = {
-                k: v["name"] for k, v in charword_table["voiceLangTypeDict"].items()
-            }
-            lang_dict["CN_MANDARIN"], lang_dict["CN_TOPOLECT"] = "中文", "中文方言"
-            for k in cv_dict:
-                lang = lang_dict.get(k, "未知语言")
-                cv += f"\n|{lang}配音={','.join(cv_dict[k]['cvName'])}"
-        except Exception:
-            cv += "\n|日文配音="
-        try:
-            drawer_append = ""
-            for skin_p, skin_k in skin_table["buildinEvolveMap"][char_key].items():
-                drawer_temp = ",".join(
-                    skin_table["charSkins"][skin_k]["displaySkin"]["drawerList"]
-                )
-                if drawer == "":
-                    drawer = drawer_temp
-                elif drawer != drawer_temp:
-                    drawer_append += f"\n|精英{skin_p}画师={drawer_temp}"
-            drawer = "\n|画师=" + drawer + drawer_append
-        except Exception:
-            drawer = "\n|画师="
+        cv = format_cv(charword_table, char_key)
+        # 这里与建页不同:画师信息不完整时整段留空
+        drawer, drawer_append, complete = phase_drawers(skin_table, char_key)
+        drawer = "\n|画师=" + drawer + drawer_append if complete else "\n|画师="
         new_text = new_text[:num1] + drawer + cv + new_text[num2:]
 
         if new_text != origin_text:
-            ctx.wiki.edit(title=char.name, text=new_text, summary="update")
-            logger.info("Updated: {}.".format(char.name))
+            wiki.edit(title=char.name, text=new_text, summary="update")
+            logger.info(f"Updated: {char.name}.")
         else:
-            logger.info("Same: {}.".format(char.name))
+            logger.info(f"Same: {char.name}.")
 
 
 @job
-def update_handbook(ctx: JobContext) -> None:
-    character_table = CharacterTable.validate_python(
-        ctx.getgd("excel/character_table.json")
-    )
-    item_table = ctx.getgd("excel/item_table.json")
-    stories_table = ctx.getgd("excel/handbook_info_table.json")
-    medal_table = ctx.getgd("excel/medal_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
+def update_handbook(
+    wiki: Wiki,
+    character_table: params.CharacterTable,
+    item_table: params.ItemTable,
+    stories_table: params.HandbookInfoTable,
+    medal_table: params.MedalTable,
+    rts: params.RichText,
+) -> None:
     for char_key, char in iter_operators(character_table):
         handbook_avg = get_handbook_avg(char, stories_table, char_key, medal_table)
         handbook_stage = get_handbook_stage(
@@ -1467,7 +1413,7 @@ def update_handbook(ctx: JobContext) -> None:
         )
 
         if handbook_avg != "" or handbook_stage != "":
-            origin_text = ctx.wiki.read(char.name)
+            origin_text = wiki.read(char.name)
 
             num1 = origin_text.find("/语音记录}}")
             num2 = origin_text.find("\n==干员模型==")
@@ -1483,11 +1429,11 @@ def update_handbook(ctx: JobContext) -> None:
             )
 
             if new_text != origin_text:
-                ctx.wiki.edit(
+                wiki.edit(
                     title=char.name,
                     text=new_text,
                     summary="更新干员密录&悖论模拟",
                 )
-                logger.info("Updated: {}.".format(char.name))
+                logger.info(f"Updated: {char.name}.")
             else:
-                logger.info("Same: {}.".format(char.name))
+                logger.info(f"Same: {char.name}.")

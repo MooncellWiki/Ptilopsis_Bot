@@ -1,21 +1,89 @@
 import copy
 import json
-import os
 import re
 from collections.abc import Callable, Sequence
+from typing import Annotated
 
 import requests
 from pydantic import BaseModel, ValidationError
 
-from ptilopsis.gamedata.stage import (
+from ptilopsis.gamedata import campaign_table as campaign_models
+from ptilopsis.gamedata.activity_table import ActivityTable
+from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.gamedata.campaign_table import CampaignTable
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.gamedata.crisis_v2_table import RecalRuneStageData
+from ptilopsis.gamedata.enemy_database import EnemyDatabaseEnemyLevel
+from ptilopsis.gamedata.enemy_handbook_table import (
+    EnemyHandBookData,
+    EnemyHandBookDataGroup,
+)
+from ptilopsis.gamedata.handbook_info_table import HandbookStoryStageData
+from ptilopsis.gamedata.item_table import InventoryData
+from ptilopsis.gamedata.level_data import (
+    BlackboardDataPair,
+    EnemyDatabaseEnemyData,
+    LegacyInLevelRuneData,
+    LevelData,
+    LevelDataEnemyDataDbReference,
+    LevelDataOptions,
+    LevelDataWaveDataFragmentDataActionData,
+    UndefinableFloat,
+    UndefinableInt,
+    UndefinableStr,
+)
+from ptilopsis.gamedata.roguelike_topic_table import RoguelikeGameStageData
+from ptilopsis.gamedata.sandbox_perm_table import SandboxV2StageData
+from ptilopsis.gamedata.skill_table import SkillDataBundle
+from ptilopsis.gamedata.stage_table import (
     StageData,
     StageDataDisplayDetailRewards,
     StageTable,
+    TileAppendInfo,
+)
+from ptilopsis.gamedata.zone_table import ZoneTable
+from ptilopsis.jobs.params import (
+    BattleMiscTable,
+    CharacterTable,
+    CrisisV2Table,
+    EnemyHandbookTable,
+    EnemyLevels,
+    HandbookInfoTable,
+    ItemTable,
+    LevelLoader,
+    Levels,
+    RichText,
+    RoguelikeTopicTable,
+    SandboxPermTable,
+    SkillTable,
+    StoryReviewMetaTable,
+    table,
 )
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
-from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.job import job
+from ptilopsis.utils.wiki import Wiki
 from ptilopsis.wikitext import WikiTemplate, inline_template
+
+# 关卡表与剿灭表各自生成了一份同名的 DisplayDetailRewards 模型,字段完全一致
+DisplayDetailRewards = (
+    StageDataDisplayDetailRewards | campaign_models.StageDataDisplayDetailRewards
+)
+EnemyTable = dict[str, EnemyHandBookData]
+"""enemy_handbook_table 的 enemyData:敌人 id → 图鉴条目。"""
+EnemyLevelIndex = dict[str, list[EnemyDatabaseEnemyLevel]]
+"""enemy_database 按敌人 id 索引的各级别数据(即 params.EnemyLevels)。"""
+NotCountList = dict[str, list[int]]
+"""不计入敌人总数的敌人:id → 标记了 notCountInTotal 的 level 列表。"""
+
+
+def _require[T](value: T | None, what: str = "field") -> T:
+    """生成模型里 string / table 字段一律可空;取到 None 时按旧代码缺键的行为抛
+    KeyError,由调用方原有的兜底接住,或者像以前一样让这一关失败。"""
+
+    if value is None:
+        raise KeyError(what)
+    return value
+
 
 # 渲染视图,字段与页面上的 wiki 模板参数一一对应
 
@@ -310,21 +378,30 @@ def parse_rune_profession(professionMask):
     return "和".join(p_text) + "干员"
 
 
-def build_rune_buffs(runes: list[dict]) -> tuple[int, list[str]]:
+def _profession_mask(rune: LegacyInLevelRuneData) -> int | str:
+    """runes[].professionMask 在数据里多是职业位掩码整数,偶尔是单个职业的枚举名;
+    生成模型把数字统一成了字符串,这里还原成整数,让 parse_rune_profession 照常工作。"""
+
+    mask = rune.profession_mask
+    return int(mask) if mask.isdigit() else mask
+
+
+def build_rune_buffs(runes: list[LegacyInLevelRuneData]) -> tuple[int, list[str]]:
     """扫描 runes,取出部署位增减和敌方属性加成。
 
     返回 (部署上限增量, 情报行)。突袭和集成战略紧急作战两处都要这份结果。
     """
 
     climit = 0
-    ebuff = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
+    ebuff: dict[str | None, float] = {"atk": 1.0, "def": 1.0, "max_hp": 1.0, "flag": 0}
     for rune in runes:
-        if rune["key"] in ["gbuff_placable_char_num", "global_placable_char_num_add"]:
-            climit = int(rune["blackboard"][0]["value"])
-        if rune["key"] in ["enemy_attribute_mul", "ebuff_attribute"]:
+        blackboard = rune.blackboard or []
+        if rune.key in ["gbuff_placable_char_num", "global_placable_char_num_add"]:
+            climit = int(blackboard[0].value)
+        if rune.key in ["enemy_attribute_mul", "ebuff_attribute"]:
             ebuff["flag"] = 1
-            for item in rune["blackboard"]:
-                ebuff[item["key"]] = item["value"]
+            for item in blackboard:
+                ebuff[item.key] = item.value
 
     intelligence = []
     if ebuff["flag"] == 1:
@@ -342,45 +419,42 @@ def build_rune_buffs(runes: list[dict]) -> tuple[int, list[str]]:
     return climit, intelligence
 
 
-def build_rune_lines(runes: list[dict]) -> list[str]:
+def build_rune_lines(runes: list[LegacyInLevelRuneData]) -> list[str]:
+    # 各枚举字段在模型里是成员名(NORMAL / MELEE …),不再需要兼容早期数据里的数字
     rune_lines = []
     for rune in runes:
         text = []
-        if rune["difficultyMask"] == 2 or rune["difficultyMask"] in [
-            "FOUR_STAR",
-            "SIX_STAR",
-        ]:  # 突袭
+        if rune.difficulty_mask in ["FOUR_STAR", "SIX_STAR"]:  # 突袭
             pass
-        elif rune["difficultyMask"] == 1 or rune["difficultyMask"] == "NORMAL":  # 普通
+        elif rune.difficulty_mask == "NORMAL":  # 普通
             text.append("普通难度")
-        elif rune["difficultyMask"] == "EASY":  # 普通
+        elif rune.difficulty_mask == "EASY":  # 普通
             text.append("简单难度")
-        elif rune["difficultyMask"] == 0 or rune["difficultyMask"] == "NONE":  # 未知
+        elif rune.difficulty_mask == "NONE":  # 未知
             text.append("未知关卡难度")
 
-        if rune["buildableMask"] == 3 or rune["buildableMask"] == "ALL":  # 全部单位
+        if rune.buildable_mask == "ALL":  # 全部单位
             pass
-        elif (
-            rune["buildableMask"] == 2 or rune["buildableMask"] == "RANGED"
-        ):  # 远程单位
+        elif rune.buildable_mask == "RANGED":  # 远程单位
             text.append("远程单位")
-        elif rune["buildableMask"] == 1 or rune["buildableMask"] == "MELEE":  # 近战单位
+        elif rune.buildable_mask == "MELEE":  # 近战单位
             text.append("近战单位")
-        elif rune["buildableMask"] == 0 or rune["buildableMask"] == "NONE":  # 未知
+        elif rune.buildable_mask == "NONE":  # 未知
             text.append("未知单位")
 
-        if rune["professionMask"] != 1023:
-            if isinstance(rune["professionMask"], int):
-                text.append(parse_rune_profession(rune["professionMask"]))
+        profession_mask = _profession_mask(rune)
+        if profession_mask != 1023:
+            if isinstance(profession_mask, int):
+                text.append(parse_rune_profession(profession_mask))
             else:
-                text.append(rune["professionMask"])
-        text.append(rune["key"])
+                text.append(profession_mask)
+        text.append(rune.key or "")
 
         blackboard = []
-        for i in rune["blackboard"]:
-            text2 = "{}: {}".format(i["key"], i["value"])
-            if i["valueStr"] is not None:
-                text2 += " ({})".format(i["valueStr"])
+        for i in rune.blackboard or []:
+            text2 = f"{i.key}: {i.value}"
+            if i.value_str is not None:
+                text2 += f" ({i.value_str})"
             blackboard.append(text2)
 
         rune_lines.append(" ".join(text) + ": " + ", ".join(blackboard))
@@ -389,24 +463,27 @@ def build_rune_lines(runes: list[dict]) -> list[str]:
 
 def parse_drop_item(
     item_type: str,
-    item_id: str,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
+    item_id: str | None,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
 ) -> str:
     """把掉落物的类型与 id 翻译成 wiki 上的显示名。
 
-    掉落在数据里有两种载体:关卡的 displayDetailRewards 已经建模成
-    StageDataDisplayDetailRewards,而回忆关卡的 rewardItem、剿灭进度奖励仍是
-    裸 dict。取字段这一步留给调用方,这里只认类型和 id。
+    关卡的 displayDetailRewards、回忆关卡的 rewardItem、剿灭进度奖励虽然是不同的
+    模型,取字段这一步留给调用方,这里只认类型和 id。查不到(含名字为 null)时
+    退化成 "物品<id>"。
     """
 
     try:
+        item_id = _require(item_id, "id")
         if item_type == "CHAR":
-            return character_table[item_id]["name"]
+            return _require(character_table[item_id].name, "name")
         if item_type == "FURN":
-            return building_data["customData"]["furnitures"][item_id]["name"]
-        if item_type in [
+            custom_data = _require(building_data.custom_data, "customData")
+            furnitures = _require(custom_data.furnitures, "furnitures")
+            return _require(furnitures[item_id].name, "name")
+        if item_type not in [
             "MATERIAL",
             "CARD_EXP",
             "TKT_RECRUIT",
@@ -419,46 +496,46 @@ def parse_drop_item(
             "LGG_SHD",
             "HGG_SHD",
         ]:
-            return item_table["items"][item_id]["name"].strip()
-        logger.info(f"Unknown drop item {item_id}")
-        return item_table["items"][item_id]["name"].strip()
+            logger.info(f"Unknown drop item {item_id}")
+        items = _require(item_table.items, "items")
+        return _require(items[item_id].name, "name").strip()
     except (AttributeError, KeyError, TypeError):
         return f"物品{item_id}"
 
 
-def build_enemy_overrides(overwritten_data: dict) -> list[EnemyOverrideView]:
-    fields = [
-        (("name",), "显示名"),
-        (("attributes", "maxHp"), "生命值"),
-        (("attributes", "atk"), "攻击力"),
-        (("attributes", "def"), "防御力"),
-        (("attributes", "magicResistance"), "法术抗性"),
-        (("attributes", "baseAttackTime"), "攻击间隔"),
-        (("attributes", "massLevel"), "重量等级"),
-        (("attributes", "moveSpeed"), "移动速度"),
-        (("attributes", "hpRecoveryPerSec"), "生命恢复速度"),
-        (("rangeRadius",), "攻击范围半径"),
-        (("lifePointReduce",), "目标价值"),
+def build_enemy_overrides(
+    overwritten_data: EnemyDatabaseEnemyData,
+) -> list[EnemyOverrideView]:
+    attributes = overwritten_data.attributes
+    fields: list[
+        tuple[UndefinableStr | UndefinableInt | UndefinableFloat | None, str]
+    ] = [
+        (overwritten_data.name, "显示名"),
+        (attributes.max_hp if attributes else None, "生命值"),
+        (attributes.atk if attributes else None, "攻击力"),
+        (attributes.def_ if attributes else None, "防御力"),
+        (attributes.magic_resistance if attributes else None, "法术抗性"),
+        (attributes.base_attack_time if attributes else None, "攻击间隔"),
+        (attributes.mass_level if attributes else None, "重量等级"),
+        (attributes.move_speed if attributes else None, "移动速度"),
+        (attributes.hp_recovery_per_sec if attributes else None, "生命恢复速度"),
+        (overwritten_data.range_radius, "攻击范围半径"),
+        (overwritten_data.life_point_reduce, "目标价值"),
     ]
     overrides = []
-    for path, label in fields:
-        value = overwritten_data
-        for key in path:
-            value = value[key]
-        if value["m_defined"]:
-            overrides.append(
-                EnemyOverrideView(label=label, value=str(value["m_value"]))
-            )
+    for value, label in fields:
+        if value is not None and value.m_defined:
+            overrides.append(EnemyOverrideView(label=label, value=str(value.m_value)))
     return overrides
 
 
 def build_reward_groups(
-    rewards: Sequence[dict | StageDataDisplayDetailRewards],
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
+    rewards: Sequence[DisplayDetailRewards],
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
 ) -> list[RewardGroupView]:
-    reward_list = {
+    reward_list: dict[str, list[DropView]] = {
         "NONE": [],
         "ONCE": [],
         "NORMAL": [],
@@ -472,12 +549,7 @@ def build_reward_groups(
         "OVERRIDE_DROP": [],
         "ITEM_RETURN": [],
     }
-    for raw_reward in rewards:
-        # 关卡表里的掉落已经建模,剿灭的 dropGains 仍是裸 dict,这里统一成模型
-        if isinstance(raw_reward, StageDataDisplayDetailRewards):
-            reward = raw_reward
-        else:
-            reward = StageDataDisplayDetailRewards.model_validate(raw_reward)
+    for reward in rewards:
         furniture = reward.type == "FURN"
         occurrence = parse_occ_type(reward.occ_percent, reward.drop_type, furniture)
         occurrence_prefix = ":2=" if furniture else ":"
@@ -508,7 +580,11 @@ def build_reward_groups(
     return groups
 
 
-def analyze_action(actions, normal_hidden_group, notCount_list):
+def analyze_action(
+    actions: list[LevelDataWaveDataFragmentDataActionData],
+    normal_hidden_group: list[str | None],
+    notCount_list: NotCountList,
+) -> tuple[float, int, int, bool]:
     action_list = [ActionInfo(action) for action in actions]
     pack_dict = {}
     for action in action_list:
@@ -642,40 +718,44 @@ def analyze_action(actions, normal_hidden_group, notCount_list):
 
 
 def build_level_info(
-    level_table: dict, not_count_list: dict, *, use_countdown: bool = False
+    level: LevelData, not_count_list: NotCountList, *, use_countdown: bool = False
 ) -> LevelInfoView:
     enemy_count = {"min": 0, "max": 0}
     min_time = 0.0
-    normal_hidden_group = analyze_normal_hidden_group(level_table)
+    normal_hidden_group = analyze_normal_hidden_group(level)
     not_count_list_level = copy.deepcopy(not_count_list)
-    for enemy in level_table["enemyDbRefs"]:
-        if enemy["useDb"] is False:
-            try:
-                if enemy["overwrittenData"]["notCountInTotal"]["m_defined"] is True:
-                    if enemy["overwrittenData"]["notCountInTotal"]["m_value"] is True:
-                        if enemy["id"] not in not_count_list_level:
-                            not_count_list_level[enemy["id"]] = []
-                        not_count_list_level[enemy["id"]].append(enemy["level"])
-            except (KeyError, TypeError):
-                continue
-    for wave in level_table["waves"]:
-        min_time += wave["preDelay"] + wave["postDelay"]
-        for fragment in wave["fragments"]:
+    for enemy in level.enemy_db_refs or []:
+        if enemy.use_db is False:
+            overwritten = enemy.overwritten_data
+            flag = overwritten.not_count_in_total if overwritten is not None else None
+            if (
+                flag is not None
+                and flag.m_defined is True
+                and flag.m_value is True
+                and enemy.id is not None
+            ):
+                if enemy.id not in not_count_list_level:
+                    not_count_list_level[enemy.id] = []
+                not_count_list_level[enemy.id].append(enemy.level)
+    for wave in level.waves or []:
+        min_time += wave.pre_delay + wave.post_delay
+        for fragment in wave.fragments or []:
             time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(
-                fragment["actions"], normal_hidden_group, not_count_list_level
+                fragment.actions or [], normal_hidden_group, not_count_list_level
             )
             enemy_count["min"] += action_enemy_min
             enemy_count["max"] += action_enemy_max
             if fragment_flag:
-                min_time += fragment["preDelay"]
+                min_time += fragment.pre_delay
                 min_time += time
     if enemy_count["min"] == enemy_count["max"]:
         enemy_count_text = str(enemy_count["min"])
     else:
         enemy_count_text = f"{enemy_count['min']}~{enemy_count['max']}"
 
-    if use_countdown and level_table["options"]["maxPlayTime"] > 0:
-        max_play_time = level_table["options"]["maxPlayTime"]
+    options = level.options or LevelDataOptions()
+    if use_countdown and options.max_play_time > 0:
+        max_play_time = options.max_play_time
         time_label = "倒计时"
         time_text = f"{int(max_play_time / 60)}分{int(max_play_time % 60)}秒"
     elif abs(min_time - int(min_time)) < 0.0001:
@@ -685,67 +765,73 @@ def build_level_info(
         time_label = "最短用时"
         time_text = f"{int(min_time / 60)}分{min_time % 60:.1f}秒"
 
+    # mapData.map 是原始嵌套 list(模型里是 Any)
+    map_matrix = (level.map_data.map if level.map_data is not None else None) or []
     return LevelInfoView(
-        character_limit=level_table["options"]["characterLimit"],
-        initial_cost=level_table["options"]["initialCost"],
-        max_cost=level_table["options"]["maxCost"],
-        max_life_point=level_table["options"]["maxLifePoint"],
+        character_limit=options.character_limit,
+        initial_cost=options.initial_cost,
+        max_cost=options.max_cost,
+        max_life_point=options.max_life_point,
         enemy_count=enemy_count_text,
-        map_size=(
-            f"{len(level_table['mapData']['map'][0])}×"
-            f"{len(level_table['mapData']['map'])}"
-        ),
+        map_size=f"{len(map_matrix[0])}×{len(map_matrix)}",
         time_label=time_label,
         time=time_text,
     )
 
 
-def analyze_normal_hidden_group(level_table):
-    normal_hidden_group = []
-    if level_table["runes"]:
-        try:
-            for rune in level_table["runes"]:
-                if (
-                    rune["difficultyMask"] == 1 or rune["difficultyMask"] == "NORMAL"
-                ) and rune["key"] == "level_hidden_group_enable":
-                    for d in rune["blackboard"]:
-                        if d["key"] == "key":
-                            normal_hidden_group.append(d["valueStr"])
-        except Exception:
-            logger.info("hiddenGroup解析出错.")
+def analyze_normal_hidden_group(level: LevelData) -> list[str | None]:
+    normal_hidden_group: list[str | None] = []
+    for rune in level.runes or []:
+        if rune.difficulty_mask == "NORMAL" and rune.key == "level_hidden_group_enable":
+            for d in rune.blackboard or []:
+                if d.key == "key":
+                    normal_hidden_group.append(d.value_str)
     return normal_hidden_group
 
 
+def _skill_name(
+    char: CharacterData, skill_index: int, skill_table: dict[str, SkillDataBundle]
+) -> str:
+    """干员第 skill_index 个技能 1 级时的名字;-1 表示不带技能。
+
+    数据缺失时抛 KeyError / IndexError,由调用方按"这一关没有编队"兜底。
+    """
+
+    if skill_index == -1:
+        return ""
+    skill_id = _require(
+        _require(char.skills, "skills")[skill_index].skill_id, "skillId"
+    )
+    levels = _require(skill_table[skill_id].levels, "levels")
+    return _require(levels[0].name, "name")
+
+
 def build_char_card_info(
-    level_table, stage_page_name, character_table, skill_table, stage_charId=None
+    level: LevelData,
+    stage_page_name: str,
+    character_table: dict[str, CharacterData],
+    skill_table: dict[str, SkillDataBundle],
+    stage_charId: str | None = None,
 ) -> SquadSectionView | None:
     units = []
     memory_desc = ""
     favor_point, fp_set = [], set()
     try:
-        if (
-            level_table["predefines"] is None
-            or "characterCards" not in level_table["predefines"]
-        ):
+        predefines = level.predefines
+        if predefines is None or predefines.character_cards is None:
             return None
-        for char_card in level_table["predefines"]["characterCards"]:
-            char_card_name = character_table[char_card["inst"]["characterKey"]]["name"]
-            if (
-                stage_charId is not None
-                and char_card["inst"]["characterKey"] == stage_charId
-            ):
+        for char_card in predefines.character_cards:
+            inst = _require(char_card.inst, "inst")
+            character_key = _require(inst.character_key, "characterKey")
+            char_card_name = _require(character_table[character_key].name, "name")
+            if stage_charId is not None and character_key == stage_charId:
                 units.append(SquadUnitView(name=char_card_name, simulation=True))
                 memory_desc = "模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准"
                 continue
-            if char_card["skillIndex"] != -1:
-                skill_name = skill_table[
-                    character_table[char_card["inst"]["characterKey"]]["skills"][
-                        char_card["skillIndex"]
-                    ]["skillId"]
-                ]["levels"][0]["name"]
-            else:
-                skill_name = ""
-            potential_rank = char_card["inst"]["potentialRank"]
+            skill_name = _skill_name(
+                character_table[character_key], char_card.skill_index, skill_table
+            )
+            potential_rank = inst.potential_rank
             units.append(
                 SquadUnitView(
                     name=char_card_name,
@@ -754,14 +840,14 @@ def build_char_card_info(
                         "PHASE_1": 1,
                         "PHASE_2": 2,
                         "PHASE_3": 3,
-                    }.get(char_card["inst"]["phase"], char_card["inst"]["phase"]),
-                    level=char_card["inst"]["level"],
+                    }.get(inst.phase, inst.phase),
+                    level=inst.level,
                     skill_name=skill_name,
-                    main_skill_level=char_card["mainSkillLvl"],
+                    main_skill_level=char_card.main_skill_lvl,
                     potential=potential_rank + 1 if potential_rank != 0 else None,
                 )
             )
-            this_p = min(200, char_card["inst"]["favorPoint"] * 2)
+            this_p = min(200, inst.favor_point * 2)
             fp_set.add(this_p)
             favor_point.append(f"{char_card_name}信赖值为{this_p}%")
         if units:
@@ -779,37 +865,34 @@ def build_char_card_info(
             return SquadSectionView(
                 title="固定编队", units=units, note=fp_desc + memory_desc
             )
-    # ValidationError 也要接住:干员数据缺字段时只该丢掉这一关的固定编队,
-    # 不能让异常冒泡打断整轮三千多个关卡的生成
-    except (IndexError, KeyError, TypeError, ValidationError):
+    # 干员数据缺字段时只该丢掉这一关的固定编队,不能让异常冒泡打断整轮三千多个
+    # 关卡的生成:模型字段为 None 时 _require 抛 KeyError,视图校验失败抛
+    # ValidationError,都在这里接住
+    except (AttributeError, IndexError, KeyError, TypeError, ValidationError):
         logger.info(f"{stage_page_name}: characterCards error.")
     return None
 
 
 def build_char_insert_info(
-    level_table, stage_page_name, character_table, skill_table
+    level: LevelData,
+    stage_page_name: str,
+    character_table: dict[str, CharacterData],
+    skill_table: dict[str, SkillDataBundle],
 ) -> SquadSectionView | None:
     units = []
     favor_point, fp_set = [], set()
     try:
-        if (
-            level_table["predefines"] is None
-            or "characterInsts" not in level_table["predefines"]
-        ):
+        predefines = level.predefines
+        if predefines is None or predefines.character_insts is None:
             return None
-        for char_insert in level_table["predefines"]["characterInsts"]:
-            char_insert_name = character_table[char_insert["inst"]["characterKey"]][
-                "name"
-            ]
-            if char_insert["skillIndex"] != -1:
-                skill_name = skill_table[
-                    character_table[char_insert["inst"]["characterKey"]]["skills"][
-                        char_insert["skillIndex"]
-                    ]["skillId"]
-                ]["levels"][0]["name"]
-            else:
-                skill_name = ""
-            potential_rank = char_insert["inst"]["potentialRank"]
+        for char_insert in predefines.character_insts:
+            inst = _require(char_insert.inst, "inst")
+            character_key = _require(inst.character_key, "characterKey")
+            char_insert_name = _require(character_table[character_key].name, "name")
+            skill_name = _skill_name(
+                character_table[character_key], char_insert.skill_index, skill_table
+            )
+            potential_rank = inst.potential_rank
             units.append(
                 SquadUnitView(
                     name=char_insert_name,
@@ -818,17 +901,14 @@ def build_char_insert_info(
                         "PHASE_1": 1,
                         "PHASE_2": 2,
                         "PHASE_3": 3,
-                    }.get(
-                        char_insert["inst"]["phase"],
-                        char_insert["inst"]["phase"],
-                    ),
-                    level=char_insert["inst"]["level"],
+                    }.get(inst.phase, inst.phase),
+                    level=inst.level,
                     skill_name=skill_name,
-                    main_skill_level=char_insert["mainSkillLvl"],
+                    main_skill_level=char_insert.main_skill_lvl,
                     potential=potential_rank + 1 if potential_rank != 0 else None,
                 )
             )
-            this_p = min(200, char_insert["inst"]["favorPoint"] * 2)
+            this_p = min(200, inst.favor_point * 2)
             fp_set.add(this_p)
             favor_point.append(f"{char_insert_name}信赖值为{this_p}%")
         if units:
@@ -837,23 +917,23 @@ def build_char_insert_info(
             else:
                 fp_desc = "，".join(favor_point)
             return SquadSectionView(title="已部署干员", units=units, note=fp_desc)
-    except (IndexError, KeyError, TypeError, ValidationError):
+    except (AttributeError, IndexError, KeyError, TypeError, ValidationError):
         logger.info(f"{stage_page_name}: characterInsts error.")
     return None
 
 
 def build_squad_sections(
-    level_table: dict,
+    level: LevelData,
     stage_page_name: str,
-    character_table: dict,
-    skill_table: dict,
+    character_table: dict[str, CharacterData],
+    skill_table: dict[str, SkillDataBundle],
     *,
     stage_char_id: str | None = None,
     include_inserted: bool = True,
 ) -> list[SquadSectionView]:
     sections = []
     fixed = build_char_card_info(
-        level_table,
+        level,
         stage_page_name,
         character_table,
         skill_table,
@@ -863,7 +943,7 @@ def build_squad_sections(
         sections.append(fixed)
     if include_inserted:
         inserted = build_char_insert_info(
-            level_table, stage_page_name, character_table, skill_table
+            level, stage_page_name, character_table, skill_table
         )
         if inserted is not None:
             sections.append(inserted)
@@ -871,41 +951,37 @@ def build_squad_sections(
 
 
 def build_tile_effects(
-    level_table: dict, stage_tile_info: dict
+    level: LevelData, stage_tile_info: dict[str, TileAppendInfo]
 ) -> list[TileEffectView]:
-    try:
-        tiles = level_table["mapData"]["tiles"]
-        if not tiles:
-            return []
-    except (KeyError, TypeError):
+    tiles = level.map_data.tiles if level.map_data is not None else None
+    if not tiles:
         return []
-    tile_blackboard_dict = {}
-    for tile in filter(lambda x: x["blackboard"], tiles):
-        if tile["tileKey"] not in tile_blackboard_dict:
-            tile_blackboard_dict[tile["tileKey"]] = []
-        if tile["blackboard"] not in tile_blackboard_dict[tile["tileKey"]]:
-            tile_blackboard_dict[tile["tileKey"]].append(tile["blackboard"])
+    tile_blackboard_dict: dict[str, list[list[BlackboardDataPair]]] = {}
+    for tile in tiles:
+        if not tile.blackboard:
+            continue
+        tile_key = tile.tile_key or ""
+        if tile_key not in tile_blackboard_dict:
+            tile_blackboard_dict[tile_key] = []
+        if tile.blackboard not in tile_blackboard_dict[tile_key]:
+            tile_blackboard_dict[tile_key].append(tile.blackboard)
     if tile_blackboard_dict == {}:
         return []
 
     effects = []
     for tile_key, blackboards in tile_blackboard_dict.items():
         tile_info = stage_tile_info.get(tile_key)
-        if hasattr(tile_info, "name"):
-            tile_name = tile_info.name
-        elif tile_info is not None:
-            tile_name = tile_info["name"]
-        else:
-            tile_name = tile_key
+        # tileInfo 里有条目但名字为 null 时输出空名,与旧模型的默认值一致
+        tile_name = (tile_info.name or "") if tile_info is not None else tile_key
         effects.append(
             TileEffectView(
                 name=tile_name,
                 blackboards=[
                     [
                         BlackboardView(
-                            key=item["key"],
-                            value=item["value"],
-                            value_str=item["valueStr"],
+                            key=item.key or "",
+                            value=item.value,
+                            value_str=item.value_str,
                         )
                         for item in blackboard
                     ]
@@ -916,23 +992,35 @@ def build_tile_effects(
     return effects
 
 
+def _override_name(enemy: LevelDataEnemyDataDbReference) -> str:
+    """useDb 为 false 的敌人只有 overwrittenData.name 这一处名字。"""
+
+    data = _require(enemy.overwritten_data, "overwrittenData")
+    return _require(_require(data.name, "name").m_value, "name.m_value")
+
+
+def _database_name(levels: list[EnemyDatabaseEnemyLevel]) -> str:
+    """图鉴里没有的敌人退回 enemy_database 第 0 级的名字。"""
+
+    data = _require(levels[0].enemy_data, "enemyData")
+    return _require(_require(data.name, "name").m_value, "name.m_value")
+
+
 def build_enemies(
-    level_table: dict,
-    enemy_table: dict,
-    enemy_database: dict,
+    level: LevelData,
+    enemy_table: EnemyTable,
+    enemy_levels: EnemyLevelIndex,
     flag_skip0: bool,
 ) -> list[EnemyView]:
-    def enemyDbRefs_sort(item):
-        if item["id"] in enemy_table:
-            return enemy_table[item["id"]]["sortId"]
-        else:
-            return 9999999
+    def enemyDbRefs_sort(item: LevelDataEnemyDataDbReference) -> int:
+        handbook = enemy_table.get(item.id) if item.id is not None else None
+        return handbook.sort_id if handbook is not None else 9999999
 
-    normal_hidden_group = analyze_normal_hidden_group(level_table)
+    normal_hidden_group = analyze_normal_hidden_group(level)
     enemy_count_dict = {}
-    for wave in level_table["waves"]:
-        for fragment in wave["fragments"]:
-            action_list = [ActionInfo(action) for action in fragment["actions"]]
+    for wave in level.waves or []:
+        for fragment in wave.fragments or []:
+            action_list = [ActionInfo(action) for action in fragment.actions or []]
             pack_dict = {}
             actions_count_type = {}
             for action in action_list:
@@ -1015,14 +1103,14 @@ def build_enemies(
             enemy_num_dict[k] = (
                 f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
             )
-    enemy_db_refs_sorted = sorted(level_table["enemyDbRefs"], key=enemyDbRefs_sort)
+    enemy_db_refs_sorted = sorted(level.enemy_db_refs or [], key=enemyDbRefs_sort)
     enemies = []
     for enemy in enemy_db_refs_sorted:
-        if enemy["id"] not in enemy_num_dict:
-            enemy_num_dict[enemy["id"]] = "0"
-        if flag_skip0 and enemy_num_dict[enemy["id"]] == "0":
+        if enemy.id not in enemy_num_dict:
+            enemy_num_dict[enemy.id] = "0"
+        if flag_skip0 and enemy_num_dict[enemy.id] == "0":
             continue
-        count_text = enemy_num_dict[enemy["id"]]
+        count_text = enemy_num_dict[enemy.id]
         if "," in count_text:
             count_lower, count_upper = count_text.split(",")
         else:
@@ -1031,26 +1119,25 @@ def build_enemies(
         display_name = None
         note = None
         overrides = []
-        # 只有明确的 False 才读 overwrittenData;useDb 缺失(None)时仍然查表,
-        # 与 build_level_info 里对同一字段的判断保持一致
-        if enemy["useDb"] is False:
-            enemy_name = enemy["overwrittenData"]["name"]["m_value"]
+        # 只有明确的 False 才读 overwrittenData;与 build_level_info 里对同一字段的
+        # 判断保持一致
+        if enemy.use_db is False:
+            enemy_name = _override_name(enemy)
             note = "需人工复查！"
         else:
-            if enemy["id"] in enemy_table:
-                enemy_name = enemy_table[enemy["id"]]["name"]
+            handbook = enemy_table.get(enemy.id) if enemy.id is not None else None
+            if handbook is not None:
+                enemy_name = _require(handbook.name, "name")
                 if enemy_name in ["W", "泥岩", "多萝西", "弑君者"]:
                     display_name = enemy_name
                     enemy_name += "(敌方)"
             else:
                 enemy_name = ""
-                for enemy_content in enemy_database["enemies"]:
-                    if enemy_content["Key"] == enemy["id"]:
-                        enemy_name = enemy_content["Value"][0]["enemyData"]["name"][
-                            "m_value"
-                        ]
-            if enemy["overwrittenData"] is not None:
-                overrides = build_enemy_overrides(enemy["overwrittenData"])
+                db_levels = enemy_levels.get(enemy.id) if enemy.id is not None else None
+                if db_levels is not None:
+                    enemy_name = _database_name(db_levels)
+            if enemy.overwritten_data is not None:
+                overrides = build_enemy_overrides(enemy.overwritten_data)
 
         enemies.append(
             EnemyView(
@@ -1059,7 +1146,7 @@ def build_enemies(
                 display_name=display_name,
                 count=count_upper,
                 count_lower=count_lower,
-                level=enemy["level"],
+                level=enemy.level,
                 note=note,
                 overrides=overrides,
             )
@@ -1067,28 +1154,41 @@ def build_enemies(
     return enemies
 
 
-def format_zone(zone_table: dict, zone_id: str) -> str:
+def format_zone(zone_table: ZoneTable, zone_id: str | None) -> str:
     """拼接所属区域名。
 
     zone_table 里有 62 个区域(guide_1、camp_zone_* 等)两个名字字段都是 null,
     此处刻意保留旧行为输出字面量 None,而不是让参数从 wikitext 里消失 ——
     MediaWiki 模板对「参数缺失」和「参数为 None」的处理并不相同。
     """
-    zone_data = zone_table["zones"][zone_id]
-    if zone_data["zoneNameFirst"]:
-        return f"{zone_data['zoneNameFirst']} {zone_data['zoneNameSecond']}"
-    return f"{zone_data['zoneNameSecond']}"
+    zone_data = (zone_table.zones or {})[_require(zone_id, "zoneId")]
+    if zone_data.zone_name_first:
+        return f"{zone_data.zone_name_first} {zone_data.zone_name_second}"
+    return f"{zone_data.zone_name_second}"
+
+
+def _terrain_tags(level: LevelData | None) -> list[str] | None:
+    """mapData.tags;没有关卡或字段为 null 时为 None(页面上不输出 |地形tag=)。"""
+
+    if level is None or level.map_data is None:
+        return None
+    return level.map_data.tags
+
+
+def _display_detail_rewards(stage: StageData) -> list[StageDataDisplayDetailRewards]:
+    drop_info = stage.stage_drop_info
+    return (drop_info.display_detail_rewards if drop_info is not None else None) or []
 
 
 def build_normal_stage(
     stage: StageData,
     table: StageTable,
-    zone_table: dict,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
-    level_table: dict,
-    not_count_list: dict,
+    zone_table: ZoneTable,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+    level: LevelData | None,
+    not_count_list: NotCountList,
     compile_rich_text: Callable[[str], str],
     map_override: str = "",
 ) -> BasicStageView:
@@ -1100,9 +1200,10 @@ def build_normal_stage(
     elif stage.appearance_style == "MIST_OPS":
         subtype = "迷雾"
 
+    stages = table.stages or {}
     unlock_conditions = []
-    for unlock in stage.unlock_condition:
-        previous_stage = table.stages[unlock.stage_id]
+    for unlock in stage.unlock_condition or []:
+        previous_stage = stages[_require(unlock.stage_id, "stageId")]
         if_tough = ""
         if previous_stage.difficulty == "SIX_STAR":
             if_tough = "险地"
@@ -1125,26 +1226,21 @@ def build_normal_stage(
         description = compile_rich_text(stage.description.replace("\\n", "<br/>"))
 
     rewards = []
-    if stage.stage_drop_info.display_detail_rewards:
+    display_detail_rewards = _display_detail_rewards(stage)
+    if display_detail_rewards:
         rewards = build_reward_groups(
-            stage.stage_drop_info.display_detail_rewards,
-            character_table,
-            building_data,
-            item_table,
+            display_detail_rewards, character_table, building_data, item_table
         )
 
     tile_effects = []
-    terrain_tags = None
-    if stage.level_id:
-        tile_effects = build_tile_effects(level_table, table.tile_info)
-        if "tags" in level_table["mapData"]:
-            terrain_tags = level_table["mapData"]["tags"]
+    if level is not None:
+        tile_effects = build_tile_effects(level, table.tile_info or {})
 
     view = BasicStageView(
         heading="普通",
         code=(stage.code or "").strip(),
         name=(stage.name or "").strip(),
-        stage_id=stage.stage_id,
+        stage_id=stage.stage_id or "",
         map_override=map_override,
         stage_type=parse_stage_type(stage.stage_type),
         subtype=subtype,
@@ -1155,15 +1251,13 @@ def build_normal_stage(
         unlock_condition=", ".join(unlock_conditions),
         recommended_level=stage.danger_level or "-",
         zone=zone,
-        level=(
-            build_level_info(level_table, not_count_list) if stage.level_id else None
-        ),
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=description,
         ap_cost=stage.ap_cost,
         practice_cost=stage.practice_ticket_cost if stage.can_practice else -1,
         rewards=rewards,
         tile_effects=tile_effects,
-        terrain_tags=terrain_tags,
+        terrain_tags=_terrain_tags(level),
     )
     return view
 
@@ -1171,16 +1265,17 @@ def build_normal_stage(
 def build_4star_stage(
     stage: StageData,
     table: StageTable,
-    zone_table: dict,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
-    level_table: dict,
+    zone_table: ZoneTable,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+    level: LevelData,
     compile_rich_text: Callable[[str], str],
 ) -> AssaultStageView:
+    stages = table.stages or {}
     unlock_conditions = []
-    for unlock in stage.unlock_condition:
-        previous_stage = table.stages[unlock.stage_id]
+    for unlock in stage.unlock_condition or []:
+        previous_stage = stages[_require(unlock.stage_id, "stageId")]
         rank = {"PASS": 2, "COMPLETE": 3}.get(
             unlock.complete_state, unlock.complete_state
         )
@@ -1197,19 +1292,19 @@ def build_4star_stage(
 
     zone = format_zone(zone_table, stage.zone_id)
 
-    climit, intelligence = build_rune_buffs(level_table["runes"])
+    runes = level.runes or []
+    climit, intelligence = build_rune_buffs(runes)
 
     rewards = []
-    if stage.stage_drop_info.display_detail_rewards:
+    display_detail_rewards = _display_detail_rewards(stage)
+    if display_detail_rewards:
         rewards = build_reward_groups(
-            stage.stage_drop_info.display_detail_rewards,
-            character_table,
-            building_data,
-            item_table,
+            display_detail_rewards, character_table, building_data, item_table
         )
 
-    intelligence.extend(build_rune_lines(level_table["runes"]))
+    intelligence.extend(build_rune_lines(runes))
 
+    options = level.options or LevelDataOptions()
     view = AssaultStageView(
         heading="突袭",
         code=(stage.code or "").strip(),
@@ -1219,9 +1314,9 @@ def build_4star_stage(
         unlock_condition=", ".join(unlock_conditions),
         recommended_level=str(stage.danger_level),
         zone=zone,
-        character_limit=level_table["options"]["characterLimit"] + climit,
-        initial_cost=level_table["options"]["initialCost"],
-        max_cost=level_table["options"]["maxCost"],
+        character_limit=options.character_limit + climit,
+        initial_cost=options.initial_cost,
+        max_cost=options.max_cost,
         description=compile_rich_text(
             (stage.description or "").replace("\\n", "<br/>")
         ),
@@ -1236,17 +1331,18 @@ def build_4star_stage(
 def build_campaign_stage(
     stage: StageData,
     table: StageTable,
-    campaign_table: dict,
-    character_table: dict,
-    building_data: dict,
-    item_table: dict,
-    level_table: dict,
-    not_count_list: dict,
+    campaign_table: CampaignTable,
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+    level: LevelData | None,
+    not_count_list: NotCountList,
     compile_rich_text: Callable[[str], str],
 ) -> CampaignStageView:
+    stages = table.stages or {}
     unlock_conditions = []
-    for unlock in stage.unlock_condition:
-        previous_stage = table.stages[unlock.stage_id]
+    for unlock in stage.unlock_condition or []:
+        previous_stage = stages[_require(unlock.stage_id, "stageId")]
         rank = {"PASS": 2, "COMPLETE": 3}.get(
             unlock.complete_state, unlock.complete_state
         )
@@ -1254,71 +1350,68 @@ def build_campaign_stage(
             f"{rank}星通关[[{previous_stage.code} {previous_stage.name}]]"
         )
 
-    if stage.zone_id in campaign_table["campaignZones"]:
-        zone = campaign_table["campaignZones"][stage.zone_id]["name"]
-    else:
-        zone = "NONE"
+    campaign_zones = campaign_table.campaign_zones or {}
+    zone_data = campaign_zones.get(stage.zone_id) if stage.zone_id is not None else None
+    zone = _require(zone_data.name, "name") if zone_data is not None else "NONE"
 
     description = ""
     if stage.description:
         description = compile_rich_text(stage.description.replace("\\n", "<br/>"))
 
-    campaign_detail = campaign_table["campaigns"][stage.stage_id]
-    if campaign_detail["dropGains"]["PERMANENT"]["gainLadders"] != []:
+    stage_id = stage.stage_id or ""
+    campaign_detail = (campaign_table.campaigns or {})[stage_id]
+    drop_gains = campaign_detail.drop_gains or {}
+    if drop_gains["PERMANENT"].gain_ladders != []:
         gain_flag = "PERMANENT"
     else:
         gain_flag = "ROTATE"
+    drop_gain = drop_gains[gain_flag]
 
     rewards = []
-    if campaign_detail["dropGains"][gain_flag]["displayDetailRewards"]:
+    if drop_gain.display_detail_rewards:
         rewards = build_reward_groups(
-            campaign_detail["dropGains"][gain_flag]["displayDetailRewards"],
+            drop_gain.display_detail_rewards,
             character_table,
             building_data,
             item_table,
         )
 
-    gain_ladders = campaign_detail["dropGains"][gain_flag]["gainLadders"]
-    ap_returns = [f"+{ladder['apFailReturn']}" for ladder in gain_ladders]
+    gain_ladders = drop_gain.gain_ladders or []
+    ap_returns = [f"+{ladder.ap_fail_return}" for ladder in gain_ladders]
     diamond_rewards = []
     for ladder in gain_ladders:
-        if ladder["displayDiamondShdNum"] == 0:
-            diamond_rewards.append(f"+{ladder['displayDiamondShdNum']}")
+        if ladder.display_diamond_shd_num == 0:
+            diamond_rewards.append(f"+{ladder.display_diamond_shd_num}")
         else:
-            diamond_rewards.append(f"+约{ladder['displayDiamondShdNum']}")
-
-    terrain_tags = None
-    if stage.level_id and "tags" in level_table["mapData"]:
-        terrain_tags = level_table["mapData"]["tags"]
+            diamond_rewards.append(f"+约{ladder.display_diamond_shd_num}")
 
     view = CampaignStageView(
         code=(stage.code or "").strip(),
         name=(stage.name or "").strip(),
-        stage_id=stage.stage_id,
-        commission="_r_" in stage.stage_id,
+        stage_id=stage_id,
+        commission="_r_" in stage_id,
         stage_type=parse_stage_type(stage.stage_type),
         difficulty=stage.difficulty,
         unlock_condition=", ".join(unlock_conditions),
         zone=zone,
-        level=(
-            build_level_info(level_table, not_count_list) if stage.level_id else None
-        ),
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=description,
         ap_cost=stage.ap_cost,
         rewards=rewards,
         ap_returns=ap_returns,
         diamond_rewards=diamond_rewards,
-        terrain_tags=terrain_tags,
+        terrain_tags=_terrain_tags(level),
     )
     return view
 
 
 def build_crisis_stage(
     stage_detail: dict,
-    level_table: dict,
-    not_count_list: dict,
+    level: LevelData | None,
+    not_count_list: NotCountList,
     compile_rich_text: Callable[[str], str],
 ) -> BasicStageView:
+    # stage_detail 来自 weedy 的 crisis_info.json,不是 gamedata,仍按 dict 访问
     if "description" in stage_detail:
         stage_desc = compile_rich_text(
             stage_detail["description"].replace("\\n", "<br/>")
@@ -1337,11 +1430,7 @@ def build_crisis_stage(
         unlock_condition="—",
         recommended_level="—",
         zone=stage_detail["code"].strip(),
-        level=(
-            build_level_info(level_table, not_count_list)
-            if stage_detail["levelId"]
-            else None
-        ),
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=stage_desc,
         ap_cost=0,
         practice_cost=-1,
@@ -1350,60 +1439,54 @@ def build_crisis_stage(
 
 
 def build_roguelike_stage(
-    stage_detail: dict,
-    level_table: dict,
-    not_count_list: dict,
+    stage: RoguelikeGameStageData,
+    level: LevelData | None,
+    not_count_list: NotCountList,
     compile_rich_text: Callable[[str], str],
 ) -> BasicStageView:
-    terrain_tags = None
-    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
-        terrain_tags = level_table["mapData"]["tags"]
     view = BasicStageView(
         heading="普通",
-        code=stage_detail["code"].strip(),
-        name=stage_detail["name"].strip(),
-        stage_id=stage_detail["id"],
+        code=_require(stage.code, "code").strip(),
+        name=_require(stage.name, "name").strip(),
+        stage_id=_require(stage.id, "id"),
         stage_type="活动",
         difficulty="NORMAL",
         unlock_condition="—",
         recommended_level="—",
         zone="—",
-        level=(
-            build_level_info(level_table, not_count_list)
-            if stage_detail["levelId"]
-            else None
-        ),
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=compile_rich_text(
-            stage_detail["description"].replace("\\n", "<br/>")
+            _require(stage.description, "description").replace("\\n", "<br/>")
         ),
         ap_cost=0,
         practice_cost=-1,
-        terrain_tags=terrain_tags,
+        terrain_tags=_terrain_tags(level),
     )
     return view
 
 
 def build_roguelike_4star_stage(
-    stage_detail: dict,
-    level_table: dict,
+    stage: RoguelikeGameStageData,
+    level: LevelData,
     compile_rich_text: Callable[[str], str],
 ) -> AssaultStageView:
-    climit, intelligence = build_rune_buffs(level_table["runes"])
+    climit, intelligence = build_rune_buffs(level.runes or [])
 
+    options = level.options or LevelDataOptions()
     view = AssaultStageView(
         heading="紧急作战",
-        code=stage_detail["code"].strip(),
-        name=stage_detail["name"].strip(),
+        code=_require(stage.code, "code").strip(),
+        name=_require(stage.name, "name").strip(),
         stage_type="活动",
         subtype="紧急作战",
         difficulty="FOUR_STAR",
         unlock_condition="-",
         zone="-",
-        character_limit=level_table["options"]["characterLimit"] + climit,
-        initial_cost=level_table["options"]["initialCost"],
-        max_cost=level_table["options"]["maxCost"],
+        character_limit=options.character_limit + climit,
+        initial_cost=options.initial_cost,
+        max_cost=options.max_cost,
         description=compile_rich_text(
-            stage_detail["eliteDesc"].replace("\\n", "<br/>")
+            _require(stage.elite_desc, "eliteDesc").replace("\\n", "<br/>")
         ),
         ap_cost=0,
         practice_cost=-1,
@@ -1413,126 +1496,112 @@ def build_roguelike_4star_stage(
 
 
 def build_memory_stage(
-    stage_detail,
-    level_table,
-    compile_rich_text,
-    character_table,
-    building_data,
-    item_table,
-    notCount_list,
+    stage: HandbookStoryStageData,
+    level: LevelData | None,
+    compile_rich_text: Callable[[str], str],
+    character_table: dict[str, CharacterData],
+    building_data: BuildingData,
+    item_table: InventoryData,
+    notCount_list: NotCountList,
 ) -> BasicStageView:
     unlock_cond = ""
-    for p in stage_detail["unlockParam"]:
+    for p in stage.unlock_param or []:
         if unlock_cond != "":
             unlock_cond += "，"
-        if p["unlockType"] == 1 or p["unlockType"] == "AWAKE":
-            unlock_cond += "提升至精英阶段{}等级{}".format(
-                p["unlockParam1"], p["unlockParam2"]
-            )
-        elif p["unlockType"] == 2 or p["unlockType"] == "FAVOR":
-            unlock_cond += "提升信赖至{}".format(p["unlockParam1"])
+        if p.unlock_type == "AWAKE":
+            unlock_cond += f"提升至精英阶段{p.unlock_param_1}等级{p.unlock_param_2}"
+        elif p.unlock_type == "FAVOR":
+            unlock_cond += f"提升信赖至{p.unlock_param_1}"
         else:
-            logger.info("Unknown unlockType", p["unlockType"])
+            logger.info(f"Unknown unlockType {p.unlock_type}")
     unlock_cond = (
-        "干员'''[[{}]]'''".format(character_table[stage_detail["charId"]]["name"])
+        "干员'''[[{}]]'''".format(
+            character_table[_require(stage.char_id, "charId")].name
+        )
         + unlock_cond
     )
 
     reward_items = [
         DropView(
             name=parse_drop_item(
-                r["type"], r["id"], character_table, building_data, item_table
+                r.type, r.id, character_table, building_data, item_table
             ),
             occurrence="三星获得",
         )
-        for r in stage_detail["rewardItem"]
+        for r in stage.reward_item or []
     ]
-    terrain_tags = None
-    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
-        terrain_tags = level_table["mapData"]["tags"]
     view = BasicStageView(
         code="悖论模拟",
-        name=stage_detail["name"].strip(),
-        stage_id=stage_detail["stageId"],
+        name=_require(stage.name, "name").strip(),
+        stage_id=_require(stage.stage_id, "stageId"),
         stage_type="悖论模拟",
         difficulty="NORMAL",
         unlock_condition=unlock_cond,
         recommended_level="—",
-        zone=stage_detail["zoneId"],
-        level=(
-            build_level_info(level_table, notCount_list)
-            if stage_detail["levelId"]
-            else None
-        ),
+        zone=stage.zone_id,
+        level=build_level_info(level, notCount_list) if level is not None else None,
         description=compile_rich_text(
-            stage_detail["description"].replace("\n", "<br/>")
+            _require(stage.description, "description").replace("\n", "<br/>")
         ),
         ap_cost=0,
         practice_cost=-1,
         rewards=[RewardGroupView(label="首次掉落", drops=reward_items)],
-        terrain_tags=terrain_tags,
+        terrain_tags=_terrain_tags(level),
     )
     return view
 
 
 def build_sandbox_v2_stage(
-    stage_detail: dict,
+    stage: SandboxV2StageData,
     compile_rich_text: Callable[[str], str],
-    level_table: dict,
-    not_count_list: dict,
+    level: LevelData | None,
+    not_count_list: NotCountList,
 ) -> BasicStageView:
-    terrain_tags = None
-    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
-        terrain_tags = level_table["mapData"]["tags"]
+    code = _require(stage.code, "code")
+    name = _require(stage.name, "name")
+    stage_id = _require(stage.stage_id, "stageId")
     view = BasicStageView(
-        code=stage_detail["code"],
-        name=stage_detail["name"],
-        stage_id=stage_detail["stageId"],
+        code=code,
+        name=name,
+        stage_id=stage_id,
         stage_type="生息演算",
         level=(
-            build_level_info(level_table, not_count_list, use_countdown=True)
-            if stage_detail["levelId"]
+            build_level_info(level, not_count_list, use_countdown=True)
+            if level is not None
             else None
         ),
         description=compile_rich_text(
-            stage_detail["description"].replace("\\n", "<br/>").replace("\n", "<br/>")
+            _require(stage.description, "description")
+            .replace("\\n", "<br/>")
+            .replace("\n", "<br/>")
         ),
-        action_cost=stage_detail["actionCost"],
-        terrain_tags=terrain_tags,
-        sandbox_map=SandboxMapView(
-            code=stage_detail["code"],
-            name=stage_detail["name"],
-            stage_id=stage_detail["stageId"],
-        ),
+        action_cost=stage.action_cost,
+        terrain_tags=_terrain_tags(level),
+        sandbox_map=SandboxMapView(code=code, name=name, stage_id=stage_id),
     )
     return view
 
 
 def build_recal_rune_stage(
-    stage_detail: dict,
+    stage: RecalRuneStageData,
     compile_rich_text: Callable[[str], str],
-    level_table: dict,
-    not_count_list: dict,
+    level: LevelData | None,
+    not_count_list: NotCountList,
 ) -> BasicStageView:
-    terrain_tags = None
-    if stage_detail["levelId"] and "tags" in level_table["mapData"]:
-        terrain_tags = level_table["mapData"]["tags"]
     view = BasicStageView(
-        code=stage_detail["levelCode"],
-        name=stage_detail["levelName"],
-        stage_id=stage_detail["stageId"],
+        code=_require(stage.level_code, "levelCode"),
+        name=_require(stage.level_name, "levelName"),
+        stage_id=_require(stage.stage_id, "stageId"),
         stage_type="全息作战矩阵",
-        level=(
-            build_level_info(level_table, not_count_list)
-            if stage_detail["levelId"]
-            else None
-        ),
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=compile_rich_text(
-            stage_detail["levelDesc"].replace("\\n", "<br/>").replace("\n", "<br/>")
+            _require(stage.level_desc, "levelDesc")
+            .replace("\\n", "<br/>")
+            .replace("\n", "<br/>")
         ),
         ap_cost=0,
         practice_cost=-1,
-        terrain_tags=terrain_tags,
+        terrain_tags=_terrain_tags(level),
     )
     return view
 
@@ -1880,42 +1949,27 @@ def render_disambiguation(links: list[DisambiguationLinkView]) -> str:
 
 
 class ActionInfo:
-    def __init__(self, action):
-        if (action["actionType"] == 0 or action["actionType"] == "SPAWN") and action[
-            "key"
-        ] != "":
-            self.key = action["key"]
+    def __init__(self, action: LevelDataWaveDataFragmentDataActionData) -> None:
+        if action.action_type == "SPAWN" and action.key != "":
+            self.key = action.key
         else:
             self.key = None
         if self.key is not None:
-            self.time = action["preDelay"] + (action["count"] - 1) * action["interval"]
-            self.count = action["count"]
+            self.time = action.pre_delay + (action.count - 1) * action.interval
+            self.count = action.count
         else:
             self.time = 0.0
             self.count = 0
-        if "hiddenGroup" in action and action["hiddenGroup"] is not None:
-            self.hidden_group = action["hiddenGroup"]
-        else:
-            self.hidden_group = None
+        self.hidden_group = action.hidden_group
         self.random_type = 0
-        if (
-            "randomSpawnGroupKey" in action
-            and action["randomSpawnGroupKey"] is not None
-        ):
-            self.random_key = action["randomSpawnGroupKey"]
+        self.random_key = action.random_spawn_group_key
+        if self.random_key is not None:
             self.random_type += 1
-        else:
-            self.random_key = None
-        if (
-            "randomSpawnGroupPackKey" in action
-            and action["randomSpawnGroupPackKey"] is not None
-        ):
-            self.random_pack = action["randomSpawnGroupPackKey"]
+        self.random_pack = action.random_spawn_group_pack_key
+        if self.random_pack is not None:
             self.random_type += 2
-        else:
-            self.random_pack = None
 
-    def update_pack(self, pack_dict):
+    def update_pack(self, pack_dict: dict[str, str]) -> None:
         if self.random_key is None and self.random_pack is not None:
             if self.random_pack in pack_dict:
                 self.random_key = pack_dict[self.random_pack]
@@ -1925,40 +1979,44 @@ class ActionInfo:
                 )
 
 
-def check_duplicate(ctx: JobContext) -> dict[str, str]:
+def check_duplicate(
+    stage_table: StageTable, activity_table: ActivityTable
+) -> dict[str, str]:
     """同名关卡代号 -> 消歧义页 wikitext。"""
-    stage_table = ctx.getgd("excel/stage_table.json")
-    activity_table = ctx.getgd("excel/activity_table.json")
+    stages = stage_table.stages or {}
+    basic_info = activity_table.basic_info or {}
 
-    stage_code_dict, duplicate_dict = {}, {}
-    for s in stage_table["stages"].values():
-        if s["name"] is None or s["code"] is None:
+    stage_code_dict: dict[str, list[str]] = {}
+    duplicate_dict: dict[str, str] = {}
+    for s in stages.values():
+        if s.name is None or s.code is None:
             continue
         if (
-            s["difficulty"] in ["FOUR_STAR", "SIX_STAR"]
-            or s["stageType"] == "GUIDE"
-            or s["diffGroup"] in ["EASY", "TOUGH"]
+            s.difficulty in ["FOUR_STAR", "SIX_STAR"]
+            or s.stage_type == "GUIDE"
+            or s.diff_group in ["EASY", "TOUGH"]
         ):
             continue
-        if s["code"] not in stage_code_dict:
-            stage_code_dict[s["code"].strip()] = []
-        stage_code_dict[s["code"].strip()].append(s["stageId"])
+        # 沿用旧代码:判重用原始 code,建键用 strip 后的 code
+        if s.code not in stage_code_dict:
+            stage_code_dict[s.code.strip()] = []
+        stage_code_dict[s.code.strip()].append(_require(s.stage_id, "stageId"))
     for code, s_list in stage_code_dict.items():
         if len(s_list) > 1:
             links = []
             seen_links = set()
             for sid in s_list:
+                target = stages[sid]
                 activity_name = None
-                if stage_table["stages"][sid]["stageType"] == "ACTIVITY":
-                    result = re.search("^([^_]+)[_-]", sid)
+                if target.stage_type == "ACTIVITY":
+                    result = _require(re.search("^([^_]+)[_-]", sid), "activity id")
                     act_id = result.group(1)
-                    if act_id in activity_table["basicInfo"]:
-                        activity_name = activity_table["basicInfo"][act_id][
-                            "name"
-                        ].replace("#", "/0")
+                    if act_id in basic_info:
+                        activity_name = _require(
+                            basic_info[act_id].name, "name"
+                        ).replace("#", "/0")
                 page_name = "{} {}".format(
-                    stage_table["stages"][sid]["code"].strip(),
-                    stage_table["stages"][sid]["name"].strip(),
+                    (target.code or "").strip(), (target.name or "").strip()
                 )
                 link_key = (page_name, activity_name)
                 if link_key not in seen_links:
@@ -1970,58 +2028,73 @@ def check_duplicate(ctx: JobContext) -> dict[str, str]:
                     )
                     seen_links.add(link_key)
             duplicate_dict[code] = render_disambiguation(links)
-    # logger.info(json.dumps(duplicate_dict, indent=4, ensure_ascii=False))
     return duplicate_dict
 
 
-def _get_list_notCountInTotal(ctx: JobContext):
-    enemy_database = ctx.getgd("levels/enemydata/enemy_database.json")
-    notCount_list = {}
-    try:
-        for enemy in enemy_database["enemies"]:
-            for enemy_level in enemy["Value"]:
-                if "notCountInTotal" in enemy_level["enemyData"]:
-                    if enemy_level["enemyData"]["notCountInTotal"]["m_defined"] is True:
-                        if (
-                            enemy_level["enemyData"]["notCountInTotal"]["m_value"]
-                            is True
-                        ):
-                            if enemy["Key"] not in notCount_list:
-                                notCount_list[enemy["Key"]] = []
-                            notCount_list[enemy["Key"]].append(enemy_level["level"])
-                    elif (
-                        enemy["Key"] in notCount_list
-                        and enemy_level["level"] - 1 in notCount_list[enemy["Key"]]
-                    ):
-                        notCount_list[enemy["Key"]].append(enemy_level["level"])
-        return notCount_list
-    except Exception:
-        return {}
+def _get_list_notCountInTotal(enemy_levels: EnemyLevelIndex) -> NotCountList:
+    """enemy_database 里标记了 notCountInTotal 的敌人及其 level。
+
+    某一级明确标记为 true 时记下该级;未定义的级别若紧接着已记下的上一级,
+    视为沿用上一级的标记。
+    """
+
+    notCount_list: NotCountList = {}
+    for key, levels in enemy_levels.items():
+        for enemy_level in levels:
+            data = enemy_level.enemy_data
+            flag = data.not_count_in_total if data is not None else None
+            if flag is None:
+                continue
+            if flag.m_defined is True:
+                if flag.m_value is True:
+                    if key not in notCount_list:
+                        notCount_list[key] = []
+                    notCount_list[key].append(enemy_level.level)
+            elif key in notCount_list and enemy_level.level - 1 in notCount_list[key]:
+                notCount_list[key].append(enemy_level.level)
+    return notCount_list
+
+
+def _build_enemy_views(
+    level: LevelData,
+    enemy_handbook_table: EnemyHandBookDataGroup,
+    enemy_levels: EnemyLevelIndex,
+    flag_skip0: bool = False,
+) -> list[EnemyView]:
+    return build_enemies(
+        level, enemy_handbook_table.enemy_data or {}, enemy_levels, flag_skip0
+    )
 
 
 @job
-def run(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    stage_table = ctx.getgd("excel/stage_table.json")
-    typed_stage_table = StageTable.model_validate(stage_table)
-    zone_table = ctx.getgd("excel/zone_table.json")
-    redirect_table = ctx.getgd("battle/battle_misc_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+def run(
+    wiki: Wiki,
+    stage_table: Annotated[StageTable, table("stage_table")],
+    activity_table: Annotated[ActivityTable, table("activity_table")],
+    zone_table: Annotated[ZoneTable, table("zone_table")],
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+    battle_misc_table: BattleMiscTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    stages = stage_table.stages or {}
+    level_scene_pairs = battle_misc_table.level_scene_pairs or {}
 
-    stage_list = ctx.wiki.category("分类:普通难度关卡")
+    stage_list = wiki.category("分类:普通难度关卡")
     new_stage_list = []
-    duplicate_dict = check_duplicate(ctx)
-    notCount_list = _get_list_notCountInTotal(ctx)
+    duplicate_dict = check_duplicate(stage_table, activity_table)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for stage_id in stage_table["stages"]:
-        stage_detail = stage_table["stages"][stage_id]
-        if stage_detail["name"] is None or stage_detail["code"] is None:
+    for stage_id, stage in stages.items():
+        if stage.name is None or stage.code is None:
             continue
         if (
-            stage_detail["stageType"]
+            stage.stage_type
             not in [
                 "MAIN",
                 "SUB",
@@ -2030,11 +2103,12 @@ def run(ctx: JobContext) -> None:
                 "SPECIAL_STORY",
                 "CLIMB_TOWER",
             ]
-            or stage_detail["difficulty"] in ["FOUR_STAR"]
-            or stage_detail["diffGroup"] in ["EASY"]
+            or stage.difficulty in ["FOUR_STAR"]
+            or stage.diff_group in ["EASY"]
         ):
             continue
-        stage_detail["name"] = {
+        # 改名直接写回表里:后面的关卡在解锁条件里引用它时,用的就是这个名字
+        stage.name = {
             "act21side_01_t": "新城区大街(德克萨斯)",
             "act21side_02_t": "萨卢佐家(拉普兰德2)",
             "act21side_03_m2": "后巷(拉普兰德1)",
@@ -2042,92 +2116,73 @@ def run(ctx: JobContext) -> None:
             "act21side_05_m1": "后巷(乔万娜)",
             "act21side_05_t": "后巷(拉普兰德2)",
             "act21side_06_t": "新城区大街(丹布朗)",
-        }.get(stage_id, stage_detail["name"].strip())
-        # 表里的副本就是下面要渲染的那一关,改名后直接用它,不再单独校验一份
-        typed_stage_table.stages[stage_id].name = stage_detail["name"]
-        typed_stage = typed_stage_table.stages[stage_id]
-        stage_page_name = stage_detail["code"].strip() + " " + stage_detail["name"]
-        if stage_detail["difficulty"] == "SIX_STAR":
+        }.get(stage_id, stage.name.strip())
+        code = stage.code.strip()
+        stage_page_name = code + " " + stage.name
+        if stage.difficulty == "SIX_STAR":
             stage_page_name = "险地" + stage_page_name
         elif (
-            stage_detail["diffGroup"] == "TOUGH"
-            and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
+            stage.diff_group == "TOUGH" and stage.appearance_style != "HIGH_DIFFICULTY"
         ):
             stage_page_name = "磨难" + stage_page_name
         if stage_page_name in stage_list:
             continue
-        # if stage_detail['code'] not in ['IG-DF-6']:
-        #     continue
 
         map_override = ""
-        if stage_detail["levelId"]:
+        level = None
+        if stage.level_id:
             try:
-                if stage_detail["levelId"] in redirect_table["levelScenePairs"]:
-                    level_table = ctx.getgd(
-                        "levels/"
-                        + redirect_table["levelScenePairs"][stage_detail["levelId"]][
-                            "levelId"
-                        ].lower()
-                        + ".json"
-                    )
-                    if (
-                        redirect_table["levelScenePairs"][stage_detail["levelId"]][
-                            "hookedMapPreviewId"
-                        ]
-                        is not None
-                    ):
-                        map_override = redirect_table["levelScenePairs"][
-                            stage_detail["levelId"]
-                        ]["hookedMapPreviewId"]
+                # battle_misc_table 登记了替换场景的关卡,读实际加载的那份关卡文件
+                pair = level_scene_pairs.get(stage.level_id)
+                if pair is not None:
+                    level = levels(_require(pair.level_id, "levelId"))
+                    if pair.hooked_map_preview_id is not None:
+                        map_override = pair.hooked_map_preview_id
                 else:
-                    level_table = ctx.getgd(
-                        "levels/" + stage_detail["levelId"].lower() + ".json"
-                    )
+                    level = levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-        else:
-            level_table = {}
 
         normal_stage = build_normal_stage(
-            typed_stage,
-            typed_stage_table,
+            stage,
+            stage_table,
             zone_table,
             character_table,
             building_data,
             item_table,
-            level_table,
+            level,
             notCount_list,
             rts.compile,
             map_override=map_override,
         )
         enemies = (
-            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
         )
-        assault_stage = (
-            build_4star_stage(
-                typed_stage_table.stages[typed_stage.hard_staged_id],
-                typed_stage_table,
+        assault_stage = None
+        if stage.hard_staged_id:
+            assault_stage = build_4star_stage(
+                stages[stage.hard_staged_id],
+                stage_table,
                 zone_table,
                 character_table,
                 building_data,
                 item_table,
-                level_table,
+                _require(level, "level"),
                 rts.compile,
             )
-            if stage_detail["hardStagedId"]
-            else None
-        )
+        # dropType 在数据里是枚举名,这个数字比较沿用旧代码(恒为 False),
+        # 页面输出与迁移前一致;要不要改成按枚举名判断另行决定
         has_material_drop = any(
-            reward["dropType"] in [2, 3, 4]
-            for reward in stage_detail["stageDropInfo"]["displayDetailRewards"]
+            reward.drop_type in [2, 3, 4] for reward in _display_detail_rewards(stage)
         )
-        if stage_detail["levelId"]:
-            squads = build_squad_sections(
-                level_table, stage_page_name, character_table, skill_table
-            )
-        else:
-            squads = []
+        squads = (
+            build_squad_sections(level, stage_page_name, character_table, skill_table)
+            if level is not None
+            else []
+        )
 
         stage_content = render_normal_page(
             NormalPageView(
@@ -2140,61 +2195,31 @@ def run(ctx: JobContext) -> None:
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        # old = ctx.wiki.read(stage_page_name)
-        # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
-        # if result:
-        #     stage_content = old.replace(result.group(1), stage_enemy_data)
-        # else:
-        #     continue
-
-        # result2 = re.search(r"\|额外物资=(.*?)\n", stage_normal_data)
-        # if not result2:
-        #     continue
-        # old = ctx.wiki.read(stage_page_name)
-        # result1 = re.search(r"\|额外物资=(.*?)\n", old)
-        # if result1 and result2:
-        #     stage_content = old.replace(result1.group(1), result2.group(1))
-        #     if stage_content != old:
-        #         logger.info(f'{stage_page_name} differenet. update.')
-        #         ctx.wiki.edit(
-        #             title=stage_page_name,
-        #             text=stage_content,
-        #             summary='update'
-        #         )
-        #     else:
-        #         logger.info(f'{stage_page_name} same.')
-        # else:
-        #     continue
-
-        if stage_detail["code"].strip() in duplicate_dict:
-            ctx.wiki.edit(
-                title=stage_detail["code"].strip(),
-                text=duplicate_dict[stage_detail["code"].strip()],
-                summary="消歧义",
-            )
+        if code in duplicate_dict:
+            wiki.edit(title=code, text=duplicate_dict[code], summary="消歧义")
         else:
-            if stage_detail["difficulty"] == "SIX_STAR":
-                redirect_title = "险地" + stage_detail["code"].strip()
+            if stage.difficulty == "SIX_STAR":
+                redirect_title = "险地" + code
             elif (
-                stage_detail["diffGroup"] == "TOUGH"
-                and stage_detail["appearanceStyle"] != "HIGH_DIFFICULTY"
+                stage.diff_group == "TOUGH"
+                and stage.appearance_style != "HIGH_DIFFICULTY"
             ):
-                redirect_title = "磨难" + stage_detail["code"].strip()
+                redirect_title = "磨难" + code
             else:
-                redirect_title = stage_detail["code"].strip()
-            ctx.wiki.edit(
+                redirect_title = code
+            wiki.edit(
                 title=redirect_title,
                 text=stage_redirect,
                 summary="init",
                 createonly="1",
             )
-        ctx.wiki.edit(
-            title=stage_detail["stageId"].strip(),
+        wiki.edit(
+            title=_require(stage.stage_id, "stageId").strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2202,99 +2227,105 @@ def run(ctx: JobContext) -> None:
             bot=None,
             minor=True,
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
 
         new_stage_list.append(f"* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             text="\n".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
 @job
-def run_campaign(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    stage_table = ctx.getgd("excel/stage_table.json")
-    typed_stage_table = StageTable.model_validate(stage_table)
-    campaign_table = ctx.getgd("excel/campaign_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+def run_campaign(
+    wiki: Wiki,
+    stage_table: Annotated[StageTable, table("stage_table")],
+    campaign_table: Annotated[CampaignTable, table("campaign_table")],
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    stages = stage_table.stages or {}
+    campaigns = campaign_table.campaigns or {}
 
-    stage_list = ctx.wiki.category("分类:剿灭关卡")
+    stage_list = wiki.category("分类:剿灭关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for stage_id in stage_table["stages"]:
-        stage_detail = stage_table["stages"][stage_id]
-        if stage_detail["stageType"] != "CAMPAIGN":
+    for stage in stages.values():
+        if stage.stage_type != "CAMPAIGN":
             continue
-        stage_page_name = (
-            stage_detail["code"].strip() + " " + stage_detail["name"].strip()
-        )
+        name = _require(stage.name, "name").strip()
+        stage_page_name = _require(stage.code, "code").strip() + " " + name
         if stage_page_name in stage_list:
             continue
 
-        if stage_detail["levelId"]:
+        level = None
+        if stage.level_id:
             try:
-                level_table = ctx.getgd(
-                    "levels/" + stage_detail["levelId"].lower() + ".json"
-                )
+                level = levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-        else:
-            level_table = {}
 
         campaign_stage = build_campaign_stage(
-            typed_stage_table.stages[stage_id],
-            typed_stage_table,
+            stage,
+            stage_table,
             campaign_table,
             character_table,
             building_data,
             item_table,
-            level_table,
+            level,
             notCount_list,
             rts.compile,
         )
         enemies = (
-            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
         )
-        squads = build_squad_sections(
-            level_table,
-            stage_page_name,
-            character_table,
-            skill_table,
-            include_inserted=False,
+        squads = (
+            build_squad_sections(
+                level,
+                stage_page_name,
+                character_table,
+                skill_table,
+                include_inserted=False,
+            )
+            if level is not None
+            else []
         )
+        stage_id = _require(stage.stage_id, "stageId")
         progress_rows = []
-        for r in campaign_table["campaigns"][stage_detail["stageId"]]["breakLadders"]:
+        for r in campaigns[stage_id].break_ladders or []:
             progress_rows.append(
                 CampaignProgressRowView(
-                    kill_count=r["killCnt"],
+                    kill_count=r.kill_cnt,
                     items=[
                         CampaignProgressItemView(
                             name=parse_drop_item(
-                                reward["type"],
-                                reward["id"],
+                                reward.type,
+                                reward.id,
                                 character_table,
                                 building_data,
                                 item_table,
                             ),
-                            count=reward["count"],
+                            count=reward.count,
                         )
-                        for reward in r["rewards"]
+                        for reward in r.rewards or []
                     ],
-                    break_fee_add=r["breakFeeAdd"],
+                    break_fee_add=r.break_fee_add,
                 )
             )
 
@@ -2308,59 +2339,52 @@ def run_campaign(ctx: JobContext) -> None:
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        ctx.wiki.edit(
-            title=stage_detail["name"].strip(),
+        wiki.edit(
+            title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
-            title=stage_detail["stageId"].strip(),
+        wiki.edit(
+            title=stage_id.strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
             bot=None,
             minor=True,
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
 
         new_stage_list.append(f"* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             text="\n".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
 @job
-def run_crisis(ctx: JobContext) -> None:
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-    notCount_list = _get_list_notCountInTotal(ctx)
+def run_crisis(
+    wiki: Wiki,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    # 从 crisis_info 读
+    # 危机合约的关卡表不在 gamedata 里,从 weedy 读(外部数据,保持 dict)
     # https://weedy.prts.wiki/crisis_info.json
-    # with open('crisis_info.json', 'r', encoding='utf-8') as file:
-    #     stage_table = json.loads(file.read())['info']['mapStageDataMap']
-    # # for stage_key in stage_table['data']['seasonInfo'][0]['stages']:
-    # #     stage_detail = stage_table['data']['seasonInfo'][0]['stages'][stage_key]
-    # #     stage_detail['stageId'] = stage_key
-    # #     stage_detail['levelId'] = 'Obt/rune/' + stage_key
-    # for stage_x in stage_table.values():
-    #     stage_detail = stage_x
-
-    # 从 weedy 读
     session = requests.Session()
     stage_list = session.get("https://weedy.prts.wiki/crisis_info.json").json()["info"][
         "mapStageDataMap"
@@ -2370,22 +2394,21 @@ def run_crisis(ctx: JobContext) -> None:
             stage_detail["code"].strip() + " " + stage_detail["name"].strip()
         )
 
+        level = None
         if stage_detail["levelId"]:
             try:
-                level_table = ctx.getgd(
-                    "levels/" + stage_detail["levelId"].lower() + ".json"
-                )
+                level = levels(stage_detail["levelId"])
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-        else:
-            level_table = {}
 
         crisis_stage = build_crisis_stage(
-            stage_detail, level_table, notCount_list, rts.compile
+            stage_detail, level, notCount_list, rts.compile
         )
         enemies = (
-            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
         )
 
         stage_content = render_basic_page(
@@ -2396,13 +2419,13 @@ def run_crisis(ctx: JobContext) -> None:
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_detail["name"].strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2410,67 +2433,58 @@ def run_crisis(ctx: JobContext) -> None:
             minor=True,
             createonly="1",
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
 
 
 @job
-def run_rogue_like(ctx: JobContext) -> None:
-    # roguelike_table = ctx.getgd('excel/roguelike_table.json')
-    roguelike_table = ctx.getgd("excel/roguelike_topic_table.json")
-    roguelike_table = roguelike_table["details"]["rogue_6"]
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+def run_rogue_like(
+    wiki: Wiki,
+    roguelike_topic_table: RoguelikeTopicTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    rogue_stages = (roguelike_topic_table.details or {})["rogue_6"].stages or {}
 
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for stage_key in roguelike_table["stages"]:
-        stage_detail = roguelike_table["stages"][stage_key]
-        if stage_detail["difficulty"] == "FOUR_STAR":
+    for stage_key, stage in rogue_stages.items():
+        if stage.difficulty == "FOUR_STAR":
             continue
         if stage_key == "ro4_b_9":
             continue
 
-        stage_page_name = (
-            stage_detail["code"].strip() + " " + stage_detail["name"].strip()
-        )
+        name = _require(stage.name, "name").strip()
+        stage_page_name = _require(stage.code, "code").strip() + " " + name
 
-        if stage_detail["levelId"]:
+        level = None
+        if stage.level_id:
             try:
-                if (
-                    stage_detail["levelReplaceIds"]
-                    and len(stage_detail["levelReplaceIds"]) >= 1
-                ):
-                    level_table = ctx.getgd(
-                        "levels/" + stage_detail["levelReplaceIds"][0].lower() + ".json"
-                    )
+                if stage.level_replace_ids and len(stage.level_replace_ids) >= 1:
+                    level = levels(stage.level_replace_ids[0])
                 else:
-                    level_table = ctx.getgd(
-                        "levels/" + stage_detail["levelId"].lower() + ".json"
-                    )
+                    level = levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-        else:
-            level_table = {}
 
-        normal_stage = build_roguelike_stage(
-            stage_detail, level_table, notCount_list, rts.compile
-        )
-        linkedStage = [
-            k
-            for k in roguelike_table["stages"]
-            if roguelike_table["stages"][k]["linkedStageId"] == stage_key
+        normal_stage = build_roguelike_stage(stage, level, notCount_list, rts.compile)
+        linked_stages = [
+            k for k, s in rogue_stages.items() if s.linked_stage_id == stage_key
         ]
-        if len(linkedStage) >= 1:
+        if len(linked_stages) >= 1:
             assault_stage = build_roguelike_4star_stage(
-                roguelike_table["stages"][linkedStage[0]],
-                level_table,
+                rogue_stages[linked_stages[0]],
+                _require(level, "level"),
                 rts.compile,
             )
         else:
             assault_stage = None
         enemies = (
-            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
         )
 
         stage_content = render_roguelike_page(
@@ -2482,13 +2496,13 @@ def run_rogue_like(ctx: JobContext) -> None:
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        ctx.wiki.edit(
-            title=stage_detail["name"].strip(),
+        wiki.edit(
+            title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2496,41 +2510,42 @@ def run_rogue_like(ctx: JobContext) -> None:
             minor=True,
             createonly="1",
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
 
 
 @job
-def run_memory(ctx: JobContext) -> None:
-    building_data = ctx.getgd("excel/building_data.json")
-    item_table = ctx.getgd("excel/item_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    handbook_info_table = ctx.getgd("excel/handbook_info_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
-    stage_list = ctx.wiki.category("分类:悖论模拟关卡")
+def run_memory(
+    wiki: Wiki,
+    handbook_info_table: HandbookInfoTable,
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    building_data: Annotated[BuildingData, table("building_data")],
+    item_table: ItemTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    stage_list = wiki.category("分类:悖论模拟关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for stage_detail in handbook_info_table["handbookStageData"].values():
-        stage_page_name = "悖论模拟 {}".format(stage_detail["name"].strip())
+    for stage in (handbook_info_table.handbook_stage_data or {}).values():
+        name = _require(stage.name, "name").strip()
+        stage_page_name = f"悖论模拟 {name}"
         if stage_page_name in stage_list:
             continue
-        if stage_detail["levelId"]:
+        level = None
+        if stage.level_id:
             try:
-                level_table = ctx.getgd(
-                    "levels/" + stage_detail["levelId"].lower() + ".json"
-                )
+                level = levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
-        else:
-            level_table = {}
 
         memory_stage = build_memory_stage(
-            stage_detail,
-            level_table,
+            stage,
+            level,
             rts.compile,
             character_table,
             building_data,
@@ -2538,14 +2553,20 @@ def run_memory(ctx: JobContext) -> None:
             notCount_list,
         )
         enemies = (
-            _build_enemy_views(ctx, level_table) if stage_detail["levelId"] else None
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
         )
-        squads = build_squad_sections(
-            level_table,
-            stage_page_name,
-            character_table,
-            skill_table,
-            stage_char_id=stage_detail["charId"],
+        squads = (
+            build_squad_sections(
+                level,
+                stage_page_name,
+                character_table,
+                skill_table,
+                stage_char_id=stage.char_id,
+            )
+            if level is not None
+            else []
         )
 
         stage_content = render_basic_page(
@@ -2558,13 +2579,13 @@ def run_memory(ctx: JobContext) -> None:
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        ctx.wiki.edit(
-            title=stage_detail["name"].strip(),
+        wiki.edit(
+            title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2572,70 +2593,71 @@ def run_memory(ctx: JobContext) -> None:
             bot=None,
             minor=True,
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
 
         new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
 @job
-def run_sandbox(ctx: JobContext) -> None:
-    # sandbox_table = ctx.getgd('excel/sandbox_table.json')
-    sandbox_table = ctx.getgd("excel/sandbox_perm_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+def run_sandbox(
+    wiki: Wiki,
+    sandbox_perm_table: SandboxPermTable,
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    sandbox_acts = _require(sandbox_perm_table.detail, "detail").sandbox_v2 or {}
 
-    stage_list = ctx.wiki.category("分类:生息演算关卡")
+    stage_list = wiki.category("分类:生息演算关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    # sandbox_stage_list = sandbox_table['sandboxActTables']
-    sandbox_stage_list = sandbox_table["detail"]["SANDBOX_V2"]
-
-    for act_key in sandbox_stage_list:
-        for stage_id, stage_data in sandbox_stage_list[act_key]["stageData"].items():
-            stage_data["name"] = stage_data["name"].strip()
-            stage_page_name = f"{stage_data['code']} {stage_data['name']}(沙洲遗闻)"
+    for act in sandbox_acts.values():
+        for stage in (act.stage_data or {}).values():
+            stage.name = _require(stage.name, "name").strip()
+            stage_page_name = f"{stage.code} {stage.name}(沙洲遗闻)"
             if stage_page_name in stage_list:
                 continue
-            # if stage_data['name'] not in ['炎岩关']:
-            #     continue
 
-            if stage_data["levelId"]:
+            # /data 页面要原样发布整个关卡 JSON,所以先取原始 dict 再自己校验
+            level = None
+            raw_level: dict = {}
+            if stage.level_id:
                 try:
-                    level_table = ctx.getgd(
-                        "levels/" + stage_data["levelId"].lower() + ".json"
-                    )
+                    raw_level = levels.raw(stage.level_id)
+                    level = LevelData.model_validate(raw_level)
                 except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
-            else:
-                level_table = {}
 
             sandbox_stage = build_sandbox_v2_stage(
-                stage_data, rts.compile, level_table, notCount_list
+                stage, rts.compile, level, notCount_list
             )
             enemies = (
-                _build_enemy_views(ctx, level_table) if stage_data["levelId"] else None
+                _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+                if level is not None
+                else None
             )
-            if stage_data["levelId"]:
-                squads = build_squad_sections(
-                    level_table, stage_page_name, character_table, skill_table
+            squads = (
+                build_squad_sections(
+                    level, stage_page_name, character_table, skill_table
                 )
-            else:
-                squads = []
+                if level is not None
+                else []
+            )
             # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
             stage_content = render_basic_page(
                 BasicPageView(
@@ -2645,21 +2667,14 @@ def run_sandbox(ctx: JobContext) -> None:
                 ),
             )
 
-            # old = ctx.wiki.read(stage_page_name)
-            # result = re.search('(\n==敌方情报==\n[\s\S]*?)\n==', old)
-            # if result:
-            #     stage_content = old.replace(result.group(1), stage_enemy_data)
-            # else:
-            #     continue
-
-            ctx.wiki.edit(
+            wiki.edit(
                 title=stage_page_name + "/data",
-                text=json.dumps(level_table, ensure_ascii=False),
+                text=json.dumps(raw_level, ensure_ascii=False),
                 summary="init",
                 createonly=True,
                 contentmodel="json",
             )
-            ctx.wiki.edit(
+            wiki.edit(
                 title=stage_page_name,
                 text=stage_content,
                 summary="init",
@@ -2667,66 +2682,70 @@ def run_sandbox(ctx: JobContext) -> None:
                 bot=None,
                 minor=True,
             )
-            # logger.info(stage_content)
             logger.info(f"Created: {stage_page_name}.")
 
             new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
 @job
-def run_mechanism(ctx: JobContext) -> None:
-    story_review_meta_table = ctx.getgd("excel/story_review_meta_table.json")
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
+def run_mechanism(
+    wiki: Wiki,
+    story_review_meta_table: StoryReviewMetaTable,
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+) -> None:
+    training_camp = _require(
+        story_review_meta_table.training_camp_data, "trainingCampData"
+    )
 
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for stage_data in story_review_meta_table["trainingCampData"]["stageData"].values():
-        stage_page_name = f"{stage_data['code']} {stage_data['name'].strip()}"
-        # if stage_page_name in stage_list:
-        #     continue
+    for stage in (training_camp.stage_data or {}).values():
+        name = _require(stage.name, "name").strip()
+        stage_page_name = f"{stage.code} {name}"
 
-        if stage_data["levelId"]:
-            try:
-                level_table = ctx.getgd(
-                    "levels/" + stage_data["levelId"].lower() + ".json"
-                )
-            except Exception:
-                logger.info(f"Cannot find level data of {stage_page_name}.")
-                continue
-        else:
-            level_table = {}
+        # 训练场关卡一定带关卡文件;没有的话页面上的地图信息无从谈起
+        if not stage.level_id:
+            logger.info(f"Cannot find level data of {stage_page_name}.")
+            continue
+        try:
+            level = levels(stage.level_id)
+        except Exception:
+            logger.info(f"Cannot find level data of {stage_page_name}.")
+            continue
 
         mechanism_stage = BasicStageView(
-            code=stage_data["code"],
-            name=stage_data["name"].strip(),
-            stage_id=stage_data["stageId"],
+            code=_require(stage.code, "code"),
+            name=name,
+            stage_id=_require(stage.stage_id, "stageId"),
             stage_type="训练场",
             difficulty="NORMAL",
             unlock_condition="—",
             recommended_level="—",
             zone="-",
-            level=build_level_info(level_table, notCount_list),
-            description=stage_data["description"],
+            level=build_level_info(level, notCount_list),
+            description=stage.description,
             ap_cost=0,
             practice_cost=-1,
         )
 
-        enemies = _build_enemy_views(ctx, level_table)
+        enemies = _build_enemy_views(level, enemy_handbook_table, enemy_levels)
         squads = build_squad_sections(
-            level_table, stage_page_name, character_table, skill_table
+            level, stage_page_name, character_table, skill_table
         )
         stage_content = render_basic_page(
             BasicPageView(
@@ -2737,95 +2756,92 @@ def run_mechanism(ctx: JobContext) -> None:
             notoc=True,
         )
 
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
             bot=None,
             minor=True,
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_page_name}.")
         new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info(''.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
 @job
-def run_recalrune(ctx: JobContext) -> None:
-    crisis_v2_table = ctx.getgd("excel/crisis_v2_table.json")
-    recalrune_table = crisis_v2_table["recalRuneData"]
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
+def run_recalrune(
+    wiki: Wiki,
+    crisis_v2_table: CrisisV2Table,
+    character_table: CharacterTable,
+    skill_table: SkillTable,
+    enemy_handbook_table: EnemyHandbookTable,
+    enemy_levels: EnemyLevels,
+    levels: Levels,
+    rts: RichText,
+) -> None:
+    recal_rune_data = _require(crisis_v2_table.recal_rune_data, "recalRuneData")
 
-    stage_list = ctx.wiki.category("分类:全息作战矩阵关卡")
+    stage_list = wiki.category("分类:全息作战矩阵关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(ctx)
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
-    for season_info in recalrune_table["seasons"].values():
-        for stage_id, stage_data in season_info["stages"].items():
-            stage_data["levelName"] = stage_data["levelName"].strip()
-            stage_page_name = (
-                f"全息{stage_data['levelCode']} "
-                f"{stage_data['levelName'].replace('#', '＃')}"
-            )
+    for season_info in (recal_rune_data.seasons or {}).values():
+        for stage in (season_info.stages or {}).values():
+            stage.level_name = _require(stage.level_name, "levelName").strip()
+            level_name = stage.level_name
+            stage_page_name = f"全息{stage.level_code} {level_name.replace('#', '＃')}"
             if stage_page_name in stage_list:
                 continue
-            # if stage_data['levelName'] not in ['#爱国者之死']:
-            #     continue
 
-            if stage_data["levelId"]:
+            level = None
+            if stage.level_id:
                 try:
-                    level_table = ctx.getgd(
-                        "levels/" + stage_data["levelId"].lower() + ".json"
-                    )
+                    level = levels(stage.level_id)
                 except Exception:
                     logger.info(f"Cannot find level data of {stage_page_name}.")
                     continue
-            else:
-                level_table = {}
 
             recal_rune_stage = build_recal_rune_stage(
-                stage_data, rts.compile, level_table, notCount_list
+                stage, rts.compile, level, notCount_list
             )
             enemies = (
-                _build_enemy_views(ctx, level_table) if stage_data["levelId"] else None
+                _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+                if level is not None
+                else None
             )
-            if stage_data["levelId"]:
-                squads = build_squad_sections(
-                    level_table, stage_page_name, character_table, skill_table
+            squads = (
+                build_squad_sections(
+                    level, stage_page_name, character_table, skill_table
                 )
-            else:
-                squads = []
+                if level is not None
+                else []
+            )
             stage_content = render_recal_rune_page(
                 RecalRunePageView(
                     stage=recal_rune_stage,
                     enemies=enemies,
                     squads=squads,
-                    display_title=(
-                        f"全息{stage_data['levelCode']} {stage_data['levelName']}"
-                    ),
+                    display_title=f"全息{stage.level_code} {level_name}",
                 )
             )
             stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            ctx.wiki.edit(
-                title=f"全息{stage_data['levelCode']}",
+            wiki.edit(
+                title=f"全息{stage.level_code}",
                 text=stage_redirect,
                 summary="init",
                 createonly="1",
             )
-            ctx.wiki.edit(
+            wiki.edit(
                 title=stage_page_name,
                 text=stage_content,
                 summary="init",
@@ -2833,46 +2849,49 @@ def run_recalrune(ctx: JobContext) -> None:
                 bot=None,
                 minor=True,
             )
-            # logger.info(stage_content)
             logger.info(f"Created: {stage_page_name}.")
 
             new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
-# 手动调用的调试入口,带额外参数,不注册成 job
-def run_id(ctx: JobContext, path) -> None:
-    # if ctx.gamedata._source() != 'Unpacker':
-    #     return
+def run_id(
+    wiki: Wiki,
+    levels: LevelLoader,
+    path: str,
+    *,
+    stage_table: StageTable,
+    character_table: dict[str, CharacterData],
+    skill_table: dict[str, SkillDataBundle],
+    enemy_handbook_table: EnemyHandBookDataGroup,
+    enemy_levels: EnemyLevelIndex,
+) -> None:
+    """手动调用的调试入口:把 ``gamedata/<path>`` 下尚未登记进 stage_table 的
+    关卡文件各建一页。带额外参数,不注册成 job,调用方自己准备好各张表。"""
 
-    character_table = ctx.getgd("excel/character_table.json")
-    skill_table = ctx.getgd("excel/skill_table.json")
-    stage_table = ctx.getgd("excel/stage_table.json")
-    stage_id_list = []
-    for s in stage_table["stages"].values():
-        if s["levelId"] is not None:
-            stage_id_list.append("levels/" + s["levelId"].lower() + ".json")
-    notCount_list = _get_list_notCountInTotal(ctx)
-
-    filelist = ctx.gamedata.list_files(path)
+    known_level_ids = {
+        stage.level_id.lower()
+        for stage in (stage_table.stages or {}).values()
+        if stage.level_id is not None
+    }
+    notCount_list = _get_list_notCountInTotal(enemy_levels)
 
     new_stage_list = []
-    for file in filelist:
-        stage_id = os.path.splitext(os.path.split(file)[1])[0]
-        if file.lower() in stage_id_list:
-            logger.info(stage_id, "already in stage_table. Pass.")
+    for level_id in levels.list_ids(path):
+        stage_id = level_id.rsplit("/", 1)[-1]
+        if level_id.lower() in known_level_ids:
+            logger.info(f"{stage_id} already in stage_table. Pass.")
             continue
-        level_table = ctx.getgd(file.lower())
+        level = levels(level_id)
 
         unknown_stage = BasicStageView(
             code="—",
@@ -2883,16 +2902,14 @@ def run_id(ctx: JobContext, path) -> None:
             unlock_condition="—",
             recommended_level="—",
             zone="-",
-            level=build_level_info(level_table, notCount_list),
+            level=build_level_info(level, notCount_list),
             description="",
             ap_cost=0,
             practice_cost=-1,
         )
 
-        enemies = _build_enemy_views(ctx, level_table)
-        squads = build_squad_sections(
-            level_table, stage_id, character_table, skill_table
-        )
+        enemies = _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+        squads = build_squad_sections(level, stage_id, character_table, skill_table)
         stage_content = render_basic_page(
             BasicPageView(
                 stage=unknown_stage,
@@ -2902,28 +2919,18 @@ def run_id(ctx: JobContext, path) -> None:
             notoc=True,
         )
 
-        ctx.wiki.edit(
+        wiki.edit(
             title=stage_id, text=stage_content, summary="init", bot=None, minor=True
         )
-        # logger.info(stage_content)
         logger.info(f"Created: {stage_id}.")
         new_stage_list.append(f"\n* [[{stage_id}]]")
 
     if new_stage_list != []:
-        ctx.wiki.edit(
+        wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        # logger.info('\n'.join(new_stage_list))
         logger.info("Updated: {}.".format("首页/新增关卡"))
-
-
-def _build_enemy_views(ctx: JobContext, level_table, flag_skip0=False):
-    enemy_table = ctx.getgd("excel/enemy_handbook_table.json")
-    enemy_database = ctx.getgd("levels/enemydata/enemy_database.json")
-    return build_enemies(
-        level_table, enemy_table["enemyData"], enemy_database, flag_skip0
-    )

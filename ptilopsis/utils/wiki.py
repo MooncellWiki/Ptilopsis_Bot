@@ -40,21 +40,22 @@ class Wiki:
     @retry(stop_max_attempt_number=3)
     def edit(
         self,
-        title=None,
-        pageid=None,
-        section=None,
-        sectiontitle=None,
-        text=None,
-        summary=None,
-        minor=None,
-        bot=True,
-        createonly=None,
-        nocreate=None,
-        prependtext=None,
-        appendtext=None,
-        redirect=None,
-        contentformat=None,
-        contentmodel=None,
+        title: str | None = None,
+        pageid: int | str | None = None,
+        section: int | str | None = None,
+        sectiontitle: str | None = None,
+        text: str | None = None,
+        summary: str | None = None,
+        minor: bool | None = None,
+        # 布尔标志传 None 表示不带这个参数;历史调用里 createonly 也有传 "1" 的
+        bot: bool | None = True,
+        createonly: bool | str | None = None,
+        nocreate: bool | None = None,
+        prependtext: str | None = None,
+        appendtext: str | None = None,
+        redirect: bool | None = None,
+        contentformat: str | None = None,
+        contentmodel: str | None = None,
     ):
         """
         :param title: 要编辑的页面标题。不能与pageid一起使用。
@@ -108,7 +109,7 @@ class Wiki:
         return self.session.post(self.api_url, data=post_data)
 
     @retry(stop_max_attempt_number=3)
-    def read(self, title):
+    def read(self, title: str) -> str:
         """
         :param title: 名称空间:页面名
         :return: wikitext
@@ -130,7 +131,7 @@ class Wiki:
         return ret["revisions"][0]["*"]
 
     @retry(stop_max_attempt_number=3)
-    def category(self, category):
+    def category(self, category: str) -> list[str]:
         CM_LIMIT = 1000
         cat_page_list = []
         res = self.session.post(
@@ -168,7 +169,12 @@ class Wiki:
 
     @retry(stop_max_attempt_number=3)
     def protect(
-        self, title=None, pageid=None, protections=None, reason=None, cascade=None
+        self,
+        title: str | None = None,
+        pageid: int | str | None = None,
+        protections: str | None = None,
+        reason: str | None = None,
+        cascade: bool | None = None,
     ):
         """
         :param title:要（解除）保护的页面标题。不能与pageid一起使用。

@@ -1,13 +1,21 @@
 import json
+from typing import Any
 
 import requests
 
+from ptilopsis.gamedata.character_table import CharacterData
+from ptilopsis.jobs.params import CharacterTable, RichText
 from ptilopsis.log import logger
-from ptilopsis.utils.job import JobContext, job
+from ptilopsis.utils.job import job
 from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.wiki import Wiki
 
 
-def get_gacha_mainpage(character_table, gacha_data, rts):
+def get_gacha_mainpage(
+    character_table: dict[str, CharacterData],
+    gacha_data: dict[str, Any],
+    rts: RichTextStyles,
+) -> str:
     content = "===出现概率上升===\n"
     content += "<br/>".join(
         [
@@ -16,7 +24,10 @@ def get_gacha_mainpage(character_table, gacha_data, rts):
                 rarity_star=(op["rarityRank"] + 1) * "★",
                 percent=op["percent"] * op["count"],
                 charIdList="/".join(
-                    [character_table[char_key]["name"] for char_key in op["charIdList"]]
+                    [
+                        character_table[char_key].name or ""
+                        for char_key in op["charIdList"]
+                    ]
                 ),
             )
             for op in gacha_data["up"]
@@ -30,7 +41,10 @@ def get_gacha_mainpage(character_table, gacha_data, rts):
                 rarity=(op["rarityRank"] + 1) * "★",
                 totalPercent=op["totalPercent"],
                 charIdList="/".join(
-                    [character_table[char_key]["name"] for char_key in op["charIdList"]]
+                    [
+                        character_table[char_key].name or ""
+                        for char_key in op["charIdList"]
+                    ]
                 ),
             )
             for op in gacha_data["ops"]
@@ -44,7 +58,7 @@ def get_gacha_mainpage(character_table, gacha_data, rts):
     return content
 
 
-def get_gacha_list(wiki):
+def get_gacha_list(wiki: Wiki) -> None:
     a = {"国服寻访": [], "国际服寻访": []}
 
     page_list = wiki.category("分类:国服寻访")
@@ -63,7 +77,7 @@ def get_gacha_list(wiki):
         json.dump(a, f, ensure_ascii=False, indent=4)
 
 
-def update_gacha_list(wiki):
+def update_gacha_list(wiki: Wiki) -> None:
     with open("test_gacha.txt", encoding="utf-8") as f:
         content = json.loads(f.read())
 
@@ -76,12 +90,9 @@ def update_gacha_list(wiki):
 
 
 @job
-def run(ctx: JobContext) -> None:
-    character_table = ctx.getgd("excel/character_table.json")
-    rts = RichTextStyles(ctx.getgd("excel/gamedata_const.json"))
-
-    # get_gacha_list(ctx.wiki)
-    # update_gacha_list(ctx.wiki)
+def run(wiki: Wiki, character_table: CharacterTable, rts: RichText) -> None:
+    # get_gacha_list(wiki)
+    # update_gacha_list(wiki)
 
     session = requests.Session()
     gacha_data = session.get("https://weedy.baka.icu/gacha/LIMITED_9_0_3").json()[
@@ -91,6 +102,6 @@ def run(ctx: JobContext) -> None:
     logger.info("request success.")
     content = get_gacha_mainpage(character_table, gacha_data, rts)
 
-    ctx.wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
+    wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/test"))
