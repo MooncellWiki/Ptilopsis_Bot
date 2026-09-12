@@ -16,8 +16,8 @@ from ptilopsis.jobs.basic import (
     trans_profession,
 )
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 # 潜能加成的属性名 → 累加到哪个面板值
@@ -32,7 +32,7 @@ POTENTIAL_ATTRIBUTES = {
 }
 
 
-def max_talent_remarks(char: CharacterData, rts: RichTextStyles) -> list[str]:
+def max_talent_remarks(char: CharacterData, rts: richtext.RichText) -> list[str]:
     """满精英、满级、满潜能时客户端会展示的各天赋描述。"""
 
     phases = char.phases or []
@@ -56,7 +56,7 @@ def get_char_attr(
     character_table: dict[str, CharacterData],
     uniequip_table: UniEquipTable,
     id_table: dict[str, Any],
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> str:
     content = []
     for char in character_table.values():

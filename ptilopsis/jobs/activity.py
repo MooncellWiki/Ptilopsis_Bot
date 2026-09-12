@@ -14,8 +14,8 @@ from ptilopsis.gamedata.item_table import InventoryData
 from ptilopsis.gamedata.skin_table import CharSkinData, SkinTable
 from ptilopsis.jobs.params import CharacterTable, ItemTable, RichText, table
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:800px;"'
@@ -100,7 +100,7 @@ def update_activity(
     building_data: BuildingData,
     character_table: dict[str, CharacterData],
     skin_table: SkinTable,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> str:
     items = item_table.items or {}
     basic_info = activity_table.basic_info or {}

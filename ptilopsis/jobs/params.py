@@ -67,10 +67,9 @@ from ptilopsis.gamedata import (
     zone_table,
 )
 from ptilopsis.gamedata.enemy_util import index_enemy_levels
+from ptilopsis.utils import richtext
 from ptilopsis.utils.data import GameData
 from ptilopsis.utils.di import Depends
-from ptilopsis.utils.richtext import HtmlRenderer
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 if TYPE_CHECKING:
@@ -356,19 +355,19 @@ EnemyLevels = Annotated[
 # ---- 富文本 -------------------------------------------------------------
 
 
-def _rich_text(consts: GamedataConst) -> RichTextStyles:
-    return RichTextStyles(consts)
+def _rich_text(consts: GamedataConst) -> richtext.RichText:
+    return richtext.RichText.from_gamedata_const(consts, richtext.WikiRenderer())
 
 
-RichText = Annotated[RichTextStyles, Depends(_rich_text)]
+RichText = Annotated[richtext.RichText, Depends(_rich_text)]
 """按 gamedata_const 构造的富文本转换器,输出 wiki 模板。"""
 
 
-def _rich_text_html(consts: GamedataConst) -> RichTextStyles:
-    return RichTextStyles(consts, renderer=HtmlRenderer())
+def _rich_text_html(consts: GamedataConst) -> richtext.RichText:
+    return richtext.RichText.from_gamedata_const(consts, richtext.HtmlRenderer())
 
 
-RichTextHtml = Annotated[RichTextStyles, Depends(_rich_text_html)]
+RichTextHtml = Annotated[richtext.RichText, Depends(_rich_text_html)]
 """输出内联 HTML 的富文本转换器,给前端脚本消费的 JSON 页面用。"""
 
 

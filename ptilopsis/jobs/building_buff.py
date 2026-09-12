@@ -3,8 +3,8 @@ from typing import Annotated, Any
 from ptilopsis.gamedata.building_data import BuildingData
 from ptilopsis.jobs.params import RichText, table
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 # def special_buff(buff_name, description):
@@ -19,7 +19,7 @@ from ptilopsis.utils.wiki import Wiki
 #     return description
 
 
-def get_building_buff(building_data: BuildingData, rts: RichTextStyles) -> str:
+def get_building_buff(building_data: BuildingData, rts: richtext.RichText) -> str:
     buff_format = """{{{{后勤技能信息/store
 |技能名={name}
 |房间={room}

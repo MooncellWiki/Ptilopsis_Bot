@@ -13,8 +13,8 @@ from ptilopsis.gamedata.mission_table import (
 )
 from ptilopsis.jobs.params import ItemTable, RichText, table
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 table_title = '{|class = "wikitable mw-collapsed mw-collapsible" style = "text-align:center; display:table; white-space:normal; width:800px;"'
@@ -44,7 +44,7 @@ def format_rewards(
 
 
 def format_mission_row(
-    mission: MissionData, mission_reward: str, rts: RichTextStyles
+    mission: MissionData, mission_reward: str, rts: richtext.RichText
 ) -> str:
     mission_text = rts.compile(mission.description)
     return f"\n|-\n|{mission.id}\n|{mission_text}\n|{mission_reward}"
@@ -62,7 +62,7 @@ def format_reward_row(
 
 
 def update_mission(
-    mission_table: MissionTable, item_table: InventoryData, rts: RichTextStyles
+    mission_table: MissionTable, item_table: InventoryData, rts: richtext.RichText
 ) -> str:
     items = item_table.items or {}
     missions = mission_table.missions or {}

@@ -6,15 +6,15 @@ import requests
 from ptilopsis.gamedata.character_table import CharacterData
 from ptilopsis.jobs.params import CharacterTable, RichText
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 
 def get_gacha_mainpage(
     character_table: dict[str, CharacterData],
     gacha_data: dict[str, Any],
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> str:
     content = "===出现概率上升===\n"
     content += "<br/>".join(

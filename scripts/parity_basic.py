@@ -17,7 +17,7 @@ from ptilopsis.config import config
 from ptilopsis.jobs import basic, char_attr
 from ptilopsis.jobs.params import TABLES
 from ptilopsis.utils.data import GameData
-from ptilopsis.utils.richTextStyles import RichTextStyles
+from ptilopsis.utils.richtext import RichText, WikiRenderer
 
 GAMEDATA = GameData(config)
 
@@ -58,7 +58,7 @@ def main(out_dir: Path) -> None:
     charword_table = load("charword_table")
     medal_table = load("medal_table")
     id_table: dict[str, Any] = {}
-    rts = RichTextStyles(gamedata_const)
+    rts = RichText.from_gamedata_const(gamedata_const, WikiRenderer())
     wiki = RecordingWiki()
 
     chars_dir = out_dir / "chars"

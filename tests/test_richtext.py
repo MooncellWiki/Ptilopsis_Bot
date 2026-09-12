@@ -7,7 +7,6 @@ from ptilopsis.utils.richtext import (
     WikiRenderer,
     is_start_tag,
 )
-from ptilopsis.utils.richTextStyles import RichTextStyles
 
 STYLES = {
     "ba.vup": "<color=#0098DC>{0}</color>",
@@ -134,12 +133,12 @@ def test_is_start_tag() -> None:
     assert not is_start_tag("")
 
 
-def test_facade_keeps_legacy_newline_behaviour() -> None:
-    rts = RichTextStyles(GAMEDATA_CONST)
-    assert rts.compile("<@ba.vup>a</>\\nb") == "{{color|#0098DC|a}}\\nb"
+def test_from_gamedata_const_dict() -> None:
+    rts = RichText.from_gamedata_const(GAMEDATA_CONST, WikiRenderer())
+    assert rts.compile("<@ba.vup>a</>\\nb") == "{{color|#0098DC|a}}<br/>b"
     assert rts.compile(None) == ""
 
 
-def test_facade_with_html_renderer() -> None:
-    rts = RichTextStyles(GAMEDATA_CONST, renderer=HtmlRenderer())
+def test_from_gamedata_const_with_html_renderer() -> None:
+    rts = RichText.from_gamedata_const(GAMEDATA_CONST, HtmlRenderer())
     assert rts.compile("<@ba.kw>x</>") == '<span style="color:#00B0FF;">x</span>'

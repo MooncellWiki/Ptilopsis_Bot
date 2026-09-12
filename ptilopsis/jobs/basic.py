@@ -32,9 +32,9 @@ from ptilopsis.gamedata.skin_table import CharSkinDataDisplaySkin, SkinTable
 from ptilopsis.gamedata.uniequip_table import UniEquipTable
 from ptilopsis.jobs import params
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.blackboard import blackboard_values, format_paramed_text
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 TeamTable = dict[str, HandbookTeamData]
@@ -58,11 +58,11 @@ def favor_attributes(char: CharacterData) -> AttributesDeltaData:
     return frames[-1] if frames else AttributesDeltaData()
 
 
-def compile_text(rts: RichTextStyles, text: str | None) -> str:
-    return rts.compile(text).replace("\\n", "<br/>").replace("\n", "<br/>")
+def compile_text(rts: richtext.RichText, text: str | None) -> str:
+    return rts.compile(text).replace("\n", "<br/>")
 
 
-def format_trait(char: CharacterData, phase: int, rts: RichTextStyles) -> str:
+def format_trait(char: CharacterData, phase: int, rts: richtext.RichText) -> str:
     """某个精英阶段满级、满潜能时客户端显示的特性文本。"""
 
     phases = char.phases or []
@@ -149,7 +149,7 @@ def get_basic_info(
     char: CharacterData,
     char_key: str,
     id_table: IdTable,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
     uniequip_table: UniEquipTable,
     team_table: TeamTable,
     skin_table: SkinTable,
@@ -411,7 +411,7 @@ def get_range_data(char: CharacterData) -> str:
     return range_data
 
 
-def get_talent_list(char: CharacterData, rts: RichTextStyles) -> str:
+def get_talent_list(char: CharacterData, rts: richtext.RichText) -> str:
     if char.talents is None:
         return "该干员没有天赋"
     id_char_list = ["一", "二", "三"]
@@ -447,7 +447,7 @@ def get_potential_list(char: CharacterData) -> str:
 
 
 def get_skill_text(
-    skill_table: dict[str, SkillDataBundle], skill_id: str, rts: RichTextStyles
+    skill_table: dict[str, SkillDataBundle], skill_id: str, rts: richtext.RichText
 ) -> str:
     skill_data = skill_table.get(skill_id)
     if skill_data is None:
@@ -494,7 +494,7 @@ def get_skill_text(
 
 
 def get_skill_list(
-    char: CharacterData, skill_table: dict[str, SkillDataBundle], rts: RichTextStyles
+    char: CharacterData, skill_table: dict[str, SkillDataBundle], rts: richtext.RichText
 ) -> str:
     skill_list = ""
     if char.skills:
@@ -525,7 +525,7 @@ def get_token_info(
     update_token_page: bool,
     character_table: dict[str, CharacterData],
     skill_table: dict[str, SkillDataBundle],
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> str:
     # 用 dict 保持顺序:先 displayTokenDict,再技能覆盖的召唤物
     token_keys: dict[str, None] = dict.fromkeys(char.display_token_dict or {})
@@ -717,7 +717,7 @@ def get_battle_equip(
     battle_equip_table: dict[str, BattleEquipPack],
     uniequip_table: UniEquipTable,
     item_table: InventoryData,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> list[str]:
     equip_ids = (uniequip_table.char_equip or {}).get(char_key)
     if equip_ids is None:
@@ -986,7 +986,7 @@ def get_handbook_stage(
     char_key: str,
     stories_table: HandbookInfoTable,
     item_table: InventoryData,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
 ) -> str:
     stage_info = (stories_table.handbook_stage_data or {}).get(char_key)
     if stage_info is None:

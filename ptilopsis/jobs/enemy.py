@@ -31,8 +31,8 @@ from ptilopsis.jobs.params import (
     category,
 )
 from ptilopsis.log import logger
+from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
-from ptilopsis.utils.richTextStyles import RichTextStyles
 from ptilopsis.utils.wiki import Wiki
 
 EnemyPages = Annotated[list[str], category("分类:敌人")]
@@ -122,7 +122,7 @@ def damage_type_names(enemy: EnemyHandBookData) -> str:
 
 
 def get_value(
-    idx: int, v: Undefinable | None, name: str, kind: str, rts: RichTextStyles
+    idx: int, v: Undefinable | None, name: str, kind: str, rts: richtext.RichText
 ) -> str:
     """级别 ``idx`` 的一项属性,写成 ``\\n|name=值``。
 
@@ -157,7 +157,7 @@ def get_value(
 
 def format_abilityList(
     ability_list: list[EnemyHandBookDataAbilty] | None,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
     html: bool = False,
 ) -> str:
     """图鉴里的能力列表:每条按 textFormat 加前缀 / 标色,``<br>`` 分隔。"""
@@ -299,7 +299,7 @@ def summarize_levels(
 def level_section(
     idx: int,
     lv: EnemyDatabaseEnemyData,
-    rts: RichTextStyles,
+    rts: richtext.RichText,
     race_names: dict[str, str],
 ) -> str:
     """``==级别idx==`` 一节,内容是 ``{{敌人信息/levelcontent}}`` 模板。"""
