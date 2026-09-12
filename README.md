@@ -44,7 +44,7 @@ ptilopsis/
 └── utils/
     ├── data.py            # GameData，统一访问 torappu（国服）/ 子模块（海外服）数据
     ├── torappu.py         # torappu HTTP 客户端：版本列表、文件下载、目录列举
-    ├── unpacker.py        # 各服版本号检查与记录（附官方 CDN 资源下载工具）
+    ├── unpacker.py        # 各服版本号检查与记录
     ├── wiki.py            # MediaWiki API 客户端（带 retry）
     ├── di.py              # 依赖注入：Depends / analyze / Resolver
     ├── job.py             # @job 注册表、JobContext、按名字调度

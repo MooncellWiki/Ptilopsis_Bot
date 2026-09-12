@@ -26,12 +26,8 @@ class ServerConfig(BaseModel):
 
     folder: str
     """解包数据落盘的目录名，如 zh_CN。"""
-    files: str
-    """需要解包的资源前缀，如 gamedata / gamedata/excel。"""
     update_msg: str
     """检测到更新时输出的日志模板，占位符为 {0} 客户端版本、{1} 资源版本。"""
-    res_url: str
-    """资源 CDN 根地址。"""
     config_url: str
     """版本号 / network_config 接口根地址。"""
     chat_mask: str

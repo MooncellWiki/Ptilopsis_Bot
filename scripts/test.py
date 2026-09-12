@@ -21,9 +21,3 @@ if __name__ == "__main__":
     # print('flag2')
     # item.run(ctx)
     # route.run(ctx)
-
-    # up = Unpacker(config)
-    # up.get_all_ab()
-    # up.unpack_all_data()
-    # up.get_ab("arts/teamicon/team_icon_hub.ab")
-    # up.unpack_data("gamedata/excel/building_data.ab")

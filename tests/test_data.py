@@ -43,9 +43,7 @@ def config(tmp_path: Path) -> Config:
     )
     server = {
         "folder": "",
-        "files": "gamedata",
         "updateMsg": "{0} {1}",
-        "resUrl": "https://res.example/",
         "configUrl": "https://conf.example/",
         "chatMask": "x",
     }
