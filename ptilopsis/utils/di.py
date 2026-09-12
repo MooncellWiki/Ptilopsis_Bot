@@ -1,11 +1,12 @@
-"""极简的 FastAPI 风格依赖注入,移植自 torappu.core.di(去掉了 async)。
+"""极简的 FastAPI 风格依赖注入,移植自 torappu.core.di。
 
 *dependant* 是一个由 :class:`Resolver` 而不是调用方填参数的可调用对象。
 它的每个参数必须是下面两种之一:
 
 * ``param: Annotated[T, Depends(fn)]`` 或 ``param: T = Depends(fn)``:调用 ``fn``
-  (它自己也是 dependant)并注入返回值。结果按 :class:`Resolver` 缓存,同一个
-  依赖在一次解析里(直接或间接)被多个参数引用时只跑一次。
+  (同步或 async 都可以,它自己也是 dependant)并注入返回值。结果按
+  :class:`Resolver` 缓存,同一个依赖在一次解析里(直接或间接)被多个参数引用时
+  只跑一次。
 * ``param: SomeType``:注入 resolver 创建时按该类型提供的对象(``Wiki``、
   ``GameData`` 等,见 ``ptilopsis.utils.job.PROVIDED_TYPES``)。子类注解也能
   匹配。
@@ -162,35 +163,44 @@ def analyze(
 
 
 class Resolver:
-    """对一组固定的提供对象解析 dependant;一个 resolver 就是一次运行的缓存。"""
+    """对一组固定的提供对象解析 dependant;一个 resolver 就是一次运行的缓存。
+
+    解析是 async 的:依赖可以是协程函数(读 wiki、下载 gamedata),普通函数
+    照常直接调用。
+    """
 
     def __init__(self, provided: Mapping[type, Any]) -> None:
         self._provided = dict(provided)
         self._cache: dict[Callable[..., Any], Any] = {}
 
-    def solve_params(self, dependant: Dependant) -> dict[str, Any]:
+    async def solve_params(self, dependant: Dependant) -> dict[str, Any]:
         """按声明顺序解析 ``dependant`` 的每个参数。"""
 
         kwargs: dict[str, Any] = {}
         for param in dependant.params:
             if param.depends is not None and param.dependant is not None:
-                kwargs[param.name] = self._solve_depends(param.depends, param.dependant)
+                kwargs[param.name] = await self._solve_depends(
+                    param.depends, param.dependant
+                )
             elif param.provided is not None:
                 kwargs[param.name] = self._provided[param.provided]
             else:  # pragma: no cover - analyze() 不会生成这样的 Param
                 raise TypeError(f"unresolvable parameter {param.name!r}")
         return kwargs
 
-    def solve(self, dependant: Dependant) -> Any:
-        """解析参数并调用 ``dependant.call``。"""
+    async def solve(self, dependant: Dependant) -> Any:
+        """解析参数并调用 ``dependant.call``,返回值可等待时再 await。"""
 
-        return dependant.call(**self.solve_params(dependant))
+        result = dependant.call(**await self.solve_params(dependant))
+        if inspect.isawaitable(result):
+            result = await result
+        return result
 
-    def _solve_depends(self, depends: DependsMarker, dependant: Dependant) -> Any:
+    async def _solve_depends(self, depends: DependsMarker, dependant: Dependant) -> Any:
         key = depends.dependency
         if depends.use_cache and key in self._cache:
             return self._cache[key]
-        value = self.solve(dependant)
+        value = await self.solve(dependant)
         if depends.use_cache:
             self._cache[key] = value
         return value

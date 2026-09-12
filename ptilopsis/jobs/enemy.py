@@ -371,7 +371,7 @@ def linked_enemy_links(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_levels: EnemyLevels,
@@ -427,7 +427,7 @@ def run(
             "skin": {"默认": {"战斗": {"file": f"{enemy.enemy_id}"}}},
         }
 
-        wiki.edit(
+        await wiki.edit(
             title=name,
             text=content,
             summary="init",
@@ -435,12 +435,12 @@ def run(
             minor=True,
             createonly="1",
         )
-        wiki.protect(
+        await wiki.protect(
             title=name,
             protections="edit=autoconfirmed|move=sysop",
             reason="protect",
         )
-        wiki.edit(
+        await wiki.edit(
             title=name + "/spine",
             text=json.dumps(spine_content, indent=4, ensure_ascii=False),
             summary="init",
@@ -449,7 +449,7 @@ def run(
             createonly="1",
             contentmodel="json",
         )
-        wiki.protect(
+        await wiki.protect(
             title=name + "/spine",
             protections="edit=autoconfirmed|move=sysop",
             reason="protect",
@@ -458,7 +458,7 @@ def run(
 
 
 @job
-def update_data(
+async def update_data(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_levels: EnemyLevels,
@@ -539,7 +539,7 @@ def update_data(
 
         new_enemy_table.append(new_data)
 
-    wiki.edit(
+    await wiki.edit(
         title="敌人一览/数据",
         text=json.dumps(new_enemy_table, ensure_ascii=False),
         summary="update",
@@ -555,7 +555,7 @@ def update_summary(
 
 
 @job
-def update_immune(
+async def update_immune(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_levels: EnemyLevels,
@@ -565,11 +565,15 @@ def update_immune(
     """给已建页的敌人各级别补上后来新增的 ``战栗抗性`` 一项。"""
 
     page_titles = {page.replace("(敌方)", ""): page for page in enemy_pages}
-    for enemy in (enemy_handbook_table.enemy_data or {}).values():
-        if enemy.name is None or enemy.name == "-":
-            continue
-        title = page_titles[enemy.name.strip()].strip()
-        old_page = wiki.read(title)
+    enemies = [
+        (page_titles[enemy.name.strip()].strip(), enemy)
+        for enemy in (enemy_handbook_table.enemy_data or {}).values()
+        if enemy.name is not None and enemy.name != "-"
+    ]
+    # 一次性批量读取全部敌人页,再逐个比对、按需编辑
+    texts = await wiki.read_many(title for title, _ in enemies)
+    for title, enemy in enemies:
+        old_page = texts[title]
         new_page = old_page
 
         levels = enemy_levels.get(enemy.enemy_id, []) if enemy.enemy_id else []
@@ -587,5 +591,5 @@ def update_immune(
                     new_page = new_page[:lv_idx] + lv_piece + new_page[lv_idx2:]
 
         if new_page != old_page:
-            wiki.edit(title=title, text=new_page, summary="更新抗性")
+            await wiki.edit(title=title, text=new_page, summary="更新抗性")
             logger.info(f"Updated: {enemy.name}.")

@@ -12,12 +12,14 @@ from ptilopsis.utils.data import GameData
 from ptilopsis.utils.di import Resolver, analyze
 from ptilopsis.utils.job import PROVIDED_TYPES
 
+pytestmark = pytest.mark.anyio
+
 
 class FakeGameData:
     def __init__(self) -> None:
         self.reads: list[tuple[str, str]] = []
 
-    def get(self, path: str, region: str = "CN") -> Any:
+    async def get(self, path: str, region: str = "CN") -> Any:
         self.reads.append((path, region))
         if path.endswith("character_table.json"):
             return {"char_1": {"name": f"阿米娅-{region}", "rarity": "TIER_5"}}
@@ -34,21 +36,21 @@ class FakeGameData:
             return {"options": {"characterLimit": 6}, "waves": []}
         raise AssertionError(path)
 
-    def list_files(self, path: str, region: str = "CN") -> list[str]:
+    async def list_files(self, path: str, region: str = "CN") -> list[str]:
         return [
             "levels/obt/main/level_main_01-01.json",
             "levels/obt/main/readme.txt",
         ]
 
 
-def solve(dependency: Any, data: Any) -> Any:
+async def solve(dependency: Any, data: Any) -> Any:
     marker = (
         dependency.__metadata__[0]
         if hasattr(dependency, "__metadata__")
         else dependency
     )
     dependant = analyze(marker.dependency, PROVIDED_TYPES)
-    return Resolver({GameData: data}).solve(dependant)
+    return await Resolver({GameData: data}).solve(dependant)
 
 
 def test_every_registered_table_has_a_path_and_model() -> None:
@@ -59,18 +61,18 @@ def test_every_registered_table_has_a_path_and_model() -> None:
         ), name
 
 
-def test_table_alias_validates_into_models() -> None:
+async def test_table_alias_validates_into_models() -> None:
     data = FakeGameData()
-    table = solve(params.CharacterTable, data)
+    table = await solve(params.CharacterTable, data)
     assert isinstance(table["char_1"], CharacterData)
     assert table["char_1"].name == "阿米娅-CN"
     assert data.reads == [("excel/character_table.json", "CN")]
 
 
-def test_table_with_region_reads_that_server() -> None:
+async def test_table_with_region_reads_that_server() -> None:
     data = FakeGameData()
     dep = Annotated[dict[str, CharacterData], params.table("character_table", "JP")]
-    table = solve(dep, data)
+    table = await solve(dep, data)
     assert table["char_1"].name == "阿米娅-JP"
     assert data.reads == [("excel/character_table.json", "JP")]
 
@@ -80,32 +82,32 @@ def test_unknown_table_name_is_rejected() -> None:
         params.table("no_such_table")
 
 
-def test_level_loader_reads_by_id_and_lists_ids() -> None:
+async def test_level_loader_reads_by_id_and_lists_ids() -> None:
     data = FakeGameData()
-    levels = solve(params.Levels, data)
-    level = levels("Obt/Main/level_main_01-01")
+    levels = await solve(params.Levels, data)
+    level = await levels("Obt/Main/level_main_01-01")
     assert isinstance(level, LevelData)
     assert level.options is not None and level.options.character_limit == 6
     assert data.reads == [("levels/obt/main/level_main_01-01.json", "CN")]
-    assert levels.raw("Obt/Main/level_main_01-01") == {
+    assert await levels.raw("Obt/Main/level_main_01-01") == {
         "options": {"characterLimit": 6},
         "waves": [],
     }
-    assert levels.list_ids("levels/obt/main") == ["obt/main/level_main_01-01"]
+    assert await levels.list_ids("levels/obt/main") == ["obt/main/level_main_01-01"]
 
 
-def test_enemy_levels_index_skips_entries_without_key() -> None:
-    index = solve(params.EnemyLevels, FakeGameData())
+async def test_enemy_levels_index_skips_entries_without_key() -> None:
+    index = await solve(params.EnemyLevels, FakeGameData())
     assert list(index) == ["enemy_a"]
     assert [lv.level for lv in index["enemy_a"]] == [0, 1]
     assert isinstance(index["enemy_a"][0], EnemyDatabaseEnemyLevel)
 
 
-def test_rich_text_variants_use_typed_gamedata_const() -> None:
+async def test_rich_text_variants_use_typed_gamedata_const() -> None:
     data = FakeGameData()
-    assert solve(params.RichText, data).compile("<@ba.vup>x</>") == (
+    assert (await solve(params.RichText, data)).compile("<@ba.vup>x</>") == (
         "{{color|#0098DC|x}}"
     )
-    assert solve(params.RichTextHtml, data).compile("<@ba.vup>x</>") == (
+    assert (await solve(params.RichTextHtml, data)).compile("<@ba.vup>x</>") == (
         '<span style="color:#0098DC;">x</span>'
     )

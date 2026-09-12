@@ -1,12 +1,13 @@
 import json
 from typing import Any
 
-import requests
+import anyio
 
 from ptilopsis.gamedata.character_table import CharacterData
 from ptilopsis.jobs.params import CharacterTable, RichText
 from ptilopsis.log import logger
 from ptilopsis.utils import richtext
+from ptilopsis.utils.http import make_client
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
@@ -58,50 +59,50 @@ def get_gacha_mainpage(
     return content
 
 
-def get_gacha_list(wiki: Wiki) -> None:
+async def get_gacha_list(wiki: Wiki) -> None:
     a = {"国服寻访": [], "国际服寻访": []}
 
-    page_list = wiki.category("分类:国服寻访")
+    page_list = await wiki.category("分类:国服寻访")
     # logger.info(page_list)
+    texts = await wiki.read_many(page_list)
     for page in page_list:
-        text = wiki.read(page)
-        a["国服寻访"].append({"name": page, "text": text})
+        a["国服寻访"].append({"name": page, "text": texts[page]})
 
-    page_list = wiki.category("分类:国际服寻访")
+    page_list = await wiki.category("分类:国际服寻访")
     # logger.info(page_list)
+    texts = await wiki.read_many(page_list)
     for page in page_list:
-        text = wiki.read(page)
-        a["国际服寻访"].append({"name": page, "text": text})
+        a["国际服寻访"].append({"name": page, "text": texts[page]})
 
-    with open("test_gacha.txt", "w") as f:
-        json.dump(a, f, ensure_ascii=False, indent=4)
+    await anyio.Path("test_gacha.txt").write_text(
+        json.dumps(a, ensure_ascii=False, indent=4)
+    )
 
 
-def update_gacha_list(wiki: Wiki) -> None:
-    with open("test_gacha.txt", encoding="utf-8") as f:
-        content = json.loads(f.read())
+async def update_gacha_list(wiki: Wiki) -> None:
+    content = json.loads(await anyio.Path("test_gacha.txt").read_text(encoding="utf-8"))
 
     for page in content["国服寻访"]:
-        wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
+        await wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
         # logger.info(page['text'])
     for page in content["国际服寻访"]:
-        wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
+        await wiki.edit(title=page["name"], text=page["text"], summary="删除序号")
         # logger.info(page['text'])
 
 
 @job
-def run(wiki: Wiki, character_table: CharacterTable, rts: RichText) -> None:
-    # get_gacha_list(wiki)
-    # update_gacha_list(wiki)
+async def run(wiki: Wiki, character_table: CharacterTable, rts: RichText) -> None:
+    # await get_gacha_list(wiki)
+    # await update_gacha_list(wiki)
 
-    session = requests.Session()
-    gacha_data = session.get("https://weedy.baka.icu/gacha/LIMITED_9_0_3").json()[
-        "detail"
-    ]
+    async with make_client() as client:
+        resp = await client.get("https://weedy.baka.icu/gacha/LIMITED_9_0_3")
+        resp.raise_for_status()
+        gacha_data = resp.json()["detail"]
 
     logger.info("request success.")
     content = get_gacha_mainpage(character_table, gacha_data, rts)
 
-    wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/test", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/test"))

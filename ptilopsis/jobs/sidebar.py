@@ -8,7 +8,7 @@ from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
 
-def update_menusidebar(
+async def update_menusidebar(
     wiki: Wiki,
     old_num: int,
     id_table: dict[str, dict[str, Any]],
@@ -19,7 +19,7 @@ def update_menusidebar(
     if new_num <= old_num:
         return
 
-    origin_text = wiki.read("MediaWiki:MenuSidebar")
+    origin_text = await wiki.read("MediaWiki:MenuSidebar")
     num1 = origin_text.find("*[[干员一览")
     num2 = origin_text.find("*[[干员一览")
 
@@ -32,7 +32,7 @@ def update_menusidebar(
             num1 = trans
     new_text = origin_text[:num1] + content + origin_text[num2:]
 
-    wiki.edit(
+    await wiki.edit(
         title="MediaWiki:MenuSidebar",
         text=new_text,
         summary="update",
@@ -43,10 +43,12 @@ def update_menusidebar(
     logger.info("Update: {}.".format("MediaWiki:MenuSidebar"))
 
 
-def update_mainpage(wiki: Wiki, old_num: int, id_table: dict[str, dict[str, Any]]):
+async def update_mainpage(
+    wiki: Wiki, old_num: int, id_table: dict[str, dict[str, Any]]
+):
     # 已弃用
 
-    fin2 = wiki.read("首页")
+    fin2 = await wiki.read("首页")
     num1 = fin2.find("==近期新增==")
     num2 = fin2.find("==网站信息==")
 
@@ -57,12 +59,12 @@ def update_mainpage(wiki: Wiki, old_num: int, id_table: dict[str, dict[str, Any]
     content = "==近期新增==\n===新增干员===\n" + content[:-1] + "\n"
     fin = fin2[:num1] + content + fin2[num2:]
 
-    wiki.edit(title="首页", text=fin, summary="update")
+    await wiki.edit(title="首页", text=fin, summary="update")
     logger.info(fin)
     logger.info("Update: {}.".format("首页"))
 
 
-def update_gameinfo(
+async def update_gameinfo(
     wiki: Wiki,
     old_num: int,
     id_table: dict[str, dict[str, Any]],
@@ -73,14 +75,14 @@ def update_gameinfo(
     if new_num <= old_num:
         return
 
-    origin_text = wiki.read("PRTS:Gameinfo/国服/干员一览")
+    origin_text = await wiki.read("PRTS:Gameinfo/国服/干员一览")
     new_text = re.sub(
         r"cnotrs />([0-9]*)<section", f"cnotrs />{new_num}<section", origin_text
     )
     new_text = re.sub(
         r"cnprevotrs />([0-9]*)<section", f"cnprevotrs />{old_num}<section", new_text
     )
-    wiki.edit(
+    await wiki.edit(
         title="PRTS:Gameinfo/国服/干员一览",
         text=new_text,
         summary="update",
@@ -92,7 +94,7 @@ def update_gameinfo(
 
 
 @job
-def update(
+async def update(
     wiki: Wiki,
     id_table: CharIdTable,
     character_table: CharacterTable,
@@ -103,5 +105,5 @@ def update(
         name = char.name or ""
         if name in id_table and name in char_list and id_table[name]["id"] > old_num:
             old_num = id_table[name]["id"]
-    update_menusidebar(wiki, old_num, id_table, character_table)
-    update_gameinfo(wiki, old_num, id_table, character_table)
+    await update_menusidebar(wiki, old_num, id_table, character_table)
+    await update_gameinfo(wiki, old_num, id_table, character_table)

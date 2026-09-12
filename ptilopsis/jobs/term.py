@@ -5,7 +5,7 @@ from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(wiki: Wiki, gamedata_const: GamedataConst, rts: RichText) -> None:
+async def run(wiki: Wiki, gamedata_const: GamedataConst, rts: RichText) -> None:
     term_list = []
     for t in (gamedata_const.term_description_dict or {}).values():
         desc = rts.compile(t.description).replace("\n", "<br>")
@@ -13,7 +13,7 @@ def run(wiki: Wiki, gamedata_const: GamedataConst, rts: RichText) -> None:
 
     content = "\n\n".join(term_list)
 
-    wiki.edit(
+    await wiki.edit(
         title="用户:Seniorious/term",
         text=content,
         summary="update",

@@ -4,7 +4,6 @@ import re
 from collections.abc import Callable, Sequence
 from typing import Annotated
 
-import requests
 from pydantic import BaseModel, ValidationError
 
 from ptilopsis.gamedata import campaign_table as campaign_models
@@ -60,6 +59,7 @@ from ptilopsis.jobs.params import (
     table,
 )
 from ptilopsis.log import logger
+from ptilopsis.utils.http import make_client
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 from ptilopsis.wikitext import WikiTemplate, inline_template
@@ -2067,7 +2067,7 @@ def _build_enemy_views(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     stage_table: Annotated[StageTable, table("stage_table")],
     activity_table: Annotated[ActivityTable, table("activity_table")],
@@ -2085,11 +2085,13 @@ def run(
     stages = stage_table.stages or {}
     level_scene_pairs = battle_misc_table.level_scene_pairs or {}
 
-    stage_list = wiki.category("分类:普通难度关卡")
+    stage_list = await wiki.category("分类:普通难度关卡")
     new_stage_list = []
     duplicate_dict = check_duplicate(stage_table, activity_table)
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    # 先筛出要建页的关卡,把它们的关卡文件一次并发下载进缓存,再逐个建页
+    candidates: list[tuple[str, StageData, str, str]] = []
     for stage_id, stage in stages.items():
         if stage.name is None or stage.code is None:
             continue
@@ -2127,7 +2129,17 @@ def run(
             stage_page_name = "磨难" + stage_page_name
         if stage_page_name in stage_list:
             continue
+        candidates.append((stage_id, stage, code, stage_page_name))
 
+    # 预取时不校验 pair.level_id:缺失的情况留给下面的循环按原逻辑记日志跳过
+    await levels.prefetch(
+        pair.level_id if pair is not None and pair.level_id else stage.level_id
+        for _, stage, _, _ in candidates
+        if stage.level_id
+        for pair in (level_scene_pairs.get(stage.level_id),)
+    )
+
+    for stage_id, stage, code, stage_page_name in candidates:
         map_override = ""
         level = None
         if stage.level_id:
@@ -2135,11 +2147,11 @@ def run(
                 # battle_misc_table 登记了替换场景的关卡,读实际加载的那份关卡文件
                 pair = level_scene_pairs.get(stage.level_id)
                 if pair is not None:
-                    level = levels(_require(pair.level_id, "levelId"))
+                    level = await levels(_require(pair.level_id, "levelId"))
                     if pair.hooked_map_preview_id is not None:
                         map_override = pair.hooked_map_preview_id
                 else:
-                    level = levels(stage.level_id)
+                    level = await levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
@@ -2196,7 +2208,7 @@ def run(
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
         if code in duplicate_dict:
-            wiki.edit(title=code, text=duplicate_dict[code], summary="消歧义")
+            await wiki.edit(title=code, text=duplicate_dict[code], summary="消歧义")
         else:
             if stage.difficulty == "SIX_STAR":
                 redirect_title = "险地" + code
@@ -2207,19 +2219,19 @@ def run(
                 redirect_title = "磨难" + code
             else:
                 redirect_title = code
-            wiki.edit(
+            await wiki.edit(
                 title=redirect_title,
                 text=stage_redirect,
                 summary="init",
                 createonly="1",
             )
-        wiki.edit(
+        await wiki.edit(
             title=_require(stage.stage_id, "stageId").strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2232,7 +2244,7 @@ def run(
         new_stage_list.append(f"* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             text="\n".join(new_stage_list),
             summary="update",
@@ -2243,7 +2255,7 @@ def run(
 
 
 @job
-def run_campaign(
+async def run_campaign(
     wiki: Wiki,
     stage_table: Annotated[StageTable, table("stage_table")],
     campaign_table: Annotated[CampaignTable, table("campaign_table")],
@@ -2259,10 +2271,11 @@ def run_campaign(
     stages = stage_table.stages or {}
     campaigns = campaign_table.campaigns or {}
 
-    stage_list = wiki.category("分类:剿灭关卡")
+    stage_list = await wiki.category("分类:剿灭关卡")
     new_stage_list = []
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    candidates: list[tuple[StageData, str, str]] = []
     for stage in stages.values():
         if stage.stage_type != "CAMPAIGN":
             continue
@@ -2270,11 +2283,17 @@ def run_campaign(
         stage_page_name = _require(stage.code, "code").strip() + " " + name
         if stage_page_name in stage_list:
             continue
+        candidates.append((stage, name, stage_page_name))
 
+    await levels.prefetch(
+        stage.level_id for stage, _, _ in candidates if stage.level_id
+    )
+
+    for stage, name, stage_page_name in candidates:
         level = None
         if stage.level_id:
             try:
-                level = levels(stage.level_id)
+                level = await levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
@@ -2339,19 +2358,19 @@ def run_campaign(
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        wiki.edit(
+        await wiki.edit(
             title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_id.strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2363,7 +2382,7 @@ def run_campaign(
         new_stage_list.append(f"* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             text="\n".join(new_stage_list),
             summary="update",
@@ -2374,7 +2393,7 @@ def run_campaign(
 
 
 @job
-def run_crisis(
+async def run_crisis(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_levels: EnemyLevels,
@@ -2385,10 +2404,17 @@ def run_crisis(
 
     # 危机合约的关卡表不在 gamedata 里,从 weedy 读(外部数据,保持 dict)
     # https://weedy.prts.wiki/crisis_info.json
-    session = requests.Session()
-    stage_list = session.get("https://weedy.prts.wiki/crisis_info.json").json()["info"][
-        "mapStageDataMap"
-    ]
+    async with make_client() as client:
+        resp = await client.get(
+            "https://weedy.prts.wiki/crisis_info.json", follow_redirects=True
+        )
+        resp.raise_for_status()
+        stage_list = resp.json()["info"]["mapStageDataMap"]
+    await levels.prefetch(
+        stage_detail["levelId"]
+        for stage_detail in stage_list.values()
+        if stage_detail["levelId"]
+    )
     for stage_detail in stage_list.values():
         stage_page_name = (
             stage_detail["code"].strip() + " " + stage_detail["name"].strip()
@@ -2397,7 +2423,7 @@ def run_crisis(
         level = None
         if stage_detail["levelId"]:
             try:
-                level = levels(stage_detail["levelId"])
+                level = await levels(stage_detail["levelId"])
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
@@ -2419,13 +2445,13 @@ def run_crisis(
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        wiki.edit(
+        await wiki.edit(
             title=stage_detail["name"].strip(),
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2437,7 +2463,7 @@ def run_crisis(
 
 
 @job
-def run_rogue_like(
+async def run_rogue_like(
     wiki: Wiki,
     roguelike_topic_table: RoguelikeTopicTable,
     enemy_handbook_table: EnemyHandbookTable,
@@ -2448,6 +2474,12 @@ def run_rogue_like(
     rogue_stages = (roguelike_topic_table.details or {})["rogue_6"].stages or {}
 
     notCount_list = _get_list_notCountInTotal(enemy_levels)
+
+    await levels.prefetch(
+        stage.level_replace_ids[0] if stage.level_replace_ids else stage.level_id
+        for stage_key, stage in rogue_stages.items()
+        if stage.difficulty != "FOUR_STAR" and stage_key != "ro4_b_9" and stage.level_id
+    )
 
     for stage_key, stage in rogue_stages.items():
         if stage.difficulty == "FOUR_STAR":
@@ -2462,9 +2494,9 @@ def run_rogue_like(
         if stage.level_id:
             try:
                 if stage.level_replace_ids and len(stage.level_replace_ids) >= 1:
-                    level = levels(stage.level_replace_ids[0])
+                    level = await levels(stage.level_replace_ids[0])
                 else:
-                    level = levels(stage.level_id)
+                    level = await levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
@@ -2496,13 +2528,13 @@ def run_rogue_like(
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        wiki.edit(
+        await wiki.edit(
             title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2514,7 +2546,7 @@ def run_rogue_like(
 
 
 @job
-def run_memory(
+async def run_memory(
     wiki: Wiki,
     handbook_info_table: HandbookInfoTable,
     character_table: CharacterTable,
@@ -2526,19 +2558,27 @@ def run_memory(
     levels: Levels,
     rts: RichText,
 ) -> None:
-    stage_list = wiki.category("分类:悖论模拟关卡")
+    stage_list = await wiki.category("分类:悖论模拟关卡")
     new_stage_list = []
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    candidates: list[tuple[HandbookStoryStageData, str, str]] = []
     for stage in (handbook_info_table.handbook_stage_data or {}).values():
         name = _require(stage.name, "name").strip()
         stage_page_name = f"悖论模拟 {name}"
         if stage_page_name in stage_list:
             continue
+        candidates.append((stage, name, stage_page_name))
+
+    await levels.prefetch(
+        stage.level_id for stage, _, _ in candidates if stage.level_id
+    )
+
+    for stage, name, stage_page_name in candidates:
         level = None
         if stage.level_id:
             try:
-                level = levels(stage.level_id)
+                level = await levels(stage.level_id)
             except Exception:
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
@@ -2579,13 +2619,13 @@ def run_memory(
         )
         stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        wiki.edit(
+        await wiki.edit(
             title=name,
             text=stage_redirect,
             summary="init",
             createonly="1",
         )
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2598,7 +2638,7 @@ def run_memory(
         new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
@@ -2609,7 +2649,7 @@ def run_memory(
 
 
 @job
-def run_sandbox(
+async def run_sandbox(
     wiki: Wiki,
     sandbox_perm_table: SandboxPermTable,
     character_table: CharacterTable,
@@ -2621,73 +2661,74 @@ def run_sandbox(
 ) -> None:
     sandbox_acts = _require(sandbox_perm_table.detail, "detail").sandbox_v2 or {}
 
-    stage_list = wiki.category("分类:生息演算关卡")
+    stage_list = await wiki.category("分类:生息演算关卡")
     new_stage_list = []
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    candidates: list[tuple[SandboxV2StageData, str]] = []
     for act in sandbox_acts.values():
         for stage in (act.stage_data or {}).values():
             stage.name = _require(stage.name, "name").strip()
             stage_page_name = f"{stage.code} {stage.name}(沙洲遗闻)"
             if stage_page_name in stage_list:
                 continue
+            candidates.append((stage, stage_page_name))
 
-            # /data 页面要原样发布整个关卡 JSON,所以先取原始 dict 再自己校验
-            level = None
-            raw_level: dict = {}
-            if stage.level_id:
-                try:
-                    raw_level = levels.raw(stage.level_id)
-                    level = LevelData.model_validate(raw_level)
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
+    await levels.prefetch(stage.level_id for stage, _ in candidates if stage.level_id)
 
-            sandbox_stage = build_sandbox_v2_stage(
-                stage, rts.compile, level, notCount_list
-            )
-            enemies = (
-                _build_enemy_views(level, enemy_handbook_table, enemy_levels)
-                if level is not None
-                else None
-            )
-            squads = (
-                build_squad_sections(
-                    level, stage_page_name, character_table, skill_table
-                )
-                if level is not None
-                else []
-            )
-            # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
-            stage_content = render_basic_page(
-                BasicPageView(
-                    stage=sandbox_stage,
-                    enemies=enemies,
-                    squads=squads,
-                ),
-            )
+    for stage, stage_page_name in candidates:
+        # /data 页面要原样发布整个关卡 JSON,所以先取原始 dict 再自己校验
+        level = None
+        raw_level: dict = {}
+        if stage.level_id:
+            try:
+                raw_level = await levels.raw(stage.level_id)
+                level = LevelData.model_validate(raw_level)
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
+                continue
 
-            wiki.edit(
-                title=stage_page_name + "/data",
-                text=json.dumps(raw_level, ensure_ascii=False),
-                summary="init",
-                createonly=True,
-                contentmodel="json",
-            )
-            wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                createonly=True,
-                bot=None,
-                minor=True,
-            )
-            logger.info(f"Created: {stage_page_name}.")
+        sandbox_stage = build_sandbox_v2_stage(stage, rts.compile, level, notCount_list)
+        enemies = (
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
+        )
+        squads = (
+            build_squad_sections(level, stage_page_name, character_table, skill_table)
+            if level is not None
+            else []
+        )
+        # 生息演算页面不加 __NOTOC__,与 crisis/memory/mechanism/id 不同
+        stage_content = render_basic_page(
+            BasicPageView(
+                stage=sandbox_stage,
+                enemies=enemies,
+                squads=squads,
+            ),
+        )
 
-            new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        await wiki.edit(
+            title=stage_page_name + "/data",
+            text=json.dumps(raw_level, ensure_ascii=False),
+            summary="init",
+            createonly=True,
+            contentmodel="json",
+        )
+        await wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            createonly=True,
+            bot=None,
+            minor=True,
+        )
+        logger.info(f"Created: {stage_page_name}.")
+
+        new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
@@ -2698,7 +2739,7 @@ def run_sandbox(
 
 
 @job
-def run_mechanism(
+async def run_mechanism(
     wiki: Wiki,
     story_review_meta_table: StoryReviewMetaTable,
     character_table: CharacterTable,
@@ -2714,6 +2755,12 @@ def run_mechanism(
     new_stage_list = []
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    await levels.prefetch(
+        stage.level_id
+        for stage in (training_camp.stage_data or {}).values()
+        if stage.level_id
+    )
+
     for stage in (training_camp.stage_data or {}).values():
         name = _require(stage.name, "name").strip()
         stage_page_name = f"{stage.code} {name}"
@@ -2723,7 +2770,7 @@ def run_mechanism(
             logger.info(f"Cannot find level data of {stage_page_name}.")
             continue
         try:
-            level = levels(stage.level_id)
+            level = await levels(stage.level_id)
         except Exception:
             logger.info(f"Cannot find level data of {stage_page_name}.")
             continue
@@ -2756,7 +2803,7 @@ def run_mechanism(
             notoc=True,
         )
 
-        wiki.edit(
+        await wiki.edit(
             title=stage_page_name,
             text=stage_content,
             summary="init",
@@ -2767,7 +2814,7 @@ def run_mechanism(
         new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
@@ -2778,7 +2825,7 @@ def run_mechanism(
 
 
 @job
-def run_recalrune(
+async def run_recalrune(
     wiki: Wiki,
     crisis_v2_table: CrisisV2Table,
     character_table: CharacterTable,
@@ -2790,10 +2837,11 @@ def run_recalrune(
 ) -> None:
     recal_rune_data = _require(crisis_v2_table.recal_rune_data, "recalRuneData")
 
-    stage_list = wiki.category("分类:全息作战矩阵关卡")
+    stage_list = await wiki.category("分类:全息作战矩阵关卡")
     new_stage_list = []
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
+    candidates: list[tuple[RecalRuneStageData, str, str]] = []
     for season_info in (recal_rune_data.seasons or {}).values():
         for stage in (season_info.stages or {}).values():
             stage.level_name = _require(stage.level_name, "levelName").strip()
@@ -2801,60 +2849,64 @@ def run_recalrune(
             stage_page_name = f"全息{stage.level_code} {level_name.replace('#', '＃')}"
             if stage_page_name in stage_list:
                 continue
+            candidates.append((stage, level_name, stage_page_name))
 
-            level = None
-            if stage.level_id:
-                try:
-                    level = levels(stage.level_id)
-                except Exception:
-                    logger.info(f"Cannot find level data of {stage_page_name}.")
-                    continue
+    await levels.prefetch(
+        stage.level_id for stage, _, _ in candidates if stage.level_id
+    )
 
-            recal_rune_stage = build_recal_rune_stage(
-                stage, rts.compile, level, notCount_list
-            )
-            enemies = (
-                _build_enemy_views(level, enemy_handbook_table, enemy_levels)
-                if level is not None
-                else None
-            )
-            squads = (
-                build_squad_sections(
-                    level, stage_page_name, character_table, skill_table
-                )
-                if level is not None
-                else []
-            )
-            stage_content = render_recal_rune_page(
-                RecalRunePageView(
-                    stage=recal_rune_stage,
-                    enemies=enemies,
-                    squads=squads,
-                    display_title=f"全息{stage.level_code} {level_name}",
-                )
-            )
-            stage_redirect = f"#redirect [[{stage_page_name}]]"
+    for stage, level_name, stage_page_name in candidates:
+        level = None
+        if stage.level_id:
+            try:
+                level = await levels(stage.level_id)
+            except Exception:
+                logger.info(f"Cannot find level data of {stage_page_name}.")
+                continue
 
-            wiki.edit(
-                title=f"全息{stage.level_code}",
-                text=stage_redirect,
-                summary="init",
-                createonly="1",
+        recal_rune_stage = build_recal_rune_stage(
+            stage, rts.compile, level, notCount_list
+        )
+        enemies = (
+            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            if level is not None
+            else None
+        )
+        squads = (
+            build_squad_sections(level, stage_page_name, character_table, skill_table)
+            if level is not None
+            else []
+        )
+        stage_content = render_recal_rune_page(
+            RecalRunePageView(
+                stage=recal_rune_stage,
+                enemies=enemies,
+                squads=squads,
+                display_title=f"全息{stage.level_code} {level_name}",
             )
-            wiki.edit(
-                title=stage_page_name,
-                text=stage_content,
-                summary="init",
-                createonly=True,
-                bot=None,
-                minor=True,
-            )
-            logger.info(f"Created: {stage_page_name}.")
+        )
+        stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-            new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        await wiki.edit(
+            title=f"全息{stage.level_code}",
+            text=stage_redirect,
+            summary="init",
+            createonly="1",
+        )
+        await wiki.edit(
+            title=stage_page_name,
+            text=stage_content,
+            summary="init",
+            createonly=True,
+            bot=None,
+            minor=True,
+        )
+        logger.info(f"Created: {stage_page_name}.")
+
+        new_stage_list.append(f"\n* [[{stage_page_name}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",
@@ -2864,7 +2916,7 @@ def run_recalrune(
         logger.info("Updated: {}.".format("首页/新增关卡"))
 
 
-def run_id(
+async def run_id(
     wiki: Wiki,
     levels: LevelLoader,
     path: str,
@@ -2886,12 +2938,16 @@ def run_id(
     notCount_list = _get_list_notCountInTotal(enemy_levels)
 
     new_stage_list = []
-    for level_id in levels.list_ids(path):
+    level_ids = await levels.list_ids(path)
+    await levels.prefetch(
+        level_id for level_id in level_ids if level_id.lower() not in known_level_ids
+    )
+    for level_id in level_ids:
         stage_id = level_id.rsplit("/", 1)[-1]
         if level_id.lower() in known_level_ids:
             logger.info(f"{stage_id} already in stage_table. Pass.")
             continue
-        level = levels(level_id)
+        level = await levels(level_id)
 
         unknown_stage = BasicStageView(
             code="—",
@@ -2919,14 +2975,14 @@ def run_id(
             notoc=True,
         )
 
-        wiki.edit(
+        await wiki.edit(
             title=stage_id, text=stage_content, summary="init", bot=None, minor=True
         )
         logger.info(f"Created: {stage_id}.")
         new_stage_list.append(f"\n* [[{stage_id}]]")
 
     if new_stage_list != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增关卡",
             appendtext="".join(new_stage_list),
             summary="update",

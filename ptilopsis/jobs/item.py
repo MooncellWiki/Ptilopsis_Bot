@@ -50,7 +50,7 @@ basic_wf = (
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     stage_table: StageTable,
     item_table: ItemTable,
@@ -270,7 +270,7 @@ def run(
         fin = "{{Navigator|道具一览}}\n" + tbasic_info + "\n{{道具导航}}"
         # logger.info(fin)
         try:
-            wiki.edit(
+            await wiki.edit(
                 title=name.rstrip(),
                 text=fin,
                 summary="item init",
