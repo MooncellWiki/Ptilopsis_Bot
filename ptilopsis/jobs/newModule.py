@@ -7,7 +7,7 @@ from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(
+async def run(
     wiki: Wiki, module_table: UniEquipTable, character_table: CharacterTable
 ) -> None:
     cur_ts = int(time.time())
@@ -32,7 +32,7 @@ def run(
 
     content = ",".join(module_list)
 
-    wiki.edit(
+    await wiki.edit(
         title="首页/亮点干员/新增模组/数据",
         text=content,
         summary="update",

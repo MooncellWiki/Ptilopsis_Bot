@@ -1,14 +1,14 @@
 from datetime import datetime
 
 import pytz
-import requests
 
 from ptilopsis.log import logger
+from ptilopsis.utils.http import make_client
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
 
-def update_yellow(wiki: Wiki) -> None:
+async def update_yellow(wiki: Wiki) -> None:
     template = """<noinclude>{{{{cbox2|lv=1|title=该页面可能与实际情况不符，<br>如有差错可以随时进行编辑<br>PRTS的建设离不开每一位用户的建设与支持}}}}</noinclude>{{{{高级凭证区商品一览
 |当期6星={star6}
 |当期5星={star5}
@@ -26,8 +26,10 @@ def update_yellow(wiki: Wiki) -> None:
 |寻访池关闭时间={time_end}
 }}}}<noinclude>[[分类:需要长期关注及更新的条目]]</noinclude>"""
 
-    session = requests.Session()
-    good_list = session.get("https://weedy.baka.icu/shop/high").json()["goodList"]
+    async with make_client() as client:
+        resp = await client.get("https://weedy.baka.icu/shop/high")
+        resp.raise_for_status()
+        good_list = resp.json()["goodList"]
     # logger.info(good_list)
 
     content = template.format(
@@ -54,12 +56,12 @@ def update_yellow(wiki: Wiki) -> None:
     logger.info(
         f"当期6星: {good_list[0]['displayName']}    当期5星: {good_list[1]['displayName']}"
     )
-    wiki.edit(title="高级凭证区", text=content, summary="update")
+    await wiki.edit(title="高级凭证区", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("高级凭证区"))
 
 
-def update_rune(wiki: Wiki) -> None:
+async def update_rune(wiki: Wiki) -> None:
     template = """<section begin={date} />
 ===={date}====
 {{|class="wikitable mw-collapsible mw-collapsed mw-collapsible-dark" style="display:table; text-align:center; width:500px;"
@@ -76,8 +78,10 @@ def update_rune(wiki: Wiki) -> None:
     rank2 = "\n|-style=\"background:#313131;color:#fff;\"\n|style=\"background:#727375;\"|'''等级2'''"
     rank3 = "\n|-style=\"background:#A20616;color:#fff;\"\n|style=\"background:#B65A65;\"|'''等级3'''"
 
-    session = requests.Session()
-    stage_list = session.get("https://weedy.baka.icu/crisis/today").json()["stages"]
+    async with make_client() as client:
+        resp = await client.get("https://weedy.baka.icu/crisis/today")
+        resp.raise_for_status()
+        stage_list = resp.json()["stages"]
 
     content = ""
     for stage in stage_list:
@@ -145,13 +149,13 @@ def update_rune(wiki: Wiki) -> None:
             col_n2=col_num,
         )
 
-    wiki.edit(title="用户:Seniorious/daily-rune", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/daily-rune", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/daily-rune"))
 
 
 @job
-def run(wiki: Wiki) -> None:
+async def run(wiki: Wiki) -> None:
     # if datetime.now(pytz.timezone('Asia/Shanghai')).isoweekday() == 4:
-    #     update_yellow(wiki)
-    update_rune(wiki)
+    #     await update_yellow(wiki)
+    await update_rune(wiki)

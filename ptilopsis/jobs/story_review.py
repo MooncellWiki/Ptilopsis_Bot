@@ -42,7 +42,7 @@ def parse_item(
     return ""
 
 
-def update_story_review(
+async def update_story_review(
     gamedata: GameData,
     story_review_table: dict[str, StoryReviewGroupClientData],
     character_table: dict[str, CharacterData],
@@ -83,6 +83,13 @@ def update_story_review(
 """
     zones = zone_table.zones or {}
     mainline_zone_ids = zone_table.mainline_zone_id_list or []
+    # 剧情简介有两千多个小文件,先并发下载进缓存,下面的循环再逐个读
+    await gamedata.prefetch(
+        "story/[uc]" + story.story_info + ".txt"
+        for group in story_review_table.values()
+        for story in group.info_unlock_datas or []
+        if story.story_info
+    )
     for group in story_review_table.values():
         event_table = ""
         if group.act_type == "ACTIVITY_STORY":
@@ -118,7 +125,9 @@ def update_story_review(
                 path = "story/[uc]" + story.story_info + ".txt"
                 try:
                     story_info = (
-                        gamedata.get_txt(path, "CN").rstrip().replace("\n", "<br/>")
+                        (await gamedata.get_txt(path, "CN"))
+                        .rstrip()
+                        .replace("\n", "<br/>")
                     )
                 except Exception:
                     logger.info(f"路径名错误：{path}")
@@ -146,7 +155,7 @@ def update_story_review(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     data: GameData,
     story_review_table: StoryReviewTable,
@@ -155,7 +164,7 @@ def run(
     item_table: ItemTable,
     zone_table: Annotated[ZoneTable, table("zone_table")],
 ) -> None:
-    content = update_story_review(
+    content = await update_story_review(
         data,
         story_review_table,
         character_table,
@@ -164,6 +173,6 @@ def run(
         zone_table,
     )
 
-    wiki.edit(title="用户:Seniorious/情报处理室", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/情报处理室", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/情报处理室"))

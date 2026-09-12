@@ -23,7 +23,7 @@ svgDefStr = (
 svgRectTemplate = '<use xlink:href="#{}" x="{}" y="{}"/>'
 
 
-def skill_range(wiki: Wiki, range_table: dict[str, RangeData]) -> None:
+async def skill_range(wiki: Wiki, range_table: dict[str, RangeData]) -> None:
     for range_id, range_data in range_table.items():
         grids = range_data.grids or []
         # [最小行, 最大行, 最小列, 最大列],原点 (0, 0) 总在范围内
@@ -65,12 +65,12 @@ def skill_range(wiki: Wiki, range_table: dict[str, RangeData]) -> None:
             + "}}</noinclude>"
         )
 
-        wiki.edit(
+        await wiki.edit(
             title="Widget:Range/" + range_id, text=text, summary="init", createonly="1"
         )
         logger.info(f"Updated: Widget:Range/{range_id}.")
 
 
 @job
-def run(wiki: Wiki, range_table: RangeTable) -> None:
-    skill_range(wiki, range_table)
+async def run(wiki: Wiki, range_table: RangeTable) -> None:
+    await skill_range(wiki, range_table)

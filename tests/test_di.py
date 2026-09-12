@@ -4,6 +4,8 @@ import pytest
 
 from ptilopsis.utils.di import Depends, Resolver, analyze
 
+pytestmark = pytest.mark.anyio
+
 
 class Client:
     pass
@@ -24,28 +26,29 @@ def resolver(**objects) -> Resolver:
     return Resolver({Client: objects.get("client", Client()), Settings: Settings()})
 
 
-def test_provided_types_are_injected_by_annotation() -> None:
+async def test_provided_types_are_injected_by_annotation() -> None:
     def task(client: Client, settings: Settings) -> tuple[Client, Settings]:
         return client, settings
 
     client = Client()
-    got_client, got_settings = resolver(client=client).solve(analyze(task, PROVIDED))
+    got_client, got_settings = await resolver(client=client).solve(
+        analyze(task, PROVIDED)
+    )
     assert got_client is client and isinstance(got_settings, Settings)
 
 
-def test_subclass_annotation_matches_provider() -> None:
+async def test_subclass_annotation_matches_provider() -> None:
     def task(client: SubClient) -> SubClient:
         return client
 
     # 提供的是 SubClient 的实例时,注解写子类也能拿到
     dependant = analyze(task, (SubClient, Settings))
     client = SubClient()
-    assert (
-        Resolver({SubClient: client, Settings: Settings()}).solve(dependant) is client
-    )
+    resolver_ = Resolver({SubClient: client, Settings: Settings()})
+    assert await resolver_.solve(dependant) is client
 
 
-def test_depends_as_default_and_annotated() -> None:
+async def test_depends_as_default_and_annotated() -> None:
     def table(client: Client) -> dict:
         return {"client": client}
 
@@ -54,11 +57,11 @@ def test_depends_as_default_and_annotated() -> None:
     ) -> tuple[dict, dict]:
         return a, b
 
-    a, b = resolver().solve(analyze(task, PROVIDED))
+    a, b = await resolver().solve(analyze(task, PROVIDED))
     assert a is b  # 同一次解析里缓存
 
 
-def test_use_cache_false_reruns_dependency() -> None:
+async def test_use_cache_false_reruns_dependency() -> None:
     calls = []
 
     def counter() -> int:
@@ -71,10 +74,10 @@ def test_use_cache_false_reruns_dependency() -> None:
     ) -> tuple[int, int]:
         return a, b
 
-    assert resolver().solve(analyze(task, PROVIDED)) == (1, 2)
+    assert await resolver().solve(analyze(task, PROVIDED)) == (1, 2)
 
 
-def test_nested_dependencies_resolve_in_order() -> None:
+async def test_nested_dependencies_resolve_in_order() -> None:
     order = []
 
     def first(client: Client) -> str:
@@ -88,7 +91,7 @@ def test_nested_dependencies_resolve_in_order() -> None:
     def task(s: Annotated[str, Depends(second)], f: Annotated[str, Depends(first)]):
         return s, f
 
-    assert resolver().solve(analyze(task, PROVIDED)) == ("fs", "f")
+    assert await resolver().solve(analyze(task, PROVIDED)) == ("fs", "f")
     assert order == ["first", "second"]
 
 
@@ -132,3 +135,24 @@ def test_circular_dependency_is_detected() -> None:
 def test_depends_requires_callable() -> None:
     with pytest.raises(TypeError):
         Depends("not callable")  # type: ignore[arg-type]
+
+
+async def test_async_dependencies_and_tasks_are_awaited() -> None:
+    order = []
+
+    async def fetch(client: Client) -> str:
+        order.append("fetch")
+        return "data"
+
+    def derive(raw: Annotated[str, Depends(fetch)]) -> str:
+        order.append("derive")
+        return raw.upper()
+
+    async def task(
+        d: Annotated[str, Depends(derive)], raw: Annotated[str, Depends(fetch)]
+    ) -> str:
+        return d + raw
+
+    assert await resolver().solve(analyze(task, PROVIDED)) == "DATAdata"
+    # async 依赖同样只跑一次
+    assert order == ["fetch", "derive"]

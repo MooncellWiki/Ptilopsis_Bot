@@ -242,7 +242,7 @@ def update_activity(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     activity_table: Annotated[ActivityTable, table("activity_table")],
     item_table: ItemTable,
@@ -255,6 +255,6 @@ def run(
         activity_table, item_table, building_data, character_table, skin_table, rts
     )
 
-    wiki.edit(title="用户:Seniorious/activities", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/activities", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/activities"))

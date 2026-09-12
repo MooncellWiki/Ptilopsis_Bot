@@ -94,18 +94,18 @@ def get_building_buff(building_data: BuildingData, rts: richtext.RichText) -> st
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     building_data: Annotated[BuildingData, table("building_data")],
     rts: RichText,
 ) -> None:
-    origin_text = wiki.read("后勤技能一览/store")
+    origin_text = await wiki.read("后勤技能一览/store")
     flag = origin_text.find("==控制中枢==")
     head = origin_text[:flag].rstrip()
     content = head + "\n" + get_building_buff(building_data, rts).rstrip()
 
     if content != origin_text:
-        wiki.edit(
+        await wiki.edit(
             title="后勤技能一览/store",
             text=content,
             summary="update",

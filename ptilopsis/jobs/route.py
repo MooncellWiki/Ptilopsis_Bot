@@ -221,15 +221,19 @@ def get_waves_table(
 
 
 @job
-def run(wiki: Wiki, enemy_handbook_table: EnemyHandbookTable, levels: Levels) -> None:
+async def run(
+    wiki: Wiki, enemy_handbook_table: EnemyHandbookTable, levels: Levels
+) -> None:
     """把指定关卡的出怪表写到 ``用户:Seniorious/route``(调试用)。"""
 
     path = "levels/obt/roguelike/ro3/level_rogue3_5-1.json"
     # path = "levels/activities"
     enemy_data = enemy_handbook_table.enemy_data or {}
 
-    for level_id in levels.list_ids(path):
-        level = levels(level_id)
+    level_ids = await levels.list_ids(path)
+    await levels.prefetch(level_ids)
+    for level_id in level_ids:
+        level = await levels(level_id)
         routes = get_routes(level.routes or [])
         get_waves(level.waves or [])
         wave_table = get_waves_table(level.waves or [], routes, enemy_data)
@@ -240,5 +244,7 @@ def run(wiki: Wiki, enemy_handbook_table: EnemyHandbookTable, levels: Levels) ->
         #         logger.info(f"==={stage.code} {stage.name}===")
         #         count_enemy(levels(stage.level_id).waves or [])
 
-        wiki.edit(title="用户:Seniorious/route", text=wave_table, summary="update")
+        await wiki.edit(
+            title="用户:Seniorious/route", text=wave_table, summary="update"
+        )
         logger.info("Updated: 用户:Seniorious/route.")

@@ -70,12 +70,16 @@ def collect_demand(character_table: dict[str, CharacterData]) -> MaterialDemand:
     return mat_dic
 
 
-def update_mat_demand(
+async def update_mat_demand(
     wiki: Wiki, character_table: dict[str, CharacterData], item_table: InventoryData
 ) -> None:
     mat_dic = collect_demand(character_table)
+    # 所有材料页面一次批量读完,页面不存在时和逐个读一样抛 KeyError
+    texts = await wiki.read_many(
+        item_name(item_table, material).rstrip() for material in mat_dic
+    )
     for material in mat_dic:
-        origin_text = wiki.read(item_name(item_table, material).rstrip())
+        origin_text = texts[item_name(item_table, material).rstrip()]
         count1 = count2 = count3 = 0
         mat_desc = ""
         mat_text = ["", "", "", "", "", ""]
@@ -140,7 +144,7 @@ def update_mat_demand(
 
         # edit wiki
         if origin_text != new_text:
-            wiki.edit(title=title, text=new_text, summary="update")
+            await wiki.edit(title=title, text=new_text, summary="update")
             # logger.info(new_text)
             logger.info(f"Update: {title}.")
         # else:
@@ -166,7 +170,7 @@ def merge_patch_chars(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: params.CharacterTable,
     item_table: params.ItemTable,
@@ -183,4 +187,4 @@ def run(
         k: character_table[k] for k in sorted(character_table, key=sort_id)
     }
 
-    update_mat_demand(wiki, character_table_new, item_table)
+    await update_mat_demand(wiki, character_table_new, item_table)

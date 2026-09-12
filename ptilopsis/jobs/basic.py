@@ -519,8 +519,8 @@ def get_skill_list(
     return skill_list
 
 
-def get_token_info(
-    wiki,
+async def get_token_info(
+    wiki: Wiki,
     char: CharacterData,
     update_token_page: bool,
     character_table: dict[str, CharacterData],
@@ -584,9 +584,9 @@ def get_token_info(
         token_page += f"\n==召唤物模型==\n{{{{SpineId|id={token_key}}}}}"
 
         if update_token_page:
-            wiki.edit(title=token.name, text=token_page, summary="update")
+            await wiki.edit(title=token.name, text=token_page, summary="update")
         else:
-            wiki.edit(
+            await wiki.edit(
                 title=token.name,
                 text=token_page,
                 summary="init",
@@ -1192,7 +1192,7 @@ def iter_operators(character_table: dict[str, CharacterData]):
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: params.CharacterTable,
     uniequip_table: params.UniEquipTable,
@@ -1237,7 +1237,7 @@ def run(
         talent_list = get_talent_list(char, rts)
         potential_list = get_potential_list(char)
         skill_list = get_skill_list(char, skill_table, rts)
-        token_info = get_token_info(
+        token_info = await get_token_info(
             wiki,
             char,
             update_token_page,
@@ -1287,7 +1287,7 @@ def run(
         )
 
         flag_new_char = True
-        wiki.edit(
+        await wiki.edit(
             title=char.name,
             text=char_info,
             summary="init",
@@ -1295,14 +1295,14 @@ def run(
             minor=True,
             createonly="1",
         )
-        wiki.protect(
+        await wiki.protect(
             title=char.name,
             protections="edit=autoconfirmed|move=sysop",
             reason="protect",
         )
         if char.name != char.appellation:
             redirect_text = f"#redirect [[{char.name}]]"
-            wiki.edit(
+            await wiki.edit(
                 title=char.appellation,
                 text=redirect_text,
                 summary="init",
@@ -1313,8 +1313,18 @@ def run(
     return flag_new_char
 
 
+SKIP_UPDATE_KEYS = [
+    "char_512_aprot",
+    "char_508_aguard",
+    "char_509_acast",
+    "char_511_asnipe",
+    "char_510_amedic",
+    "char_513_apionr",
+]
+
+
 @job
-def update(
+async def update(
     wiki: Wiki,
     character_table: params.CharacterTable,
     uniequip_table: params.UniEquipTable,
@@ -1326,17 +1336,17 @@ def update(
     charword_table: params.CharwordTable,
     rts: params.RichText,
 ) -> None:
-    for char_key, char in iter_operators(character_table):
-        if char_key in [
-            "char_512_aprot",
-            "char_508_aguard",
-            "char_509_acast",
-            "char_511_asnipe",
-            "char_510_amedic",
-            "char_513_apionr",
-        ]:
-            continue
-        origin_text = wiki.read(char.name)
+    operators = [
+        (char_key, char)
+        for char_key, char in iter_operators(character_table)
+        if char_key not in SKIP_UPDATE_KEYS
+    ]
+    # 一次性批量读取全部干员页面,再逐个比对、按需编辑
+    pages = await wiki.read_many(char.name or "" for _, char in operators)
+    for char_key, char in operators:
+        if char.name not in pages:
+            raise KeyError(char.name)
+        origin_text = pages[char.name]
         new_text = origin_text
 
         # 更新后勤技能
@@ -1391,14 +1401,14 @@ def update(
         new_text = new_text[:num1] + drawer + cv + new_text[num2:]
 
         if new_text != origin_text:
-            wiki.edit(title=char.name, text=new_text, summary="update")
+            await wiki.edit(title=char.name, text=new_text, summary="update")
             logger.info(f"Updated: {char.name}.")
         else:
             logger.info(f"Same: {char.name}.")
 
 
 @job
-def update_handbook(
+async def update_handbook(
     wiki: Wiki,
     character_table: params.CharacterTable,
     item_table: params.ItemTable,
@@ -1406,34 +1416,41 @@ def update_handbook(
     medal_table: params.MedalTable,
     rts: params.RichText,
 ) -> None:
+    pending: list[tuple[CharacterData, str, str]] = []
     for char_key, char in iter_operators(character_table):
         handbook_avg = get_handbook_avg(char, stories_table, char_key, medal_table)
         handbook_stage = get_handbook_stage(
             char, char_key, stories_table, item_table, rts
         )
-
         if handbook_avg != "" or handbook_stage != "":
-            origin_text = wiki.read(char.name)
+            pending.append((char, handbook_avg, handbook_stage))
 
-            num1 = origin_text.find("/语音记录}}")
-            num2 = origin_text.find("\n==干员模型==")
-            num3 = origin_text.find("\n==干员异格任务==")
-            if num3 > 0:
-                num2 = min(num2, num3)
-            new_text = (
-                origin_text[:num1]
-                + "/语音记录}}"
-                + handbook_avg
-                + handbook_stage
-                + origin_text[num2:]
+    # 一次性批量读取需要更新的干员页面
+    pages = await wiki.read_many(char.name or "" for char, _, _ in pending)
+    for char, handbook_avg, handbook_stage in pending:
+        if char.name not in pages:
+            raise KeyError(char.name)
+        origin_text = pages[char.name]
+
+        num1 = origin_text.find("/语音记录}}")
+        num2 = origin_text.find("\n==干员模型==")
+        num3 = origin_text.find("\n==干员异格任务==")
+        if num3 > 0:
+            num2 = min(num2, num3)
+        new_text = (
+            origin_text[:num1]
+            + "/语音记录}}"
+            + handbook_avg
+            + handbook_stage
+            + origin_text[num2:]
+        )
+
+        if new_text != origin_text:
+            await wiki.edit(
+                title=char.name,
+                text=new_text,
+                summary="更新干员密录&悖论模拟",
             )
-
-            if new_text != origin_text:
-                wiki.edit(
-                    title=char.name,
-                    text=new_text,
-                    summary="更新干员密录&悖论模拟",
-                )
-                logger.info(f"Updated: {char.name}.")
-            else:
-                logger.info(f"Same: {char.name}.")
+            logger.info(f"Updated: {char.name}.")
+        else:
+            logger.info(f"Same: {char.name}.")

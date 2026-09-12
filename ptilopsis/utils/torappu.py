@@ -10,26 +10,36 @@ gamedata 按 resVersion 存档。本模块只封装机器人需要的三类接�
 某个版本的 gamedata 是否已经解包完成,以 ``gamedata/<resVersion>/.gamedata-ready.json``
 是否存在为准;``/api/v1/version`` 里的 ``isReady`` 只表示 AB 包下载完毕。
 
+客户端是 async 的(httpx2 + anyio,与 torappu 自己的做法一致):HTTP/2 让上千个
+小文件复用一条连接,Happy Eyeballs 让 CDN 的多个 A 记录并发试连,不再被单个
+不通的节点拖住整个 connect timeout。同一时刻的下载数由信号量限制。
+
 完整 API 文档见 https://torappu.prts.wiki/api/v1/scalar 。
 """
 
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
+from typing import Any
 from urllib.parse import quote
 
-import requests
+import anyio
+import httpx2
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
-from retrying import retry
+from tenacity import (
+    retry,
+    retry_if_not_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 
 from ptilopsis.log import logger
+from ptilopsis.utils.http import log_retry, make_client
 
 __all__ = ["READY_MARKER", "TorappuClient", "TorappuEntry", "TorappuVersion"]
 
 READY_MARKER = ".gamedata-ready.json"
 """gamedata 解包完成后 torappu 在版本目录下写的标记文件。"""
-
-USER_AGENT = "Ptilopsis_Bot (+https://github.com/MooncellWiki/Ptilopsis_Bot)"
 
 
 class TorappuVersion(BaseModel):
@@ -59,9 +69,15 @@ class TorappuEntry(BaseModel):
     is_dir: bool
 
 
-def _retry_on_transient(exc: BaseException) -> bool:
-    # 404 会转成 FileNotFoundError,重试也没有意义
-    return not isinstance(exc, FileNotFoundError)
+def _transient(name: str) -> Any:
+    """最多 3 次、间隔 2 秒;404 已转成 FileNotFoundError,重试没有意义。"""
+    return retry(
+        stop=stop_after_attempt(3),
+        wait=wait_fixed(2),
+        retry=retry_if_not_exception_type(FileNotFoundError),
+        before_sleep=log_retry(name),
+        reraise=True,
+    )
 
 
 class TorappuClient:
@@ -70,15 +86,16 @@ class TorappuClient:
     def __init__(
         self,
         base_url: str,
-        session: requests.Session | None = None,
+        client: httpx2.AsyncClient | None = None,
         timeout: float = 60,
+        max_concurrency: int = 16,
     ) -> None:
         self.base_url = base_url.rstrip("/")
-        self.timeout = timeout
-        if session is None:
-            session = requests.Session()
-            session.headers["User-Agent"] = USER_AGENT
-        self.session = session
+        self.client = client or make_client(timeout)
+        self._semaphore = anyio.Semaphore(max_concurrency)
+
+    async def aclose(self) -> None:
+        await self.client.aclose()
 
     # ----- URL -----
 
@@ -95,36 +112,35 @@ class TorappuClient:
 
     # ----- 版本 -----
 
-    @retry(stop_max_attempt_number=3, wait_fixed=2000)
-    def list_versions(self) -> list[TorappuVersion]:
+    @_transient("list_versions")
+    async def list_versions(self) -> list[TorappuVersion]:
         """全部已收录版本,按 id 升序(与接口返回顺序一致)。"""
-        resp = self.session.get(f"{self.base_url}/api/v1/version", timeout=self.timeout)
+        resp = await self.client.get(f"{self.base_url}/api/v1/version")
         resp.raise_for_status()
         versions = [TorappuVersion.model_validate(item) for item in resp.json()]
         return sorted(versions, key=lambda v: v.id)
 
-    @retry(stop_max_attempt_number=3, wait_fixed=2000)
-    def has_gamedata(self, res_version: str) -> bool:
+    @_transient("has_gamedata")
+    async def has_gamedata(self, res_version: str) -> bool:
         """该版本的 gamedata 是否已解包完成。"""
-        resp = self.session.get(
+        resp = await self.client.get(
             self.gamedata_url(res_version, READY_MARKER),
             # 标记文件走 CDN,带个时间戳避免刚生成时命中缓存的 404
             params={"_": int(time.time())},
-            timeout=self.timeout,
         )
         if resp.status_code == 404:
             return False
         resp.raise_for_status()
         return True
 
-    def latest_version(self, max_probe: int = 10) -> TorappuVersion:
+    async def latest_version(self, max_probe: int = 10) -> TorappuVersion:
         """最新的、gamedata 已解包完成的版本。
 
         从最新往旧最多探测 ``max_probe`` 个;正常情况下最新或次新就是。
         """
-        candidates = self.list_versions()[::-1][:max_probe]
+        candidates = (await self.list_versions())[::-1][:max_probe]
         for version in candidates:
-            if version.is_ready and self.has_gamedata(version.res_version):
+            if version.is_ready and await self.has_gamedata(version.res_version):
                 return version
             logger.info(f"[torappu] {version.res_version} gamedata not ready yet, skip")
         raise RuntimeError(
@@ -134,44 +150,35 @@ class TorappuClient:
 
     # ----- 文件 -----
 
-    @retry(
-        stop_max_attempt_number=3,
-        wait_fixed=2000,
-        retry_on_exception=_retry_on_transient,
-    )
-    def fetch(self, res_version: str, path: str) -> bytes:
+    @_transient("fetch")
+    async def fetch(self, res_version: str, path: str) -> bytes:
         """下载 ``gamedata/<res_version>/<path>``;不存在时抛 FileNotFoundError。"""
         url = self.gamedata_url(res_version, path)
-        resp = self.session.get(url, timeout=self.timeout)
+        async with self._semaphore:
+            resp = await self.client.get(url)
         if resp.status_code == 404:
             raise FileNotFoundError(f"torappu has no {path!r} for {res_version}")
         resp.raise_for_status()
         return resp.content
 
-    @retry(stop_max_attempt_number=3, wait_fixed=2000)
-    def exists(self, res_version: str, path: str) -> bool:
+    @_transient("exists")
+    async def exists(self, res_version: str, path: str) -> bool:
         """``gamedata/<res_version>/<path>`` 是否是一个存在的文件。"""
-        resp = self.session.head(
-            self.gamedata_url(res_version, path),
-            allow_redirects=True,
-            timeout=self.timeout,
+        resp = await self.client.head(
+            self.gamedata_url(res_version, path), follow_redirects=True
         )
         if resp.status_code == 404:
             return False
         resp.raise_for_status()
         return True
 
-    @retry(
-        stop_max_attempt_number=3,
-        wait_fixed=2000,
-        retry_on_exception=_retry_on_transient,
-    )
-    def list_dir(self, res_version: str, path: str = "") -> list[TorappuEntry]:
+    @_transient("list_dir")
+    async def list_dir(self, res_version: str, path: str = "") -> list[TorappuEntry]:
         """列出 ``gamedata/<res_version>/<path>`` 目录下的直接子项。"""
         full_path = f"gamedata/{res_version}"
         if path:
             full_path = f"{full_path}/{path.strip('/')}"
-        resp = self.session.get(self.files_url(full_path), timeout=self.timeout)
+        resp = await self.client.get(self.files_url(full_path))
         # 目录不存在时接口返回 500 而不是 404
         if resp.status_code in (404, 500):
             raise FileNotFoundError(
@@ -180,7 +187,7 @@ class TorappuClient:
         resp.raise_for_status()
         return [TorappuEntry.model_validate(item) for item in resp.json()["children"]]
 
-    def walk(self, res_version: str, path: str = "") -> Iterator[str]:
+    async def walk(self, res_version: str, path: str = "") -> AsyncIterator[str]:
         """递归列出 ``path`` 下所有文件,产出相对 gamedata 根的路径。
 
         ``path`` 本身是文件时只产出它自己。
@@ -190,10 +197,10 @@ class TorappuClient:
         while pending:
             current = pending.pop(0)
             try:
-                entries = self.list_dir(res_version, current)
+                entries = await self.list_dir(res_version, current)
             except FileNotFoundError:
                 # 目录接口对「不存在」和「是文件」都报错,再确认一次是不是文件
-                if current and self.exists(res_version, current):
+                if current and await self.exists(res_version, current):
                     yield current
                     continue
                 raise
