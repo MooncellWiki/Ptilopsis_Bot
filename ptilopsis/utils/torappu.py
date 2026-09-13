@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from tenacity import (
     retry,
-    retry_if_not_exception_type,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_fixed,
 )
@@ -70,12 +70,16 @@ class TorappuEntry(BaseModel):
 
 
 def _transient(name: str) -> Any:
-    """最多 3 次、间隔 2 秒;404 已转成 FileNotFoundError,重试没有意义。"""
+    """最多 3 次、间隔 2 秒,只重试网络与 HTTP 错误。
+
+    404 已转成 FileNotFoundError,数据解析失败重试也没用;取消(CancelledError)
+    更不能被当成失败重试,否则 Ctrl+C 会被吞掉。
+    """
     return retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
-        retry=retry_if_not_exception_type(FileNotFoundError),
-        before_sleep=log_retry(name),
+        retry=retry_if_exception_type(httpx2.HTTPError),
+        before_sleep=log_retry(name, with_args=True),
         reraise=True,
     )
 

@@ -179,7 +179,8 @@ class Wiki:
             text/plain、text/css、text/x-wiki、text/javascript
         :param contentmodel:新内容的内容模型。GadgetDefinition、Scribunto、
             sanitized-css、flow-board、wikitext、javascript、json、css、text、smw/schema
-        :return: API 返回的 JSON;dev 模式下只打印参数并返回 None
+        :return: API 返回的 JSON;dev 模式下只打印参数并返回 None,
+            ``createonly`` 而页面已存在时也返回 None
         """
         args = locals().copy()
         args.pop("self")
@@ -187,7 +188,14 @@ class Wiki:
             logger.info("\n" + str(args) + "\n")
             return None
         boolargs = {"minor", "createonly", "nocreate", "redirect", "bot"}
-        return await self._write("edit", self._form(args, boolargs))
+        try:
+            return await self._write("edit", self._form(args, boolargs))
+        except WikiError as e:
+            # createonly 的本意就是「已存在则不动」,各 job 每次都会对已有页面调用
+            if createonly and e.code == "articleexists":
+                logger.info(f"Page already exists, skip: {title or pageid}")
+                return None
+            raise
 
     async def protect(
         self,

@@ -1,5 +1,6 @@
 """torappu 客户端:URL 编码、版本挑选、404 处理与目录遍历,全部离线。"""
 
+import asyncio
 import json
 from typing import Any
 
@@ -73,6 +74,36 @@ async def test_fetch_returns_bytes_and_404_becomes_file_not_found() -> None:
         await client.fetch(V, "excel/nope.json")
     # 404 不重试
     assert server.calls.count(("GET", f"{BASE}/gamedata/{V}/excel/nope.json")) == 1
+
+
+async def test_non_http_errors_are_not_retried() -> None:
+    # 返回的不是 JSON:数据错误重试也没用
+    client, server = make_client({f"{BASE}/api/v1/version": b"<html>"})
+    with pytest.raises(ValueError):
+        await client.list_versions()
+    assert len(server.calls) == 1
+
+
+async def test_cancellation_is_not_retried() -> None:
+    calls = 0
+    started = asyncio.Event()
+
+    async def hang(request: httpx2.Request) -> httpx2.Response:
+        nonlocal calls
+        calls += 1
+        started.set()
+        await asyncio.sleep(10)
+        return httpx2.Response(200, content=b"late")
+
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(hang))
+    client = TorappuClient(BASE, client=http)
+    # 与 asyncio.run 收到 SIGINT 时一样,直接 cancel 任务
+    task = asyncio.get_running_loop().create_task(client.fetch(V, "excel/a.json"))
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert calls == 1
 
 
 async def test_list_versions_sorted_by_id() -> None:

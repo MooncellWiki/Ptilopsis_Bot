@@ -33,8 +33,12 @@ def make_client(timeout: float = 60, **kwargs: Any) -> httpx2.AsyncClient:
     )
 
 
-def log_retry(name: str) -> Any:
-    """tenacity 的 ``before_sleep`` 回调:重试前把调用与异常记到日志。"""
+def log_retry(name: str, with_args: bool = False) -> Any:
+    """tenacity 的 ``before_sleep`` 回调:重试前把调用与异常记到日志。
+
+    默认不记调用参数:wiki 登录请求里有密码和 token,编辑请求里有整页 wikitext。
+    参数不含敏感信息时(如 torappu 的文件路径)传 ``with_args=True``。
+    """
 
     def _before_sleep(retry_state: Any) -> None:
         exc = (
@@ -42,14 +46,16 @@ def log_retry(name: str) -> Any:
             if retry_state.outcome and retry_state.outcome.failed
             else None
         )
-        # 跳过 self
-        args = retry_state.args[1:] if retry_state.args else ()
-        call_args = ", ".join(
-            [
-                *(repr(a) for a in args),
-                *(f"{k}={v!r}" for k, v in retry_state.kwargs.items()),
-            ]
-        )
+        call_args = ""
+        if with_args:
+            # 跳过 self
+            args = retry_state.args[1:] if retry_state.args else ()
+            call_args = ", ".join(
+                [
+                    *(repr(a) for a in args),
+                    *(f"{k}={v!r}" for k, v in retry_state.kwargs.items()),
+                ]
+            )
         logger.warning(f"Retrying {name}({call_args}) after failure: {exc!r}")
 
     return _before_sleep

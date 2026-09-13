@@ -592,4 +592,6 @@ async def update_immune(
 
         if new_page != old_page:
             await wiki.edit(title=title, text=new_page, summary="更新抗性")
+            # 多个敌人 ID 可能共用一个页面,后面的比对要基于这次改过的文本
+            texts[title] = new_page
             logger.info(f"Updated: {enemy.name}.")

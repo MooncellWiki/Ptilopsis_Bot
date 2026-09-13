@@ -87,7 +87,7 @@ class Unpacker:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_fixed(1),
-        before_sleep=log_retry("get_version_official"),
+        before_sleep=log_retry("get_version_official", with_args=True),
         reraise=True,
     )
     async def _get_version_official(self, region: str) -> str:

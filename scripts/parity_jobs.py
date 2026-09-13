@@ -20,18 +20,20 @@ import hashlib
 import json
 import time
 import traceback
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
 from typing import Any
 
-import requests
+import anyio
+import httpx2
 
 import ptilopsis
 from ptilopsis.config import config
 from ptilopsis.jobs import discover_jobs
 from ptilopsis.log import logger
 from ptilopsis.utils.data import GameData
-from ptilopsis.utils.job import JobContext, get_job, registered_jobs
+from ptilopsis.utils.http import make_client
+from ptilopsis.utils.job import Job, JobContext, get_job, registered_jobs
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -51,93 +53,106 @@ class RecordingWiki:
     def __init__(self, api_url: str, cache_dir: Path) -> None:
         self.api_url = api_url
         self.cache_dir = cache_dir
-        self.session = requests.Session()
-        self.session.headers["User-Agent"] = "Ptilopsis parity (read only)"
+        self.client = make_client(
+            headers={"User-Agent": "Ptilopsis parity (read only)"}
+        )
         self.edits: list[dict[str, Any]] = []
         self.real_categories = False
 
+    async def aclose(self) -> None:
+        await self.client.aclose()
+
     # ---- 记录 ----
 
-    def edit(self, **kwargs: Any) -> None:
+    async def edit(self, **kwargs: Any) -> None:
         self.edits.append({k: v for k, v in kwargs.items() if v is not None})
 
-    def protect(self, **kwargs: Any) -> None:
+    async def protect(self, **kwargs: Any) -> None:
         return None
 
-    def upload(self, *args: Any, **kwargs: Any) -> None:
+    async def upload(self, *args: Any, **kwargs: Any) -> None:
         return None
 
     # ---- 匿名读取(带缓存) ----
 
     @staticmethod
-    def _retry(fetch: Callable[[], Any]) -> Any:
+    async def _retry(fetch: Callable[[], Awaitable[Any]]) -> Any:
         for attempt in range(4):
             try:
-                return fetch()
-            except requests.RequestException:
-                time.sleep(2 * (attempt + 1))
-        return fetch()
+                return await fetch()
+            except httpx2.HTTPError:
+                await anyio.sleep(2 * (attempt + 1))
+        return await fetch()
 
-    def _cached(self, kind: str, key: str, fetch) -> Any:
+    async def _cached(
+        self, kind: str, key: str, fetch: Callable[[], Awaitable[Any]]
+    ) -> Any:
         path = self.cache_dir / kind / (_safe_name(key) + ".json")
         if path.is_file():
             return json.loads(path.read_text(encoding="utf-8"))
-        value = self._retry(fetch)
+        value = await self._retry(fetch)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
         return value
 
-    def read(self, title: str) -> str:
-        def fetch():
-            res = self.session.get(
-                self.api_url,
-                params={
-                    "format": "json",
-                    "action": "query",
+    async def _get(self, params: dict[str, Any]) -> Any:
+        res = await self.client.get(
+            self.api_url, params={"format": "json", "action": "query", **params}
+        )
+        res.raise_for_status()
+        return res.json()
+
+    async def read(self, title: str) -> str:
+        async def fetch() -> str | None:
+            data = await self._get(
+                {
                     "titles": title,
                     "prop": "revisions",
                     "rvprop": "content",
                     "rvslots": "main",
-                },
-                timeout=60,
+                }
             )
-            res.raise_for_status()
-            pages = res.json()["query"]["pages"]
-            page = next(iter(pages.values()))
+            page = next(iter(data["query"]["pages"].values()))
             if "revisions" not in page:
                 return None
             return page["revisions"][0]["slots"]["main"]["*"]
 
-        text = self._cached("read", title, fetch)
+        text = await self._cached("read", title, fetch)
         if text is None:
             # 与 Wiki.read 对不存在页面的行为一致:KeyError
-            raise KeyError("revisions")
+            raise KeyError(title)
         return text
 
-    def category(self, category: str) -> list[str]:
+    async def read_many(self, titles: Iterable[str]) -> dict[str, str]:
+        """逐个走 :meth:`read` 的缓存;与 Wiki.read_many 一样,不存在的页面不在结果里。"""
+        result: dict[str, str] = {}
+        for title in dict.fromkeys(titles):
+            try:
+                result[title] = await self.read(title)
+            except KeyError:
+                continue
+        return result
+
+    async def category(self, category: str) -> list[str]:
         if not self.real_categories:
             return []
 
-        def fetch():
+        async def fetch() -> list[str]:
             members: list[str] = []
-            params = {
-                "format": "json",
-                "action": "query",
+            params: dict[str, Any] = {
                 "list": "categorymembers",
                 "cmtitle": category,
                 "cmlimit": 500,
                 "cmprop": "title",
             }
             while True:
-                res = self.session.get(self.api_url, params=params, timeout=60)
-                res.raise_for_status()
-                data = res.json()
+                data = await self._get(params)
                 members.extend(p["title"] for p in data["query"]["categorymembers"])
                 if "continue" not in data:
                     return members
                 params.update(data["continue"])
 
-        return self._cached("category", category, fetch)
+        return await self._cached("category", category, fetch)
 
 
 def dump_edits(wiki: RecordingWiki, out_dir: Path) -> None:
@@ -157,6 +172,14 @@ def dump_edits(wiki: RecordingWiki, out_dir: Path) -> None:
         )
 
 
+async def run_job(job: Job, wiki: RecordingWiki, gamedata: GameData) -> None:
+    try:
+        await job.run(JobContext(wiki, gamedata))  # type: ignore[arg-type]
+    finally:
+        await wiki.aclose()
+        await gamedata.aclose()
+
+
 def run(out_dir: Path, names: list[str], *, data_root: Path = ROOT) -> None:
     data_root = data_root.expanduser().resolve()
     cache_root = data_root / ".cache"
@@ -174,7 +197,7 @@ def run(out_dir: Path, names: list[str], *, data_root: Path = ROOT) -> None:
         )
         started = time.time()
         try:
-            job.run(JobContext(wiki, gamedata))  # type: ignore[arg-type]
+            anyio.run(run_job, job, wiki, gamedata)
             status[name] = f"ok {len(wiki.edits)} edits {time.time() - started:.0f}s"
         except Exception as exc:
             status[name] = f"FAIL {type(exc).__name__}: {exc}"

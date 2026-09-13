@@ -143,6 +143,19 @@ async def test_edit_caches_csrf_token_and_retries_on_badtoken() -> None:
         await wiki.edit(title="页面", text="4")
 
 
+async def test_createonly_on_existing_page_is_not_an_error() -> None:
+    wiki, server = make_wiki({})
+    server.error = {
+        "code": "articleexists",
+        "info": "The article you tried to create has been created already.",
+    }
+    assert await wiki.edit(title="页面", text="1", createonly="1") is None
+    assert await wiki.edit(title="页面", text="1", createonly=True) is None
+    # 不带 createonly 时同一个错误照常抛出
+    with pytest.raises(WikiError, match="articleexists"):
+        await wiki.edit(title="页面", text="1")
+
+
 async def test_dev_mode_does_not_write() -> None:
     wiki, server = make_wiki({}, mode="dev")
     assert await wiki.edit(title="页面", text="1") is None

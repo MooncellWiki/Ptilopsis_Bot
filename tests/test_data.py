@@ -21,6 +21,8 @@ class FakeTorappu:
         self.fetches: list[tuple[str, str]] = []
         self.in_flight = 0
         self.max_in_flight = 0
+        self.broken: set[str] = set()
+        """这些路径重试后仍失败(模拟 503 / 超时)。"""
 
     async def fetch(self, res_version: str, path: str) -> bytes:
         self.fetches.append((res_version, path))
@@ -28,6 +30,8 @@ class FakeTorappu:
         self.max_in_flight = max(self.max_in_flight, self.in_flight)
         await anyio.sleep(0.01)
         self.in_flight -= 1
+        if path in self.broken:
+            raise RuntimeError(f"503 for {path}")
         try:
             return self.files[(res_version, path)]
         except KeyError:
@@ -169,6 +173,22 @@ async def test_prefetch_downloads_concurrently_and_remembers_missing(
     # 再次 prefetch 同样的路径是空操作
     await gamedata.prefetch(paths)
     assert torappu.fetches == []
+
+
+async def test_prefetch_failure_does_not_abort_and_is_retried_on_read(
+    gamedata: GameData, tmp_path: Path
+) -> None:
+    torappu = fake(gamedata)
+    torappu.broken.add("story/[uc]info/x.txt")
+    await gamedata.prefetch(["story/[uc]info/x.txt", "story/[uc]info/y.txt"])
+    # 其它文件照常进缓存
+    assert (tmp_path / "cache" / CN_VERSION / "story/[uc]info/y.txt").is_file()
+
+    # 失败的文件不记成缺失:之后读取时再请求一次
+    torappu.broken.clear()
+    torappu.fetches.clear()
+    assert await gamedata.get_txt("story/[uc]info/x.txt") == "剧情\n"
+    assert torappu.fetches == [(CN_VERSION, "story/[uc]info/x.txt")]
 
 
 async def test_prefetch_is_noop_for_yostar(gamedata: GameData) -> None:

@@ -107,6 +107,10 @@ class GameData:
                 await self._download(res_version, path)
             except FileNotFoundError:
                 self._missing.add((res_version, path))
+            except Exception as e:
+                # 预取只是加速:单个文件失败不能拖垮整个 job,之后逐个读取时
+                # 会再请求一次,由调用方原有的逐文件容错处理
+                logger.warning(f"Prefetch {path} failed: {e!r}")
 
         async with anyio.create_task_group() as tg:
             for path in pending:
