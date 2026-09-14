@@ -258,7 +258,7 @@ def update_medal(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     medal_table: MedalTable,
     item_table: ItemTable,
@@ -270,7 +270,7 @@ def run(
         medal_table, character_table, building_data, item_table, rts.compile
     )
 
-    wiki.edit(
+    await wiki.edit(
         title="用户:Seniorious/medal",
         text=content,
         summary="update",

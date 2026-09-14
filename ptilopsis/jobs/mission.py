@@ -188,7 +188,7 @@ def update_mission(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     mission_table: Annotated[MissionTable, table("mission_table")],
     item_table: ItemTable,
@@ -196,6 +196,6 @@ def run(
 ) -> None:
     content = update_mission(mission_table, item_table, rts)
 
-    wiki.edit(title="用户:Seniorious/missions", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/missions", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/missions"))

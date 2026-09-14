@@ -12,11 +12,11 @@ from ptilopsis.utils.wiki import Wiki
 
 
 @job
-def run(wiki: Wiki, character_table: CharacterTable, rts: RichText) -> None:
+async def run(wiki: Wiki, character_table: CharacterTable, rts: RichText) -> None:
     content = ""
     # for char in character_table.values():
     #     content += rts.compile(char.description) + "\n"
 
-    wiki.edit(title="", text=content, summary="update")
+    await wiki.edit(title="", text=content, summary="update")
     # logger.info(content)
     logger.info("Updated: {}.".format(""))

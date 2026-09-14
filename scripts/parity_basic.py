@@ -13,13 +13,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import anyio
+
 from ptilopsis.config import config
 from ptilopsis.jobs import basic, char_attr
 from ptilopsis.jobs.params import TABLES
 from ptilopsis.utils.data import GameData
 from ptilopsis.utils.richtext import RichText, WikiRenderer
-
-GAMEDATA = GameData(config)
 
 
 class RecordingWiki:
@@ -28,35 +28,45 @@ class RecordingWiki:
     def __init__(self) -> None:
         self.pages: dict[str, str] = {}
 
-    def edit(self, title: str | None = None, text: str | None = None, **_: Any):
+    async def edit(
+        self, title: str | None = None, text: str | None = None, **_: Any
+    ) -> None:
         if title is not None:
             self.pages[title] = text or ""
 
-    def protect(self, *_: Any, **__: Any) -> None:
+    async def protect(self, *_: Any, **__: Any) -> None:
         return None
 
 
-def load(name: str) -> Any:
+async def load(gamedata: GameData, name: str) -> Any:
     """按 ``params.TABLES`` 里登记的路径读取并校验成模型。"""
 
     spec = TABLES[name]
     validate = getattr(spec.model, "validate_python", None) or spec.model.model_validate
-    return validate(GAMEDATA.get(spec.path, "CN"))
+    return validate(await gamedata.get(spec.path, "CN"))
 
 
-def main(out_dir: Path) -> None:
-    character_table = load("character_table")
-    uniequip_table = load("uniequip_table")
-    battle_equip_table = load("battle_equip_table")
-    skill_table = load("skill_table")
-    building_data = load("building_data")
-    item_table = load("item_table")
-    team_table = load("handbook_team_table")
-    stories_table = load("handbook_info_table")
-    skin_table = load("skin_table")
-    gamedata_const = load("gamedata_const")
-    charword_table = load("charword_table")
-    medal_table = load("medal_table")
+async def main(out_dir: Path) -> None:
+    gamedata = GameData(config)
+    try:
+        await render(gamedata, out_dir)
+    finally:
+        await gamedata.aclose()
+
+
+async def render(gamedata: GameData, out_dir: Path) -> None:
+    character_table = await load(gamedata, "character_table")
+    uniequip_table = await load(gamedata, "uniequip_table")
+    battle_equip_table = await load(gamedata, "battle_equip_table")
+    skill_table = await load(gamedata, "skill_table")
+    building_data = await load(gamedata, "building_data")
+    item_table = await load(gamedata, "item_table")
+    team_table = await load(gamedata, "handbook_team_table")
+    stories_table = await load(gamedata, "handbook_info_table")
+    skin_table = await load(gamedata, "skin_table")
+    gamedata_const = await load(gamedata, "gamedata_const")
+    charword_table = await load(gamedata, "charword_table")
+    medal_table = await load(gamedata, "medal_table")
     id_table: dict[str, Any] = {}
     rts = RichText.from_gamedata_const(gamedata_const, WikiRenderer())
     wiki = RecordingWiki()
@@ -88,7 +98,7 @@ def main(out_dir: Path) -> None:
             potential=basic.get_potential_list(char),
             skill=basic.get_skill_list(char, skill_table, rts),
             building=basic.get_building_skill(building_data, char_key),
-            token_info=basic.get_token_info(
+            token_info=await basic.get_token_info(
                 wiki, char, False, character_table, skill_table, rts
             ),
             phase=basic.get_phase_list(char, gamedata_const, item_table),
@@ -130,4 +140,4 @@ def main(out_dir: Path) -> None:
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         sys.exit(__doc__)
-    main(Path(sys.argv[1]))
+    anyio.run(main, Path(sys.argv[1]))

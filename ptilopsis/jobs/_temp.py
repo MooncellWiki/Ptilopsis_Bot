@@ -32,23 +32,25 @@ def _sort_id(text: str) -> str | None:
 
 
 @job
-def update_enemyId(
+async def update_enemyId(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_pages: Annotated[list[str], category("分类:敌人")],
 ) -> None:
     """核对已建页敌人的 sortId / index 与图鉴是否一致(只记日志,不提交)。"""
 
+    # 先决定每个敌人读哪个页面,再一次批量读完
+    targets: list[tuple[str, str, str]] = []
     for enemy in (enemy_handbook_table.enemy_data or {}).values():
         name = enemy.name or ""
         if name in enemy_pages:
-            old_text = wiki.read(name)
+            title = name
             replace_text = (
                 f"{{{{敌人信息/common\n|id={enemy.sort_id}\n|名称={name}\n"
                 f"|index={enemy.enemy_index}\n"
             )
         elif name + "(敌方)" in enemy_pages:
-            old_text = wiki.read(name + "(敌方)")
+            title = name + "(敌方)"
             replace_text = (
                 f"{{{{敌人信息/common\n|id={enemy.sort_id}\n|名称={name}(敌方)\n"
                 f"|显示名={name}\n|index={enemy.enemy_index}\n"
@@ -56,6 +58,11 @@ def update_enemyId(
         else:
             logger.info(f"{name} 页面未建立.")
             continue
+        targets.append((name, title, replace_text))
+    texts = await wiki.read_many(title for _, title, _ in targets)
+
+    for name, title, replace_text in targets:
+        old_text = texts[title]
 
         n1 = old_text.find("{{敌人信息/common")
         n2 = old_text.find("|地位级别")
@@ -72,7 +79,7 @@ def update_enemyId(
             # logger.info(f"Updated: {name}.")
 
 
-def _remove_drop_section(wiki: Wiki, stage_name: str, content: str) -> None:
+async def _remove_drop_section(wiki: Wiki, stage_name: str, content: str) -> None:
     """页面里有 ``{{关卡材料掉落}}`` 但关卡没有材料掉落时,把这一节删掉。"""
 
     if content.find(DROP_SECTION) == -1:
@@ -80,12 +87,12 @@ def _remove_drop_section(wiki: Wiki, stage_name: str, content: str) -> None:
         return
     content = content.replace(DROP_SECTION + "\n==注释与链接==", "==注释与链接==")
     content = content.replace(DROP_SECTION + "\n\n==注释与链接==", "==注释与链接==")
-    wiki.edit(title=stage_name, text=content, summary="删去模板:关卡材料掉落")
+    await wiki.edit(title=stage_name, text=content, summary="删去模板:关卡材料掉落")
     logger.info(f"删去多余: {stage_name}")
 
 
 @job
-def add_stage_drop(
+async def add_stage_drop(
     wiki: Wiki,
     stage_table: StageTable,
     roguelike_table: RoguelikeTable,
@@ -96,20 +103,21 @@ def add_stage_drop(
     stages = stage_table.stages or {}
     roguelike_stages = roguelike_table.stages or {}
 
+    texts = await wiki.read_many(stage_pages)
     for stage_name in stage_pages:
-        content = wiki.read(stage_name)
+        content = texts[stage_name]
         result = re.search(r"\|关卡id=(.+?)\n", content)
         if not result:
             logger.info(f"No stage id found: {stage_name}")
             for sid, stage in roguelike_stages.items():
                 if f"{stage.code} {stage.name}" == stage_name:
                     content = content.replace("|关卡类型", f"|关卡id={sid}\n|关卡类型")
-                    wiki.edit(
+                    await wiki.edit(
                         title=stage_name, text=content, summary="添加肉鸽关卡stageId"
                     )
                     logger.info(f"添加肉鸽关卡stageId: {stage_name}")
                     break
-            _remove_drop_section(wiki, stage_name, content)
+            await _remove_drop_section(wiki, stage_name, content)
             continue
 
         stage_detail = stages[result.group(1)]
@@ -117,7 +125,7 @@ def add_stage_drop(
         rewards = drop_info.display_detail_rewards if drop_info is not None else None
         has_material = any(r.drop_type in MATERIAL_DROP_TYPES for r in rewards or [])
         if not has_material:
-            _remove_drop_section(wiki, stage_name, content)
+            await _remove_drop_section(wiki, stage_name, content)
             continue
 
         if content.find(DROP_SECTION) != -1:
@@ -128,15 +136,23 @@ def add_stage_drop(
                 "{{关卡导航}}", "==注释与链接==\n<references/>\n{{关卡导航}}"
             )
         content = content.replace("==注释与链接==", DROP_SECTION + "\n==注释与链接==")
-        wiki.edit(title=stage_name, text=content, summary="添加模板:关卡材料掉落")
+        await wiki.edit(title=stage_name, text=content, summary="添加模板:关卡材料掉落")
         logger.info(f"添加: {stage_name}.")
 
 
 @job
-def test_yinyang(stage_table: StageTable, levels: Levels) -> None:
+async def test_yinyang(stage_table: StageTable, levels: Levels) -> None:
     """列出各关卡里带 effects 的地块(排查晦明地块用)。"""
 
-    for stage_detail in (stage_table.stages or {}).values():
+    stages = list((stage_table.stages or {}).values())
+    await levels.prefetch(
+        stage.level_id
+        for stage in stages
+        if stage.level_id
+        and stage.stage_type in ("MAIN", "SUB", "DAILY", "ACTIVITY", "SPECIAL_STORY")
+        and stage.difficulty != "FOUR_STAR"
+    )
+    for stage_detail in stages:
         if (
             stage_detail.stage_type
             not in ("MAIN", "SUB", "DAILY", "ACTIVITY", "SPECIAL_STORY")
@@ -149,7 +165,7 @@ def test_yinyang(stage_table: StageTable, levels: Levels) -> None:
         if not stage_detail.level_id:
             continue
         try:
-            level = levels(stage_detail.level_id)
+            level = await levels(stage_detail.level_id)
         except Exception:
             logger.info(f"Cannot find level data of {stage_page_name}.")
             continue

@@ -18,20 +18,22 @@ from ptilopsis.utils.job import (
 )
 from ptilopsis.utils.wiki import Wiki
 
+pytestmark = pytest.mark.anyio
+
 
 class FakeWiki:
     def __init__(self) -> None:
         self.edits: list[dict[str, Any]] = []
         self.categories: list[str] = []
 
-    def edit(self, **kwargs: Any) -> None:
+    async def edit(self, **kwargs: Any) -> None:
         self.edits.append(kwargs)
 
-    def category(self, name: str) -> list[str]:
+    async def category(self, name: str) -> list[str]:
         self.categories.append(name)
         return ["页面甲", "页面乙"]
 
-    def read(self, title: str) -> str:
+    async def read(self, title: str) -> str:
         return "name,sortId,approach,date\n阿米娅,1,初始,2019-05-01\n"
 
 
@@ -41,7 +43,7 @@ class FakeGameData:
     def __init__(self) -> None:
         self.reads: list[str] = []
 
-    def get(self, path: str, region: str = "CN") -> dict:
+    async def get(self, path: str, region: str = "CN") -> dict:
         self.reads.append(path)
         if path.endswith("gamedata_const.json"):
             return {
@@ -67,7 +69,7 @@ def isolated_registry():
 
 def test_bare_decorator_names_job_after_module_and_function() -> None:
     @job
-    def run(wiki: Wiki) -> str:
+    async def run(wiki: Wiki) -> str:
         return "ok"
 
     assert isinstance(run, Job)
@@ -78,7 +80,7 @@ def test_bare_decorator_names_job_after_module_and_function() -> None:
 
 def test_named_decorator() -> None:
     @job("custom.name")
-    def run(wiki: Wiki) -> None:
+    async def run(wiki: Wiki) -> None:
         return None
 
     assert run.name == "custom.name"
@@ -86,13 +88,13 @@ def test_named_decorator() -> None:
 
 def test_duplicate_name_from_different_function_is_rejected() -> None:
     @job("dup")
-    def one(wiki: Wiki) -> None:
+    async def one(wiki: Wiki) -> None:
         return None
 
     with pytest.raises(ValueError, match="already registered"):
 
         @job("dup")
-        def two(wiki: Wiki) -> None:
+        async def two(wiki: Wiki) -> None:
             return None
 
 
@@ -100,13 +102,13 @@ def test_bad_signature_fails_at_registration() -> None:
     with pytest.raises(TypeError, match="cannot inject"):
 
         @job
-        def run(count: int) -> None:
+        async def run(count: int) -> None:
             return None
 
 
-def test_provided_types_and_params_are_injected(ctx: JobContext) -> None:
+async def test_provided_types_and_params_are_injected(ctx: JobContext) -> None:
     @job
-    def run(
+    async def run(
         wiki: Wiki,
         data: GameData,
         context: JobContext,
@@ -123,7 +125,7 @@ def test_provided_types_and_params_are_injected(ctx: JobContext) -> None:
             "pages": pages,
         }
 
-    result = run_job(run, ctx)
+    result = await run_job(run, ctx)
     assert result is not None
     assert result["wiki"] is ctx.wiki and result["data"] is ctx.gamedata
     assert result["context"] is ctx
@@ -132,63 +134,73 @@ def test_provided_types_and_params_are_injected(ctx: JobContext) -> None:
     assert result["pages"] == ["页面甲", "页面乙"]
 
 
-def test_gamedata_with_model_validates(ctx: JobContext) -> None:
+async def test_gamedata_with_model_validates(ctx: JobContext) -> None:
     from pydantic import BaseModel
 
     class Table(BaseModel):
         path: str
 
     @job
-    def run(table: Annotated[Table, gamedata("excel/x.json", model=Table)]) -> str:
+    async def run(
+        table: Annotated[Table, gamedata("excel/x.json", model=Table)],
+    ) -> str:
         return table.path
 
-    assert run_job(run, ctx) == "excel/x.json"
+    assert await run_job(run, ctx) == "excel/x.json"
 
 
-def test_legacy_context_signature_still_works(ctx: JobContext) -> None:
+async def test_sync_job_without_io_still_runs(ctx: JobContext) -> None:
     @job
-    def run(context: JobContext) -> str:
-        return context.getgd("excel/y.json")["path"]
+    def run(item_table: Annotated[dict, gamedata("excel/x.json")]) -> str:
+        return item_table["path"]
 
-    assert run_job(run, ctx) == "excel/y.json"
+    assert await run_job(run, ctx) == "excel/x.json"
+
+
+async def test_legacy_context_signature_still_works(ctx: JobContext) -> None:
+    @job
+    async def run(context: JobContext) -> str:
+        return (await context.getgd("excel/y.json"))["path"]
+
+    assert await run_job(run, ctx) == "excel/y.json"
     # 旧的 module.run(ctx) 调用方式
-    assert run(ctx) == "excel/y.json"
+    assert await run(ctx) == "excel/y.json"
 
 
-def test_run_jobs_reports_failures_and_skips(ctx: JobContext) -> None:
+async def test_run_jobs_reports_failures_and_skips(ctx: JobContext) -> None:
     order: list[str] = []
 
     @job("t.ok")
-    def ok(wiki: Wiki) -> None:
+    async def ok(wiki: Wiki) -> None:
         order.append("ok")
 
-    def nothing_to_do(wiki: Wiki) -> None:
+    async def nothing_to_do(wiki: Wiki) -> None:
         raise SkipJob("no new version")
 
     @job("t.skip")
-    def skipped(flag: Annotated[None, Depends(nothing_to_do)]) -> None:
+    async def skipped(flag: Annotated[None, Depends(nothing_to_do)]) -> None:
         order.append("skip")
 
     @job("t.boom")
-    def boom(wiki: Wiki) -> None:
+    async def boom(wiki: Wiki) -> None:
         raise RuntimeError("boom")
 
     @job("t.after")
-    def after(wiki: Wiki) -> None:
+    async def after(wiki: Wiki) -> None:
         order.append("after")
 
-    failed = run_jobs(["t.ok", "t.skip", "t.boom", "t.after"], ctx)
+    failed = await run_jobs(["t.ok", "t.skip", "t.boom", "t.after"], ctx)
     assert failed == ["t.boom"]
     assert order == ["ok", "after"]
 
 
-def test_run_jobs_rejects_unknown_name_before_running(ctx: JobContext) -> None:
+async def test_run_jobs_rejects_unknown_name_before_running(ctx: JobContext) -> None:
     order: list[str] = []
 
     @job("t.ok")
-    def ok(wiki: Wiki) -> None:
+    async def ok(wiki: Wiki) -> None:
         order.append("ok")
 
     with pytest.raises(KeyError, match=r"unknown job 't\.nope'"):
-        run_jobs(["t.ok", "t.nope"], ctx)
+        await run_jobs(["t.ok", "t.nope"], ctx)
     assert order == []

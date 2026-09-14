@@ -1,9 +1,10 @@
 import os
 
+import anyio
 import click
 import sentry_sdk
 
-from ptilopsis.config import config, get_settings
+from ptilopsis.config import Config, Settings, config, get_settings
 from ptilopsis.jobs import discover_jobs
 from ptilopsis.log import logger
 from ptilopsis.utils.data import YOSTAR_DIR, GameData
@@ -116,48 +117,69 @@ def main(
         game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
         game_config = config
-    gameData = GameData(config=game_config)
 
-    if check_mode == "cn":
-        if not gameData.unpacker.check_update() and not force:
-            gameData.unpacker.commit_version()
-            logger.info("No version update. Program exit.")
-            return
-    elif check_mode == "jp":
-        sign1 = gameData.unpacker.check_update("JP")
-        sign2 = gameData.unpacker.check_update("US")
-        gameData.unpacker.check_update("KR")
-        if not sign1 and not sign2:
-            gameData.unpacker.commit_version()
-            logger.info("No version update. Program exit.")
-            return
-    elif check_mode == "global":
-        gameData.unpacker.check_all_update()
-        gameData.unpacker.commit_version()
-        return
-
-    if not modes:
-        gameData.unpacker.commit_version()
-        _push_remote(remote)
-        return
-
-    username, password = settings.require_wiki_credentials()
-    wiki = Wiki(
-        config.api_url,
-        username,
-        password,
-        "dev" if dev else "product",
+    # 网络 I/O 全部在 anyio 事件循环里跑（与 torappu 一致）；git 操作留在外面
+    should_push = anyio.run(
+        _amain, game_config, settings, check_mode, force, dev, modes
     )
-    # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
-    # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
-    gameData.unpacker.commit_version()
+    if should_push:
+        _push_remote(remote)
 
-    discover_jobs()
-    failed = run_jobs(jobs_for(modes), JobContext(wiki, gameData))
-    if failed:
-        logger.error(f"{len(failed)} job(s) failed: {', '.join(failed)}")
 
-    _push_remote(remote)
+async def _amain(
+    game_config: Config,
+    settings: Settings,
+    check_mode: str | None,
+    force: bool,
+    dev: bool,
+    modes: tuple[str, ...],
+) -> bool:
+    """检查版本、跑 job；返回是否需要提交推送。"""
+    gameData = GameData(config=game_config)
+    try:
+        if check_mode == "cn":
+            if not await gameData.unpacker.check_update() and not force:
+                gameData.unpacker.commit_version()
+                logger.info("No version update. Program exit.")
+                return False
+        elif check_mode == "jp":
+            sign1 = await gameData.unpacker.check_update("JP")
+            sign2 = await gameData.unpacker.check_update("US")
+            await gameData.unpacker.check_update("KR")
+            if not sign1 and not sign2:
+                gameData.unpacker.commit_version()
+                logger.info("No version update. Program exit.")
+                return False
+        elif check_mode == "global":
+            await gameData.unpacker.check_all_update()
+            gameData.unpacker.commit_version()
+            return False
+
+        if not modes:
+            gameData.unpacker.commit_version()
+            return True
+
+        username, password = settings.require_wiki_credentials()
+        wiki = await Wiki.login(
+            config.api_url,
+            username,
+            password,
+            "dev" if dev else "product",
+        )
+        try:
+            # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
+            # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
+            gameData.unpacker.commit_version()
+
+            discover_jobs()
+            failed = await run_jobs(jobs_for(modes), JobContext(wiki, gameData))
+            if failed:
+                logger.error(f"{len(failed)} job(s) failed: {', '.join(failed)}")
+        finally:
+            await wiki.aclose()
+    finally:
+        await gameData.aclose()
+    return True
 
 
 def _push_remote(remote: bool) -> None:

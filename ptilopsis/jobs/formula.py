@@ -73,7 +73,7 @@ def get_workshop_formulas(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     building_data: params.BuildingData,
     item_table: params.ItemTable,
@@ -81,6 +81,8 @@ def run(
 ) -> None:
     content = get_workshop_formulas(building_data, item_table, stage_table)
 
-    wiki.edit(title="用户:Seniorious/workshopFormulas", text=content, summary="update")
+    await wiki.edit(
+        title="用户:Seniorious/workshopFormulas", text=content, summary="update"
+    )
     # logger.info(content)
     logger.info("Updated: {}.".format("用户:Seniorious/workshopFormulas"))

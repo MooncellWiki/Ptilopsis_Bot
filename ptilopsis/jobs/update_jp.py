@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterable
 from typing import Annotated
 
 from ptilopsis.gamedata.building_data import BuildingData, BuildingDataCustomData
@@ -70,8 +71,21 @@ def replace_story_condition(text: str, num: int) -> str:
     return text
 
 
+def _operators(
+    character_table: dict[str, CharacterData], char_ids: Iterable[str]
+) -> list[tuple[str, str]]:
+    """``char_ids`` 里的干员(排除陷阱与召唤物):``[(id, 名字), ...]``。"""
+    result: list[tuple[str, str]] = []
+    for char in char_ids:
+        char_detail = character_table[char]
+        if char_detail.profession == "TRAP" or char_detail.profession == "TOKEN":
+            continue
+        result.append((char, char_detail.name or ""))
+    return result
+
+
 # out of date
-def update_charword_jp(
+async def update_charword_jp(
     wiki: Wiki,
     character_table: dict[str, CharacterData],
     charword_table: CharWordTable,
@@ -80,21 +94,18 @@ def update_charword_jp(
 ) -> None:
     char_words = charword_table.char_words or {}
     char_words_jp = charword_table_jp.char_words or {}
-    for char in character_table_jp:
-        char_detail = character_table[char]
-
-        if char_detail.profession == "TRAP" or char_detail.profession == "TOKEN":
-            continue
-        name = char_detail.name or ""
-
-        origin_text = wiki.read(name + "/语音记录")
+    targets = _operators(character_table, character_table_jp)
+    # 语音记录页面一次批量读完;页面不存在时和原来的 wiki.read 一样抛 KeyError
+    pages = await wiki.read_many(f"{name}/语音记录" for _, name in targets)
+    for char, name in targets:
+        origin_text = pages[name + "/语音记录"]
         new_text = get_charword_data_jp(char, name, char_words, char_words_jp)
         new_text += "\n<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>"
 
         # edit wiki
         if origin_text != new_text:
             # logger.info(new_text)
-            wiki.edit(
+            await wiki.edit(
                 title=name + "/语音记录",
                 text=new_text,
                 summary="update",
@@ -110,7 +121,7 @@ def _skill_name(bundle: SkillDataBundle) -> str | None:
     return levels[0].name
 
 
-def update_skill_and_name(
+async def update_skill_and_name(
     wiki: Wiki,
     character_table: dict[str, CharacterData],
     skill_table: dict[str, SkillDataBundle],
@@ -119,21 +130,21 @@ def update_skill_and_name(
     character_table_en: dict[str, CharacterData],
     skill_table_en: dict[str, SkillDataBundle],
 ) -> None:
-    for char in character_table_jp:
+    # if (char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP'
+    #         or char_detail['profession'] == 'TOKEN'):
+    targets = [
+        (char, name)
+        for char, name in _operators(character_table, character_table_jp)
+        if character_table[char].is_not_obtainable is not True
+    ]
+    # 干员页面一次批量读完;原来读不到的页面直接跳过,这里同样跳过不在结果里的
+    pages = await wiki.read_many(name for _, name in targets)
+    for char, name in targets:
         char_detail = character_table[char]
-        # if (char_detail['name'] != '能天使' or char_detail['profession'] == 'TRAP'
-        #         or char_detail['profession'] == 'TOKEN'):
-        if char_detail.profession == "TRAP" or char_detail.profession == "TOKEN":
+        if name not in pages:
             continue
-        if char_detail.is_not_obtainable is True:
-            continue
-        name = char_detail.name or ""
-
-        try:
-            origin_text = wiki.read(name)
-            new_text = origin_text
-        except Exception:
-            continue
+        origin_text = pages[name]
+        new_text = origin_text
 
         # update skill name
         if char_detail.skills:
@@ -186,7 +197,7 @@ def update_skill_and_name(
         # edit wiki
         if origin_text != new_text:
             # logger.info(new_text)
-            wiki.edit(
+            await wiki.edit(
                 title=name,
                 text=new_text,
                 summary="update",
@@ -197,7 +208,9 @@ def update_skill_and_name(
 
         if name != name_jp:
             redirect_text = f"#redirect [[{name}]]"
-            wiki.edit(title=name_jp, text=redirect_text, summary="init", createonly="1")
+            await wiki.edit(
+                title=name_jp, text=redirect_text, summary="init", createonly="1"
+            )
 
 
 def _custom_data(building_data: BuildingData) -> BuildingDataCustomData:
@@ -207,7 +220,22 @@ def _custom_data(building_data: BuildingData) -> BuildingDataCustomData:
     return building_data.custom_data
 
 
-def update_furni_info(
+def _furni_page_name(custom_cn: BuildingDataCustomData, furni_id: str) -> str:
+    """家具页面名;重名的家具("松软沙发")带上主题名区分。"""
+    furni_data_cn = (custom_cn.furnitures or {})[furni_id]
+    page_name = furni_data_cn.name or ""
+    if page_name in ["松软沙发"]:
+        themes = ""
+        for groups_data in (custom_cn.groups or {}).values():
+            if furni_data_cn.id in (groups_data.furniture or []):
+                theme_id = groups_data.theme_id or ""
+                themes = (custom_cn.themes or {})[theme_id].name or ""
+                break
+        page_name += f"（{themes}）"
+    return page_name
+
+
+async def update_furni_info(
     wiki: Wiki,
     building_data: BuildingData,
     building_data_jp: BuildingData,
@@ -217,23 +245,19 @@ def update_furni_info(
     furnitures_cn = custom_cn.furnitures or {}
     furnitures_jp = _custom_data(building_data_jp).furnitures or {}
     furnitures_en = _custom_data(building_data_en).furnitures or {}
-    for furni in furnitures_cn:
-        if furni not in furnitures_jp or furni not in furnitures_en:
-            continue
+    targets = [
+        (furni, _furni_page_name(custom_cn, furni))
+        for furni in furnitures_cn
+        if furni in furnitures_jp and furni in furnitures_en
+    ]
+    # 家具页面一次批量读完;页面不存在时和原来的 wiki.read 一样抛 KeyError
+    pages = await wiki.read_many(page_name for _, page_name in targets)
+    for furni, page_name in targets:
         furni_data_cn = furnitures_cn[furni]
         furni_data_jp = furnitures_jp[furni]
         furni_data_en = furnitures_en[furni]
 
-        page_name = furni_data_cn.name or ""
-        if page_name in ["松软沙发"]:
-            themes = ""
-            for groups_data in (custom_cn.groups or {}).values():
-                if furni_data_cn.id in (groups_data.furniture or []):
-                    theme_id = groups_data.theme_id or ""
-                    themes = (custom_cn.themes or {})[theme_id].name or ""
-                    break
-            page_name += f"（{themes}）"
-        origin_text = wiki.read(page_name)
+        origin_text = pages[page_name]
         new_text = origin_text
 
         # update info
@@ -259,7 +283,7 @@ def update_furni_info(
         # edit wiki
         if origin_text != new_text:
             # logger.info(new_text)
-            wiki.edit(
+            await wiki.edit(
                 title=page_name,
                 text=new_text,
                 summary="update",
@@ -270,7 +294,7 @@ def update_furni_info(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     skill_table: Annotated[dict[str, SkillDataBundle], table("skill_table")],
@@ -293,7 +317,7 @@ def run(
     # update_charword_jp(
     #     wiki, character_table, charword_table, character_table_jp, charword_table_jp
     # )
-    update_skill_and_name(
+    await update_skill_and_name(
         wiki,
         character_table,
         skill_table,

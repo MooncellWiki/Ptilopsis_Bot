@@ -1,14 +1,15 @@
 """job 的注册、依赖注入与调度。
 
-一个 job 就是一个用 :func:`job` 装饰的普通函数,参数按注解注入::
+一个 job 就是一个用 :func:`job` 装饰的函数(通常是 ``async def``,因为 Wiki 与
+GameData 的接口都是 async 的),参数按注解注入::
 
     from ptilopsis.jobs.params import ItemTable, RichText
     from ptilopsis.utils.job import job
     from ptilopsis.utils.wiki import Wiki
 
     @job
-    def run(wiki: Wiki, item_table: ItemTable, rts: RichText) -> None:
-        ...
+    async def run(wiki: Wiki, item_table: ItemTable, rts: RichText) -> None:
+        await wiki.edit(...)
 
 ``Wiki`` / ``GameData`` / ``Config`` / ``JobContext`` 按类型直接提供,其余参数
 用 ``Depends`` 标记(各表的类型化模型等都在 :mod:`ptilopsis.jobs.params`),
@@ -54,21 +55,21 @@ class JobContext:
     wiki: Wiki
     gamedata: GameData
 
-    def getgd(self, path: str, region: str = "CN") -> dict:
+    async def getgd(self, path: str, region: str = "CN") -> dict:
         """
         :param path:
         :param region: 服务器: CN,US,JP,KR,TW
         :return: dict
         """
-        return self.gamedata.get(path, region)
+        return await self.gamedata.get(path, region)
 
-    def getgd_txt(self, path: str, region: str = "CN") -> str:
+    async def getgd_txt(self, path: str, region: str = "CN") -> str:
         """
         :param path:
         :param region: 服务器: CN,US,JP,KR,TW
         :return: string
         """
-        return self.gamedata.get_txt(path, region)
+        return await self.gamedata.get_txt(path, region)
 
 
 class SkipJob(Exception):
@@ -87,8 +88,8 @@ class Job:
     def __init__(self, func: Callable[..., Any], *, name: str) -> None:
         if not name:
             raise ValueError("a job needs a non-empty name")
-        if not callable(func) or inspect.iscoroutinefunction(func):
-            raise TypeError(f"job {name!r}: {func!r} must be a plain function")
+        if not callable(func):
+            raise TypeError(f"job {name!r}: {func!r} must be callable")
         self.func = func
         self.name = name
         # 注册时就把整棵依赖树检查一遍
@@ -97,7 +98,7 @@ class Job:
     def __repr__(self) -> str:
         return f"<Job {self.name!r}>"
 
-    def resolve(self, ctx: JobContext) -> dict[str, Any]:
+    async def resolve(self, ctx: JobContext) -> dict[str, Any]:
         """解析这次运行的实参;依赖抛 :class:`SkipJob` 时原样抛出。"""
 
         resolver = Resolver(
@@ -108,17 +109,17 @@ class Job:
                 Config: ctx.gamedata.config,
             }
         )
-        return resolver.solve_params(self.dependant)
+        return await resolver.solve_params(self.dependant)
 
-    def run(self, ctx: JobContext) -> Any:
-        """:meth:`resolve` 后调用函数,异常原样抛出。"""
+    async def run(self, ctx: JobContext) -> Any:
+        """:meth:`resolve` 后调用函数(可等待时 await),异常原样抛出。"""
 
-        return self.func(**self.resolve(ctx))
+        return await _call(self.func, await self.resolve(ctx))
 
-    def __call__(self, ctx: JobContext) -> Any:
-        """兼容旧的 ``module.run(ctx)`` 调用方式:带异常兜底地运行。"""
+    async def __call__(self, ctx: JobContext) -> Any:
+        """兼容旧的 ``await module.run(ctx)`` 调用方式:带异常兜底地运行。"""
 
-        return run_job(self, ctx)
+        return await run_job(self, ctx)
 
 
 _registry: dict[str, Job] = {}
@@ -187,13 +188,22 @@ def job(
     return decorator
 
 
-def _execute(job_: Job, ctx: JobContext) -> tuple[bool, Any]:
+async def _call(func: Callable[..., Any], kwargs: dict[str, Any]) -> Any:
+    """调用 ``func``,返回值可等待(async job)时再 await。"""
+
+    result = func(**kwargs)
+    if inspect.isawaitable(result):
+        result = await result
+    return result
+
+
+async def _execute(job_: Job, ctx: JobContext) -> tuple[bool, Any]:
     """返回 (是否失败, 返回值);跳过与失败都只记日志。"""
 
     try:
-        kwargs = job_.resolve(ctx)
+        kwargs = await job_.resolve(ctx)
         logger.info(f"Starting job {job_.name}")
-        result = job_.func(**kwargs)
+        result = await _call(job_.func, kwargs)
     except SkipJob as reason:
         detail = f": {reason}" if str(reason) else ""
         logger.info(f"Skipping job {job_.name}{detail}")
@@ -205,17 +215,22 @@ def _execute(job_: Job, ctx: JobContext) -> tuple[bool, Any]:
     return False, result
 
 
-def run_job(job_: Job, ctx: JobContext) -> Any:
+async def run_job(job_: Job, ctx: JobContext) -> Any:
     """运行一个 job,返回值原样透传;跳过或失败时为 None。"""
 
-    return _execute(job_, ctx)[1]
+    return (await _execute(job_, ctx))[1]
 
 
-def run_jobs(names: Iterable[str], ctx: JobContext) -> list[str]:
+async def run_jobs(names: Iterable[str], ctx: JobContext) -> list[str]:
     """按顺序运行 ``names`` 里的 job,返回失败的名字。
 
-    名字先全部查一遍,写错任何一个都不会开始运行。
+    job 之间有先后依赖(sidebar 要先于 basic),所以逐个跑;job 内部再用
+    task group 并发自己的 I/O。名字先全部查一遍,写错任何一个都不会开始运行。
     """
 
     jobs = [get_job(name) for name in names]
-    return [job_.name for job_ in jobs if _execute(job_, ctx)[0]]
+    failed: list[str] = []
+    for job_ in jobs:
+        if (await _execute(job_, ctx))[0]:
+            failed.append(job_.name)
+    return failed

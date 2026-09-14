@@ -4,6 +4,7 @@ from typing import Annotated
 from ptilopsis.gamedata.building_data import (
     BuildingData,
     BuildingDataCustomData,
+    BuildingDataCustomDataFurnitureData,
 )
 from ptilopsis.gamedata.item_table import InventoryData, ItemData
 from ptilopsis.gamedata.shop_client_table import ShopClientData
@@ -56,7 +57,7 @@ def furni_sub_type_text(building_data: BuildingData, sub_type: str) -> str:
     return ""
 
 
-def update_furni(
+async def update_furni(
     wiki: Wiki,
     building_data: BuildingData,
     item_table: InventoryData,
@@ -65,6 +66,7 @@ def update_furni(
     data = custom_data(building_data)
     items = item_table.items or {}
     types = data.types or {}
+    pages: list[tuple[str, BuildingDataCustomDataFurnitureData]] = []
     for furni_data in (data.furnitures or {}).values():
         furni_data.name = (furni_data.name or "").strip()
         page_name = furni_data.name
@@ -73,8 +75,12 @@ def update_furni(
             if themes == "":
                 themes = "散件"
             page_name += f"（{themes}）"
+        pages.append((page_name, furni_data))
 
-        origin_text = wiki.read(page_name)
+    # 一次性批量读取全部家具页,再逐个比对、按需编辑
+    texts = await wiki.read_many(page_name for page_name, _ in pages)
+    for page_name, furni_data in pages:
+        origin_text = texts[page_name]
 
         num1 = origin_text.find("|描述=")
         num2 = origin_text.find("|", num1 + 4)
@@ -106,20 +112,20 @@ def update_furni(
         )
 
         if origin_text != new_text:
-            wiki.edit(title=page_name, text=new_text, summary="update")
+            await wiki.edit(title=page_name, text=new_text, summary="update")
             # logger.info(new_text)
             logger.info(f"Update: {page_name}.")
         else:
             logger.info(f"Same: {page_name}.")
 
 
-def create_furni(
+async def create_furni(
     wiki: Wiki,
     building_data: BuildingData,
     item_table: InventoryData,
     duplicates: set[str],
 ) -> None:
-    furni_list = wiki.category("分类:家具")
+    furni_list = await wiki.category("分类:家具")
 
     furni_format = """{{{{家具信息
 |名称={name}
@@ -190,12 +196,14 @@ def create_furni(
         else:
             page_name = furni_data.name
 
-        wiki.edit(title=page_name, text=furni_info, createonly=True, summary="init")
+        await wiki.edit(
+            title=page_name, text=furni_info, createonly=True, summary="init"
+        )
         # logger.info(furni_info)
         logger.info(f"Created: {page_name}.")
 
     if individual_furni != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增单件",
             text="".join(individual_furni),
             summary="update",
@@ -224,10 +232,10 @@ def theme_preview_pic(shop_client_table: ShopClientData, theme_id: str | None) -
     return ""
 
 
-def create_themes(
+async def create_themes(
     wiki: Wiki, building_data: BuildingData, shop_client_table: ShopClientData
 ) -> None:
-    themes_list = wiki.category("分类:家具主题")
+    themes_list = await wiki.category("分类:家具主题")
 
     themes_info = """{{{{pathnav2|家具一览}}}}
 ==总览==
@@ -340,7 +348,7 @@ def create_themes(
             "{{{{家具主题|{name}}}}}".format(name=themesData.name.replace("/", ""))
         )
 
-        wiki.edit(
+        await wiki.edit(
             title=themesData.name,
             text=themesContent,
             summary="init",
@@ -352,7 +360,7 @@ def create_themes(
         logger.info(f"Created: {themesData.name}.")
 
     if new_theme != []:
-        wiki.edit(
+        await wiki.edit(
             title="首页/新增主题",
             text=" ".join(new_theme),
             summary="update",
@@ -364,7 +372,7 @@ def create_themes(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     building_data: Annotated[BuildingData, table("building_data")],
     item_table: ItemTable,
@@ -372,14 +380,14 @@ def run(
 ) -> None:
     # 先算重名家具再建页,主题页里引用的家具名要和家具页一致
     duplicates = find_duplicates(building_data)
-    create_themes(wiki, building_data, shop_client_table)
-    create_furni(wiki, building_data, item_table, duplicates)
+    await create_themes(wiki, building_data, shop_client_table)
+    await create_furni(wiki, building_data, item_table, duplicates)
 
 
 @job
-def update(
+async def update(
     wiki: Wiki,
     building_data: Annotated[BuildingData, table("building_data")],
     item_table: ItemTable,
 ) -> None:
-    update_furni(wiki, building_data, item_table, find_duplicates(building_data))
+    await update_furni(wiki, building_data, item_table, find_duplicates(building_data))

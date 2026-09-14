@@ -107,7 +107,7 @@ def _has_mandarin(voice_lang_dict: dict[str, VoiceLangData], word_key: str) -> b
     )
 
 
-def create_charword(
+async def create_charword(
     wiki: Wiki,
     char_list: list[tuple[str, str]],
     char_words: dict[str, CharWordData],
@@ -127,7 +127,7 @@ def create_charword(
             content += get_charword_data(k, file_name, char_words, flag_CN) + "\n"
         content = content.rstrip()
 
-        wiki.edit(
+        await wiki.edit(
             title=char_name + "/语音记录",
             text=content,
             summary="init",
@@ -138,12 +138,11 @@ def create_charword(
         logger.info("Created: {}.".format(char_name + "/语音记录"))
 
 
-def update_charword(
-    wiki: Wiki,
-    char_list: list[tuple[str, str]],
-    char_words: dict[str, CharWordData],
-    voice_lang_dict: dict[str, VoiceLangData],
-) -> None:
+def _key_lists(
+    char_list: list[tuple[str, str]], char_words: dict[str, CharWordData]
+) -> list[tuple[str, str, list[str]]]:
+    """每个干员的 wordkey 列表(含阿米娅升变的特殊处理),没有语音的干员略过。"""
+    result: list[tuple[str, str, list[str]]] = []
     for char_id, char_name in char_list:
         key_list = word_key_list(char_id, char_words)
         # 处理阿米娅升变
@@ -153,8 +152,21 @@ def update_charword(
             key_list.remove("char_1001_amiya2")
         if key_list == []:
             continue
+        result.append((char_id, char_name, key_list))
+    return result
 
-        origin_text = wiki.read(char_name + "/语音记录")
+
+async def update_charword(
+    wiki: Wiki,
+    char_list: list[tuple[str, str]],
+    char_words: dict[str, CharWordData],
+    voice_lang_dict: dict[str, VoiceLangData],
+) -> None:
+    targets = _key_lists(char_list, char_words)
+    # 语音记录页面一次批量读完;页面不存在时和原来的 wiki.read 一样抛 KeyError
+    pages = await wiki.read_many(f"{char_name}/语音记录" for _, char_name, _ in targets)
+    for char_id, char_name, key_list in targets:
+        origin_text = pages[char_name + "/语音记录"]
         origin_text += "=="
         new_text = ""
         for k in key_list:
@@ -182,14 +194,16 @@ def update_charword(
         new_text = new_text.rstrip()
 
         if origin_text != new_text:
-            wiki.edit(title=char_name + "/语音记录", text=new_text, summary="update")
+            await wiki.edit(
+                title=char_name + "/语音记录", text=new_text, summary="update"
+            )
             # logger.info(new_text)
             logger.info("Update: {}.".format(char_name + "/语音记录"))
         else:
             logger.info("Same: {}.".format(char_name + "/语音记录"))
 
 
-def update_charword_jp(
+async def update_charword_jp(
     wiki: Wiki,
     char_list: list[tuple[str, str]],
     char_words: dict[str, CharWordData],
@@ -197,17 +211,10 @@ def update_charword_jp(
     char_words_jp: dict[str, CharWordData],
     mode: str = "JP",
 ) -> None:
-    for char_id, char_name in char_list:
-        key_list = word_key_list(char_id, char_words)
-        # 处理阿米娅升变
-        if char_id == "char_1001_amiya2":
-            key_list.append("char_1001_amiya2")
-        if char_id == "char_002_amiya":
-            key_list.remove("char_1001_amiya2")
-        if key_list == []:
-            continue
-
-        origin_text = wiki.read(char_name + "/语音记录")
+    targets = _key_lists(char_list, char_words)
+    pages = await wiki.read_many(f"{char_name}/语音记录" for _, char_name, _ in targets)
+    for char_id, char_name, key_list in targets:
+        origin_text = pages[char_name + "/语音记录"]
         origin_text += "=="
         new_text = ""
         for k in key_list:
@@ -248,7 +255,7 @@ def update_charword_jp(
             new_text += "<noinclude>[[分类:有官方日文文本的干员语音]]</noinclude>"
 
         if origin_text != new_text:
-            wiki.edit(
+            await wiki.edit(
                 title=char_name + "/语音记录",
                 text=new_text,
                 summary="update",
@@ -268,7 +275,7 @@ def char_filter(char_tuple: tuple[str, CharacterData]) -> bool:
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     charword_table: Annotated[CharWordTable, table("charword_table")],
@@ -286,11 +293,11 @@ def run(
             continue
         char_list.append((char_id, name))
 
-    create_charword(wiki, char_list, char_words, voice_lang_dict)
+    await create_charword(wiki, char_list, char_words, voice_lang_dict)
 
 
 @job
-def update(
+async def update(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     charword_table: Annotated[CharWordTable, table("charword_table")],
@@ -302,11 +309,11 @@ def update(
         (k, v.name or "") for k, v in filter(char_filter, character_table.items())
     ]
     char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
-    update_charword(wiki, char_list, char_words, voice_lang_dict)
+    await update_charword(wiki, char_list, char_words, voice_lang_dict)
 
 
 @job
-def update_jp(
+async def update_jp(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     charword_table: Annotated[CharWordTable, table("charword_table")],
@@ -340,10 +347,10 @@ def update_jp(
         else:
             char_list.append((char_id, char.name or ""))
     char_list.append(("char_1001_amiya2", "阿米娅(近卫)"))
-    update_charword_jp(
+    await update_charword_jp(
         wiki, char_list, char_words, voice_lang_dict, charword_table_jp.char_words or {}
     )
-    update_charword_jp(
+    await update_charword_jp(
         wiki,
         char_list_en,
         char_words,

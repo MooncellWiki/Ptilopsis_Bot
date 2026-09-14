@@ -133,7 +133,7 @@ def get_char_attr(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: params.CharacterTable,
     uniequip_table: params.UniEquipTable,
@@ -142,5 +142,5 @@ def run(
 ) -> None:
     content = get_char_attr(character_table, uniequip_table, id_table, rts)
 
-    wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
+    await wiki.edit(title="用户:Seniorious/attribute", text=content, summary="update")
     logger.info("Updated: {}.".format("用户:Seniorious/attribute"))

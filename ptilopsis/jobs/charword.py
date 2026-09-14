@@ -359,7 +359,7 @@ def _set_amiya_default_type(charword_table: CharWordTable) -> None:
     charword_table.char_default_type_dict["char_1037_amiya3"] = "JP"
 
 
-def create_charword(
+async def create_charword(
     wiki: Wiki,
     char_list: list[tuple[str, str]],
     skin_table: SkinTable,
@@ -381,7 +381,7 @@ def create_charword(
             title="语音记录",
             mode="create",
         )
-        wiki.edit(
+        await wiki.edit(
             title=char_name + "/语音记录",
             text=content,
             summary="init",
@@ -393,7 +393,19 @@ def create_charword(
         logger.info("Created: {}.".format(char_name + "/语音记录"))
 
 
-def update_charword(
+def _updatable(
+    char_list: list[tuple[str, str]], voice_lang_dict: dict[str, Any]
+) -> list[tuple[str, str]]:
+    """有语音配置、且不在例外名单里的干员。"""
+    return [
+        (char_id, char_name)
+        for char_id, char_name in char_list
+        if char_id in voice_lang_dict
+        and char_id not in ["char_311_mudrok#1", "char_4087_ines"]
+    ]
+
+
+async def update_charword(
     wiki: Wiki,
     char_list: list[tuple[str, str]],
     skin_table: SkinTable,
@@ -406,14 +418,13 @@ def update_charword(
     _set_amiya_default_type(charword_table)
     lt = LangType(charword_table)
     voice_lang_dict = charword_table.voice_lang_dict or {}
-    for char_id, char_name in char_list:
-        if char_id not in voice_lang_dict or char_id in [
-            "char_311_mudrok#1",
-            "char_4087_ines",
-        ]:
-            continue
-
-        old = wiki.read(char_name + "/语音记录")
+    targets = _updatable(char_list, voice_lang_dict)
+    # 几百个语音记录页面一次批量读完;页面不存在时和原来的 wiki.read 一样抛 KeyError
+    old_pages = await wiki.read_many(
+        f"{char_name}/语音记录" for _, char_name in targets
+    )
+    for char_id, char_name in targets:
+        old = old_pages[char_name + "/语音记录"]
         # 海外服文本暂不写入,其它语言的台词沿用页面上已有的
         content = charword_data(
             char_id,
@@ -430,7 +441,7 @@ def update_charword(
             mode="update",
         )
         if old != content:
-            wiki.edit(
+            await wiki.edit(
                 title=char_name + "/语音记录",
                 text=content,
                 summary="update",
@@ -444,7 +455,7 @@ def update_charword(
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     charword_table: Annotated[CharWordTable, table("charword_table")],
@@ -460,11 +471,11 @@ def run(
             continue
         char_list.append((char_id, name.strip()))
 
-    create_charword(wiki, char_list, skin_table, charword_table)
+    await create_charword(wiki, char_list, skin_table, charword_table)
 
 
 @job
-def update(
+async def update(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     charword_table: Annotated[CharWordTable, table("charword_table")],
@@ -490,7 +501,7 @@ def update(
     # char_list.append(('char_1001_amiya2', '阿米娅(近卫)'))
     # char_list.append(('char_1037_amiya3', '阿米娅(医疗)'))
 
-    update_charword(
+    await update_charword(
         wiki,
         char_list,
         skin_table,

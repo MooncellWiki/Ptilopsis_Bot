@@ -114,7 +114,7 @@ def get_skin_info(char_key: str, skin_table: SkinTable, drawer: str) -> tuple[st
     return basic_info, skin_counter - 1
 
 
-def update_skin(
+async def update_skin(
     wiki: Wiki,
     character_table: dict[str, CharacterData],
     skin_table: SkinTable,
@@ -125,10 +125,12 @@ def update_skin(
     name_to_id = {(v.name or "").strip(): k for k, v in character_table.items()}
     name_to_id["阿米娅(近卫)"] = "char_1001_amiya2"
     name_to_id["阿米娅(医疗)"] = "char_1037_amiya3"
+    # 干员页面一次批量读完;页面不存在时和原来的 wiki.read 一样抛 KeyError
+    origin_texts = await wiki.read_many(skin_list)
     for skin_char_name in skin_list:
         skin_char_id = name_to_id[skin_char_name]
 
-        origin_text = wiki.read(skin_char_name)
+        origin_text = origin_texts[skin_char_name]
         if skin_char_id in ["char_1001_amiya2", "char_1037_amiya3"]:
             num1 = origin_text.find("\n|精英2介绍")
         else:
@@ -148,7 +150,7 @@ def update_skin(
 
         if origin_text != new_text:
             skin_data.append(f"1={skin_char_name}:skin={count}")
-            wiki.edit(
+            await wiki.edit(
                 title=skin_char_name,
                 text=new_text,
                 summary="update",
@@ -161,7 +163,7 @@ def update_skin(
             logger.info(f"Same: {skin_char_name}.")
 
     if skin_data != [] and skin_list is not None:
-        wiki.edit(
+        await wiki.edit(
             title="首页/亮点干员/新增皮肤/数据",
             text=",".join(skin_data),
             summary="update",
@@ -302,7 +304,7 @@ def update_skin(
 #     logger.info('Updated: {}.'.format('用户:Seniorious/skins'))
 
 
-def update_outfit_gallery(
+async def update_outfit_gallery(
     wiki: Wiki, skin_table: SkinTable, character_table: dict[str, CharacterData]
 ) -> None:
     skin_half_format = """{{{{{{{{时装回廊/半身像
@@ -387,12 +389,12 @@ def update_outfit_gallery(
         "{{#Widget:Brandbtn}}</div></div></div>"
     )
 
-    wiki.edit(title="模板:时装回廊", text=fin, summary="update")
+    await wiki.edit(title="模板:时装回廊", text=fin, summary="update")
     # logger.info(fin)
     logger.info("Updated: {}.".format("模板:时装回廊"))
 
 
-def update_outfit_brand(
+async def update_outfit_brand(
     wiki: Wiki, skin_table: SkinTable, character_table: dict[str, CharacterData]
 ) -> None:
     skin_half_format = """{{{{时装回廊/半身像
@@ -505,6 +507,8 @@ def update_outfit_brand(
         )
         skin_dict[skin_brand]["detail_content"][skin_name] = skin_detail_desc
 
+    # 品牌页面一次批量读完;不存在的页面不在结果里,下面按 KeyError 走整页重建
+    brand_pages = await wiki.read_many("时装回廊/" + brand for brand in skin_dict)
     for brand in skin_dict:
         pic = ""
         detail = ""
@@ -512,7 +516,7 @@ def update_outfit_brand(
         flag_new = False
 
         try:
-            old_content = wiki.read("时装回廊/" + brand)
+            old_content = brand_pages["时装回廊/" + brand]
 
             # range不+1了, 有一张挪出来变default
             result = re.search(r"\|default=([\s\S]+?)\n\|", old_content)
@@ -570,7 +574,7 @@ def update_outfit_brand(
             detail_content=detail,
         )
         if content != old_content:
-            wiki.edit(
+            await wiki.edit(
                 title="时装回廊/" + brand,
                 text=content,
                 summary="init" if flag_new else "update",
@@ -582,7 +586,7 @@ def update_outfit_brand(
                 logger.info("Updated: {}.".format("时装回廊/" + brand))
 
 
-def update_logo_link(wiki: Wiki, skin_table: SkinTable) -> None:
+async def update_logo_link(wiki: Wiki, skin_table: SkinTable) -> None:
     logo_set = {
         name
         for s in (skin_table.char_skins or {}).values()
@@ -594,7 +598,7 @@ def update_logo_link(wiki: Wiki, skin_table: SkinTable) -> None:
             link_title = f"文件:Skin logo {logo}.png"
             x = logo.find("/")
             content = f"#redirect [[文件:Skin logo {logo[:x]}.png]]"
-            wiki.edit(
+            await wiki.edit(
                 title=link_title,
                 text=content,
                 summary="redirect skin logo",
@@ -604,12 +608,12 @@ def update_logo_link(wiki: Wiki, skin_table: SkinTable) -> None:
 
 
 @job
-def run(
+async def run(
     wiki: Wiki,
     character_table: Annotated[dict[str, CharacterData], table("character_table")],
     skin_table: Annotated[SkinTable, table("skin_table")],
 ) -> None:
-    gallery = wiki.read("模板:时装回廊")
+    gallery = await wiki.read("模板:时装回廊")
     old_skin: list[str] = []
     result = re.findall(r"{{时装回廊/半身像\n([\s\S]*?)\n}}", gallery)
     for skin in result:
@@ -633,10 +637,10 @@ def run(
             logger.info(f"新时装：{k}")
     # skin_list = ['阿米娅(近卫)']
     if skin_list is not None:
-        update_skin(wiki, character_table, skin_table, skin_list)
+        await update_skin(wiki, character_table, skin_table, skin_list)
 
     # update_randomFig(wiki, character_table, skin_table)
     # update_skin_handbook(wiki, character_table, skin_table)
-    update_outfit_gallery(wiki, skin_table, character_table)
-    update_outfit_brand(wiki, skin_table, character_table)
-    update_logo_link(wiki, skin_table)
+    await update_outfit_gallery(wiki, skin_table, character_table)
+    await update_outfit_brand(wiki, skin_table, character_table)
+    await update_logo_link(wiki, skin_table)

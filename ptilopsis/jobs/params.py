@@ -10,7 +10,7 @@
     )
 
     @job
-    def run(
+    async def run(
         wiki: Wiki,
         character_table: CharacterTable,
         item_table: ItemTable,
@@ -21,7 +21,7 @@
         rts: RichText,
         char_list: Annotated[list[str], category("分类:干员")],
     ) -> None:
-        level = levels(stage.level_id)
+        level = await levels(stage.level_id)
         ...
 
 每张表都注册在 :data:`TABLES` 里,``XxxTable`` 这类别名就是"读取 + 校验成
@@ -31,6 +31,7 @@
 
 import csv
 import io
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
 
@@ -131,8 +132,8 @@ def gamedata(path: str, model: Any = None, region: str = "CN") -> Any:
     if model is not None:
         validate = getattr(model, "validate_python", None) or model.model_validate
 
-    def dependency(data: GameData) -> Any:
-        raw = data.get(path, region)
+    async def dependency(data: GameData) -> Any:
+        raw = await data.get(path, region)
         return validate(raw) if validate is not None else raw
 
     dependency.__qualname__ = f"gamedata({path!r}, region={region!r})"
@@ -142,8 +143,8 @@ def gamedata(path: str, model: Any = None, region: str = "CN") -> Any:
 def gamedata_text(path: str, region: str = "CN") -> Any:
     """``gamedata/<path>`` 的原始文本(剧情等非 JSON 文件)。"""
 
-    def dependency(data: GameData) -> str:
-        return data.get_txt(path, region)
+    async def dependency(data: GameData) -> str:
+        return await data.get_txt(path, region)
 
     dependency.__qualname__ = f"gamedata_text({path!r})"
     return Depends(dependency)
@@ -314,19 +315,26 @@ class LevelLoader:
     def path(level_id: str) -> str:
         return f"levels/{level_id.lower()}.json"
 
-    def __call__(self, level_id: str) -> level_data.LevelData:
-        return level_data.LevelData.model_validate(self.raw(level_id))
+    async def __call__(self, level_id: str) -> level_data.LevelData:
+        return level_data.LevelData.model_validate(await self.raw(level_id))
 
-    def raw(self, level_id: str) -> dict[str, Any]:
+    async def raw(self, level_id: str) -> dict[str, Any]:
         """未经校验的原始 JSON,给要把整个文件原样发布到 wiki 的 job 用。"""
 
-        return self._data.get(self.path(level_id), self._region)
+        return await self._data.get(self.path(level_id), self._region)
 
-    def list_ids(self, path: str) -> list[str]:
+    async def prefetch(self, level_ids: Iterable[str]) -> None:
+        """并发把这些关卡文件下载进缓存,之后逐个读取不再走网络。"""
+
+        await self._data.prefetch(
+            (self.path(level_id) for level_id in level_ids), self._region
+        )
+
+    async def list_ids(self, path: str) -> list[str]:
         """``gamedata/<path>`` 下全部关卡文件的 ``levelId``(相对 levels/ 的路径)。"""
 
         ids = []
-        for file in self._data.list_files(path, self._region):
+        for file in await self._data.list_files(path, self._region):
             if file.startswith("levels/") and file.endswith(".json"):
                 ids.append(file[len("levels/") : -len(".json")])
         return ids
@@ -374,10 +382,10 @@ RichTextHtml = Annotated[richtext.RichText, Depends(_rich_text_html)]
 # ---- wiki --------------------------------------------------------------
 
 
-def _char_id_table(wiki: Wiki) -> dict[str, dict[str, Any]]:
+async def _char_id_table(wiki: Wiki) -> dict[str, dict[str, Any]]:
     """wiki 上维护的 ``干员一览/干员id`` 表:``{干员名: {id, approach, date}}``。"""
 
-    reader = csv.DictReader(io.StringIO(wiki.read("干员一览/干员id")))
+    reader = csv.DictReader(io.StringIO(await wiki.read("干员一览/干员id")))
     return {
         row["name"]: {
             "id": int(row["sortId"]),
@@ -395,8 +403,8 @@ CharIdTable = Annotated[dict[str, dict[str, Any]], Depends(_char_id_table)]
 def category(name: str) -> Any:
     """wiki 分类 ``name`` 下的全部页面标题。"""
 
-    def dependency(wiki: Wiki) -> list[str]:
-        return wiki.category(name)
+    async def dependency(wiki: Wiki) -> list[str]:
+        return await wiki.category(name)
 
     dependency.__qualname__ = f"category({name!r})"
     return Depends(dependency)
