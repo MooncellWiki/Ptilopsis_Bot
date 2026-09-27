@@ -30,9 +30,23 @@ def test_parse_skips_empty_and_fully_blocked() -> None:
     assert parse_ratelimits({"blocked": {"user": {"hits": 0, "seconds": 60}}}) == {}
 
 
-def test_negative_safety_is_rejected() -> None:
+def test_parse_tolerates_malformed_entries() -> None:
+    # 单个类别的字段缺失 / 非数字只跳过该条,不影响其余动作
+    ratelimits = {
+        "edit": {"user": {"hits": "abc", "seconds": 60}, "ip": {"hits": 8}},
+        "purge": {"ip": {"hits": 30, "seconds": 60}},
+    }
+    assert parse_ratelimits(ratelimits) == {"purge": RateLimit(30, 60)}
+
+
+def test_constructor_validates_arguments() -> None:
+    with pytest.raises(ValueError, match="limit"):
+        TokenBucket(0, 60)
+    with pytest.raises(ValueError, match="period"):
+        TokenBucket(10, 0)
     with pytest.raises(ValueError, match="safety"):
         TokenBucket(10, 60, safety=0)
+    TokenBucket(None, 0.0)  # 无限制的桶不要求窗口
 
 
 async def test_unlimited_bucket_never_waits() -> None:

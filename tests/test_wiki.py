@@ -1,13 +1,21 @@
-"""Wiki 客户端:登录、批量读取、csrf token 缓存与 badtoken 重试,全部离线。"""
+"""Wiki 客户端:登录、批量读取、csrf token 缓存、badtoken 重试与限速,全部离线。"""
 
 import json
+import time
 from typing import Any
 from urllib.parse import parse_qs
 
+import anyio
 import httpx2
 import pytest
 
-from ptilopsis.utils.wiki import READ_CHUNK, PageRevision, Wiki, WikiError
+from ptilopsis.utils.wiki import (
+    MAX_RETRY_AFTER,
+    READ_CHUNK,
+    PageRevision,
+    Wiki,
+    WikiError,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -27,10 +35,14 @@ class FakeMediaWiki:
         """设置后所有 edit 都返回这个错误。"""
         self.ratelimits: dict[str, Any] = {}
         """userinfo 查询返回的 ratelimits;默认为空(noratelimit 账号)。"""
+        self.fail_userinfo = False
+        """设置后 userinfo 查询直接抛异常,模拟配额查询失败。"""
         self.ratelimit_quota = 0
         """接下来这么多个 edit 请求返回 ratelimited 错误。"""
         self.throttle = 0
-        """接下来的这些请求返回 429 + Retry-After: 0。"""
+        """接下来的这些请求返回 429,等待秒数取 ``retry_after``。"""
+        self.retry_after: str | None = "0"
+        """429 响应的 Retry-After 头;None 表示不带这个头。"""
 
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         params = {k: v[0] for k, v in parse_qs(request.url.query.decode()).items()}
@@ -39,7 +51,10 @@ class FakeMediaWiki:
         self.requests.append(params)
         if self.throttle > 0:
             self.throttle -= 1
-            return httpx2.Response(429, headers={"retry-after": "0"})
+            headers = (
+                {} if self.retry_after is None else {"retry-after": self.retry_after}
+            )
+            return httpx2.Response(429, headers=headers)
         return httpx2.Response(200, content=json.dumps(self.handle(params)).encode())
 
     def handle(self, p: dict[str, str]) -> Any:
@@ -50,6 +65,8 @@ class FakeMediaWiki:
             self.token_serial += 1
             return {"query": {"tokens": {"csrftoken": f"CSRF{self.token_serial}"}}}
         if action == "query" and p.get("meta") == "userinfo":
+            if self.fail_userinfo:
+                raise KeyError("userinfo exploded")
             return {
                 "query": {
                     "userinfo": {"id": 1, "name": "bot", "ratelimits": self.ratelimits}
@@ -266,6 +283,11 @@ async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
     server.ratelimit_quota = 1
     await wiki.edit(title="页面", text="1")
     assert len(server.edits) == 1  # 第一次被拒,冷却后重试成功
+    # 撞限重试不该重新取 token(只有 badtoken 才失效)
+    csrf_queries = [
+        r for r in server.requests if r.get("meta") == "tokens" and "type" not in r
+    ]
+    assert len(csrf_queries) == 1
 
     # 连续撞限:三次尝试全被拒后照常抛出
     server.ratelimit_quota = 3
@@ -274,8 +296,61 @@ async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
     assert len(server.edits) == 1
 
 
-async def test_get_sleeps_on_429_and_retries() -> None:
+async def test_write_min_interval_spaces_writes() -> None:
+    server = FakeMediaWiki({})
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = Wiki(API, "product", client=http, write_min_interval=0.2)
+    start = time.monotonic()
+    await wiki.edit(title="页面", text="1")
+    await wiki.edit(title="页面", text="2")
+    # 第二次写要补足与上一次写请求的间隔
+    assert time.monotonic() - start >= 0.2
+    assert len(server.edits) == 2
+
+
+async def test_login_survives_rate_limit_query_failure() -> None:
+    server = FakeMediaWiki({})
+    server.ratelimits = {"edit": {"user": {"hits": 90, "seconds": 60}}}
+    server.fail_userinfo = True
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+    # 配额查询失败只是放弃限速,登录照常成功
+    assert wiki._buckets == {}
+
+
+async def test_get_retries_after_429() -> None:
     wiki, server = make_wiki({"a": "A"})
     server.throttle = 1  # Retry-After: 0,不睡;由 _transient 等 1s 后重试
     assert await wiki.read("a") == "A"
     assert server.requests[-1]["titles"] == "a"
+
+
+async def _slept_429(monkeypatch: pytest.MonkeyPatch, retry_after: str | None) -> list:
+    """让下一个请求返回 429 并拦截 anyio.sleep,返回实际睡的秒数列表。"""
+    slept: list[float] = []
+
+    async def record_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr(anyio, "sleep", record_sleep)
+    wiki, server = make_wiki({"a": "A"})
+    server.throttle = 1
+    server.retry_after = retry_after
+    assert await wiki.read("a") == "A"
+    return slept
+
+
+async def test_429_sleeps_retry_after_header(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert await _slept_429(monkeypatch, "7") == [7.0]
+
+
+async def test_429_caps_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert await _slept_429(monkeypatch, "86400") == [float(MAX_RETRY_AFTER)]
+
+
+async def test_429_without_header_uses_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    assert await _slept_429(monkeypatch, None) == [60.0]

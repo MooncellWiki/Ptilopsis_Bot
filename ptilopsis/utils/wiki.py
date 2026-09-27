@@ -68,12 +68,16 @@ def _transient(name: str) -> Any:
     )
 
 
+MAX_RETRY_AFTER = 300
+"""429 时按 ``Retry-After`` 等待的上限(秒):等更久说明问题不在节奏,直接失败更好。"""
+
+
 async def _respect_retry_after(resp: httpx2.Response) -> None:
     """HTTP 429(CDN / 反代层限流)时按 ``Retry-After`` 头等待后再重试。
 
     这和 MediaWiki 自己的配额无关;等待后照常 ``raise_for_status``,抛出的
     异常属于 :class:`httpx2.HTTPError`,会被 ``_transient`` 重试。头缺失或
-    不是秒数时按默认冷却处理。
+    不是秒数时按默认冷却处理,过长的值截到上限。
     """
     if resp.status_code != 429:
         return
@@ -81,6 +85,7 @@ async def _respect_retry_after(resp: httpx2.Response) -> None:
         delay = int(resp.headers.get("retry-after", ""))
     except ValueError:
         delay = int(DEFAULT_COOLDOWN)
+    delay = min(delay, MAX_RETRY_AFTER)
     if delay > 0:
         logger.warning(f"HTTP 429; sleeping {delay}s before next attempt")
         await anyio.sleep(delay)
@@ -195,30 +200,33 @@ class Wiki:
         return token
 
     async def _pace_write(self, action: str) -> None:
-        """写前限速:取该动作的令牌桶,再保证写间隔不小于配置下限。"""
+        """写前限速:取该动作的令牌桶,再保证与上一次写请求的间隔不小于下限。"""
         await self._buckets.get(action, self._default_bucket).acquire()
         if self._write_min_interval > 0:
             delay = self._write_min_interval - (time.monotonic() - self._last_write)
             if delay > 0:
                 await anyio.sleep(delay)
-        self._last_write = time.monotonic()
 
     async def _write(self, action: str, data: dict[str, Any], **kwargs: Any) -> Any:
-        """带 csrf token 的写操作;token 失效或撞限时等待后重试一次。"""
+        """带 csrf token 的写操作;token 失效时刷新重试一次,撞限时冷却后重试。"""
+        refresh_token = False
         async with self._write_lock:
             for attempt in range(3):
                 await self._pace_write(action)
                 post_data = {
                     "action": action,
-                    "token": await self.csrf_token(refresh=attempt > 0),
+                    "token": await self.csrf_token(refresh=refresh_token),
                     **data,
                 }
+                # 间隔按请求实际发出的时刻计,不含取 token 的耗时
+                self._last_write = time.monotonic()
                 res = await self._post(post_data, **kwargs)
                 error = res.get("error")
                 if error is None:
                     return res
                 code = error.get("code", "")
-                if code == "badtoken" and attempt == 0:
+                if code == "badtoken" and attempt < 2:
+                    refresh_token = True
                     continue
                 if code == "ratelimited" and attempt < 2:
                     bucket = self._buckets.get(action, self._default_bucket)

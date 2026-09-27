@@ -35,17 +35,23 @@ def parse_ratelimits(
 ) -> dict[str, RateLimit]:
     """把 ``userinfo.ratelimits`` 转成 ``{action: RateLimit}``。
 
-    同一动作可能同时适用多个类别(user / newbie / ip ...),服务器按其中最紧
-    的一条计,这里同样只保留补充速率最低的一条。``hits <= 0`` 表示动作被完全
-    禁止而不是限速,本地无从等待,跳过。
+    同一动作可能同时适用多个类别(user / newbie / ip ...),服务器对每条都
+    单独计数,这里只保留补充速率最低的一条建桶;满桶的初始令牌数可能超过
+    突发上限更小的那条计数器,启动时的这部分漏网由撞限冷却兜底。
+    ``hits <= 0`` 表示动作被完全禁止而不是限速,本地无从等待,跳过。字段
+    缺失或不是数字的类别单独跳过,不影响其它条目。
     """
     result: dict[str, RateLimit] = {}
     for action, categories in ratelimits.items():
-        candidates = [
-            RateLimit(int(cat["hits"]), float(cat["seconds"]))
-            for cat in categories.values()
-            if int(cat.get("hits", 0)) > 0 and float(cat.get("seconds", 0)) > 0
-        ]
+        candidates: list[RateLimit] = []
+        for cat in categories.values():
+            try:
+                limit = int(cat["hits"])
+                period = float(cat["seconds"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if limit > 0 and period > 0:
+                candidates.append(RateLimit(limit, period))
         if candidates:
             result[action] = min(candidates, key=lambda rl: rl.limit / rl.period)
     return result
@@ -59,11 +65,16 @@ class TokenBucket:
     """
 
     def __init__(self, limit: int | None, period: float, safety: float = 1.0) -> None:
-        if limit and safety <= 0:
+        if limit is not None and limit <= 0:
+            # hits=0 是"动作被禁止",不是一个可等待的限速
+            raise ValueError("limit must be positive, or None for unlimited")
+        if limit is not None and period <= 0:
+            raise ValueError("period must be positive when the bucket is limited")
+        if safety <= 0:
             raise ValueError("safety must be positive")
         self.period = period
-        self._capacity = float(limit) if limit else math.inf
-        self._rate = limit * safety / period if limit else math.inf
+        self._capacity = float(limit) if limit is not None else math.inf
+        self._rate = limit * safety / period if limit is not None else math.inf
         self._tokens = self._capacity
         self._updated = time.monotonic()
 
