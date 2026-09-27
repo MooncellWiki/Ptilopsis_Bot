@@ -22,6 +22,7 @@ MODE_JOBS: dict[str, list[str]] = {
         "skin.run",
         "furni.run",
         "item.run",
+        "relic.run",
         "newModule.run",
         "activity.run",
         "mission.run",
@@ -46,6 +47,7 @@ MODE_JOBS: dict[str, list[str]] = {
     "demand": [],
     "jp": ["charword.update", "update_jp.run"],
     "weedy": ["weedy.run"],
+    "relic": ["relic.run"],
 }
 """各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并。"""
 
@@ -53,9 +55,11 @@ MODES = list(MODE_JOBS)
 
 
 def jobs_for(modes: tuple[str, ...]) -> list[str]:
-    return [
-        name for mode, names in MODE_JOBS.items() if mode in modes for name in names
-    ]
+    return list(
+        dict.fromkeys(
+            name for mode, names in MODE_JOBS.items() if mode in modes for name in names
+        )
+    )
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
@@ -96,13 +100,35 @@ def jobs_for(modes: tuple[str, ...]) -> list[str]:
     help="Wiki 客户端预览模式，仅打印将要提交的内容，不实际写入",
 )
 @click.argument("modes", nargs=-1, type=click.Choice(MODES))
+@click.option(
+    "--relic-source",
+    type=click.Path(exists=True, dir_okay=False),
+    help="收藏品本地 JSON；省略时直接读取当前 CN 游戏资源",
+)
+@click.option(
+    "--relic-state",
+    type=click.Path(dir_okay=False),
+    help="收藏品长期维护状态路径；可沿用旧脚本的 state 文件",
+)
+@click.option(
+    "--relic-theme",
+    "relic_themes",
+    type=click.IntRange(min=1),
+    multiple=True,
+    help="只维护指定 rogue_N 主题编号的收藏品；可重复指定，覆盖 relic.themes 配置",
+)
 def main(
     check_mode: str | None,
     remote: bool,
     force: bool,
     dev: bool,
     modes: tuple[str, ...],
+    relic_source: str | None,
+    relic_state: str | None,
+    relic_themes: tuple[int, ...],
 ) -> None:
+    if relic_themes and "relic.run" not in jobs_for(modes):
+        raise click.UsageError("--relic-theme 需要 relic 或 regular 模式")
     settings = get_settings()
     if settings.sentry_dsn:
         sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=1.0)
@@ -117,6 +143,17 @@ def main(
         game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
         game_config = config
+    if relic_source is not None or relic_state is not None or relic_themes:
+        relic_options = game_config.relic.model_dump()
+        if relic_source is not None:
+            relic_options["source_file"] = relic_source
+        if relic_state is not None:
+            relic_options["state_file"] = relic_state
+        if relic_themes:
+            relic_options["themes"] = sorted(set(relic_themes))
+        game_config = game_config.model_copy(
+            update={"relic": type(game_config.relic).model_validate(relic_options)}
+        )
 
     # 网络 I/O 全部在 anyio 事件循环里跑（与 torappu 一致）；git 操作留在外面
     should_push = anyio.run(
@@ -135,11 +172,16 @@ async def _amain(
     modes: tuple[str, ...],
 ) -> bool:
     """检查版本、跑 job；返回是否需要提交推送。"""
+    partial_relic_run = bool(game_config.relic.themes) and "relic.run" in jobs_for(
+        modes
+    )
+    advance_version = not dev and not partial_relic_run
     gameData = GameData(config=game_config)
     try:
         if check_mode == "cn":
             if not await gameData.unpacker.check_update() and not force:
-                gameData.unpacker.commit_version()
+                if advance_version:
+                    gameData.unpacker.commit_version()
                 logger.info("No version update. Program exit.")
                 return False
         elif check_mode == "jp":
@@ -147,39 +189,46 @@ async def _amain(
             sign2 = await gameData.unpacker.check_update("US")
             await gameData.unpacker.check_update("KR")
             if not sign1 and not sign2:
-                gameData.unpacker.commit_version()
+                if advance_version:
+                    gameData.unpacker.commit_version()
                 logger.info("No version update. Program exit.")
                 return False
         elif check_mode == "global":
             await gameData.unpacker.check_all_update()
-            gameData.unpacker.commit_version()
+            if advance_version:
+                gameData.unpacker.commit_version()
             return False
 
         if not modes:
-            gameData.unpacker.commit_version()
-            return True
+            if advance_version:
+                gameData.unpacker.commit_version()
+            return not dev
 
         username, password = settings.require_wiki_credentials()
         wiki = await Wiki.login(
-            config.api_url,
+            game_config.api_url,
             username,
             password,
             "dev" if dev else "product",
         )
         try:
-            # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
-            # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
-            gameData.unpacker.commit_version()
-
             discover_jobs()
             failed = await run_jobs(jobs_for(modes), JobContext(wiki, gameData))
             if failed:
                 logger.error(f"{len(failed)} job(s) failed: {', '.join(failed)}")
+                raise click.ClickException(
+                    "任务失败，未推进资源版本：" + ", ".join(failed)
+                )
+            # 局部主题更新也不消费整个版本，后续全量运行仍能处理剩余主题。
+            if advance_version:
+                gameData.unpacker.commit_version()
+            elif partial_relic_run:
+                logger.info("本轮仅维护指定收藏品主题，不推进整体资源版本。")
         finally:
             await wiki.aclose()
     finally:
         await gameData.aclose()
-    return True
+    return not dev
 
 
 def _push_remote(remote: bool) -> None:

@@ -7,8 +7,9 @@ Wiki 登录凭据、Sentry DSN 等敏感信息一律走环境变量（本地开�
 import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -38,6 +39,31 @@ class ServerConfig(BaseModel):
     """需要按 FlatBuffers 解析的表名，仅在 enable_flat_buffers 为真时有意义。"""
 
 
+class RelicConfig(BaseModel):
+    """自动收藏品任务；相对路径以运行目录为准。"""
+
+    model_config = ConfigDict(
+        alias_generator=to_camel, populate_by_name=True, extra="forbid"
+    )
+    source_file: Path | None = None
+    state_file: Path = Path("state/relic-pages.json")
+    interval: float = Field(default=2.0, ge=1.0, allow_inf_nan=False)
+    themes: list[Annotated[int, Field(gt=0, strict=True)]] = Field(default_factory=list)
+    """游戏 rogue_N 编号；空列表维护全部主题，不是页面中的主题参数序号。"""
+
+    @model_validator(mode="before")
+    @classmethod
+    def ignore_retired_report_dir(cls, value):
+        """Accept old configuration without recreating page reports on disk."""
+        if isinstance(value, dict):
+            return {
+                key: item
+                for key, item in value.items()
+                if key not in {"reportDir", "report_dir"}
+            }
+        return value
+
+
 class Config(BaseModel):
     """config.json 的整体结构，不包含任何敏感信息。"""
 
@@ -55,6 +81,7 @@ class Config(BaseModel):
     """按服务器代号索引的配置。"""
     chat_mask_list: list[str]
     """历史上出现过的 chatMask，解密时逐个尝试。"""
+    relic: RelicConfig = Field(default_factory=RelicConfig)
 
 
 class Settings(BaseSettings):

@@ -1,5 +1,9 @@
 name: main-cn-force
 
+concurrency:
+  group: ptilopsis-cn-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   workflow_dispatch:
 
@@ -24,3 +28,17 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         uv run ptil --check --remote --force new regular special
+
+    - name: Preserve collectible maintenance state
+      if: always()
+      shell: bash
+      run: |
+        if [ -f state/relic-pages.json ]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- state/relic-pages.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Preserve collectible maintenance state"
+            git push
+          fi
+        fi
