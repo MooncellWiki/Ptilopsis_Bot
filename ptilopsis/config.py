@@ -8,7 +8,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic.alias_generators import to_camel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -78,6 +78,10 @@ class Settings(BaseSettings):
     """Wiki 登录密码，建议使用 Special:BotPasswords 生成，对应 PTILOPSIS_PASSWORD。"""
     sentry_dsn: str = ""
     """Sentry DSN，对应 PTILOPSIS_SENTRY_DSN，留空则不启用上报。"""
+    rate_safety: float = Field(default=0.8, gt=0.0, le=1.0)
+    """本地令牌桶相对配额的补充速率比例，对应 PTILOPSIS_RATE_SAFETY，越小越保守。"""
+    write_min_interval: float = Field(default=0.0, ge=0.0)
+    """两次写请求的最小间隔秒数，对应 PTILOPSIS_WRITE_MIN_INTERVAL，默认不限制。"""
 
     def require_wiki_credentials(self) -> tuple[str, str]:
         """返回 (username, password)，缺失时抛出带指引的异常。"""

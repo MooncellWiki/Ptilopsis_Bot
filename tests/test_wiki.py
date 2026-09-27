@@ -25,12 +25,21 @@ class FakeMediaWiki:
         self.reject_tokens: set[str] = set()
         self.error: dict[str, str] | None = None
         """设置后所有 edit 都返回这个错误。"""
+        self.ratelimits: dict[str, Any] = {}
+        """userinfo 查询返回的 ratelimits;默认为空(noratelimit 账号)。"""
+        self.ratelimit_quota = 0
+        """接下来这么多个 edit 请求返回 ratelimited 错误。"""
+        self.throttle = 0
+        """接下来的这些请求返回 429 + Retry-After: 0。"""
 
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         params = {k: v[0] for k, v in parse_qs(request.url.query.decode()).items()}
         if request.method == "POST":
             params |= {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
         self.requests.append(params)
+        if self.throttle > 0:
+            self.throttle -= 1
+            return httpx2.Response(429, headers={"retry-after": "0"})
         return httpx2.Response(200, content=json.dumps(self.handle(params)).encode())
 
     def handle(self, p: dict[str, str]) -> Any:
@@ -40,6 +49,12 @@ class FakeMediaWiki:
                 return {"query": {"tokens": {"logintoken": "LOGIN"}}}
             self.token_serial += 1
             return {"query": {"tokens": {"csrftoken": f"CSRF{self.token_serial}"}}}
+        if action == "query" and p.get("meta") == "userinfo":
+            return {
+                "query": {
+                    "userinfo": {"id": 1, "name": "bot", "ratelimits": self.ratelimits}
+                }
+            }
         if action == "login":
             ok = p["lgpassword"] == "secret" and p["lgtoken"] == "LOGIN"
             return {
@@ -52,6 +67,11 @@ class FakeMediaWiki:
         if action == "edit":
             if self.error is not None:
                 return {"error": self.error}
+            if self.ratelimit_quota > 0:
+                self.ratelimit_quota -= 1
+                return {
+                    "error": {"code": "ratelimited", "info": "Rate limit exceeded."}
+                }
             if p["token"] in self.reject_tokens:
                 return {"error": {"code": "badtoken", "info": "Invalid CSRF token."}}
             self.edits.append(p)
@@ -103,7 +123,9 @@ async def test_login_success_and_failure() -> None:
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     wiki = await Wiki.login(API, "bot", "secret", client=http)
     assert isinstance(wiki, Wiki)
-    assert [r["action"] for r in server.requests] == ["query", "login"]
+    # 登录成功后还会查一次 ratelimits
+    assert [r["action"] for r in server.requests] == ["query", "login", "query"]
+    assert server.requests[-1]["uiprop"] == "ratelimits"
 
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     with pytest.raises(RuntimeError, match="Incorrect password"):
@@ -221,3 +243,39 @@ async def test_dev_mode_does_not_write() -> None:
     assert await wiki.edit(title="页面", text="1") is None
     assert await wiki.protect(title="页面", protections="edit=sysop") is None
     assert server.requests == []
+
+
+async def test_login_builds_buckets_from_discovered_limits() -> None:
+    server = FakeMediaWiki({})
+    server.ratelimits = {"edit": {"user": {"hits": 90, "seconds": 60}}}
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+    edit_bucket = wiki._buckets["edit"]
+    assert (edit_bucket._capacity, edit_bucket.period) == (90.0, 60.0)
+    # safety 0.8 -> 令牌补充速率 90 * 0.8 / 60 = 1.2/s
+    assert edit_bucket._rate == pytest.approx(1.2)
+
+
+async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
+    # 窗口取小值,让冷却只睡 0.05s
+    server = FakeMediaWiki({})
+    server.ratelimits = {"edit": {"user": {"hits": 100, "seconds": 0.05}}}
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+
+    server.ratelimit_quota = 1
+    await wiki.edit(title="页面", text="1")
+    assert len(server.edits) == 1  # 第一次被拒,冷却后重试成功
+
+    # 连续撞限:三次尝试全被拒后照常抛出
+    server.ratelimit_quota = 3
+    with pytest.raises(WikiError, match="ratelimited"):
+        await wiki.edit(title="页面", text="2")
+    assert len(server.edits) == 1
+
+
+async def test_get_sleeps_on_429_and_retries() -> None:
+    wiki, server = make_wiki({"a": "A"})
+    server.throttle = 1  # Retry-After: 0,不睡;由 _transient 等 1s 后重试
+    assert await wiki.read("a") == "A"
+    assert server.requests[-1]["titles"] == "a"

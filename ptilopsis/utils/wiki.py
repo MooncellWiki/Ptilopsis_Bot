@@ -5,9 +5,11 @@
 50 个一批合并成一个 ``action=query``;要在读到的版本上改写页面时用
 :meth:`Wiki.read_revisions`,它额外带回版本号与时间戳供编辑冲突检测。
 csrf token 按会话缓存,只在服务器报 ``badtoken`` 时重新取。编辑类操作用锁
-串行,避免并发写页面。
+串行,避免并发写页面;登录后还会查询账号适用的写配额并本地限速,撞限时
+冷却重试(见 :mod:`ptilopsis.utils.ratelimit`)。
 """
 
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
@@ -19,6 +21,11 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
+from ptilopsis.utils.ratelimit import (
+    DEFAULT_COOLDOWN,
+    TokenBucket,
+    parse_ratelimits,
+)
 
 __all__ = ["PageRevision", "Wiki", "WikiError"]
 
@@ -61,18 +68,45 @@ def _transient(name: str) -> Any:
     )
 
 
+async def _respect_retry_after(resp: httpx2.Response) -> None:
+    """HTTP 429(CDN / 反代层限流)时按 ``Retry-After`` 头等待后再重试。
+
+    这和 MediaWiki 自己的配额无关;等待后照常 ``raise_for_status``,抛出的
+    异常属于 :class:`httpx2.HTTPError`,会被 ``_transient`` 重试。头缺失或
+    不是秒数时按默认冷却处理。
+    """
+    if resp.status_code != 429:
+        return
+    try:
+        delay = int(resp.headers.get("retry-after", ""))
+    except ValueError:
+        delay = int(DEFAULT_COOLDOWN)
+    if delay > 0:
+        logger.warning(f"HTTP 429; sleeping {delay}s before next attempt")
+        await anyio.sleep(delay)
+
+
 class Wiki:
     def __init__(
         self,
         api_url: str,
         mode: str = "product",
         client: httpx2.AsyncClient | None = None,
+        rate_safety: float = 0.8,
+        write_min_interval: float = 0.0,
     ) -> None:
         self.api_url = api_url
         self.mode = mode
         self.client = client or make_client()
         self._csrf_token: str | None = None
         self._write_lock = anyio.Lock()
+        self._rate_safety = rate_safety
+        self._write_min_interval = write_min_interval
+        self._buckets: dict[str, TokenBucket] = {}
+        """登录后发现配额后,每个写动作一个桶;查不到时全是 passthrough。"""
+        self._default_bucket = TokenBucket(None, 0.0)
+        self._read_bucket = TokenBucket(None, 0.0)
+        self._last_write = 0.0
 
     @classmethod
     async def login(
@@ -82,9 +116,11 @@ class Wiki:
         password: str,
         mode: str = "product",
         client: httpx2.AsyncClient | None = None,
+        rate_safety: float = 0.8,
+        write_min_interval: float = 0.0,
     ) -> "Wiki":
         """登录并返回客户端;登录失败抛 RuntimeError。"""
-        wiki = cls(api_url, mode, client)
+        wiki = cls(api_url, mode, client, rate_safety, write_min_interval)
         token = await wiki._query({"meta": "tokens", "type": "login"})
         res = await wiki._post(
             {
@@ -96,6 +132,7 @@ class Wiki:
         )
         if res["login"]["result"] != "Success":
             raise RuntimeError(res["login"]["reason"])
+        await wiki._discover_rate_limits()
         return wiki
 
     async def aclose(self) -> None:
@@ -105,7 +142,9 @@ class Wiki:
 
     @_transient("wiki.get")
     async def _get(self, params: dict[str, Any]) -> dict[str, Any]:
+        await self._read_bucket.acquire()
         resp = await self.client.get(self.api_url, params={"format": "json", **params})
+        await _respect_retry_after(resp)
         resp.raise_for_status()
         return resp.json()
 
@@ -114,8 +153,36 @@ class Wiki:
         resp = await self.client.post(
             self.api_url, data={"format": "json", **data}, **kwargs
         )
+        await _respect_retry_after(resp)
         resp.raise_for_status()
         return resp.json()
+
+    async def _discover_rate_limits(self) -> None:
+        """登录后查一次当前账号适用的写配额并建桶;查不到就保持不限速。"""
+        try:
+            res = await self._query({"meta": "userinfo", "uiprop": "ratelimits"})
+            limits = parse_ratelimits(res["query"]["userinfo"].get("ratelimits") or {})
+        except Exception:
+            # 配额只是护栏,查询失败不该挡住任务;真撞了还有 ratelimited 重试兜底
+            logger.opt(exception=True).warning(
+                "Rate limit discovery failed; writes stay unpaced"
+            )
+            return
+        self._buckets = {
+            action: TokenBucket(rl.limit, rl.period, safety=self._rate_safety)
+            for action, rl in limits.items()
+        }
+        if read := limits.get("read"):
+            self._read_bucket = TokenBucket(
+                read.limit, read.period, safety=self._rate_safety
+            )
+        detail = (
+            ", ".join(
+                f"{a} {rl.limit}/{rl.period:g}s" for a, rl in sorted(limits.items())
+            )
+            or "none (noratelimit?)"
+        )
+        logger.info(f"Rate limits for this account: {detail}")
 
     async def _query(self, params: dict[str, Any]) -> dict[str, Any]:
         return await self._get({"action": "query", **params})
@@ -127,10 +194,20 @@ class Wiki:
             token = self._csrf_token = res["query"]["tokens"]["csrftoken"]
         return token
 
+    async def _pace_write(self, action: str) -> None:
+        """写前限速:取该动作的令牌桶,再保证写间隔不小于配置下限。"""
+        await self._buckets.get(action, self._default_bucket).acquire()
+        if self._write_min_interval > 0:
+            delay = self._write_min_interval - (time.monotonic() - self._last_write)
+            if delay > 0:
+                await anyio.sleep(delay)
+        self._last_write = time.monotonic()
+
     async def _write(self, action: str, data: dict[str, Any], **kwargs: Any) -> Any:
-        """带 csrf token 的写操作;token 失效时刷新后重试一次。"""
+        """带 csrf token 的写操作;token 失效或撞限时等待后重试一次。"""
         async with self._write_lock:
-            for attempt in range(2):
+            for attempt in range(3):
+                await self._pace_write(action)
                 post_data = {
                     "action": action,
                     "token": await self.csrf_token(refresh=attempt > 0),
@@ -140,9 +217,17 @@ class Wiki:
                 error = res.get("error")
                 if error is None:
                     return res
-                if error.get("code") == "badtoken" and attempt == 0:
+                code = error.get("code", "")
+                if code == "badtoken" and attempt == 0:
                     continue
-                raise WikiError(error.get("code", ""), error.get("info", ""))
+                if code == "ratelimited" and attempt < 2:
+                    bucket = self._buckets.get(action, self._default_bucket)
+                    logger.warning(
+                        f"Rate limited on {action}; cooling down before retry"
+                    )
+                    await bucket.cooldown()
+                    continue
+                raise WikiError(code, error.get("info", ""))
         raise AssertionError("unreachable")  # pragma: no cover
 
     @staticmethod

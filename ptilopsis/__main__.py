@@ -167,6 +167,8 @@ async def _amain(
             username,
             password,
             "dev" if dev else "product",
+            rate_safety=settings.rate_safety,
+            write_min_interval=settings.write_min_interval,
         )
         try:
             # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
