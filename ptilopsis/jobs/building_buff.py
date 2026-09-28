@@ -1,95 +1,66 @@
-from typing import Annotated, Any
+from collections.abc import Callable
+from typing import Annotated
 
 from ptilopsis.gamedata.building_data import BuildingData
+from ptilopsis.jobs.basic import BUILDING_BUFF_NAME_OVERRIDES
 from ptilopsis.jobs.params import RichText, table
 from ptilopsis.log import logger
-from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
-
-# def special_buff(buff_name, description):
-#     if buff_name == '坚毅随和':
-#         description = description.replace('额外恢复心情}}', '额外恢复心情}}{{color|#F49800|（心情每小时恢复+0.15）}}')  # noqa: E501
-#     elif buff_name == '神经质':
-#         description += '{{color|#F49800|（心情每小时消耗+1.5）}}'
-#     elif buff_name == '至察':
-#         description += '{{color|#F49800|（心情每小时消耗+0.5）}}'
-#     elif buff_name in ['裁缝·α', '裁缝·β']:
-#         description = description.replace('影响概率）', '影响概率）{{color|#F49800|（同类效果取最高）}}')  # noqa: E501
-#     return description
+from ptilopsis.wikitext import WikiTemplate
 
 
-def get_building_buff(building_data: BuildingData, rts: richtext.RichText) -> str:
-    buff_format = """{{{{后勤技能信息/store
-|技能名={name}
-|房间={room}
-|技能图标={icon}
-|技能描述={description}
-}}}}"""
-    room_format = """=={roomName}==
-{{|class="wikitable mw-collapsible mw-collapsed logo" style="text-align:center; width:100%; max-width:1000px; display:table; white-space:normal;"
-! colspan="4" | {roomName}
-|-
-! width="30px" |
-! width="100px" |名称
-! width="520px" |描述
-! width="350px" |持有干员
-|-
-{buffInfoAll}
-|}}"""  # noqa: E501
+def render_room(name: str | None, rows: str) -> str:
+    """一个房间的可折叠技能表,技能之间用 |- 分隔。"""
+
+    return (
+        f"=={name}==\n"
+        '{|class="wikitable mw-collapsible mw-collapsed logo" '
+        'style="text-align:center; width:100%; max-width:1000px; '
+        'display:table; white-space:normal;"\n'
+        f'! colspan="4" | {name}\n'
+        "|-\n"
+        '! width="30px" |\n'
+        '! width="100px" |名称\n'
+        '! width="520px" |描述\n'
+        '! width="350px" |持有干员\n'
+        "|-\n"
+        f"{rows}\n"
+        "|}"
+    )
+
+
+def get_building_buff(
+    building_data: BuildingData, compile_rich_text: Callable[[str | None], str]
+) -> str:
     rooms = building_data.rooms or {}
-    buff_text: dict[str, dict[str, dict[str, Any]]] = {}
-    for room in rooms:
-        buff_text[room] = {}
-
-    for buff_data in (building_data.buffs or {}).values():
-        buff_name = buff_data.buff_name or ""
-        buff_name = {
-            "control_dorm_rec[000]": "领袖(控制中枢)",
-            "dorm_rec_all[013]": "领袖(宿舍)",
-            "train_spd_doubleProf[100]": "红龙之血(精英0)",
-            "train_spd_doubleProf[110]": "红龙之血(精英2)",
-            "control_token_prod_spd2[000]": "以身作则(控制中枢)",
-            "train_spd&profession2[440]": "以身作则(训练室)",
-            "manu_prod_spd&limit&cost[200]": "得心应手(制造站)",
-            "meet_spd_condChar[000]": "得心应手(会客室)",
-            "control_prod_bd_spd[000]": "丰富工作经验(精英0)",
-            "control_prod_bd_spd[010]": "丰富工作经验(精英2)",
-            "power_rec_spd[008]": "澎湃紊流(精英0)",
-            "power_rec_spd[009]": "澎湃紊流(精英1)",
-            "meet_spd[1020]": "线索搜集·β(行箸)",
-        }.get(buff_data.buff_id or "", buff_name)
-        if buff_name not in buff_text[buff_data.room_type]:
-            buff_text[buff_data.room_type][buff_name] = {
-                "sortId": buff_data.sort_id,
-                "text": buff_format.format(
-                    name=buff_name,
-                    room=rooms[buff_data.room_type].name,
-                    icon=buff_data.skill_icon,
-                    # description = special_buff(buff_name, rts.compile(buff_data['description']))  # noqa: E501
-                    description=rts.compile(buff_data.description),
-                ),
+    # 每个房间里同名技能只输出首条,排序用的 sortId 也取自首条
+    room_buffs: dict[str, dict[str, tuple[int, str]]] = {room: {} for room in rooms}
+    for buff in (building_data.buffs or {}).values():
+        name = BUILDING_BUFF_NAME_OVERRIDES.get(
+            buff.buff_id or "", buff.buff_name or ""
+        )
+        buffs = room_buffs[buff.room_type]
+        if name in buffs:
+            continue
+        template = WikiTemplate("后勤技能信息/store").add_all(
+            {
+                "技能名": name,
+                "房间": rooms[buff.room_type].name,
+                "技能图标": buff.skill_icon,
+                "技能描述": compile_rich_text(buff.description),
             }
+        )
+        buffs[name] = (buff.sort_id, str(template))
 
     content = ""
-    for room_id in buff_text:
-        if buff_text[room_id] != {}:
-            content += (
-                room_format.format(
-                    roomName=rooms[room_id].name,
-                    buffInfoAll="\n|-\n".join(
-                        [
-                            buff_data["text"]
-                            for buff_data in sorted(
-                                buff_text[room_id].values(),
-                                key=lambda x: x["sortId"],
-                                reverse=True,
-                            )
-                        ]
-                    ),
-                )
-                + "\n"
-            )
+    for room_id, buffs in room_buffs.items():
+        if not buffs:
+            continue
+        # 技能按 sortId 降序排列
+        ordered = sorted(buffs.values(), key=lambda buff: buff[0], reverse=True)
+        rows = "\n|-\n".join(text for _, text in ordered)
+        content += render_room(rooms[room_id].name, rows) + "\n"
     return content
 
 
@@ -102,7 +73,7 @@ async def run(
     origin_text = await wiki.read("后勤技能一览/store")
     flag = origin_text.find("==控制中枢==")
     head = origin_text[:flag].rstrip()
-    content = head + "\n" + get_building_buff(building_data, rts).rstrip()
+    content = head + "\n" + get_building_buff(building_data, rts.compile).rstrip()
 
     if content != origin_text:
         await wiki.edit(

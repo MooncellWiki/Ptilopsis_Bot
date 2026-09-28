@@ -1,0 +1,41 @@
+{
+  "rooms": {
+    "CONTROL": {"name": "控制中枢"},
+    "DORMITORY": {"name": "宿舍"},
+    "POWER": {"name": "发电站"}
+  },
+  "buffs": {
+    "first": {
+      "buffId": "control_dorm_rec[000]",
+      "buffName": "领袖",
+      "skillIcon": "icon_leader_control",
+      "sortId": 10,
+      "roomType": "CONTROL",
+      "description": "控制描述"
+    },
+    "normal": {
+      "buffId": "normal",
+      "buffName": "普通技能",
+      "skillIcon": "icon_normal",
+      "sortId": 20,
+      "roomType": "CONTROL",
+      "description": "普通描述"
+    },
+    "duplicate": {
+      "buffId": "duplicate",
+      "buffName": "普通技能",
+      "skillIcon": "ignored",
+      "sortId": 99,
+      "roomType": "CONTROL",
+      "description": "不会输出"
+    },
+    "dorm": {
+      "buffId": "dorm_rec_all[013]",
+      "buffName": "领袖",
+      "skillIcon": "icon_leader_dorm",
+      "sortId": 5,
+      "roomType": "DORMITORY",
+      "description": "宿舍描述"
+    }
+  }
+}
