@@ -1,960 +1,359 @@
-"""收藏品页面自动更新与维护测试"""
+"""收藏品页面:按主题汇总、渲染、合并到已有页面,以及 job 的读写流程,全部离线。"""
 
-import copy
-import socket
-from contextlib import nullcontext
-from unittest.mock import AsyncMock, Mock
-from urllib.parse import parse_qs
+from collections.abc import Iterable, Iterator
+from typing import Any, cast
 
-import click
-import httpx2
 import pytest
-from click.testing import CliRunner
-from pydantic import ValidationError
 
-from ptilopsis import __main__ as cli
-from ptilopsis.config import RelicConfig, Settings, config
-from ptilopsis.jobs import relic
-from ptilopsis.relics.merge import common_call, merge_page
-from ptilopsis.relics.source import (
-    RelicGlossary,
-    RelicTopics,
-    build_records,
-    render_pages,
+from ptilopsis.__main__ import jobs_for
+from ptilopsis.gamedata.gamedata_const import GameDataConsts
+from ptilopsis.gamedata.roguelike_topic_table import RoguelikeTopicTable
+from ptilopsis.jobs.relic import (
+    GENERIC_OBTAIN,
+    PREAMBLE,
+    MergeError,
+    Relic,
+    collect_relics,
+    merge_page,
+    render_page,
+    run,
 )
-from ptilopsis.relics.state import atomic_json, load_state, state_lock
-from ptilopsis.utils.wiki import Wiki, WikiError
+from ptilopsis.log import logger
+from ptilopsis.utils.wiki import PageRevision, Wiki, WikiError
 
-pytestmark = pytest.mark.anyio
-API = "https://prts.wiki/api.php"
-
-
-@pytest.fixture(autouse=True)
-async def offline(monkeypatch, anyio_backend):
-    def deny(*args, **kwargs):
-        raise AssertionError("Network access is forbidden in collectible tests")
-
-    monkeypatch.setattr(socket.socket, "connect", deny)
-    monkeypatch.setattr(socket.socket, "connect_ex", deny)
-    monkeypatch.setattr(relic.anyio, "sleep", AsyncMock())
-    yield
+THEMES = {1: "傀影与猩红孤钻", 2: "水月与深蓝之树", 3: "探索者的银凇止境"}
 
 
-@pytest.fixture
-def console():
-    messages = []
-    sink = relic.logger.add(
-        lambda message: messages.append(message.record["message"]),
-        filter=lambda record: record["name"] == relic.__name__,
-    )
-    try:
-        yield messages
-    finally:
-        relic.logger.remove(sink)
-
-
-def item(key="rogue_1_relic_1", name="测试藏品", usage="原效果", **kwargs):
+def item(topic: int, key: str, name: str, **fields: Any) -> dict[str, Any]:
+    """原始 JSON 里的一件收藏品。"""
+    item_id = f"rogue_{topic}_relic_{key}"
     return {
-        "id": key,
-        "key": key,
+        "id": item_id,
         "name": name,
         "type": "RELIC",
         "rarity": "NORMAL",
-        "iconId": key,
-        "usage": usage,
-        "description": "原描述",
-        "obtainApproach": "在集成战略模式中获得",
-        "unlockCondDesc": "专用解锁条件",
-        **kwargs,
+        "description": f"{name}的描述",
+        "usage": f"{name}的效果",
+        "obtainApproach": GENERIC_OBTAIN,
+        "iconId": item_id,
+        **fields,
     }
 
 
-def source(extra=False, usage="原效果"):
-    themes = [{"theme": "旧主题", "value": item(usage=usage)}]
-    if extra:
-        themes.append(
-            {"theme": "新主题", "value": item("rogue_7_relic_1", usage="新主题效果")}
-        )
-    return {"relic": [{"name": "测试藏品", "value": themes}]}
+def tables(
+    items: list[dict[str, Any]],
+    groups: dict[int, list[dict[str, int]]] | None = None,
+    terms: dict[str, str] | None = None,
+) -> tuple[RoguelikeTopicTable, GameDataConsts]:
+    """拼出只含收藏品的 roguelike_topic_table 与 gamedata_const。
+
+    ``groups`` 为 {主题: [{收藏品 id: 生效难度, ...}, ...]},一个字典是一组难度变体。
+    """
+    details = {}
+    for number in THEMES:
+        own = {i["id"]: i for i in items if i["id"].startswith(f"rogue_{number}_")}
+        upgrade_groups = {
+            f"group_{index}": {
+                "relicData": [
+                    {"relicId": relic_id, "equivalentGrade": grade}
+                    for relic_id, grade in members.items()
+                ]
+            }
+            for index, members in enumerate((groups or {}).get(number, []))
+        }
+        details[f"rogue_{number}"] = {
+            "items": own,
+            "difficultyUpgradeRelicGroups": upgrade_groups,
+        }
+    topic_table = RoguelikeTopicTable.model_validate(
+        {
+            "topics": {
+                f"rogue_{n}": {"id": f"rogue_{n}", "name": name, "sort": n}
+                for n, name in THEMES.items()
+            },
+            "details": details,
+        }
+    )
+    consts = GameDataConsts.model_validate(
+        {
+            "termDescriptionDict": {
+                name: {"termId": name, "termName": name, "description": text}
+                for name, text in (terms or {}).items()
+            }
+        }
+    )
+    return topic_table, consts
+
+
+def relics_of(*args: Any, **kwargs: Any) -> dict[str, Relic]:
+    return {relic.name: relic for relic in collect_relics(*tables(*args, **kwargs))}
+
+
+def body(page: str) -> str:
+    assert page.startswith(PREAMBLE + "\n\n")
+    return page.removeprefix(PREAMBLE + "\n\n")
+
+
+# ----- 汇总与渲染 -----
+
+
+def test_collect_groups_same_name_across_themes_and_difficulty_variants() -> None:
+    relics = relics_of(
+        [
+            item(3, "map", "地形图"),
+            item(3, "map_a", "地形图-α"),
+            item(3, "map_b", "地形图-β"),
+            item(1, "map", "地形图"),
+            item(2, "other", "别的收藏品"),
+        ],
+        groups={
+            3: [
+                {
+                    "rogue_3_relic_map_b": 6,
+                    "rogue_3_relic_map": 0,
+                    "rogue_3_relic_map_a": 3,
+                }
+            ]
+        },
+    )
+    assert set(relics) == {"地形图", "别的收藏品"}
+    themes = relics["地形图"].themes
+    assert [theme.number for theme in themes] == [1, 3]
+    # 难度变体按生效难度排序,-α / -β 归到基础版本名下
+    variants = themes[1].variants
+    assert [(v.difficulty, v.item.id) for v in variants] == [
+        (0, "rogue_3_relic_map"),
+        (3, "rogue_3_relic_map_a"),
+        (6, "rogue_3_relic_map_b"),
+    ]
+
+
+def test_render_page() -> None:
+    relics = relics_of(
+        [
+            item(1, "a", "藏品", usage="攻击力+10%", description="旧描述"),
+            item(
+                2,
+                "a",
+                "藏品",
+                rarity="RARE",
+                usage="部署【迷彩】干员时<敌人>攻击力|+1",
+                description="新描述",
+                unlockCondDesc="通关一次",
+                obtainApproach="商店购买",
+            ),
+            item(2, "a_a", "藏品-α", rarity="RARE", usage="部署时攻击力+2"),
+        ],
+        groups={2: [{"rogue_2_relic_a": 0, "rogue_2_relic_a_a": 3}]},
+        terms={"迷彩": "不成为攻击目标"},
+    )
+    color = "{{color|#d800db|难度%d及以上生效：}}"
+    assert body(render_page(relics["藏品"])) == "\n".join(
+        [
+            "{{收藏品/common",
+            "|名称=藏品",
+            "|iconId=rogue_2_relic_a",
+            "|稀有度=1",
+            # 描述取最新主题,附上效果里出现的术语;变体描述不同时都保留
+            "|描述=新描述<br/>【迷彩】不成为攻击目标<br/><br/>藏品-α的描述",
+            "|主题1=傀影与猩红孤钻",
+            "|角标1=",
+            "|售价1=8",
+            "|效果1=攻击力+10%",
+            "|获取条件1=",
+            "|解锁条件1=",
+            "|主题2=水月与深蓝之树",
+            "|角标2=",
+            "|售价2=12",
+            "|效果2="
+            + color % 0
+            + "部署【迷彩】干员时&lt;敌人&gt;攻击力&#124;+1<br/>"
+            + color % 3
+            + "部署时攻击力+2",
+            "|获取条件2=" + color % 0 + "商店购买<br/>" + color % 3 + "－",
+            "|解锁条件2=" + color % 0 + "通关一次<br/>" + color % 3 + "－",
+            "}}",
+            "",
+        ]
+    )
+
+
+# ----- 合并到已有页面 -----
+
+
+@pytest.fixture
+def relic() -> Relic:
+    return relics_of(
+        [item(1, "a", "藏品"), item(2, "a", "藏品"), item(3, "a", "藏品")]
+    )["藏品"]
+
+
+def human_page(themes: Iterable[tuple[int, str]], extra: str = "") -> str:
+    """人工写的页面:主题编号与名称自定,效果与角标都改过。"""
+    lines = ["人工正文", "{{收藏品/common", "|名称=藏品", "|iconId=rogue_2_relic_a"]
+    lines += ["|稀有度=0", "|描述=\n藏品的描述"]
+    for number, name in themes:
+        lines += [
+            f"|主题{number}={name}",
+            f"|角标{number}={{{{收藏品/角标|stack}}}}",
+            f"|售价{number}=8",
+            f"|效果{number}=攻击力{{{{+|10|+10}}}}<!-- | -->[[攻击力|ATK]]",
+            f"|获取条件{number}=",
+            f"|解锁条件{number}=",
+        ]
+    return "\n".join(lines) + extra + "\n}}\n[[分类:收藏品]]\n"
+
+
+def test_rendered_page_is_a_fixed_point(relic: Relic) -> None:
+    page = render_page(relic)
+    assert merge_page(page, relic) == page
+
+
+def test_appends_missing_theme_and_refreshes_headers_only(relic: Relic) -> None:
+    before = human_page([(1, THEMES[1]), (2, THEMES[2])], extra="\n|备注=人工备注")
+    after = merge_page(before, relic)
+
+    # 新主题接在最后一个主题之后、人工参数之前;已有主题与正文原样保留
+    assert after == before.replace(
+        "|解锁条件2=\n",
+        "|解锁条件2=\n"
+        "|主题3=探索者的银凇止境\n|角标3=\n|售价3=8\n"
+        "|效果3=藏品的效果\n|获取条件3=\n|解锁条件3=\n",
+    ).replace("|iconId=rogue_2_relic_a", "|iconId=rogue_3_relic_a")
+    assert merge_page(after, relic) == after
+
+
+def test_refresh_keeps_whitespace_and_adds_missing_header(relic: Relic) -> None:
+    before = human_page(THEMES.items())
+    before = before.replace("|描述=\n藏品的描述", "|描述=\n人工描述\n")
+    before = before.replace("|稀有度=0\n", "")
+    after = merge_page(before, relic)
+    assert "|描述=\n藏品的描述\n\n" in after
+    assert "{{收藏品/common\n|稀有度=0\n|名称=藏品" in after
+    assert merge_page(after, relic) == after
+
+
+def test_theme_names_may_be_bold_or_linked(relic: Relic) -> None:
+    page = human_page(
+        [(1, f"'''{THEMES[1]}'''"), (2, f"[[{THEMES[2]}|水月]]"), (3, THEMES[3])]
+    ).replace("rogue_2_relic_a", "rogue_3_relic_a")
+    assert merge_page(page, relic) == page
+
+
+@pytest.mark.parametrize(
+    ("page", "reason"),
+    [
+        ("{{干员信息|名称=藏品}}", "不是收藏品页面"),
+        ("{{收藏品/common|主题1=a}}{{收藏品/common|主题1=a}}", "2 个"),
+        (human_page([(1, THEMES[1]), (2, THEMES[3])]), "插在已有主题之间"),
+        (human_page([(1, "别的主题")]), "对不上"),
+        (human_page([(1, THEMES[1]), (3, THEMES[2])]), "连续"),
+        (human_page([(1, THEMES[1])], extra="\n|效果2=x"), "效果2"),
+        (human_page([]).replace("rogue_2_relic_a", "rogue_9_relic_a"), "数据源"),
+        ("{{收藏品/common|主题1=[[a}}", "未闭合"),
+        ("{{收藏品/common|无名参数}}", "未命名"),
+    ],
+)
+def test_ambiguous_pages_are_rejected(relic: Relic, page: str, reason: str) -> None:
+    with pytest.raises(MergeError, match=reason):
+        merge_page(page, relic)
+
+
+# ----- job -----
 
 
 class FakeWiki:
-    api_url = API
+    """只实现 job 用到的 read_revisions / edit。"""
 
-    def __init__(self, mode="product"):
-        self.mode = mode
-        self.pages = {}
-        self.edits = []
-        self.fail = None
-        self.timeout_after_save = False
-        self.reads = []
+    def __init__(self, pages: dict[str, str], redirects: Iterable[str] = ()) -> None:
+        self.pages = pages
+        self.redirects = set(redirects)
+        self.edits: list[dict[str, Any]] = []
+        self.errors: dict[str, WikiError] = {}
 
-    async def read_revision(self, title):
-        self.reads.append(title)
-        row = self.pages.get(title, {"text": "", "revid": None})
+    async def read_revisions(self, titles: Iterable[str]) -> dict[str, PageRevision]:
         return {
-            "title": title,
-            "exists": title in self.pages,
-            "redirect": False,
-            "contentmodel": "wikitext",
-            "starttimestamp": "2026-09-27T00:00:00Z",
-            **row,
+            title: PageRevision(
+                title=title,
+                text=self.pages[title],
+                revid=7,
+                timestamp="2026-01-01T00:00:00Z",
+                starttimestamp="2026-01-02T00:00:00Z",
+                redirect=title in self.redirects,
+                contentmodel="wikitext",
+            )
+            for title in titles
+            if title in self.pages
         }
 
-    async def edit(self, **kwargs):
-        assert self.mode == "product"
-        assert kwargs["bot"] is True and kwargs["assert_user"] == "bot"
-        assert kwargs["retry_transport"] is False
+    async def edit(self, **kwargs: Any) -> dict[str, Any]:
+        if error := self.errors.get(kwargs["title"]):
+            raise error
         self.edits.append(kwargs)
-        if self.fail:
-            raise self.fail
-        title = kwargs["title"]
-        rev = self.pages.get(title, {}).get("revid", 0) + 1
-        self.pages[title] = {"text": kwargs["text"], "revid": rev}
-        if self.timeout_after_save:
-            raise TimeoutError("Response lost after server saved")
-        result = {"result": "Success", "newrevid": rev}
-        if kwargs["createonly"]:
-            result["new"] = True
-        return {"edit": result}
-
-
-def common_fields(text):
-    return common_call(text).fields()
+        return {"edit": {"result": "Success"}}
 
 
 @pytest.fixture
-def wiki():
-    return FakeWiki()
-
-
-@pytest.fixture
-def opts(tmp_path):
-    return RelicConfig(state_file=tmp_path / "state.json")
-
-
-async def test_create_update_idempotency_and_manual_prose(wiki, opts):
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert wiki.edits[0]["summary"] == "(Page Upload)"
-    assert wiki.edits[0]["createonly"] is True
-    assert wiki.edits[0]["baserevid"] is None
-    assert "approved" not in opts.state_file.read_text(encoding="utf-8")
-    page = wiki.pages["测试藏品"]
-    page["text"] = (
-        "人工前言\n"
-        + page["text"].replace("原效果", "人工效果")
-        + "[[分类:人工分类]]\n"
+def logged_warnings() -> Iterator[list[str]]:
+    captured: list[str] = []
+    sink = logger.add(
+        lambda message: captured.append(str(message).strip()),
+        level="WARNING",
+        format="{message}",
     )
-    page["revid"] += 1
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert len(wiki.edits) == 2
-    assert wiki.edits[1]["summary"] == "(Page Update)"
-    assert wiki.edits[1]["nocreate"] is True
-    assert wiki.edits[1]["baserevid"] == 2
-    text = wiki.pages["测试藏品"]["text"]
-    fields = common_fields(text)
-    assert fields["效果1"] == "人工效果" and fields["主题2"] == "新主题"
-    assert fields["iconId"] == "rogue_7_relic_1"
-    assert fields["解锁条件1"] == "专用解锁条件"
-    assert text.startswith("人工前言\n") and text.endswith("[[分类:人工分类]]\n")
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert len(wiki.edits) == 2
+    yield captured
+    logger.remove(sink)
 
 
-async def test_changed_source_effect_never_blocks_new_theme_or_overwrites_old_effect(
-    wiki, opts
-):
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    wiki.pages["测试藏品"]["text"] = wiki.pages["测试藏品"]["text"].replace(
-        "原效果", "人工效果"
+def relic_tables() -> tuple[RoguelikeTopicTable, GameDataConsts]:
+    names = ["新藏品", "旧藏品", "无变化", "重定向", "同名干员", "冲突"]
+    return tables(
+        [item(n, str(i), name) for i, name in enumerate(names) for n in (1, 2)]
     )
-    await relic.synchronize(
-        wiki, render_pages(source(extra=True, usage="新数据效果")), opts
-    )
-    fields = common_fields(wiki.pages["测试藏品"]["text"])
-    assert fields["效果1"] == "人工效果" and fields["主题2"] == "新主题"
-    assert len(wiki.edits) == 2
 
 
-async def test_unknown_existing_page_refreshes_headers_but_freezes_old_theme(
-    wiki, opts
-):
-    wiki.pages["测试藏品"] = {
-        "text": render_pages(source())[0]["text"].replace("原效果", "人工效果"),
-        "revid": 10,
-    }
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    fields = common_fields(wiki.pages["测试藏品"]["text"])
-    state = load_state(opts.state_file, API)["pages"]["测试藏品"]["managed"]
-    assert fields["iconId"] == "rogue_7_relic_1" and fields["效果1"] == "人工效果"
-    assert state["iconId"] == "rogue_7_relic_1" and state["效果2"] == "新主题效果"
-
-
-async def test_deleted_managed_page_is_not_recreated(wiki, opts):
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    wiki.pages.clear()
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(wiki.edits) == 1
-
-
-@pytest.mark.parametrize(
-    "text,extra",
-    [
-        ("#REDIRECT [[其他页]]", {"redirect": True}),
-        ("{}", {"contentmodel": "json"}),
-        ("人工页面，尚无 common 模板", {}),
-        ("{{收藏品/common|名称=A|名称=B}}", {}),
-    ],
-)
-async def test_ambiguous_or_non_collectible_pages_are_skipped(wiki, opts, text, extra):
-    wiki.pages["测试藏品"] = {"text": text, "revid": 1, **extra}
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert not wiki.edits
-
-
-async def test_preview_never_calls_edit_or_changes_state(wiki, opts):
-    wiki.mode = "dev"
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert not wiki.edits and not opts.state_file.exists()
-    wiki.mode = "product"
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    saved = opts.state_file.read_bytes()
-    wiki.mode = "dev"
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert opts.state_file.read_bytes() == saved and len(wiki.edits) == 1
-
-
-async def test_bot_permission_failure_stops_without_fallback(wiki, opts, console):
-    wiki.fail = WikiError("assertbotfailed", "No bot right")
-    with pytest.raises(WikiError, match="assertbotfailed"):
-        await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(wiki.edits) == 1
-    state = load_state(opts.state_file, API)
-    assert not state["pages"] and not state["pending"]
-    assert len(console) == 1
-    assert "创建失败【测试藏品】" in console[0]
-    assert "assertbotfailed" in console[0] and "No bot right" in console[0]
-
-
-async def test_server_saved_timeout_is_recovered_without_duplicate_edit(
-    wiki, opts, console
-):
-    wiki.timeout_after_save = True
-    with pytest.raises(TimeoutError):
-        await relic.synchronize(wiki, render_pages(source()), opts)
-    assert "测试藏品" in load_state(opts.state_file, API)["pending"]
-    assert "创建结果未确认【测试藏品】" in console[0]
-    assert "TimeoutError" in console[0] and "pending" in console[0]
-    wiki.timeout_after_save = False
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    state = load_state(opts.state_file, API)
-    assert len(wiki.edits) == 1 and not state["pending"]
-    assert state["pages"]["测试藏品"]["revid"] == 1
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert len(wiki.edits) == 2
-
-
-async def test_timeout_before_save_rechecks_before_next_run(wiki, opts):
-    wiki.fail = TimeoutError()
-    with pytest.raises(TimeoutError):
-        await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(wiki.edits) == 1
-    wiki.fail = None
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(wiki.reads) == 2 and len(wiki.edits) == 2
-    assert not load_state(opts.state_file, API)["pending"]
-
-
-async def test_uncertain_write_with_subsequent_human_edit_is_held(wiki, opts):
-    wiki.timeout_after_save = True
-    with pytest.raises(TimeoutError):
-        await relic.synchronize(wiki, render_pages(source()), opts)
-    wiki.pages["测试藏品"]["text"] += "人工内容"
-    wiki.pages["测试藏品"]["revid"] += 1
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(wiki.edits) == 1
-    assert "测试藏品" in load_state(opts.state_file, API)["pending"]
-
-
-async def test_edit_conflict_does_not_advance_baseline_and_requires_next_run(
-    wiki, opts, console
-):
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    before = opts.state_file.read_bytes()
-    wiki.fail = WikiError("editconflict", "Page changed")
-    with pytest.raises(RuntimeError, match="并发编辑"):
-        await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert opts.state_file.read_bytes() == before and len(wiki.edits) == 2
-    assert len(console) == 1
-    assert "维护失败【测试藏品】" in console[0] and "editconflict" in console[0]
-
-
-async def test_legacy_state_works_without_manifest(wiki, opts):
-    text = render_pages(source())[0]["text"]
-    wiki.pages["测试藏品"] = {"text": text, "revid": 50}
-    atomic_json(
-        opts.state_file,
+@pytest.mark.anyio
+async def test_job_creates_updates_and_skips(logged_warnings: list[str]) -> None:
+    topic_table, consts = relic_tables()
+    relics = {relic.name: relic for relic in collect_relics(topic_table, consts)}
+    old = render_page(relics["旧藏品"]).replace(f"|主题2={THEMES[2]}", "|主题2=")
+    old = old[: old.index("|主题2=")] + "}}\n"
+    fake = FakeWiki(
         {
-            "schema": "prts-relic-state/v1",
-            "pages": {"测试藏品": {"managed": common_fields(text), "revid": 50}},
+            "旧藏品": old,
+            "无变化": render_page(relics["无变化"]),
+            "重定向": "#重定向 [[别处]]",
+            "同名干员": "{{干员信息}}",
+            "冲突": old.replace("旧藏品", "冲突"),
         },
+        redirects=["重定向"],
     )
-    await relic.synchronize(wiki, render_pages(source(extra=True)), opts)
-    assert common_fields(wiki.pages["测试藏品"]["text"])["iconId"] == "rogue_7_relic_1"
-
-
-async def test_job_local_source_does_not_download_gamedata(opts, wiki, tmp_path):
-    opts.source_file = tmp_path / "relic.json"
-    atomic_json(opts.source_file, source())
-    wiki.mode = "dev"
-    data = AsyncMock()
-    await relic.run.func(wiki, data, config.model_copy(update={"relic": opts}))
-    data.get.assert_not_called()
-
-
-async def test_job_native_source_fetches_tables_before_any_write(wiki, opts):
-    wiki.mode = "dev"
-    data = AsyncMock()
-    data.get.side_effect = [topic_fixture(), {"termDescriptionDict": {}}]
-    await relic.run.func(wiki, data, config.model_copy(update={"relic": opts}))
-    assert [call.args[0] for call in data.get.call_args_list] == [
-        "excel/roguelike_topic_table.json",
-        "excel/gamedata_const.json",
-    ]
-    assert wiki.reads == ["测试藏品"] and not wiki.edits
-    assert all(call.kwargs == {"region": "CN"} for call in data.get.call_args_list)
-    data.get.side_effect = [{"topics": {}, "details": {}}, {"termDescriptionDict": {}}]
-    with pytest.raises(ValueError, match="非空"):
-        await relic.run.func(wiki, data, config.model_copy(update={"relic": opts}))
-    assert wiki.reads == ["测试藏品"]
-
-
-async def test_unconfirmed_response_stops_remaining_pages(wiki, opts, console):
-    wiki.edit = AsyncMock(return_value={"edit": {"result": "Failure", "captcha": {}}})
-    draft = source()
-    another = copy.deepcopy(draft["relic"][0])
-    another["name"] = "第二件藏品"
-    draft["relic"].append(another)
-    with pytest.raises(RuntimeError, match="未确认"):
-        await relic.synchronize(wiki, render_pages(draft), opts)
-    wiki.edit.assert_awaited_once()
-    assert wiki.reads == ["测试藏品"]
-    assert not load_state(opts.state_file, API)["pages"]
-    assert len(console) == 2
-    assert "结果未确认【测试藏品】" in console[0] and "API 未确认" in console[0]
-    assert "未处理【第二件藏品】" in console[1] and "尚未尝试此页" in console[1]
-
-
-async def test_create_race_keeps_baseline_empty_and_is_not_retried(wiki, opts, console):
-    wiki.edit = AsyncMock(return_value=None)
-    with pytest.raises(RuntimeError, match="并发编辑"):
-        await relic.synchronize(wiki, render_pages(source()), opts)
-    wiki.edit.assert_awaited_once()
-    state = load_state(opts.state_file, API)
-    assert not state["pages"] and not state["pending"]
-    assert len(console) == 1
-    assert "创建未完成【测试藏品】" in console[0] and "已被其他编辑者创建" in console[0]
-
-
-def topic_fixture():
-    leaves = {
-        "rogue_7_relic_1" + suffix: item(
-            "rogue_7_relic_1" + suffix,
-            name="测试藏品" + name,
-            usage=f"效果{level}【测试术语】",
-            description=f"描述{level}",
-        )
-        for suffix, name, level in [
-            ("", "", 0),
-            ("_a", "α", 3),
-            ("_b", "β", 6),
-            ("_c", "γ", 9),
-        ]
-    }
-    members = [
-        {"relicId": key, "equivalentGrade": level}
-        for key, level in zip(leaves, [0, 3, 6, 9], strict=True)
-    ]
-    return {
-        "topics": {"rogue_7": {"name": "未来主题", "sort": 7}},
-        "details": {
-            "rogue_7": {
-                "items": leaves,
-                "difficultyUpgradeRelicGroups": {"group": {"relicData": members[::-1]}},
-            }
-        },
-    }
-
-
-def test_native_source_uses_group_thresholds_merges_descriptions_and_plain_names():
-    records = build_records(
-        RelicTopics.model_validate(topic_fixture()),
-        RelicGlossary.model_validate(
-            {
-                "termDescriptionDict": {
-                    "term": {"termName": "测试术语", "description": "术语说明"}
-                }
-            }
-        ),
-    )
-    fields = common_fields(render_pages(records)[0]["text"])
-    assert fields["主题1"] == "未来主题" and "主题7" not in fields
-    assert fields["iconId"] == "rogue_7_relic_1"
-    assert fields["效果1"].count("{{color|#d800db|难度") == 4
-    for threshold in [0, 3, 6, 9]:
-        assert f"难度{threshold}及以上生效：" in fields["效果1"]
-        assert f"描述{threshold}" in fields["描述"]
-    assert "术语说明" in fields["描述"]
-
-
-def test_native_kv_arrays_match_dictionary_form():
-    raw = topic_fixture()
-    data = copy.deepcopy(raw)
-    detail = data["details"]["rogue_7"]
-    for key in ["items", "difficultyUpgradeRelicGroups"]:
-        detail[key] = [{"key": k, "value": v} for k, v in detail[key].items()]
-    for key in ["topics", "details"]:
-        data[key] = [{"key": k, "value": v} for k, v in data[key].items()]
-    assert RelicTopics.model_validate(data) == RelicTopics.model_validate(raw)
-
-
-def test_unknown_difficulty_and_unrelated_same_name_are_rejected():
-    raw = topic_fixture()
-    raw["details"]["rogue_7"]["difficultyUpgradeRelicGroups"]["group"]["relicData"][0][
-        "equivalentGrade"
-    ] = 12
-    with pytest.raises(ValueError, match="阈值"):
-        build_records(
-            RelicTopics.model_validate(raw), RelicGlossary(term_description_dict={})
-        )
-
-
-def test_state_lock_and_site_validation(tmp_path):
-    path = tmp_path / "state.json"
-    with state_lock(path), pytest.raises(ValueError, match="锁"):
-        with state_lock(path):
-            pass
-    atomic_json(
-        path,
-        {
-            "schema": "prts-relic-state/v1",
-            "api_url": "https://other.example/api.php",
-            "pages": {},
-        },
-    )
-    with pytest.raises(ValueError, match="另一个"):
-        load_state(path, API)
-
-
-def test_historical_themes_numbering_and_human_deletion():
-    old = "{{收藏品/common|主题3=旧主题|效果3=旧效果|主题6=新主题|效果6=新效果}}"
-    current = old.replace("|效果3=旧效果", "")
-    desired = "{{收藏品/common|主题1=新主题|效果1=新效果}}"
-    result = merge_page(current, desired, common_fields(old))
-    assert not result["conflicts"]
-    fields = common_fields(result["text"])
-    assert fields["主题1"] == "旧主题" and fields["主题2"] == "新主题"
-    assert "效果1" not in fields and fields["效果2"] == "新效果"
-
-
-def test_empty_or_duplicate_source_rejected():
-    with pytest.raises(ValueError):
-        render_pages({"relic": []})
-    records = source()
-    records["relic"] *= 2
-    with pytest.raises(ValueError, match="重复"):
-        render_pages(records)
-
-
-@pytest.mark.parametrize("tracked", [True, False])
-async def test_major_theme_update_and_new_page_in_one_automatic_run(
-    wiki, opts, tracked
-):
-    old = render_pages(source())[0]
-    if tracked:
-        await relic.synchronize(wiki, [old], opts)
-    else:
-        wiki.pages[old["title"]] = {"text": old["text"], "revid": 1}
-    text = wiki.pages[old["title"]]["text"]
-    # A blank parameter also belongs to the existing theme and remains blank.
-    text = text.replace("|主题1=旧主题", "|主题1='''[[旧主题|人工显示名]]'''")
-    text = text.replace("|角标1=", "|角标1=人工角标{{模板|值}}")
-    text = text.replace("|售价1=8", "|售价1=人工价格")
-    text = "人工导语\n" + text + "[[分类:人工维护]]\n"
-    wiki.pages[old["title"]]["text"] = text
-    existing = common_fields(text)
-
-    incoming = source(extra=True, usage="游戏修改了旧效果")
-    first, latest = incoming["relic"][0]["value"]
-    first["value"].update(
-        rarity="RARE", unlockCondDesc="新版旧解锁", obtainApproach="新版旧获取"
-    )
-    latest["value"].update(
-        rarity="SUPER_RARE",
-        description="新主题完整描述",
-        unlockCondDesc="新主题解锁",
-        obtainApproach="新主题获取",
-    )
-    incoming["relic"].append(
-        {
-            "name": "新收藏品",
-            "value": [
-                {
-                    "theme": "新主题",
-                    "value": item("rogue_7_relic_2", name="新收藏品", usage="新品效果"),
-                }
-            ],
-        }
-    )
-    edits_before = len(wiki.edits)
-    await relic.synchronize(wiki, render_pages(incoming), opts)
-    after_text = wiki.pages[old["title"]]["text"]
-    after = common_fields(after_text)
-    for name, value in existing.items():
-        if name not in {"iconId", "稀有度", "描述"}:
-            assert after[name] == value
-    assert after["iconId"] == "rogue_7_relic_1"
-    assert after["稀有度"] == "2" and after["描述"] == "新主题完整描述"
-    assert after["主题2"] == "新主题" and after["效果2"] == "新主题效果"
-    assert after["解锁条件2"] == "新主题解锁" and after["获取条件2"] == "新主题获取"
-    assert after_text.startswith("人工导语\n") and after_text.endswith(
-        "[[分类:人工维护]]\n"
-    )
-    new_fields = common_fields(wiki.pages["新收藏品"]["text"])
-    assert new_fields["主题1"] == "新主题" and "主题2" not in new_fields
-    assert new_fields["效果1"] == "新品效果"
-    assert [edit["summary"] for edit in wiki.edits[edits_before:]] == [
-        "(Page Update)",
-        "(Page Upload)",
-    ]
-    await relic.synchronize(wiki, render_pages(incoming), opts)
-    assert len(wiki.edits) == edits_before + 2
-
-
-async def test_bot_owned_existing_theme_fields_are_frozen_on_source_change(wiki, opts):
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    before = common_fields(wiki.pages["测试藏品"]["text"])
-    incoming = source(usage="新版效果")
-    incoming["relic"][0]["value"][0]["value"].update(
-        rarity="SUPER_RARE",
-        description="新版描述",
-        unlockCondDesc="新版解锁",
-        obtainApproach="新版获取",
-    )
-    await relic.synchronize(wiki, render_pages(incoming), opts)
-    after = common_fields(wiki.pages["测试藏品"]["text"])
-    assert after["描述"] == "新版描述" and after["稀有度"] == "2"
-    assert {
-        key: value
-        for key, value in after.items()
-        if key not in {"iconId", "稀有度", "描述"}
-    } == {
-        key: value
-        for key, value in before.items()
-        if key not in {"iconId", "稀有度", "描述"}
-    }
-
-
-@pytest.mark.parametrize("tracking", ["new", "legacy", "none"])
-async def test_older_source_cannot_roll_back_latest_headers(
-    wiki, opts, tracking, console
-):
-    page = render_pages(source(extra=True))[0]
-    if tracking != "none":
-        await relic.synchronize(wiki, [page], opts)
-        if tracking == "legacy":
-            state = load_state(opts.state_file, API)
-            state["pages"][page["title"]].pop("latest_theme")
-            atomic_json(opts.state_file, state)
-        # Even if a human changed the icon, the saved theme protects against rollback.
-        wiki.pages[page["title"]]["text"] = wiki.pages[page["title"]]["text"].replace(
-            "|iconId=rogue_7_relic_1", "|iconId=自定义图标"
-        )
-    else:
-        wiki.pages[page["title"]] = {"text": page["text"], "revid": 1}
-    before = wiki.pages[page["title"]]["text"]
-    count = len(wiki.edits)
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(console) == 1
-    assert "未处理【测试藏品】" in console[0] and "回退" in console[0]
-    assert len(wiki.edits) == count and wiki.pages[page["title"]]["text"] == before
-
-
-def test_deleted_theme_field_is_not_restored_when_source_changes():
-    original = render_pages(source())[0]["text"]
-    current = original.replace("|效果1=原效果\n", "")
-    incoming = render_pages(source(extra=True, usage="新游戏效果"))[0]["text"]
-    result = merge_page(current, incoming, common_fields(original))
-    assert not result["conflicts"]
-    fields = common_fields(result["text"])
-    assert "效果1" not in fields and fields["主题2"] == "新主题"
-
-
-def scoped_source():
-    records = source(extra=True)
-    records["relic"][0]["value"].insert(
-        1, {"theme": "中间主题", "value": item("rogue_3_relic_1", usage="中间效果")}
-    )
-    records["relic"][0]["value"][-1]["value"].update(
-        rarity="SUPER_RARE", description="最新描述"
-    )
-    for number, theme, name in [
-        (1, "旧主题", "旧主题独有"),
-        (7, "新主题", "新主题独有"),
-    ]:
-        records["relic"].append(
-            {
-                "name": name,
-                "value": [
-                    {
-                        "theme": theme,
-                        "value": item(f"rogue_{number}_relic_2", name=name),
-                    }
-                ],
-            }
-        )
-    return records
-
-
-@pytest.mark.parametrize("themes", [[0], [-1], [True], ["6"], [1.5]])
-def test_theme_config_rejects_invalid_numbers(themes):
-    with pytest.raises(ValidationError):
-        RelicConfig(themes=themes)
-
-
-def test_theme_selection_uses_source_ids_deduplicates_and_numbers_from_one():
-    records = scoped_source()
-    assert render_pages(records, []) == render_pages(records)
-    pages = render_pages(records, [7, 3, 7])
-    assert [page["title"] for page in pages] == ["测试藏品", "新主题独有"]
-    fields = common_fields(pages[0]["text"])
-    assert fields["主题1"] == "中间主题" and fields["主题2"] == "新主题"
-    assert "主题3" not in fields and "主题7" not in fields
-    assert pages[0]["latest_theme"] == 7
-    assert pages[0]["theme_order"] == ["旧主题", "中间主题", "新主题"]
-
-
-@pytest.mark.parametrize("local_source", [False, True])
-async def test_selected_job_rejects_missing_theme_before_reading_any_page(
-    wiki, opts, tmp_path, local_source
-):
-    data = AsyncMock()
-    opts.themes = [1 if local_source else 7, 999]
-    if local_source:
-        opts.source_file = tmp_path / "source.json"
-        atomic_json(opts.source_file, source())
-    else:
-        data.get.side_effect = [topic_fixture(), {"termDescriptionDict": {}}]
-    with pytest.raises(ValueError, match="不存在指定主题编号：999"):
-        await relic.run.func(wiki, data, config.model_copy(update={"relic": opts}))
-    assert not wiki.reads and not wiki.edits and not opts.state_file.exists()
-
-
-async def test_selected_job_only_reads_matching_pages_without_reports(
-    wiki, opts, tmp_path, console
-):
-    data = AsyncMock()
-    opts.source_file = tmp_path / "source.json"
-    opts.themes = [7]
-    atomic_json(opts.source_file, scoped_source())
-    await relic.run.func(wiki, data, config.model_copy(update={"relic": opts}))
-    assert wiki.reads == ["测试藏品", "新主题独有"]
-    assert "旧主题独有" not in wiki.pages
-    for row in wiki.pages.values():
-        fields = common_fields(row["text"])
-        assert fields["主题1"] == "新主题" and "主题2" not in fields
-    assert len(wiki.edits) == 2 and not console
-    assert {path.name for path in tmp_path.iterdir()} == {"source.json", "state.json"}
-    data.get.assert_not_called()
-
-
-@pytest.mark.parametrize("tracked", [True, False])
-async def test_selected_older_theme_backfills_in_order_without_touching_other_themes(
-    wiki, opts, tracked
-):
-    records = scoped_source()
-    draft = render_pages(records, [7])[0]
-    if tracked:
-        await relic.synchronize(wiki, [draft], opts)
-    else:
-        wiki.pages[draft["title"]] = {"text": draft["text"], "revid": 1}
-    wiki.pages[draft["title"]]["text"] = (
-        "人工导语\n"
-        + wiki.pages[draft["title"]]["text"]
-        .replace("|效果1=新主题效果", "|效果1=人工效果")
-        .replace("|角标1=", "|角标1={{人工角标}}")
-        .replace("|解锁条件1=专用解锁条件\n", "")
-        + "[[分类:人工维护]]\n"
-    )
-    before = common_fields(wiki.pages[draft["title"]]["text"])
-    older = render_pages(records, [1])[0]
-    opts.themes = [1]
-    await relic.synchronize(wiki, [older], opts)
-    after_text = wiki.pages[draft["title"]]["text"]
-    after = common_fields(after_text)
-    assert after["主题1"] == "旧主题" and after["主题2"] == "新主题"
-    assert "主题3" not in after and "中间主题" not in after_text
-    for prefix in ["主题", "角标", "售价", "效果", "获取条件"]:
-        assert after[prefix + "2"] == before[prefix + "1"]
-    assert "解锁条件2" not in after
-    assert after["iconId"] == "rogue_7_relic_1"
-    assert after["稀有度"] == "2" and after["描述"] == "最新描述"
-    assert after_text.startswith("人工导语\n") and after_text.endswith(
-        "[[分类:人工维护]]\n"
-    )
-    state = load_state(opts.state_file, API)
-    assert state["pages"][draft["title"]]["latest_theme"] == 7
-    count = len(wiki.edits)
-    await relic.synchronize(wiki, [older], opts)
-    assert len(wiki.edits) == count
-
-    # Full maintenance later adds the omitted middle theme, keeping manual values.
-    opts.themes = []
-    await relic.synchronize(wiki, [render_pages(records)[0]], opts)
-    full = common_fields(wiki.pages[draft["title"]]["text"])
-    assert [full[f"主题{i}"] for i in (1, 2, 3)] == ["旧主题", "中间主题", "新主题"]
-    assert full["效果3"] == "人工效果" and full["角标3"] == "{{人工角标}}"
-    if tracked:
-        assert "解锁条件3" not in full
-
-
-async def test_selected_update_does_not_fill_missing_unselected_fields(wiki, opts):
-    records = scoped_source()
-    page = render_pages(records)[0]
-    wiki.pages[page["title"]] = {
-        "text": page["text"].replace("|获取条件2=\n", "").replace("|获取条件3=\n", ""),
-        "revid": 1,
-    }
-    await relic.synchronize(wiki, [render_pages(records, [3])[0]], opts)
-    after = common_fields(wiki.pages[page["title"]]["text"])
-    assert after["获取条件2"] == "" and "获取条件3" not in after
-
-
-@pytest.mark.parametrize("mode", ["dev", "product"])
-async def test_only_problems_are_printed_and_no_page_artifacts_are_written(
-    wiki, tmp_path, monkeypatch, console, mode
-):
-    monkeypatch.chdir(tmp_path)
-    opts = RelicConfig.model_validate(
-        {
-            "stateFile": str(tmp_path / "state.json"),
-            "reportDir": str(tmp_path / "retired-reports"),
-        }
-    )
-    assert "report_dir" not in opts.model_dump()
-    wiki.mode = mode
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert not console
-    wiki.pages["测试藏品"] = {"text": "#重定向 [[目标]]", "revid": 2}
-    await relic.synchronize(wiki, render_pages(source()), opts)
-    assert len(console) == 1 and "测试藏品" in console[0] and "重定向" in console[0]
-    if mode == "dev":
-        assert "预检未通过" in console[0] and not wiki.edits
-        assert not list(tmp_path.iterdir())
-    else:
-        assert "未处理" in console[0]
-        assert {path.name for path in tmp_path.iterdir()} == {"state.json"}
-    assert not any("{{收藏品/common" in message for message in console)
-
-
-@pytest.mark.parametrize("mode", ["dev", "product"])
-async def test_failed_read_prints_page_reason_and_unattempted_pages(
-    wiki, opts, console, mode
-):
-    wiki.mode = mode
-    wiki.read_revision = AsyncMock(side_effect=TimeoutError("读取超时"))
-    drafts = source()
-    other = copy.deepcopy(drafts["relic"][0])
-    other["name"] = "尚未处理藏品"
-    drafts["relic"].append(other)
-    with pytest.raises(TimeoutError):
-        await relic.synchronize(wiki, render_pages(drafts), opts)
-    assert not wiki.edits and not opts.state_file.exists()
-    assert len(console) == 2
-    assert "测试藏品" in console[0] and "读取超时" in console[0]
-    assert "尚未处理藏品" in console[1] and "尚未尝试此页" in console[1]
-    if mode == "dev":
-        assert "预检未通过" in console[0]
-
-
-@pytest.mark.parametrize("response_lost", [False, True])
-async def test_maintenance_edit_guards_and_no_transport_retry(response_lost):
-    posts = []
-
-    def handler(request):
-        if request.method == "GET":
-            return httpx2.Response(
-                200, json={"query": {"tokens": {"csrftoken": "CSRF"}}}
-            )
-        posts.append(
-            {
-                key: values[0]
-                for key, values in parse_qs(request.content.decode()).items()
-            }
-        )
-        if response_lost:
-            raise httpx2.ReadTimeout("Response lost", request=request)
-        return httpx2.Response(
-            200, json={"edit": {"result": "Success", "newrevid": 124}}
-        )
-
-    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handler)) as client:
-        wiki = Wiki(API, client=client)
-        expected = pytest.raises(httpx2.ReadTimeout) if response_lost else nullcontext()
-        with expected:
-            await wiki.edit(
-                title="藏品",
-                text="源码",
-                baserevid=123,
-                starttimestamp="2026-09-27T00:00:00Z",
-                nocreate=True,
-                assert_user="bot",
-                maxlag=5,
-                watchlist="nochange",
-                retry_transport=False,
-            )
-    assert len(posts) == 1
-    sent = posts[0]
-    assert sent["assert"] == "bot" and sent["bot"] == "1"
-    assert sent["baserevid"] == "123" and sent["nocreate"] == "1"
-    assert sent["starttimestamp"] == "2026-09-27T00:00:00Z"
-    assert sent["maxlag"] == "5" and sent["watchlist"] == "nochange"
-    assert "retry_transport" not in sent and "assert_user" not in sent
-
-
-@pytest.mark.parametrize(
-    "kind", ["existing", "missing", "redirect", "hidden", "invalid", "error"]
-)
-async def test_revision_snapshot_distinguishes_missing_unreadable_and_redirect(kind):
-    def handler(request):
-        params = dict(request.url.params)
-        assert params["action"] == "query" and params["rvslots"] == "main"
-        assert "redirects" not in params
-        page = {
-            "title": "藏品",
-            "contentmodel": "wikitext",
-            "revisions": [
-                {
-                    "revid": 42,
-                    "slots": {"main": {"content": "正文", "contentmodel": "wikitext"}},
-                }
-            ],
-        }
-        if kind == "missing":
-            page = {"title": "藏品", "missing": True}
-        elif kind == "redirect":
-            page["redirect"] = True
-        elif kind == "hidden":
-            page["revisions"][0]["slots"]["main"] = {"texthidden": True}
-        elif kind == "invalid":
-            page = {"title": "藏品", "invalid": True}
-        elif kind == "error":
-            return httpx2.Response(
-                200, json={"error": {"code": "permissiondenied", "info": "no"}}
-            )
-        return httpx2.Response(
-            200,
-            json={"curtimestamp": "2026-09-27T00:00:00Z", "query": {"pages": [page]}},
-        )
-
-    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handler)) as client:
-        wiki = Wiki(API, client=client)
-        if kind in {"hidden", "invalid", "error"}:
-            with pytest.raises((ValueError, WikiError)):
-                await wiki.read_revision("藏品")
-        else:
-            row = await wiki.read_revision("藏品")
-            assert row["exists"] == (kind != "missing")
-            assert row["redirect"] == (kind == "redirect")
-            assert row["revid"] == (None if kind == "missing" else 42)
-
-
-def test_mode_registration_and_help():
-    assert "relic.run" in cli.jobs_for(("regular",))
-    assert cli.jobs_for(("relic",)) == ["relic.run"]
-    assert cli.jobs_for(("regular", "relic")).count("relic.run") == 1
-    result = CliRunner().invoke(cli.main, ["--help"])
-    assert result.exit_code == 0 and "--relic-source" in result.output
-    assert "--relic-theme" in result.output
-
-
-@pytest.mark.parametrize(
-    "themes,modes,dev,failed,commit",
-    [
-        ([], ("relic",), False, [], True),
-        ([], ("relic",), True, [], False),
-        ([], ("relic",), False, ["relic.run"], False),
-        ([6], ("relic",), False, [], False),
-        ([6], ("relic",), True, [], False),
-        ([6], ("regular",), False, [], False),
-        ([6], ("regular",), True, [], False),
-        ([6], ("new",), False, [], True),
-        ([6], ("new",), True, [], False),
-    ],
-)
-async def test_cli_version_commit_policy(
-    monkeypatch, themes, modes, dev, failed, commit
-):
-    scoped = config.model_copy(update={"relic": RelicConfig(themes=themes)})
-    data = Mock(aclose=AsyncMock())
-    data.unpacker.check_update = AsyncMock(return_value=True)
-    wiki = Mock(aclose=AsyncMock())
-    monkeypatch.setattr(cli, "GameData", Mock(return_value=data))
-    monkeypatch.setattr(cli.Wiki, "login", AsyncMock(return_value=wiki))
-    monkeypatch.setattr(cli, "discover_jobs", Mock())
-    monkeypatch.setattr(cli, "run_jobs", AsyncMock(return_value=failed))
-    settings = Settings(_env_file=None, username="dummy", password="dummy")
-    expected = (
-        pytest.raises(click.ClickException, match="未推进") if failed else nullcontext()
-    )
-    with expected:
-        assert await cli._amain(scoped, settings, "cn", bool(themes), dev, modes) == (
-            not dev
-        )
-    assert data.unpacker.commit_version.call_count == int(commit)
-    wiki.aclose.assert_awaited_once()
-    data.aclose.assert_awaited_once()
-
-
-@pytest.mark.parametrize(
-    "args,expected",
-    [
-        ([], [3]),
-        (["--relic-theme", "6", "--relic-theme", "1", "--relic-theme", "6"], [1, 6]),
-    ],
-)
-def test_cli_theme_options_override_configuration(monkeypatch, args, expected):
-    monkeypatch.setattr(
-        cli, "config", config.model_copy(update={"relic": RelicConfig(themes=[3])})
-    )
-    monkeypatch.setattr(
-        cli,
-        "get_settings",
-        lambda: Settings(
-            _env_file=None, username="dummy", password="dummy", sentry_dsn=""
-        ),
-    )
-    run = Mock(return_value=False)
-    monkeypatch.setattr(cli.anyio, "run", run)
-    result = CliRunner().invoke(cli.main, [*args, "relic"])
-    assert result.exit_code == 0, result.output
-    assert run.call_args.args[1].relic.themes == expected
-
-
-@pytest.mark.parametrize(
-    "args",
-    [
-        ["--relic-theme", "0", "relic"],
-        ["--relic-theme", "-1", "relic"],
-        ["--relic-theme", "rogue_6", "relic"],
-        ["--relic-theme", "6"],
-        ["--relic-theme", "6", "new"],
-    ],
-)
-def test_cli_rejects_invalid_theme_or_wrong_mode_before_network(monkeypatch, args):
-    run = Mock(side_effect=AssertionError("Must not start network workflow"))
-    monkeypatch.setattr(cli.anyio, "run", run)
-    result = CliRunner().invoke(cli.main, args)
-    assert result.exit_code == 2
-    run.assert_not_called()
+    fake.errors["冲突"] = WikiError("editconflict", "Edit conflict.")
+
+    await run.func(cast("Wiki", fake), topic_table, consts)
+
+    create, update = fake.edits
+    assert create["title"] == "新藏品"
+    assert create["createonly"] is True and create["summary"] == "init"
+    assert create["text"] == render_page(relics["新藏品"])
+    assert update["title"] == "旧藏品" and update["summary"] == "update"
+    assert update["nocreate"] is True
+    assert update["basetimestamp"] == "2026-01-01T00:00:00Z"
+    assert update["starttimestamp"] == "2026-01-02T00:00:00Z"
+    assert update["text"] == merge_page(old, relics["旧藏品"])
+    assert f"|主题2={THEMES[2]}" in update["text"]
+    assert [w.split(" ")[1] for w in logged_warnings] == ["重定向", "同名干员", "冲突"]
+
+
+@pytest.mark.anyio
+async def test_job_propagates_unexpected_api_errors() -> None:
+    topic_table, consts = relic_tables()
+    fake = FakeWiki({})
+    fake.errors["新藏品"] = WikiError("permissiondenied", "no")
+    with pytest.raises(WikiError, match="permissiondenied"):
+        await run.func(cast("Wiki", fake), topic_table, consts)
+
+
+def test_relic_mode_is_separate_from_regular() -> None:
+    assert jobs_for(("relic",)) == ["relic.run"]
+    assert "relic.run" not in jobs_for(("regular",))

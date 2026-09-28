@@ -7,7 +7,7 @@ from urllib.parse import parse_qs
 import httpx2
 import pytest
 
-from ptilopsis.utils.wiki import READ_CHUNK, Wiki, WikiError
+from ptilopsis.utils.wiki import READ_CHUNK, PageRevision, Wiki, WikiError
 
 pytestmark = pytest.mark.anyio
 
@@ -68,12 +68,28 @@ class FakeMediaWiki:
             if canonical not in self.pages:
                 pages[str(-(i + 1))] = {"title": canonical, "missing": ""}
                 continue
-            page: dict[str, Any] = {"pageid": i + 1, "title": canonical}
+            text = self.pages[canonical]
+            page: dict[str, Any] = {
+                "pageid": i + 1,
+                "title": canonical,
+                "contentmodel": "wikitext",
+            }
+            if text is not None and text.startswith("#REDIRECT"):
+                page["redirect"] = ""
             # 用 None 模拟超出结果大小上限、内容被截掉的页面(只在批量请求里发生)
-            if self.pages[canonical] is not None or len(titles) == 1:
-                page["revisions"] = [{"*": self.pages[canonical] or "single"}]
+            if text is not None or len(titles) == 1:
+                page["revisions"] = [
+                    {
+                        "revid": 100 + i,
+                        "timestamp": f"2026-01-01T00:00:{i:02d}Z",
+                        "*": text or "single",
+                    }
+                ]
             pages[str(i + 1)] = page
-        return {"query": {"normalized": normalized, "pages": pages}}
+        return {
+            "curtimestamp": "2026-01-02T00:00:00Z",
+            "query": {"normalized": normalized, "pages": pages},
+        }
 
 
 def make_wiki(pages: dict[str, Any], mode: str = "product") -> tuple[Wiki, Any]:
@@ -120,6 +136,50 @@ async def test_read_many_refetches_truncated_pages_individually() -> None:
     got = await wiki.read_many(["a", "b", "c"])
     assert got == {"a": "A", "b": "single", "c": "C"}
     assert [r["titles"] for r in server.requests] == ["a|b|c", "b"]
+
+
+async def test_read_revisions_returns_ids_timestamps_and_redirects() -> None:
+    pages: dict[str, Any] = {f"藏品{i}": f"text{i}" for i in range(READ_CHUNK + 1)}
+    pages["Some Page"] = "#REDIRECT [[藏品0]]"
+    pages["截断"] = None
+    wiki, server = make_wiki(pages)
+
+    got = await wiki.read_revisions([*pages, "Some_Page", "缺失的页面"])
+
+    assert set(got) == {*pages, "Some_Page"}
+    assert got["藏品1"] == PageRevision(
+        title="藏品1",
+        text="text1",
+        revid=101,
+        timestamp="2026-01-01T00:00:01Z",
+        starttimestamp="2026-01-02T00:00:00Z",
+        redirect=False,
+        contentmodel="wikitext",
+    )
+    assert got["Some_Page"] is got["Some Page"] and got["Some Page"].redirect
+    # 内容被截掉的页面单独再读一次
+    assert got["截断"].text == "single"
+    assert [len(r["titles"].split("|")) for r in server.requests] == [
+        READ_CHUNK,
+        5,
+        1,
+    ]
+    assert server.requests[0]["rvprop"] == "ids|timestamp|content"
+
+
+async def test_edit_passes_conflict_detection_timestamps() -> None:
+    wiki, server = make_wiki({})
+    await wiki.edit(
+        title="页面",
+        text="1",
+        nocreate=True,
+        basetimestamp="2026-01-01T00:00:00Z",
+        starttimestamp="2026-01-02T00:00:00Z",
+    )
+    edit = server.edits[0]
+    assert edit["nocreate"] == "1"
+    assert edit["basetimestamp"] == "2026-01-01T00:00:00Z"
+    assert edit["starttimestamp"] == "2026-01-02T00:00:00Z"
 
 
 async def test_edit_caches_csrf_token_and_retries_on_badtoken() -> None:

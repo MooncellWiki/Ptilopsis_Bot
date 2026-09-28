@@ -1,9 +1,5 @@
 name: main-cn
 
-concurrency:
-  group: ptilopsis-cn-${{ github.ref }}
-  cancel-in-progress: false
-
 on:
   # push:
   #   branches: [ master ]
@@ -32,19 +28,3 @@ jobs:
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
         uv run ptil --check --remote new regular special
-
-    # A later job may fail after some relic pages have already been saved.
-    # Persist their baselines/pending writes even though the version stays old.
-    - name: Preserve collectible maintenance state
-      if: always()
-      shell: bash
-      run: |
-        if [ -f state/relic-pages.json ]; then
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- state/relic-pages.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Preserve collectible maintenance state"
-            git push
-          fi
-        fi

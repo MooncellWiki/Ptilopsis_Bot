@@ -30,7 +30,7 @@ ptilopsis/
 │   ├── building_buff.py   # 基建技能
 │   ├── furni.py           # 家具
 │   ├── item.py            # 道具
-│   ├── relic.py           # 收藏品
+│   ├── relic.py           # 集成战略收藏品
 │   ├── medal.py           # 勋章
 │   ├── mission.py         # 任务
 │   ├── newModule.py       # 新模组
@@ -137,10 +137,10 @@ ptil [flags] [modes ...]
 | --- | --- |
 | `new` | 新干员相关：`sidebar.update` → `basic.run` → `charword.run` |
 | `regular` | 常规更新：基建、关卡、敌人、皮肤、家具、道具、新模组、活动、任务、属性、勋章、剧情、术语 |
-| `relic` | 仅对收藏品页面自动更新与维护 |
 | `special` | 干员详情 / 密录、悖论模拟、剿灭、语音补全等 |
 | `jp` | JP 服增量更新 |
 | `weedy` | 高规格自动任务 |
+| `relic` | 集成战略收藏品页面：新建缺失的页面，给已有页面补上新主题（见下文） |
 | `demand` | 占位 / 调试入口 |
 
 ### 常用调用示例
@@ -158,13 +158,29 @@ ptil --check-jp --remote jp
 # 预览模式：不真正提交到 Wiki
 ptil --dev regular
 
-# 仅检查指定主题的藏品记录并更新相关页面，可以使用多组 --relic-theme 来同时运行多组更新
-ptil --check --force --relic-theme 6 relic
-ptil --check --force --relic-theme 5 --relic-theme 6 relic
+# 收藏品页面：先预览，确认后再正式写入
+ptil --dev relic
+ptil relic
 ```
 
-由于同步收藏品的功能魔改自原由nearl bot同步本地藏品列表的方案，因此此处保留了原方案的markdown文档，以供检查与修复此追加功能可能存在的问题\
-收藏品任务的来源、旧维护基准迁移、配置和故障处理见[收藏品自动维护说明](docs/relic.md)。`regular` 现在也包含 `relic.run`。
+### 收藏品页面（`relic`）
+
+`relic.run` 读取国服 `roguelike_topic_table` 与 `gamedata_const`，每个收藏品一个页面，正文是
+`{{收藏品/common}}`。不同主题里的同名收藏品合成一个页面，难度变体（`xx-α` 等）按生效难度写进同一主题。
+页面上的主题按 rogue 编号的先后从 1 连续编号，与 `rogue_N` 的 N 本身无关。
+
+维护规则是幂等的，重复运行不会产生新的编辑，因此不需要保存任何状态：
+
+- 页面不存在：按全部主题新建，编辑摘要为 `init`。
+- 页面已存在：刷新 `iconId` / `稀有度` / `描述`，并把页面上缺少的主题追加到已有主题之后，编辑摘要为 `update`；
+  已有主题的字段（角标、售价、效果等）、人工添加的参数和模板以外的正文都不动。
+- 以下情况跳过并打 warning，需要人工处理：页面是重定向；页面已存在但不是收藏品页面（同名干员 / 道具等，
+  需要建立消歧义页）；缺少的主题要插在已有主题中间；页面上的主题名与游戏数据对不上；页面 `iconId`
+  所在的主题比游戏数据还新。
+- 读取后页面被他人改动或删除时放弃这次编辑，下次运行重新合并。
+
+`模板:收藏品/common` 目前只支持 6 个主题，有收藏品超过时会打 warning 提醒先扩展模板。
+首次运行会批量新建几百个页面，所以 `relic` 暂不包含在 `regular` 与 CI 中，需要手动运行。
 
 ## GitHub Actions
 

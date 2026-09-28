@@ -1,6 +1,4 @@
 # ----- Project -----
-state/*.json.lock
-state/*.json.*.tmp
 .idea/
 UnpackerData/
 Unpacker/
