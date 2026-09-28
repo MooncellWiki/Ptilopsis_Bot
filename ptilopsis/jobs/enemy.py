@@ -155,7 +155,7 @@ def get_value(
     return f"\n|{name}={s}"
 
 
-def format_abilityList(
+def format_ability_list(
     ability_list: list[EnemyHandBookDataAbilty] | None,
     rts: richtext.RichText,
     html: bool = False,
@@ -191,62 +191,64 @@ class ClassLevel:
     def __init__(self, level_info_list: list[EnemyHandbookLevelInfoData]) -> None:
         self.attack: list[float] = []
         self.defence: list[float] = []
-        self.magicRes: list[float] = []
-        self.maxHP: list[float] = []
-        self.moveSpeed: list[float] = []
-        self.baseAttackTime: list[float] = []
-        self.epRes: list[float] = []
-        self.epDamageRes: list[float] = []
+        self.magic_res: list[float] = []
+        self.max_hp: list[float] = []
+        self.move_speed: list[float] = []
+        self.base_attack_time: list[float] = []
+        self.ep_res: list[float] = []
+        self.ep_damage_res: list[float] = []
         self.level: list[str | None] = []
         # 默认YJ给的数据按序排列
         for info in reversed(level_info_list):
             self.attack.append(_range_min(info.attack))
             self.defence.append(_range_min(info.def_))
-            self.magicRes.append(_range_min(info.magic_res))
-            self.maxHP.append(_range_min(info.max_hp))
-            self.moveSpeed.append(_range_min(info.move_speed))
-            self.baseAttackTime.append(_range_min(info.attack_speed))
-            self.epRes.append(_range_min(info.enemy_res))
-            self.epDamageRes.append(_range_min(info.enemy_damage_res))
+            self.magic_res.append(_range_min(info.magic_res))
+            self.max_hp.append(_range_min(info.max_hp))
+            self.move_speed.append(_range_min(info.move_speed))
+            self.base_attack_time.append(_range_min(info.attack_speed))
+            self.ep_res.append(_range_min(info.enemy_res))
+            self.ep_damage_res.append(_range_min(info.enemy_damage_res))
             self.level.append(info.class_level)
-        self.baseAttackTime = list(reversed(self.baseAttackTime))
+        self.base_attack_time = list(reversed(self.base_attack_time))
 
-    def getAttack(self, target_attack: float) -> str | None:
+    def get_attack(self, target_attack: float) -> str | None:
         return self.level[max(1, bisect.bisect_right(self.attack, target_attack)) - 1]
 
-    def getDef(self, target_def: float) -> str | None:
+    def get_def(self, target_def: float) -> str | None:
         return self.level[max(1, bisect.bisect_right(self.defence, target_def)) - 1]
 
-    def getMagicRes(self, target_magicRes: float) -> str | None:
+    def get_magic_res(self, target_magic_res: float) -> str | None:
         return self.level[
-            max(1, bisect.bisect_right(self.magicRes, target_magicRes)) - 1
+            max(1, bisect.bisect_right(self.magic_res, target_magic_res)) - 1
         ]
 
-    def getMaxHP(self, target_maxHP: float) -> str | None:
-        return self.level[max(1, bisect.bisect_right(self.maxHP, target_maxHP)) - 1]
+    def get_max_hp(self, target_max_hp: float) -> str | None:
+        return self.level[max(1, bisect.bisect_right(self.max_hp, target_max_hp)) - 1]
 
-    def getMoveSpeed(self, target_moveSpeed: float) -> str | None:
+    def get_move_speed(self, target_move_speed: float) -> str | None:
         return self.level[
-            max(1, bisect.bisect_right(self.moveSpeed, target_moveSpeed)) - 1
+            max(1, bisect.bisect_right(self.move_speed, target_move_speed)) - 1
         ]
 
-    def getBaseAttackTime(self, target_baseAttackTime: float) -> str | None:
-        if target_baseAttackTime < 0:
+    def get_base_attack_time(self, target_base_attack_time: float) -> str | None:
+        if target_base_attack_time < 0:
             return self.level[
-                len(self.level) - bisect.bisect_right(self.baseAttackTime, 1.0)
+                len(self.level) - bisect.bisect_right(self.base_attack_time, 1.0)
             ]
         return self.level[
             len(self.level)
-            - bisect.bisect_right(self.baseAttackTime, target_baseAttackTime)
+            - bisect.bisect_right(self.base_attack_time, target_base_attack_time)
         ]
 
-    def getEnemyDamageRes(self, target_enemyDamageRes: float) -> str | None:
+    def get_enemy_damage_res(self, target_enemy_damage_res: float) -> str | None:
         return self.level[
-            max(1, bisect.bisect_right(self.epDamageRes, target_enemyDamageRes)) - 1
+            max(1, bisect.bisect_right(self.ep_damage_res, target_enemy_damage_res)) - 1
         ]
 
-    def getEnemyRes(self, target_enemyRes: float) -> str | None:
-        return self.level[max(1, bisect.bisect_right(self.epRes, target_enemyRes)) - 1]
+    def get_enemy_res(self, target_enemy_res: float) -> str | None:
+        return self.level[
+            max(1, bisect.bisect_right(self.ep_res, target_enemy_res)) - 1
+        ]
 
 
 def iter_levels(
@@ -411,7 +413,7 @@ async def run(
                 race_names.get(r, "未知") for r in summary.race_tags
             )
         if enemy.ability_list:
-            content += "\n|能力=" + format_abilityList(enemy.ability_list, rts)
+            content += "\n|能力=" + format_ability_list(enemy.ability_list, rts)
         if enemy.link_enemies:
             links = linked_enemy_links(
                 enemy.link_enemies, enemy_data_table, enemy_levels
@@ -494,14 +496,14 @@ async def update_data(
             "attackType": _lookup(APPLY_WAY_NAMES, summary.apply_way, "未知"),
             "damageType": damage_type_names(enemy),
             "motion": _lookup(MOTION_NAMES, summary.motion, "未知"),
-            "endure": level_standard.getMaxHP(attrs[0]),
-            "attack": level_standard.getAttack(attrs[1]),
-            "defence": level_standard.getDef(attrs[2]),
-            "moveSpeed": level_standard.getMoveSpeed(attrs[4]),
-            "attackSpeed": level_standard.getBaseAttackTime(attrs[5]),
-            "resistance": level_standard.getMagicRes(attrs[3]),
-            "enemyRes": level_standard.getEnemyRes(attrs[6]),
-            "enemyDamageRes": level_standard.getEnemyDamageRes(attrs[7]),
+            "endure": level_standard.get_max_hp(attrs[0]),
+            "attack": level_standard.get_attack(attrs[1]),
+            "defence": level_standard.get_def(attrs[2]),
+            "moveSpeed": level_standard.get_move_speed(attrs[4]),
+            "attackSpeed": level_standard.get_base_attack_time(attrs[5]),
+            "resistance": level_standard.get_magic_res(attrs[3]),
+            "enemyRes": level_standard.get_enemy_res(attrs[6]),
+            "enemyDamageRes": level_standard.get_enemy_damage_res(attrs[7]),
             "ability": "",
         }
         if enemy.invisible_detail:
@@ -533,7 +535,7 @@ async def update_data(
         # 地位
         new_data["enemyLevel"] = ENEMY_LEVEL_NAMES.get(enemy.enemy_level, "其他")
         # 能力
-        new_data["ability"] = format_abilityList(
+        new_data["ability"] = format_ability_list(
             enemy.ability_list, rts_html, html=True
         )
 

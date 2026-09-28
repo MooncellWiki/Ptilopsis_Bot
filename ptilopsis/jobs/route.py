@@ -33,7 +33,7 @@ def format_time(time: float) -> str:
     return f"{int(time / 60)}分{time % 60:.1f}秒"
 
 
-def parse_checkPointType(checkpoint_type: str, time: float, x: str, y: str) -> str:
+def parse_checkpoint_type(checkpoint_type: str, time: float, x: str, y: str) -> str:
     return {
         "MOVE": f"→({x}, {y})",
         "WAIT_FOR_SECONDS": f"(WAIT: {time}s)",
@@ -55,7 +55,7 @@ def parse_checkpoint(checkpoint: RouteDataCheckpointData) -> str:
     offset = checkpoint.reach_offset or UnityEngineVector2()
     x_pos = f"{position.col}" if offset.x == 0.0 else f"{position.col + offset.x}"
     y_pos = f"{position.row}" if offset.y == 0.0 else f"{position.row + offset.y}"
-    return parse_checkPointType(checkpoint.type, checkpoint.time, x_pos, y_pos)
+    return parse_checkpoint_type(checkpoint.type, checkpoint.time, x_pos, y_pos)
 
 
 def parse_route(route: RouteData | None) -> str | None:

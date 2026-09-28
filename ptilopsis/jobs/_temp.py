@@ -32,7 +32,7 @@ def _sort_id(text: str) -> str | None:
 
 
 @job
-async def update_enemyId(
+async def update_enemy_id(
     wiki: Wiki,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_pages: Annotated[list[str], category("分类:敌人")],

@@ -225,9 +225,9 @@ def update_activity(
             for milestone in act4d0.mile_stone_item_list or []:
                 order_max = max(milestone.order_id, order_max)
                 milestone_list[milestone.order_id] = (
-                    "\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50}}}}\n|{item}".format(
+                    "\n|-\n|{{{{材料消耗|{name}|{token_num}|50}}}}\n|{item}".format(
                         name=milestone_name,
-                        tokenNum=milestone.token_num,
+                        token_num=milestone.token_num,
                         item=parse_reward(
                             milestone.item,
                             item_table,
