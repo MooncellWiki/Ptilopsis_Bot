@@ -2,11 +2,14 @@
 
 用 :meth:`Wiki.login` 构造;所有请求走同一个连接池。读取用
 :meth:`Wiki.read`,一次要读很多页面时用 :meth:`Wiki.read_many`,它把标题按
-50 个一批合并成一个 ``action=query``。csrf token 按会话缓存,只在服务器报
-``badtoken`` 时重新取。编辑类操作用锁串行,避免并发写页面。
+50 个一批合并成一个 ``action=query``;要在读到的版本上改写页面时用
+:meth:`Wiki.read_revisions`,它额外带回版本号与时间戳供编辑冲突检测。
+csrf token 按会话缓存,只在服务器报 ``badtoken`` 时重新取。编辑类操作用锁
+串行,避免并发写页面。
 """
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import quote
 
@@ -17,7 +20,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
 
-__all__ = ["Wiki", "WikiError"]
+__all__ = ["PageRevision", "Wiki", "WikiError"]
 
 READ_CHUNK = 50
 """一次 ``action=query`` 里带的标题数;普通用户上限 50,bot 有 apihighlimits 才是 500。"""
@@ -30,6 +33,22 @@ class WikiError(RuntimeError):
         super().__init__(f"{code}: {info}")
         self.code = code
         self.info = info
+
+
+@dataclass(frozen=True)
+class PageRevision:
+    """页面最新版本的快照,:meth:`Wiki.read_revisions` 的结果。"""
+
+    title: str
+    """服务器规范化后的标题。"""
+    text: str
+    revid: int
+    timestamp: str
+    """该版本的保存时间,改写页面时作为 ``basetimestamp``。"""
+    starttimestamp: str
+    """读取时的服务器时间,改写页面时作为 ``starttimestamp``。"""
+    redirect: bool
+    contentmodel: str
 
 
 def _transient(name: str) -> Any:
@@ -160,6 +179,8 @@ class Wiki:
         redirect: bool | None = None,
         contentformat: str | None = None,
         contentmodel: str | None = None,
+        basetimestamp: str | None = None,
+        starttimestamp: str | None = None,
     ) -> dict[str, Any] | None:
         """
         :param title: 要编辑的页面标题。不能与pageid一起使用。
@@ -179,6 +200,9 @@ class Wiki:
             text/plain、text/css、text/x-wiki、text/javascript
         :param contentmodel:新内容的内容模型。GadgetDefinition、Scribunto、
             sanitized-css、flow-board、wikitext、javascript、json、css、text、smw/schema
+        :param basetimestamp:所基于版本的时间戳,页面在此之后被改过时报 editconflict。
+        :param starttimestamp:开始编辑的时间,页面在此之后被删除时报 pagedeleted。
+            两者都取自 :meth:`read_revisions` 的结果。
         :return: API 返回的 JSON;dev 模式下只打印参数并返回 None,
             ``createonly`` 而页面已存在时也返回 None
         """
@@ -312,6 +336,55 @@ class Wiki:
                         result[key] = text
             for title in truncated:
                 result[title] = await self.read(title)
+        return result
+
+    async def read_revisions(self, titles: Iterable[str]) -> dict[str, PageRevision]:
+        """批量读取页面最新版本,返回 ``{标题: PageRevision}``;不存在的页面不在结果里。
+
+        分批、标题映射与截断后单独重读的规则同 :meth:`read_many`,只是多带回
+        版本号、时间戳、内容模型和是否为重定向,供改写页面时检测编辑冲突。
+        """
+        titles = list(dict.fromkeys(titles))
+        chunks = [titles[i : i + READ_CHUNK] for i in range(0, len(titles), READ_CHUNK)]
+        result: dict[str, PageRevision] = {}
+        while chunks:
+            chunk = chunks.pop(0)
+            requested = set(chunk)
+            res = await self._query(
+                {
+                    "titles": "|".join(chunk),
+                    "prop": "revisions|info",
+                    "rvprop": "ids|timestamp|content",
+                    "curtimestamp": 1,
+                }
+            )
+            query = res["query"]
+            aliases: dict[str, list[str]] = {}
+            for item in query.get("normalized", []):
+                aliases.setdefault(item["to"], []).append(item["from"])
+            for page in query.get("pages", {}).values():
+                if "missing" in page or "invalid" in page:
+                    continue
+                title = page["title"]
+                keys = [t for t in (title, *aliases.get(title, [])) if t in requested]
+                text = self._page_text(page)
+                if text is None:
+                    if len(chunk) == 1:
+                        raise KeyError(title)
+                    chunks.extend([key] for key in keys)
+                    continue
+                revision = page["revisions"][0]
+                snapshot = PageRevision(
+                    title=title,
+                    text=text,
+                    revid=revision["revid"],
+                    timestamp=revision["timestamp"],
+                    starttimestamp=res["curtimestamp"],
+                    redirect="redirect" in page,
+                    contentmodel=page.get("contentmodel", "wikitext"),
+                )
+                for key in keys:
+                    result[key] = snapshot
         return result
 
     async def category(self, category: str) -> list[str]:
