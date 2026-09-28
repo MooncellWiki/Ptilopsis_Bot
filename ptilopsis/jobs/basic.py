@@ -430,7 +430,10 @@ def get_talent_list(char: CharacterData, rts: richtext.RichText) -> str:
             )
             talent_list += f"|第{talent_num}天赋{index}={talent.name}\n"
             talent_list += f"|第{talent_num}天赋{index}条件={talent_condition}\n"
-            talent_list += f"|第{talent_num}天赋{index}效果={compile_text(rts, talent.description)}\n"
+            talent_list += (
+                f"|第{talent_num}天赋{index}效果="
+                f"{compile_text(rts, talent.description)}\n"
+            )
     talent_list += "}}"
     return talent_list
 
@@ -488,7 +491,12 @@ def get_skill_text(
         else:
             skill_num = str(idx + 1)
         sp_data = level_data.sp_data
-        skill_text += f"\n|技能{skill_num}描述={skill_description}\n|技能{skill_num}初始={sp_data.init_sp if sp_data else 0}\n|技能{skill_num}消耗={sp_data.sp_cost if sp_data else 0}\n|技能{skill_num}持续={skill_duration}"
+        skill_text += (
+            f"\n|技能{skill_num}描述={skill_description}"
+            f"\n|技能{skill_num}初始={sp_data.init_sp if sp_data else 0}"
+            f"\n|技能{skill_num}消耗={sp_data.sp_cost if sp_data else 0}"
+            f"\n|技能{skill_num}持续={skill_duration}"
+        )
     skill_text += "\n}}"
     return skill_text
 
@@ -546,7 +554,12 @@ async def get_token_info(
         if token is None:
             continue
         token_phases = token.phases or []
-        token_page = f"==召唤物信息==\n{{{{召唤物信息\n|中文名称={token.name}\n|外文名称={token.appellation}\n|持有者={char.name}\n|使用条件=—"
+        token_page = (
+            f"==召唤物信息==\n{{{{召唤物信息\n|中文名称={token.name}"
+            f"\n|外文名称={token.appellation}"
+            f"\n|持有者={char.name}"
+            "\n|使用条件=—"
+        )
         token_page += "\n|部署位置="
         token_page += {"MELEE": "近战位", "RANGED": "远程位", "ALL": "全部位"}[
             token.position
@@ -556,11 +569,28 @@ async def get_token_info(
             logger.info(f"召唤物{token.name} rangeId changes.")
         for phases_num, phase in enumerate(token_phases):
             frames = phase_attributes(phase)
-            token_page += f"\n|精英{phases_num}_1级_生命上限={frames[0].max_hp}\n|精英{phases_num}_1级_攻击={frames[0].atk}\n|精英{phases_num}_1级_防御={frames[0].def_}\n|精英{phases_num}_1级_法术抗性={int(frames[0].magic_resistance)}"
+            token_page += (
+                f"\n|精英{phases_num}_1级_生命上限={frames[0].max_hp}"
+                f"\n|精英{phases_num}_1级_攻击={frames[0].atk}"
+                f"\n|精英{phases_num}_1级_防御={frames[0].def_}"
+                f"\n|精英{phases_num}_1级_法术抗性={int(frames[0].magic_resistance)}"
+            )
             token_page += f"\n|精英{phases_num}_满级={phase.max_level}"
-            token_page += f"\n|精英{phases_num}_满级_生命上限={frames[-1].max_hp}\n|精英{phases_num}_满级_攻击={frames[-1].atk}\n|精英{phases_num}_满级_防御={frames[-1].def_}\n|精英{phases_num}_满级_法术抗性={int(frames[-1].magic_resistance)}"
+            token_page += (
+                f"\n|精英{phases_num}_满级_生命上限={frames[-1].max_hp}"
+                f"\n|精英{phases_num}_满级_攻击={frames[-1].atk}"
+                f"\n|精英{phases_num}_满级_防御={frames[-1].def_}"
+                f"\n|精英{phases_num}_满级_法术抗性={int(frames[-1].magic_resistance)}"
+            )
         final = phase_attributes(token_phases[0])[-1]
-        token_page += f"\n|再部署时间={final.respawn_time}s\n|部署费用={final.cost}\n|阻挡数={final.block_cnt}\n|攻击间隔={final.base_attack_time}s\n|嘲讽等级={final.taunt_level}\n|部署占用数=?\n}}}}"
+        token_page += (
+            f"\n|再部署时间={final.respawn_time}s"
+            f"\n|部署费用={final.cost}"
+            f"\n|阻挡数={final.block_cnt}"
+            f"\n|攻击间隔={final.base_attack_time}s"
+            f"\n|嘲讽等级={final.taunt_level}"
+            "\n|部署占用数=?\n}}"
+        )
         skill_list, id_count = "\n==召唤物技能==", 0
         for skill_data in token.skills or []:
             if skill_data.skill_id is None:
@@ -692,7 +722,10 @@ def get_skill_levelUp_list(char: CharacterData, item_table: InventoryData) -> st
             if skill.level_up_cost_cond:
                 for i in [8, 9, 10]:
                     cost = skill.level_up_cost_cond[i - 8].level_up_cost or []
-                    skill_levelup_list += f"|{trans_id(skill_id + 1)}{i}={material_cost(item_table, cost)}\n"
+                    skill_levelup_list += (
+                        f"|{trans_id(skill_id + 1)}{i}="
+                        f"{material_cost(item_table, cost)}\n"
+                    )
         skill_levelup_list += "}}"
     else:
         skill_levelup_list = "该干员没有技能"
@@ -732,7 +765,11 @@ def get_battle_equip(
         equip_name = (equip_info.uni_equip_name or "").strip()
         b_info = (equip_info.uni_equip_desc or "").strip().replace("\n", "<br>")
         if equip_info.type == "INITIAL":
-            template = "\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes\n|分支={subProf}\n|模组图标={equipIcon}\n|类型图标={typeIcon}\n|基础信息={bInfo}\n}}}}"
+            template = (
+                "\n==={name}===\n{{{{模组\n|名称={name}\n|基础证章=yes"
+                "\n|分支={subProf}\n|模组图标={equipIcon}\n|类型图标={typeIcon}"
+                "\n|基础信息={bInfo}\n}}}}"
+            )
             content.append(
                 template.format(
                     name=equip_name,
@@ -744,7 +781,8 @@ def get_battle_equip(
             )
         else:
             template = (
-                "\n==={name}===\n<section begin=专属模组 />\n{{{{模组\n|名称={name}\n|类型={type}"
+                "\n==={name}===\n<section begin=专属模组 />"
+                "\n{{{{模组\n|名称={name}\n|类型={type}"
                 "{typeColor}{equipIcon}{typeIcon}{params}{trait}{talent}{missions}{unlockCond}{itemCost}"
                 "\n|基础信息={bInfo}\n}}}}\n<section end=专属模组 />"
             )
@@ -844,9 +882,17 @@ def get_battle_equip(
 def get_related_item(char: CharacterData, item_table: InventoryData) -> str:
     potential_item = (item_table.items or {}).get(char.potential_item_id or "")
     if char.potential_item_id and potential_item is not None:
-        return f"{{{{相关道具\n|干员简介={char.item_usage}\n|干员简介补充={char.item_desc}\n|信物用途={potential_item.usage}\n|信物描述={potential_item.description}\n}}}}"
+        return (
+            f"{{{{相关道具\n|干员简介={char.item_usage}"
+            f"\n|干员简介补充={char.item_desc}"
+            f"\n|信物用途={potential_item.usage}"
+            f"\n|信物描述={potential_item.description}\n}}}}"
+        )
     else:
-        return f"{{{{相关道具\n|干员简介={char.item_usage}\n|干员简介补充={char.item_desc}\n}}}}"
+        return (
+            f"{{{{相关道具\n|干员简介={char.item_usage}"
+            f"\n|干员简介补充={char.item_desc}\n}}}}"
+        )
 
 
 def first_story_text(view: HandBookStoryViewData) -> str:
@@ -878,7 +924,13 @@ def get_stories_list(
     else:
         doc8 = doc7
 
-    stories_list_set += "|性别={doc1}\n|{doc_exp}={doc2}\n|出身地={doc3}\n|生日={doc4}\n|种族={doc5}\n|身高={doc6}\n|矿石病感染情况={doc7}\n|是否感染者={doc8}\n\n|物理强度={test1}\n|战场机动={test2}\n|生理耐受={test3}\n|战术规划={test4}\n|战斗技巧={test5}\n|源石技艺适应性={test6}\n\n|体细胞与源石融合率={data1}\n|血液源石结晶密度={data2}\n}}}}".format(
+    stories_list_set += (
+        "|性别={doc1}\n|{doc_exp}={doc2}\n|出身地={doc3}\n|生日={doc4}"
+        "\n|种族={doc5}\n|身高={doc6}\n|矿石病感染情况={doc7}\n|是否感染者={doc8}\n"
+        "\n|物理强度={test1}\n|战场机动={test2}\n|生理耐受={test3}"
+        "\n|战术规划={test4}\n|战斗技巧={test5}\n|源石技艺适应性={test6}\n"
+        "\n|体细胞与源石融合率={data1}\n|血液源石结晶密度={data2}\n}}}}"
+    ).format(
         doc1=replace_basic_doc(stories1, "性别"),
         doc_exp="战斗经验",
         doc2=doc2,

@@ -64,7 +64,7 @@ async def update_story_review(
 ! class="nomobile"|[[文件:情报处理室 {name}.png|160px|link={name}]]
 |<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
 {{|
-"""
+"""  # noqa: E501
     mini_table_title = """{{{{锚点|{name}}}}}
 {{| class="wikitable" style="position:relative; text-align:center; width:100%; max-width:1000px; display:table; font-size:14px;"
 ! colspan="2" style="text-align:center;"|<big><big>{name}</big></big>
@@ -72,7 +72,7 @@ async def update_story_review(
 ! class="nomobile"|[[文件:情报处理室 {name}.png|160px|link={name}]]
 |<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
 {{|
-"""
+"""  # noqa: E501
     main_table_title = """{{{{锚点|{name2}}}}}
 {{| class="wikitable" style="position:relative; text-align:center; width:100%; max-width:1000px; display:table; font-size:14px;"
 ! colspan="2" style="text-align:center;"|<big><big>{name1}</big></big>
@@ -80,7 +80,7 @@ async def update_story_review(
 ! class="nomobile"|[[文件:章节名称 {name2}.png|160px|link=关卡一览#主线关卡一览]]
 |<div style="clear:both; overflow:auto; width:100%; height:360px; background:transparent;">
 {{|
-"""
+"""  # noqa: E501
     zones = zone_table.zones or {}
     mainline_zone_ids = zone_table.mainline_zone_id_list or []
     # 剧情简介有两千多个小文件,先并发下载进缓存,下面的循环再逐个读

@@ -17,7 +17,7 @@ def item_name(items: dict[str, ItemData], item_id: str | None) -> str:
 def build_time(sec):
     m, s = divmod(sec, 60)
     h, m = divmod(m, 60)
-    return "%02d:%02d:%02d" % (h, m, s)
+    return f"{h:02d}:{m:02d}:{s:02d}"
 
 
 def trans_rarity(rarity):

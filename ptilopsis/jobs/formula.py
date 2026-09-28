@@ -33,7 +33,7 @@ def get_workshop_formulas(
 ) -> str:
     table_title = """{| class="wikitable logo" style="text-align:center; display:table; white-space:normal;"
 |-
-!解锁等级!!产品!!消耗材料!!消耗龙门币!!消耗心情!!副产品产出概率!!额外解锁条件"""
+!解锁等级!!产品!!消耗材料!!消耗龙门币!!消耗心情!!副产品产出概率!!额外解锁条件"""  # noqa: E501
     text = "\n|-\n|{}||{}||{}||{}||{}||{}||{}"
 
     # {配方类型: {sortId: 行文本}},dict 保持配方表里的顺序

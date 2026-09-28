@@ -96,7 +96,10 @@ async def update_furni(
         num2 = origin_text.find("|描述=")
         new_text = (
             new_text[:num1]
-            + "|类型={type}{subType}\n|稀有度={rarity}\n|氛围={comfort}\n|分解获得={destroyObtain}\n|大小={size}\n".format(
+            + (
+                "|类型={type}{subType}\n|稀有度={rarity}\n|氛围={comfort}"
+                "\n|分解获得={destroyObtain}\n|大小={size}\n"
+            ).format(
                 type=types[furni_data.type].name,
                 subType=furni_sub_type_text(building_data, furni_data.sub_type),
                 rarity=furni_data.rarity,
@@ -267,7 +270,7 @@ async def create_themes(
 !width="80%"|氛围值总计
 |width="20%"|{totalComfort}
 |}}
-{refContent}==套件=={groupsContent}"""
+{refContent}==套件=={groupsContent}"""  # noqa: E501
 
     new_theme = []
 

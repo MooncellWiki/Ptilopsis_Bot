@@ -1,4 +1,4 @@
-import os
+import subprocess
 
 import anyio
 import click
@@ -115,7 +115,7 @@ def main(
 
     if remote:
         # 国服数据在线读 torappu，只有海外服还依赖子模块
-        os.system(f"git submodule update --init --remote -- {YOSTAR_DIR}")
+        _git("submodule", "update", "--init", "--remote", "--", YOSTAR_DIR)
         game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
         game_config = config
@@ -188,9 +188,14 @@ def _push_remote(remote: bool) -> None:
     """--remote 模式下把更新后的数据与版本号提交推送。"""
     if not remote:
         return
-    os.system("git add .")
-    os.system('git commit -m "remote update"')
-    os.system("git push")
+    _git("add", ".")
+    _git("commit", "-m", "remote update")
+    _git("push")
+
+
+def _git(*args: str) -> None:
+    # 与之前的 os.system 一样不检查返回码：没有改动时 commit 失败也照常往下走
+    subprocess.run(["git", *args], check=False)
 
 
 if __name__ == "__main__":

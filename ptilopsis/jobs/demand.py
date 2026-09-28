@@ -123,7 +123,9 @@ async def update_mat_demand(
         if mat_desc != "":
             mat_desc += "\n</tabber>\n"
         mat_desc = (
-            f"==干员需求==\n精英化材料：{count1}<br/>技能1→7材料：{count2}<br/>技能专精材料：{count3}<br/>'''总计：{count1 + count2 + count3}'''\n"
+            f"==干员需求==\n精英化材料：{count1}<br/>技能1→7材料：{count2}"
+            + f"<br/>技能专精材料：{count3}"
+            + f"<br/>'''总计：{count1 + count2 + count3}'''\n"
             + mat_desc
         )
 

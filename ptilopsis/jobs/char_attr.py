@@ -95,7 +95,12 @@ def get_char_attr(
                     continue
                 panel[key] += modifier.value
 
-        desc = "|[[{name}]]||{rarity}||{profession}||{subProfession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s".format(
+        desc = (
+            "|[[{name}]]||{rarity}||{profession}||{subProfession}"
+            "||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}"
+            "||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s"
+            "||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s"
+        ).format(
             name=char.name,
             rarity=rarity_stars(char.rarity),
             profession=trans_profession(char.profession),
@@ -107,7 +112,11 @@ def get_char_attr(
         )
         remarks = max_talent_remarks(char, rts)
         if remarks:
-            desc += f'\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{"<br/>".join(remarks)}'
+            desc += (
+                '\n|- class="expand-child" '
+                'style="font-size:85%; line-height:1.2; color:gray;"'
+                f'\n|colspan="13"|{"<br/>".join(remarks)}'
+            )
 
         content.append(
             {
@@ -120,7 +129,7 @@ def get_char_attr(
 {|class="wikitable sortable" style="text-align:center; width:1000px; display:table; white-space:normal;"
 !名字!!稀有度!!职业!!分支!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署
 |-
-"""
+"""  # noqa: E501
     table += "\n|-\n".join(
         [
             data["text"]
