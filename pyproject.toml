@@ -38,6 +38,7 @@ select = [
     "W",     # pycodestyle warnings
     "E",     # pycodestyle errors
     "I",     # isort
+    "N",     # pep8-naming
     "UP",    # pyupgrade
     "ASYNC", # flake8-async
     "C4",    # flake8-comprehensions
@@ -52,6 +53,7 @@ select = [
 ]
 ignore = [
     "E402",   # module-import-not-at-top-of-file
+    "N818",   # error-suffix-on-exception-name
     "UP037",  # quoted-annotation
     "RUF001", # ambiguous-unicode-character-string
     "RUF002", # ambiguous-unicode-character-docstring

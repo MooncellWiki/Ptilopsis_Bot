@@ -388,7 +388,7 @@ class Wiki:
         return result
 
     async def category(self, category: str) -> list[str]:
-        CM_LIMIT = 1000
+        CM_LIMIT = 1000  # noqa: N806
         cat_page_list: list[str] = []
         params: dict[str, Any] = {
             "list": "categorymembers",

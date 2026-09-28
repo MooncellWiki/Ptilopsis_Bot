@@ -118,7 +118,7 @@ RESERVED_FIELD_NAMES = frozenset(
 
 
 @dataclass
-class Field_:
+class Field_:  # noqa: N801
     name: str
     fbs_type: str
 
@@ -130,7 +130,7 @@ class Table:
 
 
 @dataclass
-class Enum_:
+class Enum_:  # noqa: N801
     name: str
     base: str
     members: list[tuple[str, int]] = field(default_factory=list)
