@@ -743,6 +743,13 @@ EQUIP_ATTR_NAMES = {
     "attack_speed": "攻击速度",
 }
 
+# 模组解锁所需信赖值(favor point)→ 页面上的信赖百分比,其余值留给编辑者补
+FAVOR_PERCENT: dict[int | None, str] = {0: "0", 2732: "50", 10070: "100"}
+
+
+def favor_percent(favor: int | None) -> str:
+    return FAVOR_PERCENT.get(favor, "?")
+
 
 def get_battle_equip(
     char: CharacterData,
@@ -834,14 +841,11 @@ def get_battle_equip(
             unlock = f"\n|解锁等级={equip_info.unlock_level}"
             favors = equip_info.unlock_favors
             if favors is not None:
-                unlock_favor = "\n|解锁信赖=" + "0" if favors.get("1") == 0 else "?"
-                unlock_favor += (
-                    "\n|解锁信赖2=" + "50" if favors.get("2") == 2732 else "?"
+                unlock += (
+                    f"\n|解锁信赖={favor_percent(favors.get('1'))}"
+                    f"\n|解锁信赖2={favor_percent(favors.get('2'))}"
+                    f"\n|解锁信赖3={favor_percent(favors.get('3'))}"
                 )
-                unlock_favor += (
-                    "\n|解锁信赖3=" + "100" if favors.get("3") == 10070 else "?"
-                )
-                unlock += unlock_favor
             else:
                 unlock += "\n|解锁信赖=0"
             item_cost = ""

@@ -13,6 +13,7 @@ import pytest
 
 from ptilopsis.jobs import basic
 from ptilopsis.jobs.params import TABLES
+from ptilopsis.utils import richtext
 
 pytestmark = pytest.mark.anyio
 
@@ -26,7 +27,12 @@ ID_TABLE = {
 }
 
 
-class StubRichText:
+class StubRichText(richtext.RichText):
+    """把原文包一层标记,golden 不依赖富文本的具体规则。"""
+
+    def __init__(self) -> None:
+        pass  # 用不到样式表与术语表
+
     def compile(self, text: str | None, *, convert_newline: bool = True) -> str:
         return f"[RTS]{text or ''}"
 
@@ -98,6 +104,28 @@ async def test_created_pages_match_golden() -> None:
     assert sorted(pages) == sorted(golden)
     for title, text in pages.items():
         assert text == golden[title], title
+
+
+def test_equip_unlock_favor_without_trust_requirement() -> None:
+    """电弧、机械师的模组各阶段都不要求信赖(unlockFavors 全为 0)。"""
+
+    tables = load_tables()
+    uniequip_table = tables["uniequip_table"]
+    equip = uniequip_table.equip_dict["uniequip_002_kalts"]
+    equip.unlock_favors = {"1": 0, "2": 0, "3": 0}
+
+    content = "".join(
+        basic.get_battle_equip(
+            tables["character_table"]["char_003_kalts"],
+            "char_003_kalts",
+            tables["battle_equip_table"],
+            uniequip_table,
+            tables["item_table"],
+            StubRichText(),
+        )
+    )
+
+    assert "\n|解锁信赖=0\n|解锁信赖2=0\n|解锁信赖3=0\n" in content
 
 
 async def test_update_jobs_keep_created_pages() -> None:
