@@ -24,7 +24,7 @@ async def update_yellow(wiki: Wiki) -> None:
 |当期素材6={material6}
 |寻访池开启时间={time_begin}
 |寻访池关闭时间={time_end}
-}}}}<noinclude>[[分类:需要长期关注及更新的条目]]</noinclude>"""
+}}}}<noinclude>[[分类:需要长期关注及更新的条目]]</noinclude>"""  # noqa: E501
 
     async with make_client() as client:
         resp = await client.get("https://weedy.baka.icu/shop/high")
@@ -54,7 +54,8 @@ async def update_yellow(wiki: Wiki) -> None:
     )
 
     logger.info(
-        f"当期6星: {good_list[0]['displayName']}    当期5星: {good_list[1]['displayName']}"
+        f"当期6星: {good_list[0]['displayName']}    "
+        f"当期5星: {good_list[1]['displayName']}"
     )
     await wiki.edit(title="高级凭证区", text=content, summary="update")
     # logger.info(content)
@@ -71,12 +72,21 @@ async def update_rune(wiki: Wiki) -> None:
 ! 
 ! colspan={col_n2} |任选合约{content}
 |}}
-<section end={date} />"""
+<section end={date} />"""  # noqa: E501, W291
 
     rank0 = '|rowspan={} style="background:#90C21D;width:50px;"'
-    rank1 = "\n|-style=\"background:#8A8A8A;color:#fff;\"\n|style=\"background:#A8A9AB;width:50px;\"|'''等级1'''"
-    rank2 = "\n|-style=\"background:#313131;color:#fff;\"\n|style=\"background:#727375;\"|'''等级2'''"
-    rank3 = "\n|-style=\"background:#A20616;color:#fff;\"\n|style=\"background:#B65A65;\"|'''等级3'''"
+    rank1 = (
+        '\n|-style="background:#8A8A8A;color:#fff;"'
+        "\n|style=\"background:#A8A9AB;width:50px;\"|'''等级1'''"
+    )
+    rank2 = (
+        '\n|-style="background:#313131;color:#fff;"'
+        "\n|style=\"background:#727375;\"|'''等级2'''"
+    )
+    rank3 = (
+        '\n|-style="background:#A20616;color:#fff;"'
+        "\n|style=\"background:#B65A65;\"|'''等级3'''"
+    )
 
     async with make_client() as client:
         resp = await client.get("https://weedy.baka.icu/crisis/today")
@@ -140,7 +150,7 @@ async def update_rune(wiki: Wiki) -> None:
             text = text[:num1] + rank0.format(rank_count) + "|" + "\n" + text[num1:]
         content += template.format(
             stage_type="训练场" if "tr" in stage["id"] else "轮换行动地点",
-            # date = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y年%m月%d日 %H:%M'),
+            # date = datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y年%m月%d日 %H:%M'),  # noqa: E501
             date=datetime.now(pytz.timezone("Asia/Shanghai")).strftime("%Y年%m月%d日"),
             code=stage["code"],
             name=stage["name"],

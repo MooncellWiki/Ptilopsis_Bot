@@ -9,13 +9,13 @@ from ptilopsis.utils.wiki import Wiki
 
 # def special_buff(buff_name, description):
 #     if buff_name == '坚毅随和':
-#         description = description.replace('额外恢复心情}}', '额外恢复心情}}{{color|#F49800|（心情每小时恢复+0.15）}}')
+#         description = description.replace('额外恢复心情}}', '额外恢复心情}}{{color|#F49800|（心情每小时恢复+0.15）}}')  # noqa: E501
 #     elif buff_name == '神经质':
 #         description += '{{color|#F49800|（心情每小时消耗+1.5）}}'
 #     elif buff_name == '至察':
 #         description += '{{color|#F49800|（心情每小时消耗+0.5）}}'
 #     elif buff_name in ['裁缝·α', '裁缝·β']:
-#         description = description.replace('影响概率）', '影响概率）{{color|#F49800|（同类效果取最高）}}')
+#         description = description.replace('影响概率）', '影响概率）{{color|#F49800|（同类效果取最高）}}')  # noqa: E501
 #     return description
 
 
@@ -36,7 +36,7 @@ def get_building_buff(building_data: BuildingData, rts: richtext.RichText) -> st
 ! width="350px" |持有干员
 |-
 {buffInfoAll}
-|}}"""
+|}}"""  # noqa: E501
     rooms = building_data.rooms or {}
     buff_text: dict[str, dict[str, dict[str, Any]]] = {}
     for room in rooms:
@@ -66,7 +66,7 @@ def get_building_buff(building_data: BuildingData, rts: richtext.RichText) -> st
                     name=buff_name,
                     room=rooms[buff_data.room_type].name,
                     icon=buff_data.skill_icon,
-                    # description = special_buff(buff_name, rts.compile(buff_data['description']))
+                    # description = special_buff(buff_name, rts.compile(buff_data['description']))  # noqa: E501
                     description=rts.compile(buff_data.description),
                 ),
             }
