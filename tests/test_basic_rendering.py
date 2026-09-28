@@ -1,0 +1,130 @@
+"""basic job 建页输出的 golden 测试。
+
+夹具是从国服数据里截出的三名干员及其引用到的条目(道具只留名称、描述、
+用途),覆盖召唤物(displayTokenDict / overrideTokenKey 两种来源)、势力、
+模组、干员密录、悖论模拟、后勤技能显示名、无技能 / 无法精英化等分支。
+"""
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from ptilopsis.jobs import basic
+from ptilopsis.jobs.params import TABLES
+
+pytestmark = pytest.mark.anyio
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "basic"
+GOLDEN_DIR = Path(__file__).parent / "golden" / "basic"
+
+# 干员一览/干员id 的节选:黑角不在表里,风丸按限定干员处理
+ID_TABLE = {
+    "凯尔希": {"id": 3, "approach": "", "date": "2019-04-30"},
+    "风丸": {"id": 316, "approach": "活动获得", "date": "2023-10-12"},
+}
+
+
+class StubRichText:
+    def compile(self, text: str | None, *, convert_newline: bool = True) -> str:
+        return f"[RTS]{text or ''}"
+
+
+class RecordingWiki:
+    """把写入的页面记下来;读取时返回事先给定的页面。"""
+
+    def __init__(self, pages: dict[str, str] | None = None) -> None:
+        self.stored = pages or {}
+        self.edited: dict[str, str] = {}
+
+    async def read_many(self, titles: Any) -> dict[str, str]:
+        return {title: self.stored[title] for title in titles if title in self.stored}
+
+    async def edit(self, title: str, text: str, **_: Any) -> None:
+        self.edited[title] = text
+
+    async def protect(self, **_: Any) -> None:
+        return None
+
+
+def load_tables() -> dict[str, Any]:
+    raw = json.loads((FIXTURE_DIR / "operators.json").read_text(encoding="utf-8"))
+    tables = {}
+    for name, data in raw.items():
+        model = TABLES[name].model
+        validate = getattr(model, "validate_python", None) or model.model_validate
+        tables[name] = validate(data)
+    return tables
+
+
+def load_golden() -> dict[str, str]:
+    return {
+        path.stem: path.read_text(encoding="utf-8")
+        for path in sorted(GOLDEN_DIR.glob("*.wiki"))
+    }
+
+
+async def test_created_pages_match_golden() -> None:
+    tables = load_tables()
+    wiki = RecordingWiki()
+
+    await basic.run.func(
+        wiki=wiki,
+        character_table=tables["character_table"],
+        uniequip_table=tables["uniequip_table"],
+        battle_equip_table=tables["battle_equip_table"],
+        skill_table=tables["skill_table"],
+        building_data=tables["building_data"],
+        item_table=tables["item_table"],
+        team_table=tables["handbook_team_table"],
+        stories_table=tables["handbook_info_table"],
+        skin_table=tables["skin_table"],
+        gamedata_const=tables["gamedata_const"],
+        charword_table=tables["charword_table"],
+        medal_table=tables["medal_table"],
+        id_table=ID_TABLE,
+        rts=StubRichText(),
+        char_list=[],
+    )
+
+    # 外文名重定向页不经过模板渲染,不做 golden
+    pages = {
+        title: text
+        for title, text in wiki.edited.items()
+        if not text.startswith("#redirect")
+    }
+    golden = load_golden()
+    assert sorted(pages) == sorted(golden)
+    for title, text in pages.items():
+        assert text == golden[title], title
+
+
+async def test_update_jobs_keep_created_pages() -> None:
+    """数据不变时,update / update_handbook 替换回去的片段应与建页输出一致。"""
+
+    tables = load_tables()
+    wiki = RecordingWiki(load_golden())
+
+    await basic.update.func(
+        wiki=wiki,
+        character_table=tables["character_table"],
+        uniequip_table=tables["uniequip_table"],
+        battle_equip_table=tables["battle_equip_table"],
+        building_data=tables["building_data"],
+        item_table=tables["item_table"],
+        team_table=tables["handbook_team_table"],
+        skin_table=tables["skin_table"],
+        charword_table=tables["charword_table"],
+        rts=StubRichText(),
+    )
+    await basic.update_handbook.func(
+        wiki=wiki,
+        character_table=tables["character_table"],
+        item_table=tables["item_table"],
+        stories_table=tables["handbook_info_table"],
+        medal_table=tables["medal_table"],
+        rts=StubRichText(),
+    )
+
+    assert wiki.edited == {}
