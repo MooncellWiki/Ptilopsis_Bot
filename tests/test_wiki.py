@@ -2,6 +2,7 @@
 
 import json
 import time
+from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -9,6 +10,9 @@ import anyio
 import httpx2
 import pytest
 
+from ptilopsis.utils import ratelimit
+from ptilopsis.utils import wiki as wiki_module
+from ptilopsis.utils.ratelimit import TokenBucket
 from ptilopsis.utils.wiki import (
     MAX_RETRY_AFTER,
     READ_CHUNK,
@@ -306,6 +310,45 @@ async def test_write_min_interval_spaces_writes() -> None:
     # 第二次写要补足与上一次写请求的间隔
     assert time.monotonic() - start >= 0.2
     assert len(server.edits) == 2
+
+
+@pytest.mark.parametrize("failure", [429, 503, "transport"])
+@pytest.mark.parametrize("pacing", ["interval", "bucket"])
+async def test_http_retries_and_following_write_are_paced(
+    monkeypatch: pytest.MonkeyPatch, failure: int | str, pacing: str
+) -> None:
+    now = 100.0
+    sent: list[float] = []
+
+    async def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    clock = SimpleNamespace(monotonic=lambda: now)
+    monkeypatch.setattr(wiki_module, "time", clock)
+    monkeypatch.setattr(ratelimit, "time", clock)
+    monkeypatch.setattr(anyio, "sleep", advance)
+    monkeypatch.setattr(Wiki, "_post", Wiki._post.retry_with(sleep=advance))
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        sent.append(now)
+        if len(sent) == 1:
+            if failure == "transport":
+                raise httpx2.ConnectError("offline", request=request)
+            return httpx2.Response(failure, headers={"Retry-After": "0"})
+        return httpx2.Response(200, json={"edit": {"result": "Success"}})
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(
+            API, client=http, write_min_interval=2 if pacing == "interval" else 0
+        )
+        wiki._csrf_token = "CSRF"
+        if pacing == "bucket":
+            wiki._buckets["edit"] = TokenBucket(1, 2)
+        await wiki.edit(title="a", text="A")
+        await wiki.edit(title="b", text="B")
+
+    assert sent == [100.0, 102.0, 104.0]
 
 
 async def test_login_survives_rate_limit_query_failure() -> None:

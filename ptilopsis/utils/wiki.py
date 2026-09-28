@@ -154,7 +154,17 @@ class Wiki:
         return resp.json()
 
     @_transient("wiki.post")
-    async def _post(self, data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+    async def _post(
+        self,
+        data: dict[str, Any],
+        *,
+        write_action: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        if write_action is not None:
+            # 放在 HTTP 重试内部,每次实际写请求都取令牌并更新发送时刻。
+            await self._pace_write(write_action)
+            self._last_write = time.monotonic()
         resp = await self.client.post(
             self.api_url, data={"format": "json", **data}, **kwargs
         )
@@ -212,15 +222,12 @@ class Wiki:
         refresh_token = False
         async with self._write_lock:
             for attempt in range(3):
-                await self._pace_write(action)
                 post_data = {
                     "action": action,
                     "token": await self.csrf_token(refresh=refresh_token),
                     **data,
                 }
-                # 间隔按请求实际发出的时刻计,不含取 token 的耗时
-                self._last_write = time.monotonic()
-                res = await self._post(post_data, **kwargs)
+                res = await self._post(post_data, write_action=action, **kwargs)
                 error = res.get("error")
                 if error is None:
                     return res
