@@ -717,7 +717,7 @@ def get_phase_list(
     return str(template)
 
 
-def get_skill_levelUp_list(char: CharacterData, item_table: InventoryData) -> str:
+def get_skill_levelup_list(char: CharacterData, item_table: InventoryData) -> str:
     if not char.skills:
         return "该干员没有技能"
     template = WikiTemplate("技能升级材料")
@@ -1155,7 +1155,7 @@ def handle_ifrit(text):
     return text
 
 
-def get_tal_condition(potentialRank, phase, level):
+def get_tal_condition(potential_rank, phase, level):
     condition = ""
     if phase == 0:
         condition += "精英0"
@@ -1165,8 +1165,8 @@ def get_tal_condition(potentialRank, phase, level):
         condition += "精英2"
     if level != 1:
         condition += " " + str(level) + "级"
-    if potentialRank != 0:
-        condition += " 潜能" + str(potentialRank + 1)
+    if potential_rank != 0:
+        condition += " 潜能" + str(potential_rank + 1)
     return condition
 
 
@@ -1274,7 +1274,7 @@ async def run(
         )
         building_skill = get_building_skill(building_data, char_key)
         phase_list = get_phase_list(char, gamedata_const, item_table)
-        skill_levelup_list = get_skill_levelUp_list(char, item_table)
+        skill_levelup_list = get_skill_levelup_list(char, item_table)
         battle_equip = "".join(
             get_battle_equip(
                 char,

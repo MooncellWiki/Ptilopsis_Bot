@@ -20,11 +20,11 @@ def get_gacha_mainpage(
     content = "===出现概率上升===\n"
     content += "<br/>".join(
         [
-            "{rarity_star}\t占{rarity}★出率的{percent:.0%}<br/>{charIdList}".format(
+            "{rarity_star}\t占{rarity}★出率的{percent:.0%}<br/>{char_id_list}".format(
                 rarity=op["rarityRank"] + 1,
                 rarity_star=(op["rarityRank"] + 1) * "★",
                 percent=op["percent"] * op["count"],
-                charIdList="/".join(
+                char_id_list="/".join(
                     [
                         character_table[char_key].name or ""
                         for char_key in op["charIdList"]
@@ -38,10 +38,10 @@ def get_gacha_mainpage(
     content += "\n===全部可能出现的干员===\n"
     content += "<br/>".join(
         [
-            "{rarity}\t出率{totalPercent:.0%}<br/>{charIdList}".format(
+            "{rarity}\t出率{total_percent:.0%}<br/>{char_id_list}".format(
                 rarity=(op["rarityRank"] + 1) * "★",
-                totalPercent=op["totalPercent"],
-                charIdList="/".join(
+                total_percent=op["totalPercent"],
+                char_id_list="/".join(
                     [
                         character_table[char_key].name or ""
                         for char_key in op["charIdList"]

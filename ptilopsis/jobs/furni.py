@@ -97,14 +97,14 @@ async def update_furni(
         new_text = (
             new_text[:num1]
             + (
-                "|类型={type}{subType}\n|稀有度={rarity}\n|氛围={comfort}"
-                "\n|分解获得={destroyObtain}\n|大小={size}\n"
+                "|类型={type}{sub_type}\n|稀有度={rarity}\n|氛围={comfort}"
+                "\n|分解获得={destroy_obtain}\n|大小={size}\n"
             ).format(
                 type=types[furni_data.type].name,
-                subType=furni_sub_type_text(building_data, furni_data.sub_type),
+                sub_type=furni_sub_type_text(building_data, furni_data.sub_type),
                 rarity=furni_data.rarity,
                 comfort=furni_data.comfort,
-                destroyObtain=furni_destroy,
+                destroy_obtain=furni_destroy,
                 size=str(furni_data.width)
                 + "×"
                 + str(furni_data.depth)
@@ -133,14 +133,14 @@ async def create_furni(
     furni_format = """{{{{家具信息
 |名称={name}
 |iconId={id}
-|类型={type}{subType}
+|类型={type}{sub_type}
 |稀有度={rarity}
 |氛围={comfort}
-|分解获得={destroyObtain}
+|分解获得={destroy_obtain}
 |大小={size}
 |描述={description}
 |用途={usage}
-|获得方式={obtainApproach}
+|获得方式={obtain_approach}
 |所属套装={themes}
 |所属组件={groups}
 }}}}"""
@@ -173,10 +173,10 @@ async def create_furni(
             name=furni_data.name,
             id=furni_data.id,
             type=types[furni_data.type].name,
-            subType=furni_sub_type_text(building_data, furni_data.sub_type),
+            sub_type=furni_sub_type_text(building_data, furni_data.sub_type),
             rarity=furni_data.rarity,
             comfort=furni_data.comfort,
-            destroyObtain=furni_destroy,
+            destroy_obtain=furni_destroy,
             size=str(furni_data.width)
             + "×"
             + str(furni_data.depth)
@@ -184,7 +184,7 @@ async def create_furni(
             + str(furni_data.height),
             description=(furni_data.description or "").replace("\n", "<br>"),
             usage=furni_data.usage,
-            obtainApproach=furni_data.obtain_approach,
+            obtain_approach=furni_data.obtain_approach,
             themes=themes,
             groups=groups,
         )
@@ -242,125 +242,127 @@ async def create_themes(
 
     themes_info = """{{{{pathnav2|家具一览}}}}
 ==总览==
-{{{{家具主题总览|{themesName}|{description}|主题图片={themeId}{previewPic}}}}}
+{{{{家具主题总览|{themes_name}|{description}|主题图片={theme_id}{preview_pic}}}}}
 ==快速布置==
 {{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:500px;"
 !width="60%"|家具
 !width="20%"|数量
-!width="20%"|家具氛围值{quickSetupFurni}
+!width="20%"|家具氛围值{quick_setup_furni}
 |-
 !colspan="2"|总计
-|{furniComfort}
+|{furni_comfort}
 |}}
 {{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:500px;"
 !style="width:60%;"|主题
 !style="width:20%;"|套件数量
-!style="width:20%;"|氛围值{quickSetupGroups}
+!style="width:20%;"|氛围值{quick_setup_groups}
 |-
 !colspan="2"|总计
-|{groupsComfort}
+|{groups_comfort}
 |}}
 {{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:500px;"
 |width="80%"|家具氛围值
-|width="20%"|{furniComfort}
+|width="20%"|{furni_comfort}
 |-
 |width="80%"|主题氛围值
-|width="20%"|{groupsComfort}
+|width="20%"|{groups_comfort}
 |-
 !width="80%"|氛围值总计
-|width="20%"|{totalComfort}
+|width="20%"|{total_comfort}
 |}}
-{refContent}==套件=={groupsContent}"""  # noqa: E501
+{ref_content}==套件=={groups_content}"""  # noqa: E501
 
     new_theme = []
 
     data = custom_data(building_data)
     furnitures = data.furnitures or {}
-    for themes, themesData in (data.themes or {}).items():
-        themesData.name = (themesData.name or "").strip()
-        if themesData.name in themes_list:
+    for themes, themes_data in (data.themes or {}).items():
+        themes_data.name = (themes_data.name or "").strip()
+        if themes_data.name in themes_list:
             continue
-        # if themesData['name'] != '神农祭庙会':
+        # if themes_data['name'] != '神农祭庙会':
         #     continue
 
-        groupsContent = ""
-        quickSetupFurni = ""
-        quickSetupGroups = ""
-        refId = 1
-        refFlag = False
-        refContent = ""
-        furniComfort = groupsComfort = 0
-        quickSetupDict: dict[str, int] = {}
+        groups_content = ""
+        quick_setup_furni = ""
+        quick_setup_groups = ""
+        ref_id = 1
+        ref_flag = False
+        ref_content = ""
+        furni_comfort = groups_comfort = 0
+        quick_setup_dict: dict[str, int] = {}
 
-        for quickFurni in themesData.quick_setup or []:
-            furniture_id = quickFurni.furniture_id or ""
-            if furniture_id in quickSetupDict:
-                quickSetupDict[furniture_id] += 1
+        for quick_furni in themes_data.quick_setup or []:
+            furniture_id = quick_furni.furniture_id or ""
+            if furniture_id in quick_setup_dict:
+                quick_setup_dict[furniture_id] += 1
             else:
-                quickSetupDict[furniture_id] = 1
+                quick_setup_dict[furniture_id] = 1
 
-        for quickFurniId in quickSetupDict:
-            quickFurniComfort = furnitures[quickFurniId].comfort
-            quickFurniComfort = quickFurniComfort * min(6, quickSetupDict[quickFurniId])
-            furniComfort += quickFurniComfort
-            quickSetupFurni += (
-                f"\n|-\n|[[{furnitures[quickFurniId].name}]]"
-                f"\n|{quickSetupDict[quickFurniId]}\n|{quickFurniComfort}"
+        for quick_furni_id in quick_setup_dict:
+            quick_furni_comfort = furnitures[quick_furni_id].comfort
+            quick_furni_comfort = quick_furni_comfort * min(
+                6, quick_setup_dict[quick_furni_id]
             )
-            if quickSetupDict[quickFurniId] > 6:
-                quickSetupFurni += (
-                    f'<ref name=注"{refId}">相同家具只有前6件能够获得氛围</ref>'
+            furni_comfort += quick_furni_comfort
+            quick_setup_furni += (
+                f"\n|-\n|[[{furnitures[quick_furni_id].name}]]"
+                f"\n|{quick_setup_dict[quick_furni_id]}\n|{quick_furni_comfort}"
+            )
+            if quick_setup_dict[quick_furni_id] > 6:
+                quick_setup_furni += (
+                    f'<ref name=注"{ref_id}">相同家具只有前6件能够获得氛围</ref>'
                 )
-                refId += 1
-                refFlag = True
-        if refFlag:
-            refContent = "<references />\n"
+                ref_id += 1
+                ref_flag = True
+        if ref_flag:
+            ref_content = "<references />\n"
 
-        for groups, groupsData in (data.groups or {}).items():
+        for groups, groups_data in (data.groups or {}).items():
             if themes in groups:
-                groupsContent += f"\n'''{groupsData.name}'''\n"
-                groupsComfort += groupsData.comfort
-                quickSetupGroups += (
-                    f"\n|-\n|{groupsData.name}\n|{groupsData.count}"
-                    f"\n|{groupsData.comfort}"
+                groups_content += f"\n'''{groups_data.name}'''\n"
+                groups_comfort += groups_data.comfort
+                quick_setup_groups += (
+                    f"\n|-\n|{groups_data.name}\n|{groups_data.count}"
+                    f"\n|{groups_data.comfort}"
                 )
-                for groupFurni in groupsData.furniture or []:
-                    if groupFurni not in furnitures:
+                for group_furni in groups_data.furniture or []:
+                    if group_furni not in furnitures:
                         continue
-                    groupsContent += f"{{{{家具|{furnitures[groupFurni].name}}}}}"
+                    groups_content += f"{{{{家具|{furnitures[group_furni].name}}}}}"
 
-        totalComfort = furniComfort + groupsComfort
+        total_comfort = furni_comfort + groups_comfort
 
-        preview_pic = theme_preview_pic(shop_client_table, themesData.id)
+        preview_pic = theme_preview_pic(shop_client_table, themes_data.id)
 
-        themesContent = themes_info.format(
-            themesName=themesData.name.replace("/", ""),
-            themeId=themesData.id,
-            previewPic=preview_pic,
-            description=themesData.desc,
-            quickSetupFurni=quickSetupFurni,
-            furniComfort=furniComfort,
-            quickSetupGroups=quickSetupGroups,
-            groupsComfort=groupsComfort,
-            totalComfort=totalComfort,
-            groupsContent=groupsContent,
-            refContent=refContent,
+        themes_content = themes_info.format(
+            themes_name=themes_data.name.replace("/", ""),
+            theme_id=themes_data.id,
+            preview_pic=preview_pic,
+            description=themes_data.desc,
+            quick_setup_furni=quick_setup_furni,
+            furni_comfort=furni_comfort,
+            quick_setup_groups=quick_setup_groups,
+            groups_comfort=groups_comfort,
+            total_comfort=total_comfort,
+            groups_content=groups_content,
+            ref_content=ref_content,
         )
 
         new_theme.append(
-            "{{{{家具主题|{name}}}}}".format(name=themesData.name.replace("/", ""))
+            "{{{{家具主题|{name}}}}}".format(name=themes_data.name.replace("/", ""))
         )
 
         await wiki.edit(
-            title=themesData.name,
-            text=themesContent,
+            title=themes_data.name,
+            text=themes_content,
             summary="init",
             createonly=True,
             bot=None,
             minor=True,
         )
         # logger.info(themesContent)
-        logger.info(f"Created: {themesData.name}.")
+        logger.info(f"Created: {themes_data.name}.")
 
     if new_theme != []:
         await wiki.edit(

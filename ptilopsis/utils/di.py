@@ -40,7 +40,7 @@ class DependsMarker:
         return f"Depends({_describe(self.dependency)})"
 
 
-def Depends(dependency: Callable[..., Any], *, use_cache: bool = True) -> Any:
+def Depends(dependency: Callable[..., Any], *, use_cache: bool = True) -> Any:  # noqa: N802
     """标记参数由 ``dependency`` 的返回值注入。
 
     返回类型写成 ``Any`` 是为了能直接当默认值用(``x: dict = Depends(f)``)

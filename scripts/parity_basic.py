@@ -102,7 +102,7 @@ async def render(gamedata: GameData, out_dir: Path) -> None:
                 wiki, char, False, character_table, skill_table, rts
             ),
             phase=basic.get_phase_list(char, gamedata_const, item_table),
-            skill_levelup=basic.get_skill_levelUp_list(char, item_table),
+            skill_levelup=basic.get_skill_levelup_list(char, item_table),
             equip="".join(
                 basic.get_battle_equip(
                     char,

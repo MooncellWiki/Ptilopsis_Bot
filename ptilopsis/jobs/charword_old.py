@@ -21,7 +21,7 @@ def norm_text(t: str) -> str:
 
 
 def concat_id(
-    voice_data: CharWordData, char_name: str, flag_CN: bool, text_jp: str = ""
+    voice_data: CharWordData, char_name: str, flag_cn: bool, text_jp: str = ""
 ) -> str:
     idx = voice_data.voice_index
     title = (voice_data.voice_title or "").rstrip()
@@ -31,7 +31,7 @@ def concat_id(
         f"|中文{idx}={norm_text(voice_data.voice_text or '')}\n"
         f"|语音{idx}={char_name} {title}.wav\n"
     )
-    if flag_CN:
+    if flag_cn:
         text += f"|中文语音{idx}={char_name} {title} CN.wav\n"
     unlock_param = voice_data.unlock_param or []
     if voice_data.unlock_type == "DIRECT":
@@ -57,12 +57,12 @@ def get_charword_data(
     word_key: str,
     file_name: str,
     char_words: dict[str, CharWordData],
-    flag_CN: bool,
+    flag_cn: bool,
     text_jp_dict: dict[str, str] | None = None,
     title: str = "语音记录",
 ) -> str:
     char_word = f"<noinclude>\n=={title}==\n"
-    if flag_CN:
+    if flag_cn:
         char_word += "{{#Widget:VoiceLangSelector}}\n"
     char_word += (
         f"<!--{word_key}-->" + "\n</noinclude>{{#invoke:VoiceTable|table|表格标题="
@@ -75,10 +75,10 @@ def get_charword_data(
     ):
         if text_jp_dict is not None and str(data.voice_index) in text_jp_dict:
             char_word += "\n" + concat_id(
-                data, file_name, flag_CN, text_jp=text_jp_dict[str(data.voice_index)]
+                data, file_name, flag_cn, text_jp=text_jp_dict[str(data.voice_index)]
             )
         else:
-            char_word += "\n" + concat_id(data, file_name, flag_CN)
+            char_word += "\n" + concat_id(data, file_name, flag_cn)
     char_word += "}}"
     return char_word
 
@@ -120,11 +120,11 @@ async def create_charword(
 
         content = ""
         for k in key_list:
-            flag_CN = _has_mandarin(voice_lang_dict, k)
+            flag_cn = _has_mandarin(voice_lang_dict, k)
             file_name = char_name
             if k != char_id:
                 file_name = k.replace(char_id, char_name).replace("#", "-")
-            content += get_charword_data(k, file_name, char_words, flag_CN) + "\n"
+            content += get_charword_data(k, file_name, char_words, flag_cn) + "\n"
         content = content.rstrip()
 
         await wiki.edit(
@@ -170,7 +170,7 @@ async def update_charword(
         origin_text += "=="
         new_text = ""
         for k in key_list:
-            flag_CN = _has_mandarin(voice_lang_dict, k)
+            flag_cn = _has_mandarin(voice_lang_dict, k)
             file_name = char_name
             if k != char_id:
                 file_name = k.replace(char_id, char_name).replace("#", "-")
@@ -180,11 +180,11 @@ async def update_charword(
                 result_jp = re.findall(r"\|日文([0-9]+?)=(.+?)\n", result.group(1))
                 d = dict(result_jp)
                 new_text += get_charword_data(
-                    k, file_name, char_words, flag_CN, text_jp_dict=d, title=title
+                    k, file_name, char_words, flag_cn, text_jp_dict=d, title=title
                 )
             else:
                 logger.info(char_name, "no wordkey found.")
-                new_text += get_charword_data(k, file_name, char_words, flag_CN)
+                new_text += get_charword_data(k, file_name, char_words, flag_cn)
             new_text += "\n"
 
         origin_text = origin_text[:-2]
@@ -218,7 +218,7 @@ async def update_charword_jp(
         origin_text += "=="
         new_text = ""
         for k in key_list:
-            flag_CN = _has_mandarin(voice_lang_dict, k)
+            flag_cn = _has_mandarin(voice_lang_dict, k)
             file_name = char_name
             if k != char_id:
                 file_name = k.replace(char_id, char_name).replace("#", "-")
@@ -239,13 +239,13 @@ async def update_charword_jp(
                     k,
                     file_name,
                     char_words,
-                    flag_CN,
+                    flag_cn,
                     text_jp_dict=text_jp_dict,
                     title=title,
                 )
             else:
                 new_text += get_charword_data(
-                    k, file_name, char_words, flag_CN, text_jp_dict=text_jp_dict
+                    k, file_name, char_words, flag_cn, text_jp_dict=text_jp_dict
                 )
             new_text += "\n"
         origin_text = origin_text[:-2]

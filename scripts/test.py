@@ -9,8 +9,8 @@ from ptilopsis.utils.data import GameData
 if __name__ == "__main__":
     # wiki = Wiki(config['apiUrl'], config['username'], config['password'],
     #             ('dev' if '-dev' in sys.argv else 'product'))
-    gameData = GameData(config=config)
-    # ctx = JobContext(wiki, gameData)
+    gamedata = GameData(config=config)
+    # ctx = JobContext(wiki, gamedata)
 
     # stage.run(ctx)
     # enemy.run(ctx)

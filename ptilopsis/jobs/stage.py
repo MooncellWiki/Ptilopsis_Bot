@@ -349,10 +349,10 @@ def parse_occ_type(occ_percent, drop_type, if_furni):
         }.get(occ_percent, "未知类型")
 
 
-def parse_rune_profession(professionMask):
-    if professionMask == 0:
+def parse_rune_profession(profession_mask):
+    if profession_mask == 0:
         return "未知职业范围"
-    p_list = bin(professionMask)[2:]
+    p_list = bin(profession_mask)[2:]
     p_list = "0" * (10 - len(p_list)) + p_list
     p_text = []
     if p_list[0] == "1":
@@ -583,7 +583,7 @@ def build_reward_groups(
 def analyze_action(
     actions: list[LevelDataWaveDataFragmentDataActionData],
     normal_hidden_group: list[str | None],
-    notCount_list: NotCountList,
+    not_count_list: NotCountList,
 ) -> tuple[float, int, int, bool]:
     action_list = [ActionInfo(action) for action in actions]
     pack_dict = {}
@@ -665,7 +665,7 @@ def analyze_action(
 
     # 敌人数量
     for action in filter(num_filter, action_list):
-        if action.key in notCount_list:
+        if action.key in not_count_list:
             continue
         if action.random_key is not None:
             if action.random_key not in num_dict["random_group"]:
@@ -811,7 +811,7 @@ def build_char_card_info(
     stage_page_name: str,
     character_table: dict[str, CharacterData],
     skill_table: dict[str, SkillDataBundle],
-    stage_charId: str | None = None,
+    stage_char_id: str | None = None,
 ) -> SquadSectionView | None:
     units = []
     memory_desc = ""
@@ -824,7 +824,7 @@ def build_char_card_info(
             inst = _require(char_card.inst, "inst")
             character_key = _require(inst.character_key, "characterKey")
             char_card_name = _require(character_table[character_key].name, "name")
-            if stage_charId is not None and character_key == stage_charId:
+            if stage_char_id is not None and character_key == stage_char_id:
                 units.append(SquadUnitView(name=char_card_name, simulation=True))
                 memory_desc = "模拟对象干员的状态数据与玩家持有的一致，请以实际情况为准"
                 continue
@@ -854,7 +854,7 @@ def build_char_card_info(
             if favor_point and memory_desc:
                 memory_desc = "<br>" + memory_desc
             if len(fp_set) == 1 and len(favor_point) > 1:
-                if stage_charId is not None:
+                if stage_char_id is not None:
                     fp_desc = (
                         f"本关卡除模拟对象干员外的随队干员信赖值都为{fp_set.pop()}%"
                     )
@@ -937,7 +937,7 @@ def build_squad_sections(
         stage_page_name,
         character_table,
         skill_table,
-        stage_charId=stage_char_id,
+        stage_char_id=stage_char_id,
     )
     if fixed is not None:
         sections.append(fixed)
@@ -1012,7 +1012,7 @@ def build_enemies(
     enemy_levels: EnemyLevelIndex,
     flag_skip0: bool,
 ) -> list[EnemyView]:
-    def enemyDbRefs_sort(item: LevelDataEnemyDataDbReference) -> int:
+    def enemy_db_refs_sort(item: LevelDataEnemyDataDbReference) -> int:
         handbook = enemy_table.get(item.id) if item.id is not None else None
         return handbook.sort_id if handbook is not None else 9999999
 
@@ -1103,7 +1103,7 @@ def build_enemies(
             enemy_num_dict[k] = (
                 f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
             )
-    enemy_db_refs_sorted = sorted(level.enemy_db_refs or [], key=enemyDbRefs_sort)
+    enemy_db_refs_sorted = sorted(level.enemy_db_refs or [], key=enemy_db_refs_sort)
     enemies = []
     for enemy in enemy_db_refs_sorted:
         if enemy.id not in enemy_num_dict:
@@ -1502,7 +1502,7 @@ def build_memory_stage(
     character_table: dict[str, CharacterData],
     building_data: BuildingData,
     item_table: InventoryData,
-    notCount_list: NotCountList,
+    not_count_list: NotCountList,
 ) -> BasicStageView:
     unlock_cond = ""
     for p in stage.unlock_param or []:
@@ -1539,7 +1539,7 @@ def build_memory_stage(
         unlock_condition=unlock_cond,
         recommended_level="—",
         zone=stage.zone_id,
-        level=build_level_info(level, notCount_list) if level is not None else None,
+        level=build_level_info(level, not_count_list) if level is not None else None,
         description=compile_rich_text(
             _require(stage.description, "description").replace("\n", "<br/>")
         ),
@@ -2031,14 +2031,14 @@ def check_duplicate(
     return duplicate_dict
 
 
-def _get_list_notCountInTotal(enemy_levels: EnemyLevelIndex) -> NotCountList:
+def _get_list_not_count_in_total(enemy_levels: EnemyLevelIndex) -> NotCountList:
     """enemy_database 里标记了 notCountInTotal 的敌人及其 level。
 
     某一级明确标记为 true 时记下该级;未定义的级别若紧接着已记下的上一级,
     视为沿用上一级的标记。
     """
 
-    notCount_list: NotCountList = {}
+    not_count_list: NotCountList = {}
     for key, levels in enemy_levels.items():
         for enemy_level in levels:
             data = enemy_level.enemy_data
@@ -2047,12 +2047,12 @@ def _get_list_notCountInTotal(enemy_levels: EnemyLevelIndex) -> NotCountList:
                 continue
             if flag.m_defined is True:
                 if flag.m_value is True:
-                    if key not in notCount_list:
-                        notCount_list[key] = []
-                    notCount_list[key].append(enemy_level.level)
-            elif key in notCount_list and enemy_level.level - 1 in notCount_list[key]:
-                notCount_list[key].append(enemy_level.level)
-    return notCount_list
+                    if key not in not_count_list:
+                        not_count_list[key] = []
+                    not_count_list[key].append(enemy_level.level)
+            elif key in not_count_list and enemy_level.level - 1 in not_count_list[key]:
+                not_count_list[key].append(enemy_level.level)
+    return not_count_list
 
 
 def _build_enemy_views(
@@ -2088,7 +2088,7 @@ async def run(
     stage_list = await wiki.category("分类:普通难度关卡")
     new_stage_list = []
     duplicate_dict = check_duplicate(stage_table, activity_table)
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     # 先筛出要建页的关卡,把它们的关卡文件一次并发下载进缓存,再逐个建页
     candidates: list[tuple[str, StageData, str, str]] = []
@@ -2164,7 +2164,7 @@ async def run(
             building_data,
             item_table,
             level,
-            notCount_list,
+            not_count_list,
             rts.compile,
             map_override=map_override,
         )
@@ -2273,7 +2273,7 @@ async def run_campaign(
 
     stage_list = await wiki.category("分类:剿灭关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[StageData, str, str]] = []
     for stage in stages.values():
@@ -2306,7 +2306,7 @@ async def run_campaign(
             building_data,
             item_table,
             level,
-            notCount_list,
+            not_count_list,
             rts.compile,
         )
         enemies = (
@@ -2400,7 +2400,7 @@ async def run_crisis(
     levels: Levels,
     rts: RichText,
 ) -> None:
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     # 危机合约的关卡表不在 gamedata 里,从 weedy 读(外部数据,保持 dict)
     # https://weedy.prts.wiki/crisis_info.json
@@ -2429,7 +2429,7 @@ async def run_crisis(
                 continue
 
         crisis_stage = build_crisis_stage(
-            stage_detail, level, notCount_list, rts.compile
+            stage_detail, level, not_count_list, rts.compile
         )
         enemies = (
             _build_enemy_views(level, enemy_handbook_table, enemy_levels)
@@ -2473,7 +2473,7 @@ async def run_rogue_like(
 ) -> None:
     rogue_stages = (roguelike_topic_table.details or {})["rogue_6"].stages or {}
 
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     await levels.prefetch(
         stage.level_replace_ids[0] if stage.level_replace_ids else stage.level_id
@@ -2501,7 +2501,7 @@ async def run_rogue_like(
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
 
-        normal_stage = build_roguelike_stage(stage, level, notCount_list, rts.compile)
+        normal_stage = build_roguelike_stage(stage, level, not_count_list, rts.compile)
         linked_stages = [
             k for k, s in rogue_stages.items() if s.linked_stage_id == stage_key
         ]
@@ -2560,7 +2560,7 @@ async def run_memory(
 ) -> None:
     stage_list = await wiki.category("分类:悖论模拟关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[HandbookStoryStageData, str, str]] = []
     for stage in (handbook_info_table.handbook_stage_data or {}).values():
@@ -2590,7 +2590,7 @@ async def run_memory(
             character_table,
             building_data,
             item_table,
-            notCount_list,
+            not_count_list,
         )
         enemies = (
             _build_enemy_views(level, enemy_handbook_table, enemy_levels)
@@ -2663,7 +2663,7 @@ async def run_sandbox(
 
     stage_list = await wiki.category("分类:生息演算关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[SandboxV2StageData, str]] = []
     for act in sandbox_acts.values():
@@ -2688,7 +2688,9 @@ async def run_sandbox(
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
 
-        sandbox_stage = build_sandbox_v2_stage(stage, rts.compile, level, notCount_list)
+        sandbox_stage = build_sandbox_v2_stage(
+            stage, rts.compile, level, not_count_list
+        )
         enemies = (
             _build_enemy_views(level, enemy_handbook_table, enemy_levels)
             if level is not None
@@ -2753,7 +2755,7 @@ async def run_mechanism(
     )
 
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     await levels.prefetch(
         stage.level_id
@@ -2784,7 +2786,7 @@ async def run_mechanism(
             unlock_condition="—",
             recommended_level="—",
             zone="-",
-            level=build_level_info(level, notCount_list),
+            level=build_level_info(level, not_count_list),
             description=stage.description,
             ap_cost=0,
             practice_cost=-1,
@@ -2839,7 +2841,7 @@ async def run_recalrune(
 
     stage_list = await wiki.category("分类:全息作战矩阵关卡")
     new_stage_list = []
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[RecalRuneStageData, str, str]] = []
     for season_info in (recal_rune_data.seasons or {}).values():
@@ -2865,7 +2867,7 @@ async def run_recalrune(
                 continue
 
         recal_rune_stage = build_recal_rune_stage(
-            stage, rts.compile, level, notCount_list
+            stage, rts.compile, level, not_count_list
         )
         enemies = (
             _build_enemy_views(level, enemy_handbook_table, enemy_levels)
@@ -2935,7 +2937,7 @@ async def run_id(
         for stage in (stage_table.stages or {}).values()
         if stage.level_id is not None
     }
-    notCount_list = _get_list_notCountInTotal(enemy_levels)
+    not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     new_stage_list = []
     level_ids = await levels.list_ids(path)
@@ -2958,7 +2960,7 @@ async def run_id(
             unlock_condition="—",
             recommended_level="—",
             zone="-",
-            level=build_level_info(level, notCount_list),
+            level=build_level_info(level, not_count_list),
             description="",
             ap_cost=0,
             practice_cost=-1,
