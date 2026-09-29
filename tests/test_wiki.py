@@ -2,6 +2,8 @@
 
 import json
 import time
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs
@@ -362,37 +364,67 @@ async def test_login_survives_rate_limit_query_failure() -> None:
 
 async def test_get_retries_after_429() -> None:
     wiki, server = make_wiki({"a": "A"})
-    server.throttle = 1  # Retry-After: 0,不睡;由 _transient 等 1s 后重试
+    server.throttle = 1  # Retry-After: 0,立即重试
     assert await wiki.read("a") == "A"
     assert server.requests[-1]["titles"] == "a"
 
 
-async def _slept_429(monkeypatch: pytest.MonkeyPatch, retry_after: str | None) -> list:
-    """让下一个请求返回 429 并拦截 anyio.sleep,返回实际睡的秒数列表。"""
+def _throttled(
+    monkeypatch: pytest.MonkeyPatch, retry_after: str | None, throttle: int = 1
+) -> tuple[Wiki, FakeMediaWiki, list[float]]:
+    """让接下来 ``throttle`` 个请求返回 429,并拦截重试前的等待秒数。"""
     slept: list[float] = []
 
     async def record_sleep(seconds: float) -> None:
         slept.append(seconds)
 
-    monkeypatch.setattr(anyio, "sleep", record_sleep)
+    monkeypatch.setattr(Wiki, "_get", Wiki._get.retry_with(sleep=record_sleep))
     wiki, server = make_wiki({"a": "A"})
-    server.throttle = 1
+    server.throttle = throttle
     server.retry_after = retry_after
-    assert await wiki.read("a") == "A"
-    return slept
+    return wiki, server, slept
 
 
 async def test_429_sleeps_retry_after_header(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    assert await _slept_429(monkeypatch, "7") == [7.0]
+    wiki, _, slept = _throttled(monkeypatch, "7")
+    assert await wiki.read("a") == "A"
+    assert slept == [7.0]
 
 
 async def test_429_caps_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
-    assert await _slept_429(monkeypatch, "86400") == [float(MAX_RETRY_AFTER)]
+    wiki, _, slept = _throttled(monkeypatch, "86400")
+    assert await wiki.read("a") == "A"
+    assert slept == [float(MAX_RETRY_AFTER)]
 
 
 async def test_429_without_header_uses_default(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    assert await _slept_429(monkeypatch, None) == [60.0]
+    wiki, _, slept = _throttled(monkeypatch, None)
+    assert await wiki.read("a") == "A"
+    assert slept == [60.0]
+
+
+async def test_429_does_not_wait_after_last_attempt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wiki, server, slept = _throttled(monkeypatch, "7", throttle=3)
+    with pytest.raises(httpx2.HTTPStatusError):
+        await wiki.read("a")
+    # 三次都 429:只在两次重试之前等,最后一次直接抛出
+    assert slept == [7.0, 7.0]
+    assert len(server.requests) == 3
+
+
+def test_retry_after_accepts_http_date() -> None:
+    def parse(value: str) -> float | None:
+        resp = httpx2.Response(429, headers={"Retry-After": value})
+        return wiki_module._retry_after(resp)
+
+    soon = format_datetime(datetime.now(UTC) + timedelta(seconds=30), usegmt=True)
+    assert (delay := parse(soon)) is not None and 28 <= delay <= 30
+    assert parse("Wed, 21 Oct 2015 07:28:00 GMT") == 0  # 已经过去的时刻
+    assert parse("-5") == 0
+    assert parse("soon") is None

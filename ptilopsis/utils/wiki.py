@@ -12,12 +12,14 @@ csrf token 按会话缓存,只在服务器报 ``badtoken`` 时重新取。编辑
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import quote
 
 import anyio
 import httpx2
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
@@ -58,37 +60,55 @@ class PageRevision:
     contentmodel: str
 
 
+MAX_RETRY_AFTER = 300
+"""按 ``Retry-After`` 等待的上限(秒):等更久说明问题不在节奏,直接失败更好。"""
+
+
+def _retry_after(resp: httpx2.Response) -> float | None:
+    """解析 ``Retry-After``(秒数或 HTTP 日期),截到 :data:`MAX_RETRY_AFTER`。
+
+    没有这个头或看不懂时返回 None。
+    """
+    value = resp.headers.get("retry-after")
+    if value is None:
+        return None
+    try:
+        delay = float(int(value))
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return None
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        delay = (when - datetime.now(UTC)).total_seconds()
+    return min(max(delay, 0.0), MAX_RETRY_AFTER)
+
+
+def _wait(state: RetryCallState) -> float:
+    """tenacity 的 ``wait``:决定重试后再算等多久,最后一次失败直接抛出不白等。
+
+    服务器给了 ``Retry-After``(CDN / 反代层的 429、503,和 MediaWiki 自己的
+    配额无关)就照办;429 没给按默认冷却;其余错误固定等 1 秒。
+    """
+    exc = state.outcome.exception() if state.outcome else None
+    if isinstance(exc, httpx2.HTTPStatusError):
+        delay = _retry_after(exc.response)
+        if delay is not None:
+            return delay
+        if exc.response.status_code == 429:
+            return DEFAULT_COOLDOWN
+    return 1.0
+
+
 def _transient(name: str) -> Any:
     return retry(
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
+        wait=_wait,
         retry=retry_if_exception_type(httpx2.HTTPError),
         before_sleep=log_retry(name),
         reraise=True,
     )
-
-
-MAX_RETRY_AFTER = 300
-"""429 时按 ``Retry-After`` 等待的上限(秒):等更久说明问题不在节奏,直接失败更好。"""
-
-
-async def _respect_retry_after(resp: httpx2.Response) -> None:
-    """HTTP 429(CDN / 反代层限流)时按 ``Retry-After`` 头等待后再重试。
-
-    这和 MediaWiki 自己的配额无关;等待后照常 ``raise_for_status``,抛出的
-    异常属于 :class:`httpx2.HTTPError`,会被 ``_transient`` 重试。头缺失或
-    不是秒数时按默认冷却处理,过长的值截到上限。
-    """
-    if resp.status_code != 429:
-        return
-    try:
-        delay = int(resp.headers.get("retry-after", ""))
-    except ValueError:
-        delay = int(DEFAULT_COOLDOWN)
-    delay = min(delay, MAX_RETRY_AFTER)
-    if delay > 0:
-        logger.warning(f"HTTP 429; sleeping {delay}s before next attempt")
-        await anyio.sleep(delay)
 
 
 class Wiki:
@@ -147,7 +167,6 @@ class Wiki:
     @_transient("wiki.get")
     async def _get(self, params: dict[str, Any]) -> dict[str, Any]:
         resp = await self.client.get(self.api_url, params={"format": "json", **params})
-        await _respect_retry_after(resp)
         resp.raise_for_status()
         return resp.json()
 
@@ -166,7 +185,6 @@ class Wiki:
         resp = await self.client.post(
             self.api_url, data={"format": "json", **data}, **kwargs
         )
-        await _respect_retry_after(resp)
         resp.raise_for_status()
         return resp.json()
 
