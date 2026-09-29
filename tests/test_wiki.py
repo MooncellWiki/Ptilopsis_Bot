@@ -90,13 +90,14 @@ class FakeMediaWiki:
         if action == "edit":
             if self.error is not None:
                 return {"error": self.error}
+            # 和 ApiMain 一样先校验 token,再轮到编辑模块里的限速
+            if p["token"] in self.reject_tokens:
+                return {"error": {"code": "badtoken", "info": "Invalid CSRF token."}}
             if self.ratelimit_quota > 0:
                 self.ratelimit_quota -= 1
                 return {
                     "error": {"code": "ratelimited", "info": "Rate limit exceeded."}
                 }
-            if p["token"] in self.reject_tokens:
-                return {"error": {"code": "badtoken", "info": "Invalid CSRF token."}}
             self.edits.append(p)
             return {"edit": {"result": "Success", "title": p["title"]}}
         raise AssertionError(p)
@@ -299,6 +300,25 @@ async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
     with pytest.raises(WikiError, match="ratelimited"):
         await wiki.edit(title="页面", text="2")
     assert len(server.edits) == 1
+
+
+async def test_write_refreshes_token_only_once_and_only_on_badtoken() -> None:
+    wiki, server = make_wiki({})
+    wiki._limiters["edit"] = SlidingWindow(100, 0.05)  # 冷却只睡 0.05s
+    await wiki.edit(title="页面", text="1")  # 缓存 CSRF1
+
+    # badtoken 换过 token 后又撞限:冷却重试沿用新 token,不再重取
+    server.reject_tokens.add("CSRF1")
+    server.ratelimit_quota = 1
+    await wiki.edit(title="页面", text="2")
+    assert server.edits[-1]["token"] == "CSRF2"
+    assert server.token_serial == 2
+
+    # 换过一次 token 仍被拒:照常抛出,不反复刷新
+    server.reject_tokens |= {"CSRF2", "CSRF3"}
+    with pytest.raises(WikiError, match="badtoken"):
+        await wiki.edit(title="页面", text="3")
+    assert server.token_serial == 3
 
 
 async def test_write_min_interval_spaces_writes() -> None:

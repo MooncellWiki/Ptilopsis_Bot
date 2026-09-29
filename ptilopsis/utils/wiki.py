@@ -34,6 +34,9 @@ __all__ = ["PageRevision", "Wiki", "WikiError"]
 READ_CHUNK = 50
 """一次 ``action=query`` 里带的标题数;普通用户上限 50,bot 有 apihighlimits 才是 500。"""
 
+MAX_RATELIMIT_RETRIES = 2
+"""写操作撞 ``ratelimited`` 后冷却重试的次数上限。"""
+
 
 class WikiError(RuntimeError):
     """API 返回了 ``error`` 字段。"""
@@ -231,9 +234,10 @@ class Wiki:
 
     async def _write(self, action: str, data: dict[str, Any], **kwargs: Any) -> Any:
         """带 csrf token 的写操作;token 失效时刷新重试一次,撞限时冷却后重试。"""
-        refresh_token = False
+        refresh_token = token_refreshed = False
+        cooldowns = 0
         async with self._write_lock:
-            for attempt in range(3):
+            while True:
                 post_data = {
                     "action": action,
                     "token": await self.csrf_token(refresh=refresh_token),
@@ -244,10 +248,13 @@ class Wiki:
                 if error is None:
                     return res
                 code = error.get("code", "")
-                if code == "badtoken" and attempt < 2:
-                    refresh_token = True
+                # 只有 badtoken 才换 token,且只换一次;撞限重试沿用当前 token
+                refresh_token = code == "badtoken" and not token_refreshed
+                if refresh_token:
+                    token_refreshed = True
                     continue
-                if code == "ratelimited" and attempt < 2:
+                if code == "ratelimited" and cooldowns < MAX_RATELIMIT_RETRIES:
+                    cooldowns += 1
                     limiter = self._limiters.get(action, self._unlimited)
                     logger.warning(
                         f"Rate limited on {action}; cooling down before retry"
@@ -255,7 +262,6 @@ class Wiki:
                     await limiter.cooldown()
                     continue
                 raise WikiError(code, error.get("info", ""))
-        raise AssertionError("unreachable")  # pragma: no cover
 
     @staticmethod
     def _form(args: dict[str, Any], boolargs: set[str]) -> dict[str, Any]:
