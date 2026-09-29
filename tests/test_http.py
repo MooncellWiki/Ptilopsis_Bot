@@ -43,6 +43,7 @@ def test_log_retry_omits_arguments_by_default(messages: list[str]) -> None:
     assert post(object(), {"lgpassword": "hunter2", "lgtoken": "LOGIN"}) == "ok"
     assert len(messages) == 1
     assert "wiki.post" in messages[0] and "TimeoutError" in messages[0]
+    assert "in 0s" in messages[0]
     assert "hunter2" not in messages[0] and "LOGIN" not in messages[0]
 
 

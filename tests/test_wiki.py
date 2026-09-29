@@ -1,13 +1,27 @@
-"""Wiki 客户端:登录、批量读取、csrf token 缓存与 badtoken 重试,全部离线。"""
+"""Wiki 客户端:登录、批量读取、csrf token 缓存、badtoken 重试与限速,全部离线。"""
 
 import json
+import time
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
+from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs
 
+import anyio
 import httpx2
 import pytest
 
-from ptilopsis.utils.wiki import READ_CHUNK, PageRevision, Wiki, WikiError
+from ptilopsis.utils import ratelimit
+from ptilopsis.utils import wiki as wiki_module
+from ptilopsis.utils.ratelimit import RateLimit, Throttle
+from ptilopsis.utils.wiki import (
+    MAX_RETRY_AFTER,
+    READ_CHUNK,
+    PageRevision,
+    Wiki,
+    WikiError,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -25,12 +39,28 @@ class FakeMediaWiki:
         self.reject_tokens: set[str] = set()
         self.error: dict[str, str] | None = None
         """设置后所有 edit 都返回这个错误。"""
+        self.ratelimits: dict[str, Any] = {}
+        """userinfo 查询返回的 ratelimits;默认为空(noratelimit 账号)。"""
+        self.fail_userinfo = False
+        """设置后 userinfo 查询直接抛异常,模拟配额查询失败。"""
+        self.ratelimit_quota = 0
+        """接下来这么多个 edit 请求返回 ratelimited 错误。"""
+        self.throttle = 0
+        """接下来的这些请求返回 429,等待秒数取 ``retry_after``。"""
+        self.retry_after: str | None = "0"
+        """429 响应的 Retry-After 头;None 表示不带这个头。"""
 
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         params = {k: v[0] for k, v in parse_qs(request.url.query.decode()).items()}
         if request.method == "POST":
             params |= {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
         self.requests.append(params)
+        if self.throttle > 0:
+            self.throttle -= 1
+            headers = (
+                {} if self.retry_after is None else {"retry-after": self.retry_after}
+            )
+            return httpx2.Response(429, headers=headers)
         return httpx2.Response(200, content=json.dumps(self.handle(params)).encode())
 
     def handle(self, p: dict[str, str]) -> Any:
@@ -40,6 +70,14 @@ class FakeMediaWiki:
                 return {"query": {"tokens": {"logintoken": "LOGIN"}}}
             self.token_serial += 1
             return {"query": {"tokens": {"csrftoken": f"CSRF{self.token_serial}"}}}
+        if action == "query" and p.get("meta") == "userinfo":
+            if self.fail_userinfo:
+                raise KeyError("userinfo exploded")
+            return {
+                "query": {
+                    "userinfo": {"id": 1, "name": "bot", "ratelimits": self.ratelimits}
+                }
+            }
         if action == "login":
             ok = p["lgpassword"] == "secret" and p["lgtoken"] == "LOGIN"
             return {
@@ -52,8 +90,14 @@ class FakeMediaWiki:
         if action == "edit":
             if self.error is not None:
                 return {"error": self.error}
+            # 和 ApiMain 一样先校验 token,再轮到编辑模块里的限速
             if p["token"] in self.reject_tokens:
                 return {"error": {"code": "badtoken", "info": "Invalid CSRF token."}}
+            if self.ratelimit_quota > 0:
+                self.ratelimit_quota -= 1
+                return {
+                    "error": {"code": "ratelimited", "info": "Rate limit exceeded."}
+                }
             self.edits.append(p)
             return {"edit": {"result": "Success", "title": p["title"]}}
         raise AssertionError(p)
@@ -103,7 +147,9 @@ async def test_login_success_and_failure() -> None:
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     wiki = await Wiki.login(API, "bot", "secret", client=http)
     assert isinstance(wiki, Wiki)
-    assert [r["action"] for r in server.requests] == ["query", "login"]
+    # 登录成功后还会查一次 ratelimits
+    assert [r["action"] for r in server.requests] == ["query", "login", "query"]
+    assert server.requests[-1]["uiprop"] == "ratelimits"
 
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     with pytest.raises(RuntimeError, match="Incorrect password"):
@@ -221,3 +267,245 @@ async def test_dev_mode_does_not_write() -> None:
     assert await wiki.edit(title="页面", text="1") is None
     assert await wiki.protect(title="页面", protections="edit=sysop") is None
     assert server.requests == []
+
+
+async def test_login_builds_limiters_from_discovered_limits() -> None:
+    server = FakeMediaWiki({})
+    server.ratelimits = {
+        "edit": {"user": {"hits": 90, "seconds": 60}},
+        "upload": {
+            "user": {"hits": 90, "seconds": 60},
+            "ip": {"hits": 8, "seconds": 10},
+            "newbie": {"hits": 100, "seconds": 600},
+        },
+    }
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+
+    def windows(action: str) -> list[tuple[int, float]]:
+        return [(w.max_hits, w.period) for w in wiki._limiters[action].windows]
+
+    # safety 0.8 -> 任意 60s 内至多 72 次
+    assert windows("edit") == [(72, 60.0)]
+    # newbie 与 ip 是两个独立计数器,两个窗口都要守
+    assert windows("upload") == [(6, 10.0), (80, 600.0)]
+
+
+async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
+    # 窗口取小值,让冷却只睡 0.05s
+    server = FakeMediaWiki({})
+    server.ratelimits = {"edit": {"user": {"hits": 100, "seconds": 0.05}}}
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+
+    server.ratelimit_quota = 1
+    await wiki.edit(title="页面", text="1")
+    assert len(server.edits) == 1  # 第一次被拒,冷却后重试成功
+    # 撞限重试不该重新取 token(只有 badtoken 才失效)
+    csrf_queries = [
+        r for r in server.requests if r.get("meta") == "tokens" and "type" not in r
+    ]
+    assert len(csrf_queries) == 1
+
+    # 连续撞限:三次尝试全被拒后照常抛出
+    server.ratelimit_quota = 3
+    with pytest.raises(WikiError, match="ratelimited"):
+        await wiki.edit(title="页面", text="2")
+    assert len(server.edits) == 1
+
+
+async def test_write_refreshes_token_only_once_and_only_on_badtoken() -> None:
+    wiki, server = make_wiki({})
+    wiki._limiters["edit"] = Throttle([RateLimit(100, 0.05)])  # 冷却只睡 0.05s
+    await wiki.edit(title="页面", text="1")  # 缓存 CSRF1
+
+    # badtoken 换过 token 后又撞限:冷却重试沿用新 token,不再重取
+    server.reject_tokens.add("CSRF1")
+    server.ratelimit_quota = 1
+    await wiki.edit(title="页面", text="2")
+    assert server.edits[-1]["token"] == "CSRF2"
+    assert server.token_serial == 2
+
+    # 换过一次 token 仍被拒:照常抛出,不反复刷新
+    server.reject_tokens |= {"CSRF2", "CSRF3"}
+    with pytest.raises(WikiError, match="badtoken"):
+        await wiki.edit(title="页面", text="3")
+    assert server.token_serial == 3
+
+
+async def test_write_min_interval_spaces_writes() -> None:
+    server = FakeMediaWiki({})
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = Wiki(API, "product", client=http, write_min_interval=0.2)
+    start = time.monotonic()
+    await wiki.edit(title="页面", text="1")
+    await wiki.edit(title="页面", text="2")
+    # 第二次写要补足与上一次写请求的间隔
+    assert time.monotonic() - start >= 0.2
+    assert len(server.edits) == 2
+
+
+async def test_min_interval_is_waited_before_taking_window_slot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 先等最小间隔再占窗口名额:占完再睡的话,第一次 edit 在 100s 就记账、
+    # 102s 才发出,第三次会在 110s 发出,10 秒内发了三次
+    now = 100.0
+    sent: list[tuple[str, float]] = []
+
+    async def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    clock = SimpleNamespace(monotonic=lambda: now)
+    monkeypatch.setattr(wiki_module, "time", clock)
+    monkeypatch.setattr(ratelimit, "time", clock)
+    monkeypatch.setattr(anyio, "sleep", advance)
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        action = parse_qs(request.content.decode())["action"][0]
+        sent.append((action, now))
+        return httpx2.Response(200, json={action: {"result": "Success"}})
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http, rate_safety=1, write_min_interval=2)
+        wiki._csrf_token = "CSRF"
+        wiki._limiters["edit"] = Throttle([RateLimit(2, 10)])
+        await wiki.protect(title="a", protections="edit=sysop")
+        for title in "bcd":
+            await wiki.edit(title=title, text="X")
+
+    assert sent == [("protect", 100), ("edit", 102), ("edit", 104), ("edit", 112)]
+
+
+@pytest.mark.parametrize("failure", [429, 503, "transport"])
+@pytest.mark.parametrize("pacing", ["interval", "window"])
+async def test_http_retries_and_following_write_are_paced(
+    monkeypatch: pytest.MonkeyPatch, failure: int | str, pacing: str
+) -> None:
+    now = 100.0
+    sent: list[float] = []
+
+    async def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    clock = SimpleNamespace(monotonic=lambda: now)
+    monkeypatch.setattr(wiki_module, "time", clock)
+    monkeypatch.setattr(ratelimit, "time", clock)
+    monkeypatch.setattr(anyio, "sleep", advance)
+    monkeypatch.setattr(Wiki, "_post", Wiki._post.retry_with(sleep=advance))
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        sent.append(now)
+        if len(sent) == 1:
+            if isinstance(failure, str):
+                raise httpx2.ConnectError("offline", request=request)
+            return httpx2.Response(failure, headers={"Retry-After": "0"})
+        return httpx2.Response(200, json={"edit": {"result": "Success"}})
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(
+            API, client=http, write_min_interval=2 if pacing == "interval" else 0
+        )
+        wiki._csrf_token = "CSRF"
+        if pacing == "window":
+            wiki._limiters["edit"] = Throttle([RateLimit(1, 2)])
+        await wiki.edit(title="a", text="A")
+        await wiki.edit(title="b", text="B")
+
+    assert sent == [100.0, 102.0, 104.0]
+
+
+async def test_login_survives_rate_limit_query_failure() -> None:
+    server = FakeMediaWiki({})
+    server.ratelimits = {"edit": {"user": {"hits": 90, "seconds": 60}}}
+    server.fail_userinfo = True
+    http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
+    wiki = await Wiki.login(API, "bot", "secret", client=http)
+    # 配额查询失败只是放弃限速,登录照常成功
+    assert wiki._limiters == {}
+
+
+async def test_get_retries_after_429() -> None:
+    wiki, server = make_wiki({"a": "A"})
+    server.throttle = 1  # Retry-After: 0,立即重试
+    assert await wiki.read("a") == "A"
+    assert server.requests[-1]["titles"] == "a"
+
+
+async def test_client_errors_are_not_retried() -> None:
+    sent = 0
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        nonlocal sent
+        sent += 1
+        return httpx2.Response(404)
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http)
+        with pytest.raises(httpx2.HTTPStatusError):
+            await wiki.read("a")
+    # 404 再发也是 404,不走重试
+    assert sent == 1
+
+
+def _throttled(
+    monkeypatch: pytest.MonkeyPatch, retry_after: str | None, throttle: int = 1
+) -> tuple[Wiki, FakeMediaWiki, list[float]]:
+    """让接下来 ``throttle`` 个请求返回 429,并拦截重试前的等待秒数。"""
+    slept: list[float] = []
+
+    async def record_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr(Wiki, "_get", Wiki._get.retry_with(sleep=record_sleep))
+    wiki, server = make_wiki({"a": "A"})
+    server.throttle = throttle
+    server.retry_after = retry_after
+    return wiki, server, slept
+
+
+async def test_429_sleeps_retry_after_header(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wiki, _, slept = _throttled(monkeypatch, "7")
+    assert await wiki.read("a") == "A"
+    assert slept == [7.0]
+
+
+async def test_429_caps_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    wiki, _, slept = _throttled(monkeypatch, "86400")
+    assert await wiki.read("a") == "A"
+    assert slept == [float(MAX_RETRY_AFTER)]
+
+
+async def test_429_without_header_uses_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wiki, _, slept = _throttled(monkeypatch, None)
+    assert await wiki.read("a") == "A"
+    assert slept == [60.0]
+
+
+async def test_429_does_not_wait_after_last_attempt(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wiki, server, slept = _throttled(monkeypatch, "7", throttle=3)
+    with pytest.raises(httpx2.HTTPStatusError):
+        await wiki.read("a")
+    # 三次都 429:只在两次重试之前等,最后一次直接抛出
+    assert slept == [7.0, 7.0]
+    assert len(server.requests) == 3
+
+
+def test_retry_after_accepts_http_date() -> None:
+    def parse(value: str) -> float | None:
+        resp = httpx2.Response(429, headers={"Retry-After": value})
+        return wiki_module._retry_after(resp)
+
+    soon = format_datetime(datetime.now(UTC) + timedelta(seconds=30), usegmt=True)
+    assert (delay := parse(soon)) is not None and 28 <= delay <= 30
+    assert parse("Wed, 21 Oct 2015 07:28:00 GMT") == 0  # 已经过去的时刻
+    assert parse("-5") == 0
+    assert parse("soon") is None
