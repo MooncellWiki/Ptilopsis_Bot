@@ -354,7 +354,7 @@ async def test_http_retries_and_following_write_are_paced(
     def handle(request: httpx2.Request) -> httpx2.Response:
         sent.append(now)
         if len(sent) == 1:
-            if failure == "transport":
+            if isinstance(failure, str):
                 raise httpx2.ConnectError("offline", request=request)
             return httpx2.Response(failure, headers={"Retry-After": "0"})
         return httpx2.Response(200, json={"edit": {"result": "Success"}})
