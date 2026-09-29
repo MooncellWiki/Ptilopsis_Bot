@@ -79,7 +79,10 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     """Sentry DSN，对应 PTILOPSIS_SENTRY_DSN，留空则不启用上报。"""
     rate_safety: float = Field(default=0.8, gt=0.0, le=1.0)
-    """本地令牌桶相对配额的补充速率比例，对应 PTILOPSIS_RATE_SAFETY，越小越保守。"""
+    """本地限速相对配额的比例，对应 PTILOPSIS_RATE_SAFETY，越小越保守。
+
+    任意一个配额窗口内至多发出「配额×该值」次写请求。
+    """
     write_min_interval: float = Field(default=0.0, ge=0.0)
     """两次写请求的最小间隔秒数，对应 PTILOPSIS_WRITE_MIN_INTERVAL，默认不限制。"""
 

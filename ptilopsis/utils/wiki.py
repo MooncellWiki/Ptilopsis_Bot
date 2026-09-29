@@ -23,7 +23,7 @@ from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
 from ptilopsis.utils.ratelimit import (
     DEFAULT_COOLDOWN,
-    TokenBucket,
+    SlidingWindow,
     parse_ratelimits,
 )
 
@@ -107,10 +107,9 @@ class Wiki:
         self._write_lock = anyio.Lock()
         self._rate_safety = rate_safety
         self._write_min_interval = write_min_interval
-        self._buckets: dict[str, TokenBucket] = {}
-        """登录后发现配额后,每个写动作一个桶;查不到时全是 passthrough。"""
-        self._default_bucket = TokenBucket(None, 0.0)
-        self._read_bucket = TokenBucket(None, 0.0)
+        self._limiters: dict[str, SlidingWindow] = {}
+        """登录后发现配额后,每个写动作一个限速器;查不到时全是 passthrough。"""
+        self._unlimited = SlidingWindow(None, 0.0)
         self._last_write = 0.0
 
     @classmethod
@@ -147,7 +146,6 @@ class Wiki:
 
     @_transient("wiki.get")
     async def _get(self, params: dict[str, Any]) -> dict[str, Any]:
-        await self._read_bucket.acquire()
         resp = await self.client.get(self.api_url, params={"format": "json", **params})
         await _respect_retry_after(resp)
         resp.raise_for_status()
@@ -162,7 +160,7 @@ class Wiki:
         **kwargs: Any,
     ) -> dict[str, Any]:
         if write_action is not None:
-            # 放在 HTTP 重试内部,每次实际写请求都取令牌并更新发送时刻。
+            # 放在 HTTP 重试内部,每次实际写请求都占限速名额并更新发送时刻。
             await self._pace_write(write_action)
             self._last_write = time.monotonic()
         resp = await self.client.post(
@@ -173,7 +171,7 @@ class Wiki:
         return resp.json()
 
     async def _discover_rate_limits(self) -> None:
-        """登录后查一次当前账号适用的写配额并建桶;查不到就保持不限速。"""
+        """登录后查一次当前账号适用的写配额并建限速器;查不到就保持不限速。"""
         try:
             res = await self._query({"meta": "userinfo", "uiprop": "ratelimits"})
             limits = parse_ratelimits(res["query"]["userinfo"].get("ratelimits") or {})
@@ -183,14 +181,10 @@ class Wiki:
                 "Rate limit discovery failed; writes stay unpaced"
             )
             return
-        self._buckets = {
-            action: TokenBucket(rl.limit, rl.period, safety=self._rate_safety)
+        self._limiters = {
+            action: SlidingWindow(rl.limit, rl.period, safety=self._rate_safety)
             for action, rl in limits.items()
         }
-        if read := limits.get("read"):
-            self._read_bucket = TokenBucket(
-                read.limit, read.period, safety=self._rate_safety
-            )
         detail = (
             ", ".join(
                 f"{a} {rl.limit}/{rl.period:g}s" for a, rl in sorted(limits.items())
@@ -210,8 +204,8 @@ class Wiki:
         return token
 
     async def _pace_write(self, action: str) -> None:
-        """写前限速:取该动作的令牌桶,再保证与上一次写请求的间隔不小于下限。"""
-        await self._buckets.get(action, self._default_bucket).acquire()
+        """写前限速:占该动作的窗口名额,再保证与上一次写请求的间隔不小于下限。"""
+        await self._limiters.get(action, self._unlimited).acquire()
         if self._write_min_interval > 0:
             delay = self._write_min_interval - (time.monotonic() - self._last_write)
             if delay > 0:
@@ -236,11 +230,11 @@ class Wiki:
                     refresh_token = True
                     continue
                 if code == "ratelimited" and attempt < 2:
-                    bucket = self._buckets.get(action, self._default_bucket)
+                    limiter = self._limiters.get(action, self._unlimited)
                     logger.warning(
                         f"Rate limited on {action}; cooling down before retry"
                     )
-                    await bucket.cooldown()
+                    await limiter.cooldown()
                     continue
                 raise WikiError(code, error.get("info", ""))
         raise AssertionError("unreachable")  # pragma: no cover

@@ -12,7 +12,7 @@ import pytest
 
 from ptilopsis.utils import ratelimit
 from ptilopsis.utils import wiki as wiki_module
-from ptilopsis.utils.ratelimit import TokenBucket
+from ptilopsis.utils.ratelimit import SlidingWindow
 from ptilopsis.utils.wiki import (
     MAX_RETRY_AFTER,
     READ_CHUNK,
@@ -266,15 +266,14 @@ async def test_dev_mode_does_not_write() -> None:
     assert server.requests == []
 
 
-async def test_login_builds_buckets_from_discovered_limits() -> None:
+async def test_login_builds_limiters_from_discovered_limits() -> None:
     server = FakeMediaWiki({})
     server.ratelimits = {"edit": {"user": {"hits": 90, "seconds": 60}}}
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     wiki = await Wiki.login(API, "bot", "secret", client=http)
-    edit_bucket = wiki._buckets["edit"]
-    assert (edit_bucket._capacity, edit_bucket.period) == (90.0, 60.0)
-    # safety 0.8 -> 令牌补充速率 90 * 0.8 / 60 = 1.2/s
-    assert edit_bucket._rate == pytest.approx(1.2)
+    edit = wiki._limiters["edit"]
+    # safety 0.8 -> 任意 60s 内至多 72 次
+    assert (edit.max_hits, edit.period) == (72, 60.0)
 
 
 async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
@@ -313,7 +312,7 @@ async def test_write_min_interval_spaces_writes() -> None:
 
 
 @pytest.mark.parametrize("failure", [429, 503, "transport"])
-@pytest.mark.parametrize("pacing", ["interval", "bucket"])
+@pytest.mark.parametrize("pacing", ["interval", "window"])
 async def test_http_retries_and_following_write_are_paced(
     monkeypatch: pytest.MonkeyPatch, failure: int | str, pacing: str
 ) -> None:
@@ -343,8 +342,8 @@ async def test_http_retries_and_following_write_are_paced(
             API, client=http, write_min_interval=2 if pacing == "interval" else 0
         )
         wiki._csrf_token = "CSRF"
-        if pacing == "bucket":
-            wiki._buckets["edit"] = TokenBucket(1, 2)
+        if pacing == "window":
+            wiki._limiters["edit"] = SlidingWindow(1, 2)
         await wiki.edit(title="a", text="A")
         await wiki.edit(title="b", text="B")
 
@@ -358,7 +357,7 @@ async def test_login_survives_rate_limit_query_failure() -> None:
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     wiki = await Wiki.login(API, "bot", "secret", client=http)
     # 配额查询失败只是放弃限速,登录照常成功
-    assert wiki._buckets == {}
+    assert wiki._limiters == {}
 
 
 async def test_get_retries_after_429() -> None:
