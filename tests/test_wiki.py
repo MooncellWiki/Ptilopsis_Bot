@@ -345,6 +345,39 @@ async def test_write_min_interval_spaces_writes() -> None:
     assert len(server.edits) == 2
 
 
+async def test_min_interval_is_waited_before_taking_window_slot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # 先等最小间隔再占窗口名额:占完再睡的话,第一次 edit 在 100s 就记账、
+    # 102s 才发出,第三次会在 110s 发出,10 秒内发了三次
+    now = 100.0
+    sent: list[tuple[str, float]] = []
+
+    async def advance(seconds: float) -> None:
+        nonlocal now
+        now += seconds
+
+    clock = SimpleNamespace(monotonic=lambda: now)
+    monkeypatch.setattr(wiki_module, "time", clock)
+    monkeypatch.setattr(ratelimit, "time", clock)
+    monkeypatch.setattr(anyio, "sleep", advance)
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        action = parse_qs(request.content.decode())["action"][0]
+        sent.append((action, now))
+        return httpx2.Response(200, json={action: {"result": "Success"}})
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http, rate_safety=1, write_min_interval=2)
+        wiki._csrf_token = "CSRF"
+        wiki._limiters["edit"] = Throttle([RateLimit(2, 10)])
+        await wiki.protect(title="a", protections="edit=sysop")
+        for title in "bcd":
+            await wiki.edit(title=title, text="X")
+
+    assert sent == [("protect", 100), ("edit", 102), ("edit", 104), ("edit", 112)]
+
+
 @pytest.mark.parametrize("failure", [429, 503, "transport"])
 @pytest.mark.parametrize("pacing", ["interval", "window"])
 async def test_http_retries_and_following_write_are_paced(

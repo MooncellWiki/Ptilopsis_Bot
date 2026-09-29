@@ -230,12 +230,15 @@ class Wiki:
         return token
 
     async def _pace_write(self, action: str) -> None:
-        """写前限速:占该动作的窗口名额,再保证与上一次写请求的间隔不小于下限。"""
-        await self._limiters.get(action, self._unlimited).acquire()
+        """写前限速:先补足与上一次写请求的最小间隔,再占该动作的配额名额。
+
+        顺序不能反:占名额即记账,占完再睡会让记账早于实际发送,窗口提前放出名额。
+        """
         if self._write_min_interval > 0:
             delay = self._write_min_interval - (time.monotonic() - self._last_write)
             if delay > 0:
                 await anyio.sleep(delay)
+        await self._limiters.get(action, self._unlimited).acquire()
 
     async def _write(self, action: str, data: dict[str, Any], **kwargs: Any) -> Any:
         """带 csrf token 的写操作;token 失效时刷新重试一次,撞限时冷却后重试。"""
