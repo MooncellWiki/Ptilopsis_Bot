@@ -14,7 +14,7 @@ import pytest
 
 from ptilopsis.utils import ratelimit
 from ptilopsis.utils import wiki as wiki_module
-from ptilopsis.utils.ratelimit import SlidingWindow
+from ptilopsis.utils.ratelimit import RateLimit, Throttle
 from ptilopsis.utils.wiki import (
     MAX_RETRY_AFTER,
     READ_CHUNK,
@@ -271,12 +271,24 @@ async def test_dev_mode_does_not_write() -> None:
 
 async def test_login_builds_limiters_from_discovered_limits() -> None:
     server = FakeMediaWiki({})
-    server.ratelimits = {"edit": {"user": {"hits": 90, "seconds": 60}}}
+    server.ratelimits = {
+        "edit": {"user": {"hits": 90, "seconds": 60}},
+        "upload": {
+            "user": {"hits": 90, "seconds": 60},
+            "ip": {"hits": 8, "seconds": 10},
+            "newbie": {"hits": 100, "seconds": 600},
+        },
+    }
     http = httpx2.AsyncClient(transport=httpx2.MockTransport(server))
     wiki = await Wiki.login(API, "bot", "secret", client=http)
-    edit = wiki._limiters["edit"]
+
+    def windows(action: str) -> list[tuple[int, float]]:
+        return [(w.max_hits, w.period) for w in wiki._limiters[action].windows]
+
     # safety 0.8 -> 任意 60s 内至多 72 次
-    assert (edit.max_hits, edit.period) == (72, 60.0)
+    assert windows("edit") == [(72, 60.0)]
+    # newbie 与 ip 是两个独立计数器,两个窗口都要守
+    assert windows("upload") == [(6, 10.0), (80, 600.0)]
 
 
 async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
@@ -304,7 +316,7 @@ async def test_edit_cools_down_and_retries_on_ratelimited() -> None:
 
 async def test_write_refreshes_token_only_once_and_only_on_badtoken() -> None:
     wiki, server = make_wiki({})
-    wiki._limiters["edit"] = SlidingWindow(100, 0.05)  # 冷却只睡 0.05s
+    wiki._limiters["edit"] = Throttle([RateLimit(100, 0.05)])  # 冷却只睡 0.05s
     await wiki.edit(title="页面", text="1")  # 缓存 CSRF1
 
     # badtoken 换过 token 后又撞限:冷却重试沿用新 token,不再重取
@@ -365,7 +377,7 @@ async def test_http_retries_and_following_write_are_paced(
         )
         wiki._csrf_token = "CSRF"
         if pacing == "window":
-            wiki._limiters["edit"] = SlidingWindow(1, 2)
+            wiki._limiters["edit"] = Throttle([RateLimit(1, 2)])
         await wiki.edit(title="a", text="A")
         await wiki.edit(title="b", text="B")
 

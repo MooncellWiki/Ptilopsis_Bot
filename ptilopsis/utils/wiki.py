@@ -23,11 +23,7 @@ from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attem
 
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
-from ptilopsis.utils.ratelimit import (
-    DEFAULT_COOLDOWN,
-    SlidingWindow,
-    parse_ratelimits,
-)
+from ptilopsis.utils.ratelimit import DEFAULT_COOLDOWN, Throttle, parse_ratelimits
 
 __all__ = ["PageRevision", "Wiki", "WikiError"]
 
@@ -138,9 +134,9 @@ class Wiki:
         self._write_lock = anyio.Lock()
         self._rate_safety = rate_safety
         self._write_min_interval = write_min_interval
-        self._limiters: dict[str, SlidingWindow] = {}
+        self._limiters: dict[str, Throttle] = {}
         """登录后发现配额后,每个写动作一个限速器;查不到时全是 passthrough。"""
-        self._unlimited = SlidingWindow(None, 0.0)
+        self._unlimited = Throttle()
         self._last_write = 0.0
 
     @classmethod
@@ -211,12 +207,13 @@ class Wiki:
             )
             return
         self._limiters = {
-            action: SlidingWindow(rl.limit, rl.period, safety=self._rate_safety)
-            for action, rl in limits.items()
+            action: Throttle(rls, safety=self._rate_safety)
+            for action, rls in limits.items()
         }
         detail = (
             ", ".join(
-                f"{a} {rl.limit}/{rl.period:g}s" for a, rl in sorted(limits.items())
+                f"{a} " + " + ".join(f"{rl.limit}/{rl.period:g}s" for rl in rls)
+                for a, rls in sorted(limits.items())
             )
             or "none (noratelimit?)"
         )
