@@ -389,6 +389,22 @@ async def test_get_retries_after_429() -> None:
     assert server.requests[-1]["titles"] == "a"
 
 
+async def test_client_errors_are_not_retried() -> None:
+    sent = 0
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        nonlocal sent
+        sent += 1
+        return httpx2.Response(404)
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http)
+        with pytest.raises(httpx2.HTTPStatusError):
+            await wiki.read("a")
+    # 404 再发也是 404,不走重试
+    assert sent == 1
+
+
 def _throttled(
     monkeypatch: pytest.MonkeyPatch, retry_after: str | None, throttle: int = 1
 ) -> tuple[Wiki, FakeMediaWiki, list[float]]:

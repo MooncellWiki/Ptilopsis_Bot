@@ -19,7 +19,7 @@ from urllib.parse import quote
 
 import anyio
 import httpx2
-from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
+from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attempt
 
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
@@ -104,11 +104,19 @@ def _wait(state: RetryCallState) -> float:
     return 1.0
 
 
+def _worth_retrying(exc: BaseException) -> bool:
+    """网络错误、5xx 与 429 值得重试;其余 4xx 再发一次也是同样的结果。"""
+    if isinstance(exc, httpx2.HTTPStatusError):
+        status = exc.response.status_code
+        return status == 429 or status >= 500
+    return isinstance(exc, httpx2.HTTPError)
+
+
 def _transient(name: str) -> Any:
     return retry(
         stop=stop_after_attempt(3),
         wait=_wait,
-        retry=retry_if_exception_type(httpx2.HTTPError),
+        retry=retry_if_exception(_worth_retrying),
         before_sleep=log_retry(name),
         reraise=True,
     )
