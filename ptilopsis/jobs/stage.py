@@ -41,6 +41,11 @@ from ptilopsis.gamedata.stage_table import (
     TileAppendInfo,
 )
 from ptilopsis.gamedata.zone_table import ZoneTable
+from ptilopsis.homepage import (
+    NEW_STAGES_PAGE,
+    render_new_stages,
+    render_stage_list,
+)
 from ptilopsis.jobs.params import (
     BattleMiscTable,
     CharacterTable,
@@ -2086,7 +2091,7 @@ async def run(
     level_scene_pairs = battle_misc_table.level_scene_pairs or {}
 
     stage_list = await wiki.category("分类:普通难度关卡")
-    new_stage_list = []
+    new_stage_list: list[tuple[StageData, str]] = []
     duplicate_dict = check_duplicate(stage_table, activity_table)
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
@@ -2241,17 +2246,17 @@ async def run(
         )
         logger.info(f"Created: {stage_page_name}.")
 
-        new_stage_list.append(f"* [[{stage_page_name}]]")
+        new_stage_list.append((stage, stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            text="\n".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            text=render_new_stages(new_stage_list, zone_table, activity_table),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 @job
@@ -2272,7 +2277,7 @@ async def run_campaign(
     campaigns = campaign_table.campaigns or {}
 
     stage_list = await wiki.category("分类:剿灭关卡")
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[StageData, str, str]] = []
@@ -2379,17 +2384,17 @@ async def run_campaign(
         )
         logger.info(f"Created: {stage_page_name}.")
 
-        new_stage_list.append(f"* [[{stage_page_name}]]")
+        new_stage_list.append(((stage.code or "").strip(), stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            text="\n".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            text=render_stage_list("剿灭作战", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 @job
@@ -2559,7 +2564,7 @@ async def run_memory(
     rts: RichText,
 ) -> None:
     stage_list = await wiki.category("分类:悖论模拟关卡")
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[HandbookStoryStageData, str, str]] = []
@@ -2635,17 +2640,17 @@ async def run_memory(
         )
         logger.info(f"Created: {stage_page_name}.")
 
-        new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        new_stage_list.append(("", stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            appendtext="".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            appendtext="\n" + render_stage_list("悖论模拟", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 @job
@@ -2662,7 +2667,7 @@ async def run_sandbox(
     sandbox_acts = _require(sandbox_perm_table.detail, "detail").sandbox_v2 or {}
 
     stage_list = await wiki.category("分类:生息演算关卡")
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[SandboxV2StageData, str]] = []
@@ -2727,17 +2732,17 @@ async def run_sandbox(
         )
         logger.info(f"Created: {stage_page_name}.")
 
-        new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        new_stage_list.append((stage.code or "", stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            appendtext="".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            appendtext="\n" + render_stage_list("生息演算", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 @job
@@ -2754,7 +2759,7 @@ async def run_mechanism(
         story_review_meta_table.training_camp_data, "trainingCampData"
     )
 
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     await levels.prefetch(
@@ -2813,17 +2818,17 @@ async def run_mechanism(
             minor=True,
         )
         logger.info(f"Created: {stage_page_name}.")
-        new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        new_stage_list.append((stage.code or "", stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            appendtext="".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            appendtext="\n" + render_stage_list("训练场", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 @job
@@ -2840,7 +2845,7 @@ async def run_recalrune(
     recal_rune_data = _require(crisis_v2_table.recal_rune_data, "recalRuneData")
 
     stage_list = await wiki.category("分类:全息作战矩阵关卡")
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
     candidates: list[tuple[RecalRuneStageData, str, str]] = []
@@ -2905,17 +2910,17 @@ async def run_recalrune(
         )
         logger.info(f"Created: {stage_page_name}.")
 
-        new_stage_list.append(f"\n* [[{stage_page_name}]]")
+        new_stage_list.append((stage.level_code or "", stage_page_name))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            appendtext="".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            appendtext="\n" + render_stage_list("全息作战矩阵", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
 
 
 async def run_id(
@@ -2939,7 +2944,7 @@ async def run_id(
     }
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
-    new_stage_list = []
+    new_stage_list: list[tuple[str, str]] = []
     level_ids = await levels.list_ids(path)
     await levels.prefetch(
         level_id for level_id in level_ids if level_id.lower() not in known_level_ids
@@ -2981,14 +2986,14 @@ async def run_id(
             title=stage_id, text=stage_content, summary="init", bot=None, minor=True
         )
         logger.info(f"Created: {stage_id}.")
-        new_stage_list.append(f"\n* [[{stage_id}]]")
+        new_stage_list.append(("", stage_id))
 
     if new_stage_list != []:
         await wiki.edit(
-            title="首页/新增关卡",
-            appendtext="".join(new_stage_list),
+            title=NEW_STAGES_PAGE,
+            appendtext="\n" + render_stage_list("", new_stage_list),
             summary="update",
             bot=None,
             minor=True,
         )
-        logger.info("Updated: {}.".format("首页/新增关卡"))
+        logger.info(f"Updated: {NEW_STAGES_PAGE}.")
