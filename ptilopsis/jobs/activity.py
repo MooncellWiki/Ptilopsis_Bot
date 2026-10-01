@@ -20,7 +20,7 @@ from ptilopsis.utils.wiki import Wiki
 
 table_title = (
     '{|class = "wikitable mw-collapsible mw-collapsed" style = '
-    '"text-align:center; display:table; white-space:normal; width:(800px,100%);"'
+    '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
 )
 
 
@@ -161,7 +161,7 @@ def update_activity(
         else:
             activity_text += (
                 '{|class = "wikitable" style = '
-                '"text-align:center; display:table; white-space:normal; width:(800px,100%);"'
+                '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
             )
             activity_text += (
                 f'\n!colspan="2"|开始时间:{format_time(basic.start_time)}<br/>结束时间:{format_time(basic.end_time)}<br/>兑换结束时间:{format_time(basic.reward_end_time)}'
@@ -197,7 +197,7 @@ def update_activity(
         elif basic.type == "CHECKIN_ONLY":
             item_list = (
                 '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
-                '"text-align:center; display:table; white-space:normal; width:(500px,100%);"'
+                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
             )
             item_list += "\n!累积登录!!奖励"
             for day in (checkin_acts[act_info].check_in_list or {}).values():
@@ -217,7 +217,7 @@ def update_activity(
             ).strip()
             item_list = (
                 '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
-                '"text-align:center; display:table; white-space:normal; width:(500px,100%);"'
+                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
             )
             item_list += "\n!道具点数!!奖励"
             milestone_list = {}

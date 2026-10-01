@@ -19,7 +19,7 @@ from ptilopsis.utils.wiki import Wiki
 
 table_title = (
     '{|class = "wikitable mw-collapsed mw-collapsible" style = '
-    '"text-align:center; display:table; white-space:normal; width:(800px,100%);"'
+    '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
 )
 
 
@@ -87,7 +87,7 @@ def update_mission(
         for period in daily_group.period_list or []:
             mission_list = (
                 '\n{|class = "wikitable mw-collapsed mw-collapsible" style = '
-                '"text-align:center; display:table; white-space:normal; width:(400px,100%);"'
+                '"text-align:center; display:table; white-space:normal; width:min(400px,100%);"'
             )
             mission_list += "\n!id||内容||奖励"
             mission_group = mission_groups.get(period.mission_group_id or "")
@@ -103,7 +103,7 @@ def update_mission(
             mission_list += "\n|}"
             reward_list = (
                 '\n{|class = "wikitable mw-collapsed mw-collapsible" style = '
-                '"text-align:center; display:table; white-space:normal; width:(300px,100%);"'
+                '"text-align:center; display:table; white-space:normal; width:min(300px,100%);"'
             )
             reward_list += "\n!id||点数需求||奖励"
             for reward_conf in (mission_table.periodical_rewards or {}).values():

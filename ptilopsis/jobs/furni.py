@@ -245,7 +245,7 @@ async def create_themes(
 ==总览==
 {{{{家具主题总览|{themes_name}|{description}|主题图片={theme_id}{preview_pic}}}}}
 ==快速布置==
-{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:(500px,100%);"
+{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:min(500px,100%);"
 !width="60%"|家具
 !width="20%"|数量
 !width="20%"|家具氛围值{quick_setup_furni}
@@ -253,7 +253,7 @@ async def create_themes(
 !colspan="2"|总计
 |{furni_comfort}
 |}}
-{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:(500px,100%);"
+{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:min(500px,100%);"
 !style="width:60%;"|主题
 !style="width:20%;"|套件数量
 !style="width:20%;"|氛围值{quick_setup_groups}
@@ -261,7 +261,7 @@ async def create_themes(
 !colspan="2"|总计
 |{groups_comfort}
 |}}
-{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:(500px,100%);"
+{{|class="wikitable" style="text-align:center; white-space:normal; display:table; width:min(500px,100%);"
 |width="80%"|家具氛围值
 |width="20%"|{furni_comfort}
 |-

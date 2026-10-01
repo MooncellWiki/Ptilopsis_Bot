@@ -1816,7 +1816,7 @@ def render_squad(section: SquadSectionView) -> str:
     return (
         f"=={section.title}==\n"
         '{| class="wikitable hlist logo mw-collapsed mw-collapsible" '
-        'style="text-align:center; width:(567px,100%); white-space:normal;"\n'
+        'style="text-align:center; width:min(567px,100%); white-space:normal;"\n'
         f'!style="background-color:#0098DC;color:#FFFFFF"|{section.title}\n'
         f"|-\n"
         f"|{units}\n"
@@ -1849,7 +1849,7 @@ def render_campaign_progress(progress: CampaignProgressView) -> str:
     return (
         "==作战进度奖励==\n"
         '{| class="wikitable mw-collapsible mw-collapsed" '
-        'style="text-align:center;width:(600px,100%);"\n'
+        'style="text-align:center;width:min(600px,100%);"\n'
         '!style="width:200px;color:white;font-weight:bold;'
         'background-color:#575757;"|击溃人数\n'
         '!style="width:400px;color:white;font-weight:bold;'
