@@ -8,6 +8,7 @@ import pytest
 from ptilopsis.__main__ import jobs_for
 from ptilopsis.gamedata.gamedata_const import GameDataConsts
 from ptilopsis.gamedata.roguelike_topic_table import RoguelikeTopicTable
+from ptilopsis.jobs import discover_jobs
 from ptilopsis.jobs.relic import (
     GENERIC_OBTAIN,
     PREAMBLE,
@@ -355,5 +356,7 @@ async def test_job_propagates_unexpected_api_errors() -> None:
 
 
 def test_relic_mode_is_separate_from_regular() -> None:
+    # jobs_for 会校验 MODE_JOBS 展开出的 job 都已注册,先导入全部 job 模块
+    discover_jobs()
     assert jobs_for(("relic",)) == ["relic.run"]
     assert "relic.run" not in jobs_for(("regular",))
