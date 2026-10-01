@@ -8,6 +8,7 @@ from ptilopsis.gamedata.building_data import (
 )
 from ptilopsis.gamedata.item_table import InventoryData, ItemData
 from ptilopsis.gamedata.shop_client_table import ShopClientData
+from ptilopsis.homepage import NEW_FURNITURE_PAGE, NEW_THEMES_PAGE, furniture_card
 from ptilopsis.jobs.params import ItemTable, ShopClientTable, table
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
@@ -167,7 +168,7 @@ async def create_furni(
                 break
 
         if groups == "":
-            individual_furni.append(f"{{{{家具|{furni_data.name}}}}}")
+            individual_furni.append(furniture_card(furni_data.name))
 
         furni_info = furni_format.format(
             name=furni_data.name,
@@ -207,14 +208,14 @@ async def create_furni(
 
     if individual_furni != []:
         await wiki.edit(
-            title="首页/新增单件",
+            title=NEW_FURNITURE_PAGE,
             text="".join(individual_furni),
             summary="update",
             bot=None,
             minor=True,
         )
         # logger.info(''.join(individual_furni))
-        logger.info("Updated: {}.".format("首页/新增单件"))
+        logger.info(f"Updated: {NEW_FURNITURE_PAGE}.")
 
 
 def theme_preview_pic(shop_client_table: ShopClientData, theme_id: str | None) -> str:
@@ -349,9 +350,8 @@ async def create_themes(
             ref_content=ref_content,
         )
 
-        new_theme.append(
-            "{{{{家具主题|{name}}}}}".format(name=themes_data.name.replace("/", ""))
-        )
+        # 卡片按页面名查主题的 Cargo 数据,要的是上面建页用的同一个名字
+        new_theme.append(furniture_card(themes_data.name, theme=True))
 
         await wiki.edit(
             title=themes_data.name,
@@ -366,14 +366,14 @@ async def create_themes(
 
     if new_theme != []:
         await wiki.edit(
-            title="首页/新增主题",
+            title=NEW_THEMES_PAGE,
             text=" ".join(new_theme),
             summary="update",
             bot=None,
             minor=True,
         )
         # logger.info(' '.join(new_theme))
-        logger.info("Updated: {}.".format("首页/新增主题"))
+        logger.info(f"Updated: {NEW_THEMES_PAGE}.")
 
 
 @job
