@@ -23,6 +23,7 @@ MODE_JOBS: dict[str, list[str]] = {
         "furni.run",
         "item.run",
         "new_module.run",
+        "relic.run",
         "activity.run",
         "mission.run",
         "char_attr.run",
