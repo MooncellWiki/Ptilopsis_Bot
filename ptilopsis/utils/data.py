@@ -69,7 +69,7 @@ class GameData:
         return (await self._read_bytes(path, region)).decode("utf-8")
 
     async def list_files(self, path: str, region: str = "CN") -> list[str]:
-        """递归列出 ``gamedata/<path>`` 下的全部文件,返回相对 gamedata 根的路径。"""
+        """递归列出 ``gamedata/<path>`` 下的文件,返回用 / 分隔的相对 gamedata 路径。"""
         if self._is_torappu(region):
             files = [f async for f in self.torappu.walk(self.res_version(region), path)]
             return sorted(files)
@@ -78,7 +78,7 @@ class GameData:
         if target.is_file():
             return [path]
         return sorted(
-            str(Path(dirpath, name).relative_to(root))
+            Path(dirpath, name).relative_to(root).as_posix()
             for dirpath, _, names in os.walk(target)
             for name in names
             if name != ".DS_Store"

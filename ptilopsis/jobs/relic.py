@@ -20,7 +20,7 @@ from ptilopsis.gamedata.roguelike_topic_table import (
     RoguelikeGameItemData,
     RoguelikeTopicDetail,
 )
-from ptilopsis.jobs.params import GamedataConst, RoguelikeTopicTable
+from ptilopsis.jobs.params import RoguelikeTopicTable
 from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki, WikiError
@@ -79,8 +79,6 @@ class RelicVariant:
     difficulty: int
     """从哪个难度开始生效。"""
     item: RoguelikeGameItemData
-    description: str
-    """描述,后面附上效果里出现的【术语】的解释。"""
 
 
 @dataclass(frozen=True)
@@ -131,17 +129,7 @@ def rogue_number(identifier: str) -> int | None:
     return int(match[1]) if match else None
 
 
-def describe(item: RoguelikeGameItemData, terms: dict[str, str]) -> str:
-    lines = [clean(item.description)]
-    for term in dict.fromkeys(re.findall(r"【([^】]+)】", item.usage or "")):
-        if term in terms:
-            lines.append(f"【{term}】{terms[term]}")
-    return "\n".join(filter(None, lines))
-
-
-def theme_relics(
-    detail: RoguelikeTopicDetail, terms: dict[str, str]
-) -> dict[str, list[RelicVariant]]:
+def theme_relics(detail: RoguelikeTopicDetail) -> dict[str, list[RelicVariant]]:
     """一个主题里的收藏品,按页面名分组;难度变体(xx-α 等)归到基础版本名下。"""
     items = {k: v for k, v in (detail.items or {}).items() if v.type == "RELIC"}
     # 难度变体 id → (基础版本 id, 生效难度)
@@ -159,7 +147,7 @@ def theme_relics(
         if not name:
             logger.warning(f"收藏品 {item_id} 没有名称,跳过")
             continue
-        variant = RelicVariant(difficulty, item, describe(item, terms))
+        variant = RelicVariant(difficulty, item)
         relics.setdefault(name, []).append(variant)
     for name, variants in list(relics.items()):
         variants.sort(key=lambda v: v.difficulty)
@@ -170,22 +158,15 @@ def theme_relics(
     return relics
 
 
-def collect_relics(
-    topic_table: RoguelikeTopicTable, consts: GamedataConst
-) -> list[Relic]:
+def collect_relics(topic_table: RoguelikeTopicTable) -> list[Relic]:
     """按名称汇总各主题的收藏品;不同主题里的同名收藏品是同一个页面。"""
-    terms = {
-        term.term_name: term.description
-        for term in (consts.term_description_dict or {}).values()
-        if term.term_name and term.description
-    }
     relics: dict[str, Relic] = {}
     for topic_id, topic in (topic_table.topics or {}).items():
         number = rogue_number(topic_id)
         detail = (topic_table.details or {}).get(topic_id)
         if number is None or not topic.name or detail is None:
             raise ValueError(f"无法识别的集成战略主题:{topic_id}")
-        for name, variants in theme_relics(detail, terms).items():
+        for name, variants in theme_relics(detail).items():
             relic = relics.setdefault(name, Relic(name, []))
             relic.themes.append(RelicTheme(number, topic.name, variants))
     for relic in relics.values():
@@ -215,9 +196,9 @@ def variant_text(
 
 
 def header_fields(relic: Relic) -> dict[str, str]:
-    """模板头部的字段,取最新主题的数据。"""
+    """模板头部取最新主题的数据;描述只取原表 description,不追加效果术语解释。"""
     latest = relic.themes[-1]
-    descriptions = [v.description for v in latest.variants]
+    descriptions = [clean(v.item.description) for v in latest.variants]
     return {
         "名称": wiki_text(relic.name),
         "iconId": relic.icon_id,
@@ -483,10 +464,8 @@ def valid_title(name: str) -> bool:
 
 
 @job
-async def run(
-    wiki: Wiki, topic_table: RoguelikeTopicTable, consts: GamedataConst
-) -> None:
-    relics = collect_relics(topic_table, consts)
+async def run(wiki: Wiki, topic_table: RoguelikeTopicTable) -> None:
+    relics = collect_relics(topic_table)
     if invalid := [relic.name for relic in relics if not valid_title(relic.name)]:
         logger.warning(f"收藏品名不能直接作为页面标题,跳过:{'、'.join(invalid)}")
         relics = [relic for relic in relics if valid_title(relic.name)]
