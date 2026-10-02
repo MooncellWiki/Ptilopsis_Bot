@@ -196,7 +196,7 @@ def variant_text(
 
 
 def header_fields(relic: Relic) -> dict[str, str]:
-    """模板头部的字段,取最新主题的数据。"""
+    """模板头部取最新主题的数据;描述只取原表 description,不追加效果术语解释。"""
     latest = relic.themes[-1]
     descriptions = [clean(v.item.description) for v in latest.variants]
     return {

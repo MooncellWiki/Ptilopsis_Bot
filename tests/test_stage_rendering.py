@@ -293,7 +293,7 @@ def test_campaign_entry_template_renders_the_complete_page() -> None:
         "}}\n"
         "==作战进度奖励==\n"
         '{| class="wikitable mw-collapsible mw-collapsed" '
-        'style="text-align:center;width:600px;"\n'
+        'style="text-align:center;width:min(600px,100%);"\n'
         '!style="width:200px;color:white;font-weight:bold;'
         'background-color:#575757;"|击溃人数\n'
         '!style="width:400px;color:white;font-weight:bold;'

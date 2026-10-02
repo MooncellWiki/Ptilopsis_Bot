@@ -165,8 +165,9 @@ ptil relic
 
 ### 收藏品页面（`relic`）
 
-`relic.run` 读取国服 `roguelike_topic_table` 与 `gamedata_const`，每个收藏品一个页面，正文是
+`relic.run` 读取国服 `roguelike_topic_table`，每个收藏品一个页面，正文是
 `{{收藏品/common}}`。不同主题里的同名收藏品合成一个页面，难度变体（`xx-α` 等）按生效难度写进同一主题。
+描述仅采用数据源的 `description` 字段，保留 wikitext 转义与换行处理，不解析或追加效果中的术语说明。
 页面上的主题按 rogue 编号的先后从 1 连续编号，与 `rogue_N` 的 N 本身无关。
 
 维护规则是幂等的，重复运行不会产生新的编辑，因此不需要保存任何状态：
@@ -180,7 +181,8 @@ ptil relic
 - 读取后页面被他人改动或删除时放弃这次编辑，下次运行重新合并。
 
 `模板:收藏品/common` 目前只支持 6 个主题，有收藏品超过时会打 warning 提醒先扩展模板。
-首次运行会批量新建几百个页面，所以 `relic` 暂不包含在 `regular` 与 CI 中，需要手动运行。
+收藏品维护已包含在 `regular` 中，国服更新 workflow 会执行；也可用 `relic` 模式单独运行。
+首次运行可能批量新建几百个页面，建议先用 `ptil --dev relic` 预览。
 
 ## GitHub Actions
 

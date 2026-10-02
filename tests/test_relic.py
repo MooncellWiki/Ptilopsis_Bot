@@ -336,6 +336,10 @@ def relic_tables() -> RoguelikeTopicTable:
             "远程干员获得【迷彩】<br/>攻击力&#124;+1&lt;测试&gt;",
         ),
         (None, "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
+<<<<<<< Updated upstream
+=======
+        ("", "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
+>>>>>>> Stashed changes
     ],
 )
 async def test_job_uses_only_cn_topic_table_text(
@@ -420,6 +424,6 @@ async def test_job_propagates_unexpected_api_errors() -> None:
         await run.func(cast("Wiki", fake), topic_table)
 
 
-def test_relic_mode_is_separate_from_regular() -> None:
+def test_relic_mode_is_also_in_regular() -> None:
     assert jobs_for(("relic",)) == ["relic.run"]
-    assert "relic.run" not in jobs_for(("regular",))
+    assert jobs_for(("regular",)).count("relic.run") == 1
