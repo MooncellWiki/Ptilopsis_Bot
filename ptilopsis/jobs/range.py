@@ -6,7 +6,7 @@ from ptilopsis.log import logger
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
-svgHeadTemplate = (
+SVG_HEAD_TEMPLATE = (
     '<svg xmlns="http://www.w3.org/2000/svg" '
     'xmlns:xlink="http://www.w3.org/1999/xlink" '
     'viewBox="{} {} {} {}" '
@@ -14,13 +14,13 @@ svgHeadTemplate = (
     'width:<!--{{$width|default:""|regex_replace:"/(script|<script)/":""}}-->!important;'
     'height:<!--{{$height|default:""|regex_replace:"/(script|<script)/":""}}-->!important">'
 )
-svgDefStr = (
+SVG_DEF_STR = (
     "<defs>"
     '<rect id="1" fill="#27a6f3" width="22" height="22"/>'
     '<rect id="2" fill="none" stroke="gray" stroke-width="2" width="20" height="20"/>'
     "</defs>"
 )
-svgRectTemplate = '<use xlink:href="#{}" x="{}" y="{}"/>'
+SVG_RECT_TEMPLATE = '<use xlink:href="#{}" x="{}" y="{}"/>'
 
 
 async def skill_range(wiki: Wiki, range_table: dict[str, RangeData]) -> None:
@@ -44,17 +44,17 @@ async def skill_range(wiki: Wiki, range_table: dict[str, RangeData]) -> None:
         if fig_table[0 - index[0]][0 - index[2]] == 0:
             fig_table[0 - index[0]][0 - index[2]] = 2
         svg = (
-            svgHeadTemplate.format(
+            SVG_HEAD_TEMPLATE.format(
                 0, 0, 26 * range_col, 26 * range_row, 26 * range_col, 26 * range_row
             )
-            + svgDefStr
+            + SVG_DEF_STR
         )
         for y, row in enumerate(fig_table):
             for x, cell in enumerate(row):
                 if cell == 1:
-                    svg += svgRectTemplate.format(2, x * 26 + 2, y * 26 + 2)
+                    svg += SVG_RECT_TEMPLATE.format(2, x * 26 + 2, y * 26 + 2)
                 elif cell == 2:
-                    svg += svgRectTemplate.format(1, x * 26 + 1, y * 26 + 1)
+                    svg += SVG_RECT_TEMPLATE.format(1, x * 26 + 1, y * 26 + 1)
         svg += "</svg>"
         text = (
             "<includeonly>"

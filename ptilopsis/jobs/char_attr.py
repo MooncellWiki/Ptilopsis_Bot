@@ -22,13 +22,13 @@ from ptilopsis.utils.wiki import Wiki
 
 # 潜能加成的属性名 → 累加到哪个面板值
 POTENTIAL_ATTRIBUTES = {
-    "MAX_HP": "maxHp",
+    "MAX_HP": "max_hp",
     "ATK": "atk",
     "DEF": "defence",
-    "MAGIC_RESISTANCE": "magicResistance",
+    "MAGIC_RESISTANCE": "magic_resistance",
     "COST": "cost",
-    "ATTACK_SPEED": "attackSpeed",
-    "RESPAWN_TIME": "respawnTime",
+    "ATTACK_SPEED": "attack_speed",
+    "RESPAWN_TIME": "respawn_time",
 }
 
 
@@ -69,14 +69,14 @@ def get_char_attr(
         favor = favor_attributes(char)
 
         panel: dict[str, float] = {
-            "maxHp": final.max_hp + favor.max_hp,
+            "max_hp": final.max_hp + favor.max_hp,
             "atk": final.atk + favor.atk,
             "defence": final.def_ + favor.def_,
-            "magicResistance": final.magic_resistance,
+            "magic_resistance": final.magic_resistance,
             "cost": final.cost,
-            "blockCnt": final.block_cnt,
-            "attackSpeed": final.attack_speed,
-            "respawnTime": final.respawn_time,
+            "block_cnt": final.block_cnt,
+            "attack_speed": final.attack_speed,
+            "respawn_time": final.respawn_time,
         }
 
         for potential_rank in char.potential_ranks or []:
@@ -95,19 +95,28 @@ def get_char_attr(
                     continue
                 panel[key] += modifier.value
 
-        desc = "|[[{name}]]||{rarity}||{profession}||{subProfession}||{maxHp:.0f}||{atk:.0f}||{defence:.0f}||{magicResistance:.0f}||{cost:.0f}||{blockCnt:.0f}||{attackSpeed:.0f}||{baseAttackTime}s||data-sort-value={respawnTime:.0f}|{respawnTime:.0f}s".format(
+        desc = (
+            "|[[{name}]]||{rarity}||{profession}||{sub_profession}"
+            "||{max_hp:.0f}||{atk:.0f}||{defence:.0f}||{magic_resistance:.0f}"
+            "||{cost:.0f}||{block_cnt:.0f}||{attack_speed:.0f}||{base_attack_time}s"
+            "||data-sort-value={respawn_time:.0f}|{respawn_time:.0f}s"
+        ).format(
             name=char.name,
             rarity=rarity_stars(char.rarity),
             profession=trans_profession(char.profession),
-            subProfession=sub_profession_name(
+            sub_profession=sub_profession_name(
                 uniequip_table, char.sub_profession_id
             ).strip(),
-            baseAttackTime=final.base_attack_time,
+            base_attack_time=final.base_attack_time,
             **panel,
         )
         remarks = max_talent_remarks(char, rts)
         if remarks:
-            desc += f'\n|- class="expand-child" style="font-size:85%; line-height:1.2; color:gray;"\n|colspan="13"|{"<br/>".join(remarks)}'
+            desc += (
+                '\n|- class="expand-child" '
+                'style="font-size:85%; line-height:1.2; color:gray;"'
+                f'\n|colspan="13"|{"<br/>".join(remarks)}'
+            )
 
         content.append(
             {
@@ -120,7 +129,7 @@ def get_char_attr(
 {|class="wikitable sortable" style="text-align:center; width:1000px; display:table; white-space:normal;"
 !名字!!稀有度!!职业!!分支!!生命!!攻击!!防御!!法抗!!费用!!阻挡!!攻速!!攻击间隔!!再部署
 |-
-"""
+"""  # noqa: E501
     table += "\n|-\n".join(
         [
             data["text"]

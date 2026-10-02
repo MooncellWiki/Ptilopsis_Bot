@@ -406,15 +406,15 @@ async def update_outfit_brand(
 }}}}"""
 
     skin_format = """
-{anchor}=={skinName}==
+{anchor}=={skin_name}==
 {{{{干员时装
 |干员名={name}
-|皮肤序号={skinNo}
-|时装名={skinName}
-|画师={drawerName}
-|时装组名称={skinGroupName}
+|皮肤序号={skin_no}
+|时装名={skin_name}
+|画师={drawer_name}
+|时装组名称={skin_group_name}
 |内容={content}
-|获得途径={obtainApproach}
+|获得途径={obtain_approach}
 
 |dialog={dialog}
 |usage={usage}
@@ -495,12 +495,12 @@ async def update_outfit_brand(
             if " " in skin_name
             else "",
             name=skin_char_name,
-            skinName=skin_name,
-            skinNo=char_count[skin_char_id],
-            drawerName=",".join(ds.drawer_list or []),
-            skinGroupName=(ds.skin_group_name or "").rstrip(),
+            skin_name=skin_name,
+            skin_no=char_count[skin_char_id],
+            drawer_name=",".join(ds.drawer_list or []),
+            skin_group_name=(ds.skin_group_name or "").rstrip(),
             content=content_desc,
-            obtainApproach=ds.obtain_approach,
+            obtain_approach=ds.obtain_approach,
             dialog=ds.dialog,
             usage=ds.usage,
             description=ds.description,

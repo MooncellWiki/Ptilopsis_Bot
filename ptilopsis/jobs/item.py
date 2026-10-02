@@ -17,7 +17,7 @@ def item_name(items: dict[str, ItemData], item_id: str | None) -> str:
 def build_time(sec):
     m, s = divmod(sec, 60)
     h, m = divmod(m, 60)
-    return "%02d:%02d:%02d" % (h, m, s)
+    return f"{h:02d}:{m:02d}:{s:02d}"
 
 
 def trans_rarity(rarity):
@@ -32,20 +32,20 @@ def trans_rarity(rarity):
 
 
 basic_info4 = (
-    "==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|iconId={iconId}\n|描述={description}\n|用途={usage}\n|"
-    "获得方式={obtainApproach}\n|稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n"
+    "==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={item_id}\n|iconId={icon_id}\n|描述={description}\n|用途={usage}\n|"
+    "获得方式={obtain_approach}\n|稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n"
 )
 basic_info3 = (
-    "==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={itemId}\n|iconId={iconId}\n|描述={description}\n|用途={usage}\n|"
+    "==基础信息==\n{{{{道具信息\n|名称={name}\n|itemId={item_id}\n|iconId={icon_id}\n|描述={description}\n|用途={usage}\n|"
     "稀有度={rarity}\n|id={id}\n|分类={sort}\n}}}}\n"
 )
 basic_mf = (
     "{{{{道具配方/制造站\n|产物={name}\n|产物数量={count}\n|仓库消耗={weight}\n|"
-    "时间消耗={costPoint}\n|制造站等级需求={roomLevel}\n"
+    "时间消耗={cost_point}\n|制造站等级需求={room_level}\n"
 )
 basic_wf = (
-    "{{{{道具配方/加工站\n|产物={name}\n|产物数量={count}\n|龙门币消耗={goldCost}\n|"
-    "心情消耗={apCost:.0f}\n|加工站等级需求={roomLevel}\n|副产物总概率={extraOutcomeRate:.0f}\n"
+    "{{{{道具配方/加工站\n|产物={name}\n|产物数量={count}\n|龙门币消耗={gold_cost}\n|"
+    "心情消耗={ap_cost:.0f}\n|加工站等级需求={room_level}\n|副产物总概率={extra_outcome_rate:.0f}\n"
 )
 
 
@@ -130,20 +130,20 @@ async def run(
         if recipe_approaches:
             recipe_str = "、".join(recipe_approaches)
             if original_obtain:
-                obtainApproach = original_obtain + "、" + recipe_str
+                obtain_approach = original_obtain + "、" + recipe_str
             else:
-                obtainApproach = recipe_str
+                obtain_approach = recipe_str
         else:
-            obtainApproach = original_obtain
+            obtain_approach = original_obtain
 
-        if obtainApproach:
+        if obtain_approach:
             tbasic_info = basic_info4.format(
                 name=name.strip(),
-                itemId=citem.item_id,
-                iconId=citem.icon_id if citem.icon_id is not None else "",
+                item_id=citem.item_id,
+                icon_id=citem.icon_id if citem.icon_id is not None else "",
                 description=citem.description if citem.description is not None else "",
                 usage=citem.usage if citem.usage is not None else "",
-                obtainApproach=obtainApproach,
+                obtain_approach=obtain_approach,
                 rarity=trans_rarity(citem.rarity),
                 id=citem.sort_id,
                 sort=sort,
@@ -151,8 +151,8 @@ async def run(
         else:
             tbasic_info = basic_info3.format(
                 name=name.strip(),
-                itemId=citem.item_id,
-                iconId=citem.icon_id if citem.icon_id is not None else "",
+                item_id=citem.item_id,
+                icon_id=citem.icon_id if citem.icon_id is not None else "",
                 description=citem.description if citem.description is not None else "",
                 usage=citem.usage if citem.usage is not None else "",
                 rarity=trans_rarity(citem.rarity),
@@ -163,16 +163,16 @@ async def run(
             tmf = ""
             twf = ""
             for d in citem.building_product_list:
-                cRoomType = d.room_type
-                cFormulaId = d.formula_id or ""
-                if cRoomType == "MANUFACTURE":
-                    cf = manufact_formulas[cFormulaId]
+                c_room_type = d.room_type
+                c_formula_id = d.formula_id or ""
+                if c_room_type == "MANUFACTURE":
+                    cf = manufact_formulas[c_formula_id]
                     tmf += basic_mf.format(
                         name=item_name(items, cf.item_id),
                         count=cf.count,
                         weight=cf.weight,
-                        costPoint=build_time(cf.cost_point),
-                        roomLevel=(cf.require_rooms or [])[0].room_level,
+                        cost_point=build_time(cf.cost_point),
+                        room_level=(cf.require_rooms or [])[0].room_level,
                     )
                     tstr = ""
                     for i, cost in enumerate(cf.costs or []):
@@ -190,15 +190,15 @@ async def run(
                         )
                     tmf = tmf + tstr
                     tmf = tmf + "}}"
-                elif cRoomType == "WORKSHOP":
-                    cf = workshop_formulas[cFormulaId]
+                elif c_room_type == "WORKSHOP":
+                    cf = workshop_formulas[c_formula_id]
                     twf += basic_wf.format(
                         name=item_name(items, cf.item_id),
                         count=cf.count,
-                        goldCost=cf.gold_cost,
-                        apCost=cf.ap_cost / 360000,
-                        roomLevel=(cf.require_rooms or [])[0].room_level,
-                        extraOutcomeRate=cf.extra_outcome_rate * 100,
+                        gold_cost=cf.gold_cost,
+                        ap_cost=cf.ap_cost / 360000,
+                        room_level=(cf.require_rooms or [])[0].room_level,
+                        extra_outcome_rate=cf.extra_outcome_rate * 100,
                     )
                     tstr = ""
                     for i, cost in enumerate(cf.costs or []):
@@ -215,9 +215,9 @@ async def run(
                             + "\n"
                         )
                     extra_outcome_group = cf.extra_outcome_group or []
-                    totalWeight = 0
+                    total_weight = 0
                     for oc in extra_outcome_group:
-                        totalWeight += oc.weight
+                        total_weight += oc.weight
                     for i, oc in enumerate(extra_outcome_group):
                         tstr = (
                             tstr
@@ -228,7 +228,7 @@ async def run(
                             + "\n|副产物"
                             + str(i + 1)
                             + "掉率="
-                            + str(round(oc.weight / totalWeight * 100, 1))
+                            + str(round(oc.weight / total_weight * 100, 1))
                             + "\n"
                         )
                     if cf.require_stages:

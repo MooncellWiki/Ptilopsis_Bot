@@ -4,7 +4,7 @@
 空参数按需省略——这些规则集中在这里实现,调用方只负责描述有哪些参数。
 """
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Self
 
 
@@ -68,10 +68,16 @@ class WikiTemplate:
             return self
         return self.add(key, value)
 
-    def add_all(self, params: Mapping[str, object]) -> Self:
-        """按 dict 的书写顺序批量加入参数,写法接近页面上的参数表。"""
+    def add_all(
+        self, params: Mapping[str, object] | Sequence[tuple[str, object]]
+    ) -> Self:
+        """按书写顺序批量加入参数,写法接近页面上的参数表。
 
-        for key, value in params.items():
+        也接受 (key, value) 序列,用于键名可能重复的参数(如未知属性都叫"其他")。
+        """
+
+        pairs = params.items() if isinstance(params, Mapping) else params
+        for key, value in pairs:
             self.add(key, value)
         return self
 

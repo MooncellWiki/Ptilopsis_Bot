@@ -56,6 +56,9 @@ def log_retry(name: str, with_args: bool = False) -> Any:
                     *(f"{k}={v!r}" for k, v in retry_state.kwargs.items()),
                 ]
             )
-        logger.warning(f"Retrying {name}({call_args}) after failure: {exc!r}")
+        wait = retry_state.next_action.sleep if retry_state.next_action else 0
+        logger.warning(
+            f"Retrying {name}({call_args}) in {wait:g}s after failure: {exc!r}"
+        )
 
     return _before_sleep

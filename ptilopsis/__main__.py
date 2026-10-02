@@ -1,4 +1,4 @@
-import os
+import subprocess
 
 import anyio
 import click
@@ -22,7 +22,8 @@ MODE_JOBS: dict[str, list[str]] = {
         "skin.run",
         "furni.run",
         "item.run",
-        "newModule.run",
+        "new_module.run",
+        "relic.run",
         "activity.run",
         "mission.run",
         "char_attr.run",
@@ -115,7 +116,7 @@ def main(
 
     if remote:
         # 国服数据在线读 torappu，只有海外服还依赖子模块
-        os.system(f"git submodule update --init --remote -- {YOSTAR_DIR}")
+        _git("submodule", "update", "--init", "--remote", "--", YOSTAR_DIR)
         game_config = config.model_copy(update={"version": "version_remote.json"})
     else:
         game_config = config
@@ -137,28 +138,28 @@ async def _amain(
     modes: tuple[str, ...],
 ) -> bool:
     """检查版本、跑 job；返回是否需要提交推送。"""
-    gameData = GameData(config=game_config)
+    gamedata = GameData(config=game_config)
     try:
         if check_mode == "cn":
-            if not await gameData.unpacker.check_update() and not force:
-                gameData.unpacker.commit_version()
+            if not await gamedata.unpacker.check_update() and not force:
+                gamedata.unpacker.commit_version()
                 logger.info("No version update. Program exit.")
                 return False
         elif check_mode == "jp":
-            sign1 = await gameData.unpacker.check_update("JP")
-            sign2 = await gameData.unpacker.check_update("US")
-            await gameData.unpacker.check_update("KR")
+            sign1 = await gamedata.unpacker.check_update("JP")
+            sign2 = await gamedata.unpacker.check_update("US")
+            await gamedata.unpacker.check_update("KR")
             if not sign1 and not sign2:
-                gameData.unpacker.commit_version()
+                gamedata.unpacker.commit_version()
                 logger.info("No version update. Program exit.")
                 return False
         elif check_mode == "global":
-            await gameData.unpacker.check_all_update()
-            gameData.unpacker.commit_version()
+            await gamedata.unpacker.check_all_update()
+            gamedata.unpacker.commit_version()
             return False
 
         if not modes:
-            gameData.unpacker.commit_version()
+            gamedata.unpacker.commit_version()
             return True
 
         username, password = settings.require_wiki_credentials()
@@ -167,20 +168,22 @@ async def _amain(
             username,
             password,
             "dev" if dev else "product",
+            rate_safety=settings.rate_safety,
+            write_min_interval=settings.write_min_interval,
         )
         try:
             # 登录成功后才推进版本号：登录失败（凭据缺失/过期/被吊销）时保持旧版本，
             # 下一次运行仍能检测到更新并重跑，而不是被误判为「无更新」而跳过
-            gameData.unpacker.commit_version()
+            gamedata.unpacker.commit_version()
 
             discover_jobs()
-            failed = await run_jobs(jobs_for(modes), JobContext(wiki, gameData))
+            failed = await run_jobs(jobs_for(modes), JobContext(wiki, gamedata))
             if failed:
                 logger.error(f"{len(failed)} job(s) failed: {', '.join(failed)}")
         finally:
             await wiki.aclose()
     finally:
-        await gameData.aclose()
+        await gamedata.aclose()
     return True
 
 
@@ -188,9 +191,14 @@ def _push_remote(remote: bool) -> None:
     """--remote 模式下把更新后的数据与版本号提交推送。"""
     if not remote:
         return
-    os.system("git add .")
-    os.system('git commit -m "remote update"')
-    os.system("git push")
+    _git("add", ".")
+    _git("commit", "-m", "remote update")
+    _git("push")
+
+
+def _git(*args: str) -> None:
+    # 与之前的 os.system 一样不检查返回码：没有改动时 commit 失败也照常往下走
+    subprocess.run(["git", *args], check=False)
 
 
 if __name__ == "__main__":

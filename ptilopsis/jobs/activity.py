@@ -18,7 +18,10 @@ from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
 
-table_title = '{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:800px;"'
+table_title = (
+    '{|class = "wikitable mw-collapsible mw-collapsed" style = '
+    '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
+)
 
 
 def format_time(timestamp: int) -> str:
@@ -132,7 +135,8 @@ def update_activity(
         end_time2 = format_time(basic.reward_end_time)
         activity_text_dict[mission.id] += (
             table_title
-            + f'\n!colspan="2"|开始时间:{start_time}<br/>结束时间:{end_time}<br/>兑换结束时间:{end_time2}'
+            + f'\n!colspan="2"|开始时间:{start_time}<br/>结束时间:{end_time}'
+            + f"<br/>兑换结束时间:{end_time2}"
             + "\n|-\n!内容||奖励"
         )
         for mission_id in mission.mission_ids or []:
@@ -155,7 +159,10 @@ def update_activity(
         if act_info in activity_text_dict:
             activity_text += activity_text_dict[act_info]
         else:
-            activity_text += '{|class = "wikitable" style = "text-align:center; display:table; white-space:normal; width:800px;"'
+            activity_text += (
+                '{|class = "wikitable" style = '
+                '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
+            )
             activity_text += (
                 f'\n!colspan="2"|开始时间:{format_time(basic.start_time)}<br/>结束时间:{format_time(basic.end_time)}<br/>兑换结束时间:{format_time(basic.reward_end_time)}'
                 + "\n|}"
@@ -188,7 +195,10 @@ def update_activity(
             item_list += "\n|}"
             activity_text += item_list
         elif basic.type == "CHECKIN_ONLY":
-            item_list = '\n{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:500px;"'
+            item_list = (
+                '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
+                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
+            )
             item_list += "\n!累积登录!!奖励"
             for day in (checkin_acts[act_info].check_in_list or {}).values():
                 reward_list = ""
@@ -205,16 +215,19 @@ def update_activity(
             milestone_name = (
                 items[token_item.id or ""].name or "" if token_item else ""
             ).strip()
-            item_list = '\n{|class = "wikitable mw-collapsible mw-collapsed" style = "text-align:center; display:table; white-space:normal; width:500px;"'
+            item_list = (
+                '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
+                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
+            )
             item_list += "\n!道具点数!!奖励"
             milestone_list = {}
             order_max = 0
             for milestone in act4d0.mile_stone_item_list or []:
                 order_max = max(milestone.order_id, order_max)
                 milestone_list[milestone.order_id] = (
-                    "\n|-\n|{{{{材料消耗|{name}|{tokenNum}|50}}}}\n|{item}".format(
+                    "\n|-\n|{{{{材料消耗|{name}|{token_num}|50}}}}\n|{item}".format(
                         name=milestone_name,
-                        tokenNum=milestone.token_num,
+                        token_num=milestone.token_num,
                         item=parse_reward(
                             milestone.item,
                             item_table,
