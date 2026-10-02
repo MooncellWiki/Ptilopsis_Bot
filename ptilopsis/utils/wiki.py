@@ -5,25 +5,33 @@
 50 个一批合并成一个 ``action=query``;要在读到的版本上改写页面时用
 :meth:`Wiki.read_revisions`,它额外带回版本号与时间戳供编辑冲突检测。
 csrf token 按会话缓存,只在服务器报 ``badtoken`` 时重新取。编辑类操作用锁
-串行,避免并发写页面。
+串行,避免并发写页面;登录后还会查询账号适用的写配额并本地限速,撞限时
+冷却重试(见 :mod:`ptilopsis.utils.ratelimit`)。
 """
 
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import quote
 
 import anyio
 import httpx2
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import RetryCallState, retry, retry_if_exception, stop_after_attempt
 
 from ptilopsis.log import logger
 from ptilopsis.utils.http import log_retry, make_client
+from ptilopsis.utils.ratelimit import DEFAULT_COOLDOWN, Throttle, parse_ratelimits
 
 __all__ = ["PageRevision", "Wiki", "WikiError"]
 
 READ_CHUNK = 50
 """一次 ``action=query`` 里带的标题数;普通用户上限 50,bot 有 apihighlimits 才是 500。"""
+
+MAX_RATELIMIT_RETRIES = 2
+"""写操作撞 ``ratelimited`` 后冷却重试的次数上限。"""
 
 
 class WikiError(RuntimeError):
@@ -51,11 +59,60 @@ class PageRevision:
     contentmodel: str
 
 
+MAX_RETRY_AFTER = 300
+"""按 ``Retry-After`` 等待的上限(秒):等更久说明问题不在节奏,直接失败更好。"""
+
+
+def _retry_after(resp: httpx2.Response) -> float | None:
+    """解析 ``Retry-After``(秒数或 HTTP 日期),截到 :data:`MAX_RETRY_AFTER`。
+
+    没有这个头或看不懂时返回 None。
+    """
+    value = resp.headers.get("retry-after")
+    if value is None:
+        return None
+    try:
+        delay = float(int(value))
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return None
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        delay = (when - datetime.now(UTC)).total_seconds()
+    return min(max(delay, 0.0), MAX_RETRY_AFTER)
+
+
+def _wait(state: RetryCallState) -> float:
+    """tenacity 的 ``wait``:决定重试后再算等多久,最后一次失败直接抛出不白等。
+
+    服务器给了 ``Retry-After``(CDN / 反代层的 429、503,和 MediaWiki 自己的
+    配额无关)就照办;429 没给按默认冷却;其余错误固定等 1 秒。
+    """
+    exc = state.outcome.exception() if state.outcome else None
+    if isinstance(exc, httpx2.HTTPStatusError):
+        delay = _retry_after(exc.response)
+        if delay is not None:
+            return delay
+        if exc.response.status_code == 429:
+            return DEFAULT_COOLDOWN
+    return 1.0
+
+
+def _worth_retrying(exc: BaseException) -> bool:
+    """网络错误、5xx 与 429 值得重试;其余 4xx 再发一次也是同样的结果。"""
+    if isinstance(exc, httpx2.HTTPStatusError):
+        status = exc.response.status_code
+        return status == 429 or status >= 500
+    return isinstance(exc, httpx2.HTTPError)
+
+
 def _transient(name: str) -> Any:
     return retry(
         stop=stop_after_attempt(3),
-        wait=wait_fixed(1),
-        retry=retry_if_exception_type(httpx2.HTTPError),
+        wait=_wait,
+        retry=retry_if_exception(_worth_retrying),
         before_sleep=log_retry(name),
         reraise=True,
     )
@@ -67,12 +124,20 @@ class Wiki:
         api_url: str,
         mode: str = "product",
         client: httpx2.AsyncClient | None = None,
+        rate_safety: float = 0.8,
+        write_min_interval: float = 0.0,
     ) -> None:
         self.api_url = api_url
         self.mode = mode
         self.client = client or make_client()
         self._csrf_token: str | None = None
         self._write_lock = anyio.Lock()
+        self._rate_safety = rate_safety
+        self._write_min_interval = write_min_interval
+        self._limiters: dict[str, Throttle] = {}
+        """登录后发现配额后,每个写动作一个限速器;查不到时全是 passthrough。"""
+        self._unlimited = Throttle()
+        self._last_write = 0.0
 
     @classmethod
     async def login(
@@ -82,9 +147,11 @@ class Wiki:
         password: str,
         mode: str = "product",
         client: httpx2.AsyncClient | None = None,
+        rate_safety: float = 0.8,
+        write_min_interval: float = 0.0,
     ) -> "Wiki":
         """登录并返回客户端;登录失败抛 RuntimeError。"""
-        wiki = cls(api_url, mode, client)
+        wiki = cls(api_url, mode, client, rate_safety, write_min_interval)
         token = await wiki._query({"meta": "tokens", "type": "login"})
         res = await wiki._post(
             {
@@ -96,6 +163,7 @@ class Wiki:
         )
         if res["login"]["result"] != "Success":
             raise RuntimeError(res["login"]["reason"])
+        await wiki._discover_rate_limits()
         return wiki
 
     async def aclose(self) -> None:
@@ -110,12 +178,46 @@ class Wiki:
         return resp.json()
 
     @_transient("wiki.post")
-    async def _post(self, data: dict[str, Any], **kwargs: Any) -> dict[str, Any]:
+    async def _post(
+        self,
+        data: dict[str, Any],
+        *,
+        write_action: str | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        if write_action is not None:
+            # 放在 HTTP 重试内部,每次实际写请求都占限速名额并更新发送时刻。
+            await self._pace_write(write_action)
+            self._last_write = time.monotonic()
         resp = await self.client.post(
             self.api_url, data={"format": "json", **data}, **kwargs
         )
         resp.raise_for_status()
         return resp.json()
+
+    async def _discover_rate_limits(self) -> None:
+        """登录后查一次当前账号适用的写配额并建限速器;查不到就保持不限速。"""
+        try:
+            res = await self._query({"meta": "userinfo", "uiprop": "ratelimits"})
+            limits = parse_ratelimits(res["query"]["userinfo"].get("ratelimits") or {})
+        except Exception:
+            # 配额只是护栏,查询失败不该挡住任务;真撞了还有 ratelimited 重试兜底
+            logger.opt(exception=True).warning(
+                "Rate limit discovery failed; writes stay unpaced"
+            )
+            return
+        self._limiters = {
+            action: Throttle(rls, safety=self._rate_safety)
+            for action, rls in limits.items()
+        }
+        detail = (
+            ", ".join(
+                f"{a} " + " + ".join(f"{rl.limit}/{rl.period:g}s" for rl in rls)
+                for a, rls in sorted(limits.items())
+            )
+            or "none (noratelimit?)"
+        )
+        logger.info(f"Rate limits for this account: {detail}")
 
     async def _query(self, params: dict[str, Any]) -> dict[str, Any]:
         return await self._get({"action": "query", **params})
@@ -127,23 +229,47 @@ class Wiki:
             token = self._csrf_token = res["query"]["tokens"]["csrftoken"]
         return token
 
+    async def _pace_write(self, action: str) -> None:
+        """写前限速:先补足与上一次写请求的最小间隔,再占该动作的配额名额。
+
+        顺序不能反:占名额即记账,占完再睡会让记账早于实际发送,窗口提前放出名额。
+        """
+        if self._write_min_interval > 0:
+            delay = self._write_min_interval - (time.monotonic() - self._last_write)
+            if delay > 0:
+                await anyio.sleep(delay)
+        await self._limiters.get(action, self._unlimited).acquire()
+
     async def _write(self, action: str, data: dict[str, Any], **kwargs: Any) -> Any:
-        """带 csrf token 的写操作;token 失效时刷新后重试一次。"""
+        """带 csrf token 的写操作;token 失效时刷新重试一次,撞限时冷却后重试。"""
+        refresh_token = token_refreshed = False
+        cooldowns = 0
         async with self._write_lock:
-            for attempt in range(2):
+            while True:
                 post_data = {
                     "action": action,
-                    "token": await self.csrf_token(refresh=attempt > 0),
+                    "token": await self.csrf_token(refresh=refresh_token),
                     **data,
                 }
-                res = await self._post(post_data, **kwargs)
+                res = await self._post(post_data, write_action=action, **kwargs)
                 error = res.get("error")
                 if error is None:
                     return res
-                if error.get("code") == "badtoken" and attempt == 0:
+                code = error.get("code", "")
+                # 只有 badtoken 才换 token,且只换一次;撞限重试沿用当前 token
+                refresh_token = code == "badtoken" and not token_refreshed
+                if refresh_token:
+                    token_refreshed = True
                     continue
-                raise WikiError(error.get("code", ""), error.get("info", ""))
-        raise AssertionError("unreachable")  # pragma: no cover
+                if code == "ratelimited" and cooldowns < MAX_RATELIMIT_RETRIES:
+                    cooldowns += 1
+                    limiter = self._limiters.get(action, self._unlimited)
+                    logger.warning(
+                        f"Rate limited on {action}; cooling down before retry"
+                    )
+                    await limiter.cooldown()
+                    continue
+                raise WikiError(code, error.get("info", ""))
 
     @staticmethod
     def _form(args: dict[str, Any], boolargs: set[str]) -> dict[str, Any]:
@@ -388,7 +514,7 @@ class Wiki:
         return result
 
     async def category(self, category: str) -> list[str]:
-        CM_LIMIT = 1000
+        CM_LIMIT = 1000  # noqa: N806
         cat_page_list: list[str] = []
         params: dict[str, Any] = {
             "list": "categorymembers",

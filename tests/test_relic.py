@@ -336,10 +336,7 @@ def relic_tables() -> RoguelikeTopicTable:
             "远程干员获得【迷彩】<br/>攻击力&#124;+1&lt;测试&gt;",
         ),
         (None, "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
-<<<<<<< Updated upstream
-=======
         ("", "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
->>>>>>> Stashed changes
     ],
 )
 async def test_job_uses_only_cn_topic_table_text(
