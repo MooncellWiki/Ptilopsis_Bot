@@ -50,15 +50,18 @@ MODE_JOBS: dict[str, list[str]] = {
     # 收藏品也在 regular 中;此模式可单独维护收藏品页面
     "relic": ["relic.run"],
 }
-"""各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并。"""
+"""各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并,
+同一个 job 出现在多个模式里时只在第一次出现的位置执行一次。"""
 
 MODES = list(MODE_JOBS)
 
 
 def jobs_for(modes: tuple[str, ...]) -> list[str]:
-    return [
-        name for mode, names in MODE_JOBS.items() if mode in modes for name in names
-    ]
+    return list(
+        dict.fromkeys(
+            name for mode, names in MODE_JOBS.items() if mode in modes for name in names
+        )
+    )
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
