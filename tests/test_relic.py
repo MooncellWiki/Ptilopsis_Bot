@@ -415,3 +415,10 @@ async def test_job_propagates_unexpected_api_errors() -> None:
 def test_relic_mode_is_also_in_regular() -> None:
     assert jobs_for(("relic",)) == ["relic.run"]
     assert jobs_for(("regular",)).count("relic.run") == 1
+
+
+def test_overlapping_modes_run_each_job_once() -> None:
+    assert jobs_for(("regular", "relic")) == jobs_for(("regular",))
+    jobs = jobs_for(("special", "jp"))
+    assert jobs.count("charword.update") == 1
+    assert jobs.index("charword.update") < jobs.index("update_jp.run")
