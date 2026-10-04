@@ -47,7 +47,7 @@ MODE_JOBS: dict[str, list[str]] = {
     "demand": [],
     "jp": ["charword.update", "update_jp.run"],
     "weedy": ["weedy.run"],
-    # 首次运行会批量新建收藏品页面，暂不并入 regular
+    # 收藏品也在 regular 中;此模式可单独维护收藏品页面
     "relic": ["relic.run"],
 }
 """各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并。"""

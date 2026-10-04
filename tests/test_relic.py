@@ -1,12 +1,11 @@
 """收藏品页面:按主题汇总、渲染、合并到已有页面,以及 job 的读写流程,全部离线。"""
 
 from collections.abc import Iterable, Iterator
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
 from ptilopsis.__main__ import jobs_for
-from ptilopsis.gamedata.gamedata_const import GameDataConsts
 from ptilopsis.gamedata.roguelike_topic_table import RoguelikeTopicTable
 from ptilopsis.jobs.relic import (
     GENERIC_OBTAIN,
@@ -14,12 +13,17 @@ from ptilopsis.jobs.relic import (
     MergeError,
     Relic,
     collect_relics,
+    find_common,
     merge_page,
     render_page,
     run,
 )
 from ptilopsis.log import logger
+from ptilopsis.utils.job import JobContext
 from ptilopsis.utils.wiki import PageRevision, Wiki, WikiError
+
+if TYPE_CHECKING:
+    from ptilopsis.utils.data import GameData
 
 THEMES = {1: "傀影与猩红孤钻", 2: "水月与深蓝之树", 3: "探索者的银凇止境"}
 
@@ -43,9 +47,8 @@ def item(topic: int, key: str, name: str, **fields: Any) -> dict[str, Any]:
 def tables(
     items: list[dict[str, Any]],
     groups: dict[int, list[dict[str, int]]] | None = None,
-    terms: dict[str, str] | None = None,
-) -> tuple[RoguelikeTopicTable, GameDataConsts]:
-    """拼出只含收藏品的 roguelike_topic_table 与 gamedata_const。
+) -> RoguelikeTopicTable:
+    """拼出只含收藏品的 roguelike_topic_table。
 
     ``groups`` 为 {主题: [{收藏品 id: 生效难度, ...}, ...]},一个字典是一组难度变体。
     """
@@ -65,7 +68,7 @@ def tables(
             "items": own,
             "difficultyUpgradeRelicGroups": upgrade_groups,
         }
-    topic_table = RoguelikeTopicTable.model_validate(
+    return RoguelikeTopicTable.model_validate(
         {
             "topics": {
                 f"rogue_{n}": {"id": f"rogue_{n}", "name": name, "sort": n}
@@ -74,19 +77,10 @@ def tables(
             "details": details,
         }
     )
-    consts = GameDataConsts.model_validate(
-        {
-            "termDescriptionDict": {
-                name: {"termId": name, "termName": name, "description": text}
-                for name, text in (terms or {}).items()
-            }
-        }
-    )
-    return topic_table, consts
 
 
 def relics_of(*args: Any, **kwargs: Any) -> dict[str, Relic]:
-    return {relic.name: relic for relic in collect_relics(*tables(*args, **kwargs))}
+    return {relic.name: relic for relic in collect_relics(tables(*args, **kwargs))}
 
 
 def body(page: str) -> str:
@@ -145,7 +139,6 @@ def test_render_page() -> None:
             item(2, "a_a", "藏品-α", rarity="RARE", usage="部署时攻击力+2"),
         ],
         groups={2: [{"rogue_2_relic_a": 0, "rogue_2_relic_a_a": 3}]},
-        terms={"迷彩": "不成为攻击目标"},
     )
     color = "{{color|#d800db|难度%d及以上生效：}}"
     assert body(render_page(relics["藏品"])) == "\n".join(
@@ -154,8 +147,8 @@ def test_render_page() -> None:
             "|名称=藏品",
             "|iconId=rogue_2_relic_a",
             "|稀有度=1",
-            # 描述取最新主题,附上效果里出现的术语;变体描述不同时都保留
-            "|描述=新描述<br/>【迷彩】不成为攻击目标<br/><br/>藏品-α的描述",
+            # 描述取最新主题原文;变体描述不同时都保留
+            "|描述=新描述<br/><br/>藏品-α的描述",
             "|主题1=傀影与猩红孤钻",
             "|角标1=",
             "|售价1=8",
@@ -233,6 +226,16 @@ def test_refresh_keeps_whitespace_and_adds_missing_header(relic: Relic) -> None:
     assert merge_page(after, relic) == after
 
 
+def test_refresh_removes_appended_glossary_and_preserves_theme_fields(
+    relic: Relic,
+) -> None:
+    before = human_page(THEMES.items()).replace("rogue_2_relic_a", "rogue_3_relic_a")
+    before = before.replace("藏品的描述", "藏品的描述<br/>【迷彩】额外术语解释")
+    after = merge_page(before, relic)
+    assert after == before.replace("<br/>【迷彩】额外术语解释", "")
+    assert merge_page(after, relic) == after
+
+
 def test_theme_names_may_be_bold_or_linked(relic: Relic) -> None:
     page = human_page(
         [(1, f"'''{THEMES[1]}'''"), (2, f"[[{THEMES[2]}|水月]]"), (3, THEMES[3])]
@@ -305,7 +308,7 @@ def logged_warnings() -> Iterator[list[str]]:
     logger.remove(sink)
 
 
-def relic_tables() -> tuple[RoguelikeTopicTable, GameDataConsts]:
+def relic_tables() -> RoguelikeTopicTable:
     names = ["新藏品", "旧藏品", "无变化", "重定向", "同名干员", "冲突"]
     return tables(
         [item(n, str(i), name) for i, name in enumerate(names) for n in (1, 2)]
@@ -313,9 +316,64 @@ def relic_tables() -> tuple[RoguelikeTopicTable, GameDataConsts]:
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize(
+    ("description", "usage", "expected_description", "expected_usage"),
+    [
+        (
+            "伊比利亚海民在浅滩捕杀巨鳞时常穿的外衣，独特的造型与颜色让他们看起来"
+            "像是普通的礁石。罗德岛工程部以此为原型设计了具有视觉隐匿效果的作战服，"
+            "目前尚在测试阶段。",
+            "远程干员获得【迷彩】",
+            "伊比利亚海民在浅滩捕杀巨鳞时常穿的外衣，独特的造型与颜色让他们看起来"
+            "像是普通的礁石。罗德岛工程部以此为原型设计了具有视觉隐匿效果的作战服，"
+            "目前尚在测试阶段。",
+            "远程干员获得【迷彩】",
+        ),
+        (
+            "原表描述\r\n【迷彩】原表中的说明",
+            "远程干员获得【迷彩】\n攻击力|+1<测试>",
+            "原表描述<br/>【迷彩】原表中的说明",
+            "远程干员获得【迷彩】<br/>攻击力&#124;+1&lt;测试&gt;",
+        ),
+        (None, "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
+        ("", "远程干员获得【迷彩】", "", "远程干员获得【迷彩】"),
+    ],
+)
+async def test_job_uses_only_cn_topic_table_text(
+    description: str | None,
+    usage: str,
+    expected_description: str,
+    expected_usage: str,
+) -> None:
+    topic_table = tables(
+        [item(2, "fight_132", "捕鳞蓑", description=description, usage=usage)]
+    )
+
+    class FakeGameData:
+        config = None
+
+        def __init__(self) -> None:
+            self.reads: list[tuple[str, str]] = []
+
+        async def get(self, path: str, region: str = "CN") -> dict[str, Any]:
+            self.reads.append((path, region))
+            if path == "excel/roguelike_topic_table.json":
+                return topic_table.model_dump(by_alias=True)
+            raise AssertionError(path)
+
+    fake, data = FakeWiki({}), FakeGameData()
+    await run.run(JobContext(cast("Wiki", fake), cast("GameData", data)))
+    assert data.reads == [("excel/roguelike_topic_table.json", "CN")]
+    assert len(fake.edits) == 1 and fake.edits[0]["title"] == "捕鳞蓑"
+    params = find_common(fake.edits[0]["text"]).params
+    assert params["描述"].value == expected_description
+    assert params["效果1"].value == expected_usage
+
+
+@pytest.mark.anyio
 async def test_job_creates_updates_and_skips(logged_warnings: list[str]) -> None:
-    topic_table, consts = relic_tables()
-    relics = {relic.name: relic for relic in collect_relics(topic_table, consts)}
+    topic_table = relic_tables()
+    relics = {relic.name: relic for relic in collect_relics(topic_table)}
     old = render_page(relics["旧藏品"]).replace(f"|主题2={THEMES[2]}", "|主题2=")
     old = old[: old.index("|主题2=")] + "}}\n"
     fake = FakeWiki(
@@ -330,7 +388,7 @@ async def test_job_creates_updates_and_skips(logged_warnings: list[str]) -> None
     )
     fake.errors["冲突"] = WikiError("editconflict", "Edit conflict.")
 
-    await run.func(cast("Wiki", fake), topic_table, consts)
+    await run.func(cast("Wiki", fake), topic_table)
 
     create, update = fake.edits
     assert create["title"] == "新藏品"
@@ -347,13 +405,13 @@ async def test_job_creates_updates_and_skips(logged_warnings: list[str]) -> None
 
 @pytest.mark.anyio
 async def test_job_propagates_unexpected_api_errors() -> None:
-    topic_table, consts = relic_tables()
+    topic_table = relic_tables()
     fake = FakeWiki({})
     fake.errors["新藏品"] = WikiError("permissiondenied", "no")
     with pytest.raises(WikiError, match="permissiondenied"):
-        await run.func(cast("Wiki", fake), topic_table, consts)
+        await run.func(cast("Wiki", fake), topic_table)
 
 
-def test_relic_mode_is_separate_from_regular() -> None:
+def test_relic_mode_is_also_in_regular() -> None:
     assert jobs_for(("relic",)) == ["relic.run"]
-    assert "relic.run" not in jobs_for(("regular",))
+    assert jobs_for(("regular",)).count("relic.run") == 1

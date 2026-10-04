@@ -66,7 +66,7 @@ ebuff_attribute: atk: 1.2
 |敌人2备注=需人工复查！
 }}
 ==固定编队==
-{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
+{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:min(567px,100%); white-space:normal;"
 !style="background-color:#0098DC;color:#FFFFFF"|固定编队
 |-
 |{{编队单位|能天使|1|30|冲锋模式|7||2}}
@@ -76,7 +76,7 @@ ebuff_attribute: atk: 1.2
 |能天使信赖值为100%
 |}
 ==已部署干员==
-{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:567px; white-space:normal;"
+{| class="wikitable hlist logo mw-collapsed mw-collapsible" style="text-align:center; width:min(567px,100%); white-space:normal;"
 !style="background-color:#0098DC;color:#FFFFFF"|已部署干员
 |-
 |{{编队单位|阿米娅|2|40||7}}

@@ -16,11 +16,9 @@ from ptilopsis.log import logger
 from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
+from ptilopsis.wikitext import table_open
 
-table_title = (
-    '{|class = "wikitable mw-collapsed mw-collapsible" style = '
-    '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
-)
+table_title = table_open("wikitable mw-collapsed mw-collapsible", 800)
 
 
 def format_time(timestamp: int) -> str:
@@ -85,9 +83,8 @@ def update_mission(
         count += 1
         daily_text += "\n|-\n!时间!!任务列表!!奖励列表"
         for period in daily_group.period_list or []:
-            mission_list = (
-                '\n{|class = "wikitable mw-collapsed mw-collapsible" style = '
-                '"text-align:center; display:table; white-space:normal; width:min(400px,100%);"'
+            mission_list = "\n" + table_open(
+                "wikitable mw-collapsed mw-collapsible", 400
             )
             mission_list += "\n!id||内容||奖励"
             mission_group = mission_groups.get(period.mission_group_id or "")
@@ -101,9 +98,8 @@ def update_mission(
                     mission_reward += f"Point*{mission.periodical_point}"
                 mission_list += format_mission_row(mission, mission_reward, rts)
             mission_list += "\n|}"
-            reward_list = (
-                '\n{|class = "wikitable mw-collapsed mw-collapsible" style = '
-                '"text-align:center; display:table; white-space:normal; width:min(300px,100%);"'
+            reward_list = "\n" + table_open(
+                "wikitable mw-collapsed mw-collapsible", 300
             )
             reward_list += "\n!id||点数需求||奖励"
             for reward_conf in (mission_table.periodical_rewards or {}).values():

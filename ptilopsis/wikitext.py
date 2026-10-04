@@ -32,6 +32,15 @@ def inline_template(name: str, *args: object) -> str:
     return "{{" + "|".join([name, *(format_value(arg) for arg in args)]) + "}}"
 
 
+def table_open(classes: str, width: int) -> str:
+    """居中表格的开头 ``{|class = "…" style = "…"``,宽度不超过 width 像素。"""
+
+    return (
+        f'{{|class = "{classes}" style = "text-align:center; display:table; '
+        f'white-space:normal; width:min({width}px,100%);"'
+    )
+
+
 class WikiTemplate:
     """跨行的 {{模板名|参数=值}} 调用,每个参数占一行。
 

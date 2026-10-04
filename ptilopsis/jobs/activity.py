@@ -17,11 +17,9 @@ from ptilopsis.log import logger
 from ptilopsis.utils import richtext
 from ptilopsis.utils.job import job
 from ptilopsis.utils.wiki import Wiki
+from ptilopsis.wikitext import table_open
 
-table_title = (
-    '{|class = "wikitable mw-collapsible mw-collapsed" style = '
-    '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
-)
+table_title = table_open("wikitable mw-collapsible mw-collapsed", 800)
 
 
 def format_time(timestamp: int) -> str:
@@ -159,10 +157,7 @@ def update_activity(
         if act_info in activity_text_dict:
             activity_text += activity_text_dict[act_info]
         else:
-            activity_text += (
-                '{|class = "wikitable" style = '
-                '"text-align:center; display:table; white-space:normal; width:min(800px,100%);"'
-            )
+            activity_text += table_open("wikitable", 800)
             activity_text += (
                 f'\n!colspan="2"|开始时间:{format_time(basic.start_time)}<br/>结束时间:{format_time(basic.end_time)}<br/>兑换结束时间:{format_time(basic.reward_end_time)}'
                 + "\n|}"
@@ -195,10 +190,7 @@ def update_activity(
             item_list += "\n|}"
             activity_text += item_list
         elif basic.type == "CHECKIN_ONLY":
-            item_list = (
-                '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
-                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
-            )
+            item_list = "\n" + table_open("wikitable mw-collapsible mw-collapsed", 500)
             item_list += "\n!累积登录!!奖励"
             for day in (checkin_acts[act_info].check_in_list or {}).values():
                 reward_list = ""
@@ -215,10 +207,7 @@ def update_activity(
             milestone_name = (
                 items[token_item.id or ""].name or "" if token_item else ""
             ).strip()
-            item_list = (
-                '\n{|class = "wikitable mw-collapsible mw-collapsed" style = '
-                '"text-align:center; display:table; white-space:normal; width:min(500px,100%);"'
-            )
+            item_list = "\n" + table_open("wikitable mw-collapsible mw-collapsed", 500)
             item_list += "\n!道具点数!!奖励"
             milestone_list = {}
             order_max = 0
