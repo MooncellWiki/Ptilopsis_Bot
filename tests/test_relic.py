@@ -359,15 +359,6 @@ async def test_job_uses_only_cn_topic_table_text(
             self.reads.append((path, region))
             if path == "excel/roguelike_topic_table.json":
                 return topic_table.model_dump(by_alias=True)
-            if path == "excel/gamedata_const.json":
-                return {
-                    "termDescriptionDict": {
-                        "camouflage": {
-                            "termName": "迷彩",
-                            "description": "不阻挡时不成为敌方普通攻击的目标",
-                        }
-                    }
-                }
             raise AssertionError(path)
 
     fake, data = FakeWiki({}), FakeGameData()

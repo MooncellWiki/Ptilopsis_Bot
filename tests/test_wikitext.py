@@ -1,4 +1,4 @@
-from ptilopsis.wikitext import WikiTemplate, inline_template
+from ptilopsis.wikitext import WikiTemplate, inline_template, table_open
 
 
 def test_multiline_template_puts_one_param_per_line() -> None:
@@ -94,3 +94,11 @@ def test_inline_template_uses_positional_params() -> None:
 
 def test_inline_template_without_params() -> None:
     assert inline_template("关卡导航") == "{{关卡导航}}"
+
+
+def test_table_open_sets_classes_and_max_width() -> None:
+    assert table_open("wikitable mw-collapsible", 500) == (
+        '{|class = "wikitable mw-collapsible" style = '
+        '"text-align:center; display:table; white-space:normal; '
+        'width:min(500px,100%);"'
+    )
