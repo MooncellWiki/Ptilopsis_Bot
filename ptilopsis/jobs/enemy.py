@@ -439,7 +439,7 @@ async def run(
         )
         await wiki.protect(
             title=name,
-            protections="edit=autoconfirmed|move=sysop",
+            protections="edit=autoconfirmed|move=sysop|delete=sysop",
             reason="protect",
         )
         await wiki.edit(
@@ -453,7 +453,7 @@ async def run(
         )
         await wiki.protect(
             title=name + "/spine",
-            protections="edit=autoconfirmed|move=sysop",
+            protections="edit=autoconfirmed|move=sysop|delete=sysop",
             reason="protect",
         )
         logger.info(f"Created: {name}.")

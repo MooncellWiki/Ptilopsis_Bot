@@ -1324,7 +1324,7 @@ async def run(
         )
         await wiki.protect(
             title=char.name,
-            protections="edit=autoconfirmed|move=sysop",
+            protections="edit=autoconfirmed|move=sysop|delete=sysop",
             reason="protect",
         )
         if char.name != char.appellation:
