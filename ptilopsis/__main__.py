@@ -49,6 +49,7 @@ MODE_JOBS: dict[str, list[str]] = {
     "weedy": ["weedy.run"],
     # 收藏品也在 regular 中;此模式可单独维护收藏品页面
     "relic": ["relic.run"],
+    "medal": ["medal.run"],
 }
 """各模式按顺序执行的 job 名(``<模块>.<函数>``),多个模式按这里的键顺序合并,
 同一个 job 出现在多个模式里时只在第一次出现的位置执行一次。"""
