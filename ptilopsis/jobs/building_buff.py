@@ -10,21 +10,16 @@ from ptilopsis.utils.wiki import Wiki
 from ptilopsis.wikitext import WikiTemplate
 
 
-def render_room(
-    name: str | None, rows: str, *, first: bool = False, last: bool = False
-) -> str:
+def render_room(name: str | None, rows: str) -> str:
     """一个房间的可折叠技能表。
 
     房间标题与表头骨架包在 <includeonly> 里:仅被 后勤技能一览 嵌入时渲染,
     本页保存时 Cargo 只解析骨架外的技能数据行;技能行之间不输出 |-。
-    首个房间的开标签由页首头部(参阅模板行)提供,末个房间在表格收尾后闭合。
+    片段以 includeonly 内的状态开头和结尾:首个房间的开标签由页首头部
+    (参阅模板行)提供,最后一个房间之后由调用方补上闭标签。
     """
 
-    parts: list[str] = []
-    if not first:
-        # 接在上一房间最后一行技能的 }} 之后:先收掉上一张表,再进入本房间
-        parts.append("<includeonly>\n|}\n")
-    parts.append(
+    return (
         f"=={name}==\n"
         '{|class="wikitable mw-collapsible mw-collapsed logo" '
         'style="text-align:center; width:100%; max-width:1000px; '
@@ -35,11 +30,9 @@ def render_room(
         '! width="100px" |名称\n'
         '! width="520px" |描述\n'
         '! width="350px" |持有干员</includeonly>\n'
-        f"{rows}"
+        f"{rows}<includeonly>\n"
+        "|}"
     )
-    if last:
-        parts.append("<includeonly>\n|}</includeonly>")
-    return "".join(parts)
 
 
 def get_building_buff(
@@ -65,19 +58,15 @@ def get_building_buff(
         )
         buffs[name] = (buff.sort_id, str(template))
 
-    used_rooms = [(room_id, buffs) for room_id, buffs in room_buffs.items() if buffs]
-    content = ""
-    for index, (room_id, buffs) in enumerate(used_rooms):
+    tables: list[str] = []
+    for room_id, buffs in room_buffs.items():
+        if not buffs:
+            continue
         # 技能按 sortId 降序排列
         ordered = sorted(buffs.values(), key=lambda buff: buff[0], reverse=True)
         rows = "\n".join(text for _, text in ordered)
-        content += render_room(
-            rooms[room_id].name,
-            rows,
-            first=index == 0,
-            last=index == len(used_rooms) - 1,
-        )
-    return content
+        tables.append(render_room(rooms[room_id].name, rows))
+    return "\n".join(tables) + "</includeonly>"
 
 
 @job
@@ -88,10 +77,15 @@ async def run(
 ) -> None:
     origin_text = await wiki.read("后勤技能一览/store")
     flag = origin_text.find("==控制中枢==")
+    if flag < 0:
+        # 找不到首个房间就切不出头部,硬拼会把整页旧内容当头部、技能行全部重复
+        logger.error("后勤技能一览/store 里找不到 ==控制中枢==,跳过更新")
+        return
     head = origin_text[:flag].rstrip()
-    if "<includeonly>" not in head:
+    if head.rfind("<includeonly>") <= head.rfind("</includeonly>"):
         logger.warning(
-            "后勤技能一览/store 头部没有 <includeonly> 开标签,首个房间的骨架将不被包裹"
+            "后勤技能一览/store 头部末尾没有未闭合的 <includeonly>,"
+            "首个房间的骨架将不被包裹"
         )
     content = head + "\n" + get_building_buff(building_data, rts.compile).rstrip()
 
