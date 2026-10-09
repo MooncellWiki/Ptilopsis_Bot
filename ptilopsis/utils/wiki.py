@@ -189,9 +189,13 @@ class Wiki:
             # 放在 HTTP 重试内部,每次实际写请求都占限速名额并更新发送时刻。
             await self._pace_write(write_action)
             self._last_write = time.monotonic()
-        resp = await self.client.post(
-            self.api_url, data={"format": "json", **data}, **kwargs
-        )
+        form = {"format": "json", **data}
+        if "files" not in kwargs:
+            # 站点会整个丢掉超过约 50KB 的 urlencoded 请求体,api.php 收不到参数
+            # 就返回 200 的 HTML 帮助页;multipart 不受这个限制,统一走 multipart
+            kwargs["files"] = {k: (None, str(v)) for k, v in form.items()}
+            form = {}
+        resp = await self.client.post(self.api_url, data=form or None, **kwargs)
         resp.raise_for_status()
         return resp.json()
 

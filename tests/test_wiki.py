@@ -3,6 +3,8 @@
 import json
 import time
 from datetime import UTC, datetime, timedelta
+from email.parser import BytesParser
+from email.policy import HTTP
 from email.utils import format_datetime
 from types import SimpleNamespace
 from typing import Any
@@ -26,6 +28,23 @@ from ptilopsis.utils.wiki import (
 pytestmark = pytest.mark.anyio
 
 API = "https://wiki.example/api.php"
+
+
+def post_params(request: httpx2.Request) -> dict[str, str]:
+    """解析 POST 表单,multipart 与 urlencoded 都认。"""
+    content_type = request.headers.get("content-type", "")
+    if not content_type.startswith("multipart/form-data"):
+        return {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
+    message = BytesParser(policy=HTTP).parsebytes(
+        f"Content-Type: {content_type}\r\n\r\n".encode() + request.content
+    )
+    return {
+        part.get_param("name", header="content-disposition"): part.get_payload(
+            decode=True
+        ).decode()
+        for part in message.iter_parts()
+        if part.get_filename() is None
+    }
 
 
 class FakeMediaWiki:
@@ -53,7 +72,7 @@ class FakeMediaWiki:
     def __call__(self, request: httpx2.Request) -> httpx2.Response:
         params = {k: v[0] for k, v in parse_qs(request.url.query.decode()).items()}
         if request.method == "POST":
-            params |= {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
+            params |= post_params(request)
         self.requests.append(params)
         if self.throttle > 0:
             self.throttle -= 1
@@ -228,6 +247,32 @@ async def test_edit_passes_conflict_detection_timestamps() -> None:
     assert edit["starttimestamp"] == "2026-01-02T00:00:00Z"
 
 
+async def test_post_is_multipart_so_large_edits_survive() -> None:
+    # 站点会丢掉超过约 50KB 的 urlencoded 请求体(api.php 转而返回 HTML 帮助页),
+    # 写请求必须走 multipart
+    sent: list[httpx2.Request] = []
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        sent.append(request)
+        return httpx2.Response(200, json={"edit": {"result": "Success"}})
+
+    text = "干员" * 50000
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http)
+        wiki._csrf_token = "CSRF"
+        await wiki.edit(title="页面", text=text)
+
+    assert sent[0].headers["content-type"].startswith("multipart/form-data")
+    assert post_params(sent[0]) == {
+        "format": "json",
+        "action": "edit",
+        "token": "CSRF",
+        "title": "页面",
+        "text": text,
+        "bot": "1",
+    }
+
+
 async def test_edit_caches_csrf_token_and_retries_on_badtoken() -> None:
     wiki, server = make_wiki({})
     await wiki.edit(title="页面", text="1", summary="s", minor=True, bot=None)
@@ -363,7 +408,7 @@ async def test_min_interval_is_waited_before_taking_window_slot(
     monkeypatch.setattr(anyio, "sleep", advance)
 
     def handle(request: httpx2.Request) -> httpx2.Response:
-        action = parse_qs(request.content.decode())["action"][0]
+        action = post_params(request)["action"]
         sent.append((action, now))
         return httpx2.Response(200, json={action: {"result": "Success"}})
 
