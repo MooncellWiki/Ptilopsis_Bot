@@ -653,6 +653,7 @@ BUILDING_BUFF_NAME_OVERRIDES = {
     "power_rec_spd[008]": "澎湃紊流(精英0)",
     "power_rec_spd[009]": "澎湃紊流(精英1)",
     "meet_spd[1020]": "线索搜集·β(行箸)",
+    "recycle_spd&cost[000]": "拾荒者(回收站)",
 }
 
 
