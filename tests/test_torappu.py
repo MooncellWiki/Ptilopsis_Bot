@@ -129,10 +129,28 @@ async def test_latest_version_skips_versions_without_ready_marker() -> None:
     )
     latest = await client.latest_version()
     assert latest.res_version == "ready"
-    # isReady=False 的版本连标记都不用查
-    assert not any(
-        url.startswith(f"{BASE}/gamedata/bundles-pending/") for _, url in server.calls
+    assert ("GET", f"{BASE}/gamedata/bundles-pending/{READY_MARKER}") in server.calls
+
+
+async def test_latest_version_accepts_ready_gamedata_with_bundles_pending() -> None:
+    client, server = make_client(
+        {
+            f"{BASE}/api/v1/version": [
+                version(1, "old"),
+                version(2, "bundles-pending", ready=False),
+            ],
+            f"{BASE}/gamedata/bundles-pending/{READY_MARKER}": {
+                "schema_version": 1,
+                "completed_at": "2026-10-16T08:03:26Z",
+            },
+        }
     )
+    latest = await client.latest_version()
+    assert latest.res_version == "bundles-pending"
+    assert server.calls == [
+        ("GET", f"{BASE}/api/v1/version"),
+        ("GET", f"{BASE}/gamedata/bundles-pending/{READY_MARKER}"),
+    ]
 
 
 async def test_latest_version_raises_when_nothing_ready() -> None:
