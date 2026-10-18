@@ -144,7 +144,7 @@ class TorappuClient:
         """
         candidates = (await self.list_versions())[::-1][:max_probe]
         for version in candidates:
-            if version.is_ready and await self.has_gamedata(version.res_version):
+            if await self.has_gamedata(version.res_version):
                 return version
             logger.info(f"[torappu] {version.res_version} gamedata not ready yet, skip")
         raise RuntimeError(
