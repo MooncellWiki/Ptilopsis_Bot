@@ -267,6 +267,8 @@ class RoguelikePageView(BaseModel):
     normal: BasicStageView
     assault: AssaultStageView | None = None
     enemies: list[EnemyView] | None = None
+    see_also: tuple[str, str] | None = None
+    """同名关卡的另一个页面:``(页面名, 说明)``,渲染成 {{参阅}}。"""
 
 
 class BasicPageView(BaseModel):
@@ -1918,7 +1920,10 @@ def render_basic_page(
 
 
 def render_roguelike_page(page: RoguelikePageView) -> str:
-    blocks = ["{{pathnav2|关卡一览}}", render_basic_stage(page.normal)]
+    blocks = ["{{pathnav2|关卡一览}}"]
+    if page.see_also is not None:
+        blocks.append(inline_template("参阅", *page.see_also))
+    blocks.append(render_basic_stage(page.normal))
     if page.assault is not None:
         blocks.append(render_assault_stage(page.assault))
     if page.enemies is not None:
@@ -2467,6 +2472,21 @@ async def run_crisis(
         logger.info(f"Created: {stage_page_name}.")
 
 
+ROGUE_TOPIC = "rogue_6"
+"""run_rogue_like 处理的集成战略主题。"""
+
+ROGUE_DLC_SUFFIX = {"rogue_5": "今昔境", "rogue_6": "熄日余径"}
+"""DLC 关卡(``*_dlc1``)与本体关卡同名,单独建「代号 名字(后缀)」页面;后缀由编辑组定。"""
+
+
+def insert_see_also(text: str, see_also: str) -> str:
+    """把 {{参阅}} 插到页面开头的 {{pathnav2}} 之后(没有 pathnav2 时放在最前)。"""
+    head, sep, rest = text.partition("\n")
+    if head.startswith("{{pathnav2"):
+        return f"{head}\n{see_also}{sep}{rest}"
+    return f"{see_also}\n{text}"
+
+
 @job
 async def run_rogue_like(
     wiki: Wiki,
@@ -2476,7 +2496,10 @@ async def run_rogue_like(
     levels: Levels,
     rts: RichText,
 ) -> None:
-    rogue_stages = (roguelike_topic_table.details or {})["rogue_6"].stages or {}
+    rogue_stages = (roguelike_topic_table.details or {})[ROGUE_TOPIC].stages or {}
+    dlc_suffix = ROGUE_DLC_SUFFIX.get(ROGUE_TOPIC)
+    # (本体页面, DLC 页面),循环结束后给本体页面补上指向 DLC 页面的 {{参阅}}
+    dlc_pages: list[tuple[str, str]] = []
 
     not_count_list = _get_list_not_count_in_total(enemy_levels)
 
@@ -2493,7 +2516,14 @@ async def run_rogue_like(
             continue
 
         name = _require(stage.name, "name").strip()
-        stage_page_name = _require(stage.code, "code").strip() + " " + name
+        base_page_name = _require(stage.code, "code").strip() + " " + name
+        is_dlc = dlc_suffix is not None and stage_key.endswith("_dlc1")
+        if is_dlc:
+            stage_page_name = f"{base_page_name}({dlc_suffix})"
+            see_also = (base_page_name, f"{dlc_suffix}外的该关卡")
+        else:
+            stage_page_name = base_page_name
+            see_also = None
 
         level = None
         if stage.level_id:
@@ -2529,16 +2559,20 @@ async def run_rogue_like(
                 normal=normal_stage,
                 assault=assault_stage,
                 enemies=enemies,
+                see_also=see_also,
             )
         )
-        stage_redirect = f"#redirect [[{stage_page_name}]]"
 
-        await wiki.edit(
-            title=name,
-            text=stage_redirect,
-            summary="init",
-            createonly="1",
-        )
+        if is_dlc:
+            # 同名重定向归本体页面
+            dlc_pages.append((base_page_name, stage_page_name))
+        else:
+            await wiki.edit(
+                title=name,
+                text=f"#redirect [[{stage_page_name}]]",
+                summary="init",
+                createonly="1",
+            )
         await wiki.edit(
             title=stage_page_name,
             text=stage_content,
@@ -2548,6 +2582,27 @@ async def run_rogue_like(
             createonly="1",
         )
         logger.info(f"Created: {stage_page_name}.")
+
+    # 本体页面在上面的循环里已经建好(或早已存在),统一在这里补 {{参阅}}
+    for base_page_name, dlc_page_name in dlc_pages:
+        try:
+            text = await wiki.read(base_page_name)
+        except KeyError:
+            logger.warning(f"本体页面 {base_page_name} 不存在,未添加参阅")
+            continue
+        if dlc_page_name in text:
+            continue
+        see_also_line = inline_template(
+            "参阅", dlc_page_name, f"{dlc_suffix}中的该关卡"
+        )
+        await wiki.edit(
+            title=base_page_name,
+            text=insert_see_also(text, see_also_line),
+            summary=f"参阅{dlc_suffix}关卡",
+            minor=True,
+            nocreate=True,
+        )
+        logger.info(f"Updated: {base_page_name}.")
 
 
 @job

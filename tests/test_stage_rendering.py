@@ -37,6 +37,7 @@ from ptilopsis.jobs.stage import (
     build_sandbox_v2_stage,
     build_squad_sections,
     build_tile_effects,
+    insert_see_also,
     render_assault_stage,
     render_basic_page,
     render_basic_stage,
@@ -503,6 +504,43 @@ def test_roguelike_page_matches_golden() -> None:
         (GOLDEN_DIR / "roguelike.wiki").read_text(encoding="utf-8").removesuffix("\n")
     )
     assert render_roguelike_page(page) == expected
+
+
+def test_roguelike_page_see_also_after_pathnav() -> None:
+    """DLC 同名关卡页面在 pathnav2 之后带 {{参阅}} 指回本体页面。"""
+
+    page = RoguelikePageView(
+        normal=build_roguelike_stage(
+            RoguelikeGameStageData(
+                id="ro_1_dlc1", code="RL-1", name="测试关卡", description="描述"
+            ),
+            None,
+            {},
+            stub_compile_rich_text,
+        ),
+        see_also=("RL-1 测试关卡", "熄日余径外的该关卡"),
+    )
+
+    lines = render_roguelike_page(page).splitlines()
+    assert lines[:3] == [
+        "{{pathnav2|关卡一览}}",
+        "{{参阅|RL-1 测试关卡|熄日余径外的该关卡}}",
+        "==普通==",
+    ]
+
+
+def test_insert_see_also() -> None:
+    see_also = "{{参阅|RL-1 测试关卡(熄日余径)|熄日余径中的该关卡}}"
+
+    assert (
+        insert_see_also("{{pathnav2|关卡一览}}\n==普通==\n正文", see_also)
+        == f"{{{{pathnav2|关卡一览}}}}\n{see_also}\n==普通==\n正文"
+    )
+    assert insert_see_also("==普通==", see_also) == f"{see_also}\n==普通=="
+    assert (
+        insert_see_also("{{pathnav2|关卡一览}}", see_also)
+        == f"{{{{pathnav2|关卡一览}}}}\n{see_also}"
+    )
 
 
 def test_sandbox_page_matches_golden() -> None:
