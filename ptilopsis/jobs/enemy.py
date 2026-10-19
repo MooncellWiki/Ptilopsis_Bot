@@ -523,10 +523,8 @@ async def update_data(
             new_data["enemyLink"] += "(敌方)"
         if new_data["enemyIndex"] in override_list2:
             new_data["enemyLink"] += "(我方)"
-        if new_data["enemyIndex"] == "DC3":
-            new_data["enemyLink"] += "(DC3)"
-        if new_data["enemyIndex"] == "HI02":
-            new_data["enemyLink"] += "(HI02)"
+        if new_data["enemyIndex"] in ["DC3", "HI02", "STU2"]:
+            new_data["enemyLink"] += f'({new_data["enemyIndex"]})'
         # 种族
         if summary.race_tags:
             new_data["enemyRace"] = ",".join(
