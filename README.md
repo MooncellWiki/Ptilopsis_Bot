@@ -21,13 +21,12 @@ ptilopsis/
 ├── config.py          # config.json 的 pydantic 模型 + 环境变量读取
 ├── gamedata/          # 各表的 pydantic 模型（由 FBS 生成，见下文「数据模型」）+ 客户端展示规则
 ├── jobs/              # 各类 Wiki 更新任务
-│   ├── basic.py           # 干员基础信息
+│   ├── basic.py           # 干员基础信息（含后勤技能详情）
 │   ├── sidebar.py         # 侧边栏干员一览
 │   ├── charword.py        # 干员语音 / 档案
 │   ├── skin.py            # 皮肤 / 立绘
 │   ├── stage.py           # 关卡（含悖论模拟、剿灭等）
 │   ├── enemy.py           # 敌人图鉴 / 数据
-│   ├── building_buff.py   # 基建技能,逐技能更新「后勤技能一览/<技能名>」子页
 │   ├── furni.py           # 家具
 │   ├── item.py            # 道具
 │   ├── relic.py           # 集成战略收藏品

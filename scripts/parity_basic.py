@@ -97,7 +97,7 @@ async def render(gamedata: GameData, out_dir: Path) -> None:
             talents=basic.get_talent_list(char, rts),
             potential=basic.get_potential_list(char),
             skill=basic.get_skill_list(char, skill_table, rts),
-            building=basic.get_building_skill(building_data, char_key),
+            building=basic.get_building_skill(building_data, char_key, rts),
             token_info=await basic.get_token_info(
                 wiki, char, False, character_table, skill_table, rts
             ),
