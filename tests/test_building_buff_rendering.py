@@ -7,6 +7,7 @@ import pytest
 from ptilopsis.gamedata.building_data import BuildingData
 from ptilopsis.jobs.building_buff import get_building_buff, run
 from ptilopsis.jobs.params import RichText
+from ptilopsis.log import logger
 from ptilopsis.utils.wiki import Wiki
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "building_buff"
@@ -63,3 +64,35 @@ async def test_empty_data_does_not_write() -> None:
     wiki.edit = AsyncMock()
     await run.func(wiki, BuildingData(), Mock(spec=RichText))
     wiki.edit.assert_not_called()
+
+
+def test_cross_room_duplicate_name_warns() -> None:
+    # 页面按技能名区分,跨房间同名只保留首条并提醒补消歧名
+    data = BuildingData.model_validate(
+        {
+            "rooms": {"MANUFACTURE": {"name": "制造站"}, "TRADING": {"name": "贸易站"}},
+            "buffs": {
+                "manu": {
+                    "buffId": "manu",
+                    "buffName": "同名技能",
+                    "roomType": "MANUFACTURE",
+                },
+                "trade": {
+                    "buffId": "trade",
+                    "buffName": "同名技能",
+                    "roomType": "TRADING",
+                },
+            },
+        }
+    )
+    captured: list[str] = []
+    sink = logger.add(captured.append, level="WARNING", format="{message}")
+    try:
+        pages = get_building_buff(data, stub_compile_rich_text)
+    finally:
+        logger.remove(sink)
+
+    assert list(pages) == ["后勤技能一览/同名技能"]
+    assert "|房间=制造站" in pages["后勤技能一览/同名技能"]
+    assert len(captured) == 1
+    assert "trade" in captured[0]

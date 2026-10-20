@@ -16,13 +16,25 @@ def get_building_buff(
     """生成每个技能的独立页面,同名技能只输出首条。"""
     rooms = building_data.rooms or {}
     pages: dict[str, str] = {}
+    # 页面按技能名区分,记下首条的房间,跨房间同名时提醒补消歧名
+    page_rooms: dict[str, str] = {}
     for buff in (building_data.buffs or {}).values():
         name = BUILDING_BUFF_NAME_OVERRIDES.get(
             buff.buff_id or "", buff.buff_name or ""
         )
         title = f"后勤技能一览/{name}"
         if title in pages:
+            if page_rooms[title] != buff.room_type:
+                logger.warning(
+                    "后勤技能 {} 在 {} 和 {} 都有,已跳过 {};"
+                    "需在 BUILDING_BUFF_NAME_OVERRIDES 中区分",
+                    name,
+                    page_rooms[title],
+                    buff.room_type,
+                    buff.buff_id,
+                )
             continue
+        page_rooms[title] = buff.room_type
         template = WikiTemplate("后勤技能信息/store").add_all(
             {
                 "技能名": name,
