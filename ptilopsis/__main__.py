@@ -15,7 +15,6 @@ MODE_JOBS: dict[str, list[str]] = {
     # 先 sidebar，避免影响 old_num
     "new": ["sidebar.update", "basic.run", "charword.run"],
     "regular": [
-        "building_buff.run",
         "stage.run",
         "enemy.run",
         "enemy.update_data",

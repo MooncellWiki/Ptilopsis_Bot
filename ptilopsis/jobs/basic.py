@@ -657,7 +657,9 @@ BUILDING_BUFF_NAME_OVERRIDES = {
 }
 
 
-def get_building_skill(building_data: BuildingData, char_key: str) -> str:
+def get_building_skill(
+    building_data: BuildingData, char_key: str, rts: richtext.RichText
+) -> str:
     char_building_skill = (building_data.chars or {}).get(char_key)
     if char_building_skill is None:
         return "该干员无后勤技能"
@@ -665,25 +667,36 @@ def get_building_skill(building_data: BuildingData, char_key: str) -> str:
     if not any(slot.buff_data for slot in slots):
         return "该干员无后勤技能"
     buffs = building_data.buffs or {}
+    rooms = building_data.rooms or {}
     template = WikiTemplate("后勤技能")
     for building_skill_id, slot in enumerate(slots):
         for building_skill_id_2, temp in enumerate(slot.buff_data or []):
             key = f"后勤技能{building_skill_id + 1}-{building_skill_id_2 + 1}"
             if temp.buff_id is None:
                 raise KeyError(temp.buff_id)
-            buff_name = buffs[temp.buff_id].buff_name
+            buff = buffs[temp.buff_id]
+            buff_name = buff.buff_name
             display_name = BUILDING_BUFF_NAME_OVERRIDES.get(temp.buff_id)
             if display_name is None:
                 template.add(key, buff_name)
             else:
                 # 同名技能用区分后的名字,游戏内的原名放进显示名
                 template.add(key, display_name).add(f"{key}显示名", buff_name)
+            template.add_all(
+                {
+                    f"{key}ID": temp.buff_id,
+                    f"{key}排序": buff.sort_id,
+                    f"{key}房间": rooms[buff.room_type].name,
+                    f"{key}图标": buff.skill_icon,
+                    f"{key}描述": rts.compile(buff.description),
+                }
+            )
             cond = temp.cond
             phase = trans_phase(cond.phase) if cond is not None else 0
             template.add(f"{key}阶段", f"精英{phase}")
             if cond is not None and cond.level != 1:
                 template.add(f"{key}等级", f"{cond.level}级")
-    return f"{template}\n<!--如需修改技能信息，请前往[[后勤技能一览]]页面-->"
+    return str(template)
 
 
 def material_cost(item_table: InventoryData, costs: Iterable[ItemBundle]) -> str:
@@ -1273,7 +1286,7 @@ async def run(
             skill_table,
             rts,
         )
-        building_skill = get_building_skill(building_data, char_key)
+        building_skill = get_building_skill(building_data, char_key, rts)
         phase_list = get_phase_list(char, gamedata_const, item_table)
         skill_levelup_list = get_skill_levelup_list(char, item_table)
         battle_equip = "".join(
@@ -1378,7 +1391,7 @@ async def update(
         new_text = origin_text
 
         # 更新后勤技能
-        building_skill = get_building_skill(building_data, char_key)
+        building_skill = get_building_skill(building_data, char_key, rts)
         num1 = new_text.find("==后勤技能==")
         num2 = new_text.find("==召唤物信息==")
         if num2 == -1:
