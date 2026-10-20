@@ -1,5 +1,6 @@
 {{后勤技能信息/store
 |技能名=领袖(控制中枢)
+|sortId=10
 |房间=控制中枢
 |技能图标=icon_leader_control
 |技能描述=[RTS]控制描述

@@ -1,5 +1,6 @@
 {{后勤技能信息/store
 |技能名=领袖(宿舍)
+|sortId=5
 |房间=宿舍
 |技能图标=icon_leader_dorm
 |技能描述=[RTS]宿舍描述

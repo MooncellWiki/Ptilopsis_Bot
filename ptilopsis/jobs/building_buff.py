@@ -26,6 +26,7 @@ def get_building_buff(
         template = WikiTemplate("后勤技能信息/store").add_all(
             {
                 "技能名": name,
+                "sortId": buff.sort_id,
                 "房间": rooms[buff.room_type].name,
                 "技能图标": buff.skill_icon,
                 "技能描述": compile_rich_text(buff.description),
