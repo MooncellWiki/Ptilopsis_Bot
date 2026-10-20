@@ -27,7 +27,7 @@ ptilopsis/
 │   ├── skin.py            # 皮肤 / 立绘
 │   ├── stage.py           # 关卡（含悖论模拟、剿灭等）
 │   ├── enemy.py           # 敌人图鉴 / 数据
-│   ├── building_buff.py   # 基建技能
+│   ├── building_buff.py   # 基建技能,逐技能更新「后勤技能一览/<技能名>」子页
 │   ├── furni.py           # 家具
 │   ├── item.py            # 道具
 │   ├── relic.py           # 集成战略收藏品
