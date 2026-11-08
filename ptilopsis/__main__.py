@@ -201,7 +201,8 @@ async def _amain(
         elif check_mode == "global":
             await gamedata.unpacker.check_all_update()
             gamedata.unpacker.commit_version()
-            return False
+            # 只记录版本号不跑任务；--remote 下要推送，否则记录只留在 CI 的工作区里
+            return True
 
         if not jobs:
             gamedata.unpacker.commit_version()
