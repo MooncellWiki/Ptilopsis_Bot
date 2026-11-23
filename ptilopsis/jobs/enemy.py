@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Annotated, Any
 
+from ptilopsis.config import Config
 from ptilopsis.gamedata.enemy_database import (
     EnemyDatabaseAttributesData,
     EnemyDatabaseEnemyData,
@@ -160,9 +161,17 @@ def get_value(
     ``kind`` 为 s / i / f / b,决定值怎么写。
     """
 
+    value = level_value(idx, v, name, kind, rts)
+    return "" if value is None else f"\n|{name}={value}"
+
+
+def level_value(
+    idx: int, v: Undefinable | None, name: str, kind: str, rts: richtext.RichText
+) -> str | None:
+    """返回本级参数的值,用 None 表示没有定义,保留显式空值。"""
     if v is None or not v.m_defined:
         if idx != 0:
-            return ""
+            return None
         s = {"i": "0", "f": "0.0", "s": "", "b": "无"}.get(kind, "")
         if name == "攻击范围半径":
             s = ""
@@ -170,7 +179,7 @@ def get_value(
             s = "100"
         if name == "数量":
             s = "1"
-        return f"\n|{name}={s}"
+        return s
 
     value = v.m_value
     s = ""
@@ -182,7 +191,7 @@ def get_value(
         s = str(value)
     elif kind == "b":
         s = "有" if value is True else "无"
-    return f"\n|{name}={s}"
+    return s
 
 
 def format_ability_list(
@@ -328,6 +337,51 @@ def summarize_levels(
     return summary
 
 
+def level_parameters(
+    idx: int,
+    lv: EnemyDatabaseEnemyData,
+    rts: richtext.RichText,
+    race_names: dict[str, str],
+) -> dict[str, str]:
+    """从游戏数据提取本级定义的参数。级别 0 补上默认值。"""
+    params: dict[str, str] = {}
+
+    def add(name: str, value: Undefinable | None, kind: str) -> None:
+        formatted = level_value(idx, value, name, kind, rts)
+        if formatted is not None:
+            params[name] = formatted
+
+    add("名称", lv.name, "s")
+    if lv.level_type is not None and lv.level_type.m_defined:
+        params["地位"] = ENEMY_LEVEL_NAMES.get(lv.level_type.m_value, "普通")
+    elif idx == 0:
+        params["地位"] = "普通"
+    tags = lv.enemy_tags
+    if tags is not None and tags.m_defined and tags.m_value is not None:
+        params["种类"] = ",".join(race_names.get(r, "未知") for r in tags.m_value)
+    add("描述", lv.description, "s")
+    if lv.apply_way is not None and lv.apply_way.m_defined:
+        params["攻击方式"] = APPLY_WAY_NAMES.get(lv.apply_way.m_value, "未知")
+    elif idx == 0:
+        params["攻击方式"] = "未知"
+    if lv.motion is not None and lv.motion.m_defined:
+        params["行动方式"] = MOTION_NAMES.get(lv.motion.m_value, "地面")
+    elif idx == 0:
+        params["行动方式"] = "地面"
+    add("数量", lv.life_point_reduce, "i")
+    add("攻击范围半径", lv.range_radius, "f")
+    attributes = lv.attributes or EnemyDatabaseAttributesData()
+    for field_name, param, kind in LEVEL_ATTRIBUTE_ROWS:
+        add(param, getattr(attributes, field_name), kind)
+    if lv.sp_data is not None:
+        sp = lv.sp_data
+        params["初始技力"] = str(sp.init_sp)
+        params["技力上限"] = str(sp.max_sp)
+        params["技力槽回复类型"] = SP_TYPE_NAMES.get(sp.sp_type, "")
+        params["技力回复速度"] = str(sp.increment)
+    return params
+
+
 def level_section(
     idx: int,
     lv: EnemyDatabaseEnemyData,
@@ -336,45 +390,58 @@ def level_section(
 ) -> str:
     """``==级别idx==`` 一节,内容是 ``{{敌人信息/levelcontent}}`` 模板。"""
 
-    content = f"\n==级别{idx}=="
-    content += f"\n{{{{敌人信息/levelcontent\n|index={idx}"
-    content += get_value(idx, lv.name, "名称", "s", rts)
-    if lv.level_type is not None and lv.level_type.m_defined:
-        content += f"\n|地位={ENEMY_LEVEL_NAMES.get(lv.level_type.m_value, '普通')}"
-    elif idx == 0:
-        content += "\n|地位=普通"
-    tags = lv.enemy_tags
-    if tags is not None and tags.m_defined and tags.m_value is not None:
-        content += "\n|种类=" + ",".join(
-            race_names.get(r, "未知") for r in tags.m_value
+    content = f"\n==级别{idx}==\n{{{{敌人信息/levelcontent\n|index={idx}"
+    for name, value in level_parameters(idx, lv, rts, race_names).items():
+        content += f"\n|{name}={value}"
+    return content + talent_blackboard_parameter(lv) + "\n}}"
+
+
+def talent_blackboard_parameter(level: EnemyDatabaseEnemyData) -> str:
+    """保留游戏黑板的注释格式,供页面脚本读取。"""
+    if not level.talent_blackboard:
+        return ""
+    blackboard = [pair.model_dump(by_alias=True) for pair in level.talent_blackboard]
+    dumped = json.dumps(blackboard, indent=4, ensure_ascii=False)
+    return f"\n|天赋=<!--{dumped}-->"
+
+
+def render_full_level_sections(
+    levels: list[EnemyDatabaseEnemyLevel],
+    rts: richtext.RichText,
+    race_names: dict[str, str],
+    template: str,
+) -> str:
+    """展开逐级数值继承,输出可独立渲染的每级参数。"""
+    sections: list[str] = []
+    effective = {
+        "种类": "",
+        "初始技力": "0",
+        "技力上限": "0",
+        "技力槽回复类型": "",
+        "技力回复速度": "0",
+    }
+    for idx, row in enumerate(levels):
+        level = row.enemy_data
+        if row.level != idx or level is None:
+            raise ValueError(f"级别 {idx} 的数据缺失或顺序不正确")
+        params = level_parameters(idx, level, rts, race_names)
+        taunt = level.attributes and level.attributes.taunt_level
+        if taunt and taunt.m_defined:
+            params["基础嘲讽等级"] = str(taunt.m_value)
+        tags = level.enemy_tags
+        if tags and tags.m_defined and tags.m_value is None:
+            params["种类"] = ""
+        changed = [
+            name for name, value in params.items() if effective.get(name) != value
+        ]
+        effective.update(params)
+        flags = f"\n|数值变更={','.join(changed)}" if idx else ""
+        body = "".join(f"\n|{name}={value}" for name, value in effective.items())
+        blackboard = talent_blackboard_parameter(level)
+        sections.append(
+            f"\n==级别{idx}==\n{{{{{template}\n|index={idx}{body}{flags}{blackboard}\n}}}}"
         )
-    content += get_value(idx, lv.description, "描述", "s", rts)
-    if lv.apply_way is not None and lv.apply_way.m_defined:
-        content += f"\n|攻击方式={APPLY_WAY_NAMES.get(lv.apply_way.m_value, '未知')}"
-    elif idx == 0:
-        content += "\n|攻击方式=未知"
-    if lv.motion is not None and lv.motion.m_defined:
-        content += f"\n|行动方式={MOTION_NAMES.get(lv.motion.m_value, '地面')}"
-    elif idx == 0:
-        content += "\n|行动方式=地面"
-    content += get_value(idx, lv.life_point_reduce, "数量", "i", rts)
-    content += get_value(idx, lv.range_radius, "攻击范围半径", "f", rts)
-    attributes = lv.attributes or EnemyDatabaseAttributesData()
-    for field_name, param, kind in LEVEL_ATTRIBUTE_ROWS:
-        content += get_value(idx, getattr(attributes, field_name), param, kind, rts)
-    if lv.sp_data is not None:
-        sp = lv.sp_data
-        content += f"\n|初始技力={sp.init_sp}"
-        content += f"\n|技力上限={sp.max_sp}"
-        content += f"\n|技力槽回复类型={SP_TYPE_NAMES.get(sp.sp_type, '')}"
-        content += f"\n|技力回复速度={sp.increment}"
-    if lv.talent_blackboard:
-        # 天赋黑板原样(key / value / valueStr)写进注释,供页面脚本读取
-        blackboard = [pair.model_dump(by_alias=True) for pair in lv.talent_blackboard]
-        dumped = json.dumps(blackboard, indent=4, ensure_ascii=False)
-        content += f"\n|天赋=<!--{dumped}-->"
-    content += "\n}}"
-    return content
+    return "".join(sections)
 
 
 def linked_enemy_links(
@@ -405,6 +472,7 @@ def linked_enemy_links(
 @job
 async def run(
     wiki: Wiki,
+    config: Config,
     enemy_handbook_table: EnemyHandbookTable,
     enemy_levels: EnemyLevels,
     rts: RichText,
@@ -425,10 +493,19 @@ async def run(
         # 先分析database中数据
         levels = enemy_levels.get(enemy.enemy_id, []) if enemy.enemy_id else []
         summary = summarize_levels(levels, name)
-        content_lv = "".join(
-            level_section(idx, lv, rts, race_names)
-            for idx, lv in iter_levels(levels, name)
-        )
+        if config.enemy_level_template:
+            try:
+                content_lv = render_full_level_sections(
+                    levels, rts, race_names, config.enemy_level_template
+                )
+            except ValueError as exc:
+                logger.warning(f"Enemy {title} level data is invalid; skipped: {exc}")
+                continue
+        else:
+            content_lv = "".join(
+                level_section(idx, lv, rts, race_names)
+                for idx, lv in iter_levels(levels, name)
+            )
 
         content = "{{Navigator|敌人一览}}\n{{敌人信息/common2"
         content += f"\n|id={enemy.sort_id}"
