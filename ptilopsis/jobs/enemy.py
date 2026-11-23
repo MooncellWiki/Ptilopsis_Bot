@@ -525,7 +525,7 @@ async def update_data(
             "enemyLevel": "",
             "attackType": _lookup(APPLY_WAY_NAMES, summary.apply_way, "未知"),
             "damageType": damage_type_names(enemy),
-            "motion": _lookup(MOTION_NAMES, summary.motion, "未知"),
+            "motion": _lookup(MOTION_NAMES, summary.motion, "地面"),
             "endure": level_standard.get_max_hp(attrs[0]),
             "attack": level_standard.get_attack(attrs[1]),
             "defence": level_standard.get_def(attrs[2]),
