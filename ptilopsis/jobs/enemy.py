@@ -300,6 +300,7 @@ class LevelSummary:
     attributes: list[float] = field(default_factory=lambda: [-1.0] * 8)
     """按 CLASS_LEVEL_ATTRIBUTES 的顺序,-1 表示各级别都没定义。"""
     apply_way: str | None = None
+    has_implicit_melee: bool = False
     motion: str | None = None
     race_tags: set[str] = field(default_factory=set)
 
@@ -316,9 +317,11 @@ def summarize_levels(
             )
             if attr is not None and attr.m_defined and summary.attributes[i] == -1:
                 summary.attributes[i] = attr.m_value
-        if lv.apply_way is not None and lv.apply_way.m_defined:
-            if summary.apply_way is None:
+        if lv.apply_way is not None:
+            if lv.apply_way.m_defined and summary.apply_way is None:
                 summary.apply_way = lv.apply_way.m_value
+            if not lv.apply_way.m_defined and lv.apply_way.m_value == "MELEE":
+                summary.has_implicit_melee = True
         if lv.motion is not None and lv.motion.m_defined:
             if summary.motion is None:
                 summary.motion = lv.motion.m_value
@@ -523,7 +526,13 @@ async def update_data(
             "enemyLink": name,
             "enemyRace": "其他",
             "enemyLevel": "",
-            "attackType": _lookup(APPLY_WAY_NAMES, summary.apply_way, "未知"),
+            "attackType": _lookup(
+                APPLY_WAY_NAMES,
+                summary.apply_way,
+                "近战"
+                if summary.apply_way is None and summary.has_implicit_melee
+                else "未知",
+            ),
             "damageType": damage_type_names(enemy),
             "motion": _lookup(MOTION_NAMES, summary.motion, "地面"),
             "endure": level_standard.get_max_hp(attrs[0]),
