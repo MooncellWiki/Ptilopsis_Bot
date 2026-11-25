@@ -140,6 +140,7 @@ ptil [flags] [modes ...]
 | `jp` | JP 服增量更新 |
 | `weedy` | 高规格自动任务 |
 | `relic` | 单独维护集成战略收藏品页面（`regular` 已包含）：新建缺失的页面，给已有页面补上新主题（见下文） |
+| `story` | 发布新剧情页，补齐 Cargo 参数、剧情导航和关卡跳转，更新旧版播放器的音频变量 |
 | `demand` | 占位 / 调试入口 |
 
 ### 常用调用示例
@@ -190,6 +191,53 @@ ptil relic
 收藏品维护已包含在 `regular` 中，国服更新 workflow 会自动执行，不经过预览；也可用 `relic` 模式单独运行。
 首次运行可能批量新建或改写几百个页面，想先确认内容的话，要在下一次国服更新 workflow 之前手动跑
 `ptil --dev relic` 预览，再用 `ptil relic` 正式写入。
+
+### 剧情发布（`story`）
+
+`story.pages` 从同一国服资源版本读取剧情回顾表、干员表和剧本。它按 Cargo 的剧本路径识别
+已有页面，保留页面上的正文和已填写的参数，给缺字段的剧情模拟器调用补上
+`文本路径`、`剧情类型` 和 `剧情分组`。剧本内有会被 Wiki 解析掉的字符时，会先创建
+内容模型为 `text` 的 `/data` 子页，剧情页再引用它。
+
+`story.navigation` 生成现有的移动端表格与桌面 Navbox，沿用 Cargo 里的既有页面名。
+仓库中的 [story_rules.json](ptilopsis/jobs/story_rules.json) 保存迁移自
+`mwbotdata/story_const_table.json` 的幕间编号、特殊剧情、分支和导航分组。
+有新的特例时可以更新此文件，也可以用 `PTILOPSIS_STORY_RULES_PATH` 指定同格式的配置。
+导航生成会检查线上已有链接，游戏数据或特例配置缺失时会记下遗漏的链接并跳过该次更新。
+`story.stage_links` 会给已有剧情页的关卡补上跳转，并保留关卡页里的人工编写内容。
+`story.audio` 用同一版本的 `story_variables.json` 更新 `Widget:Data_Audio`。
+
+通过带参数的 `ptil` workflow 手动选 `story`。在本地可用下列命令预演。
+
+```bash
+uv run ptil --check --force --dev story
+```
+
+已有剧情页的定向正文更新和旧版模拟器发布可从现有导出目录运行。
+
+| Job | 输入 |
+| --- | --- |
+| `story.backfill` | 从剧情目录为已有页面补空字段，可单独运行 |
+| `story.publish_scripts` | `PTILOPSIS_STORY_EXPORT_DIR/txtdata/` 下按剧本路径存放的 `.txt` 文件。可更新原有正文的剧本参数，也会保留已用的 `/data` |
+| `story.publish_widgets` | 导出目录内本次要发布的 `story_variables.json`、`data_image.txt`、`data_char.txt`、旧版结构的 `character.json`、`data_override.txt` 或 `Arknights-ScenarioSimulator.html` |
+
+```bash
+PTILOPSIS_STORY_EXPORT_DIR=/path/to/story-export uv run ptil --dev story.publish_scripts
+PTILOPSIS_STORY_EXPORT_DIR=/path/to/story-export uv run ptil --dev story.publish_widgets
+```
+
+旧版微件要使用原格式的完整导出。若导出缺少线上已有的资源项或覆盖规则，任务会保留该微件的线上版本。
+
+### 追加干员序号
+
+`operator_ids.append` 接收 `PTILOPSIS_OPERATOR_IDS_CSV` 指向的 CSV，表头为
+`name,rarity,approach,date`。新增干员按文件顺序从现有最大 `sortId` 往后编号。
+`rarity` 使用干员序号表的 0 起算格式，四至六星分别填 3 至 5，`date` 使用
+`YYYY-MM-DD HH:MM`。相同记录可以重复运行，已有同名记录的字段不一致时需要先核对。
+
+```bash
+PTILOPSIS_OPERATOR_IDS_CSV=/path/to/operator-ids.csv uv run ptil --dev operator_ids.append
+```
 
 ## GitHub Actions
 

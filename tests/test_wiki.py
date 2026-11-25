@@ -281,19 +281,43 @@ async def test_resolve_follows_redirects_and_drops_missing() -> None:
     assert server.requests[0]["redirects"] == "1"
 
 
-async def test_edit_passes_conflict_detection_timestamps() -> None:
-    wiki, server = make_wiki({})
-    await wiki.edit(
-        title="页面",
-        text="1",
-        nocreate=True,
-        basetimestamp="2026-01-01T00:00:00Z",
-        starttimestamp="2026-01-02T00:00:00Z",
-    )
-    edit = server.edits[0]
+async def test_edit_revision_detects_conflicts_and_skips_unchanged_text() -> None:
+    wiki, server = make_wiki({"页面": "原文"})
+    revision = (await wiki.read_revisions(["页面"]))["页面"]
+    assert await wiki.edit_revision(revision, revision.text, "更新")
+    assert server.edits == []
+    assert await wiki.edit_revision(revision, "新正文", "更新")
+    [edit] = server.edits
     assert edit["nocreate"] == "1"
+    assert edit["baserevid"] == "100"
     assert edit["basetimestamp"] == "2026-01-01T00:00:00Z"
     assert edit["starttimestamp"] == "2026-01-02T00:00:00Z"
+    server.error = {"code": "editconflict", "info": "A new revision was saved"}
+    assert not await wiki.edit_revision(revision, "新正文", "更新")
+    assert server.edits == [edit]
+
+
+async def test_cargo_rows_reads_beyond_one_response() -> None:
+    offsets = []
+
+    def handle(request: httpx2.Request) -> httpx2.Response:
+        params = request.url.params
+        assert params["action"] == "cargoquery"
+        assert params["tables"] == "story"
+        assert params["order_by"] == "_pageID,_ID"
+        offset, limit = int(params["offset"]), int(params["limit"])
+        offsets.append(offset)
+        rows = [
+            {"title": {"textPath": f"story/{i}"}}
+            for i in range(offset, min(offset + limit, 501))
+        ]
+        return httpx2.Response(200, json={"cargoquery": rows})
+
+    async with httpx2.AsyncClient(transport=httpx2.MockTransport(handle)) as http:
+        wiki = Wiki(API, client=http)
+        rows = await wiki.cargo_rows("story", "textPath", order_by="_pageID,_ID")
+        assert offsets == [0, 500]
+        assert len(rows) == 501 and rows[-1]["textPath"] == "story/500"
 
 
 async def test_post_is_multipart_so_large_edits_survive() -> None:

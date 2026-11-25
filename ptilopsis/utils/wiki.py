@@ -319,6 +319,7 @@ class Wiki:
         contentmodel: str | None = None,
         basetimestamp: str | None = None,
         starttimestamp: str | None = None,
+        baserevid: int | None = None,
     ) -> dict[str, Any] | None:
         """
         :param title: 要编辑的页面标题。不能与pageid一起使用。
@@ -341,6 +342,7 @@ class Wiki:
         :param basetimestamp:所基于版本的时间戳,页面在此之后被改过时报 editconflict。
         :param starttimestamp:开始编辑的时间,页面在此之后被删除时报 pagedeleted。
             两者都取自 :meth:`read_revisions` 的结果。
+        :param baserevid:所基于的修订号,检测同一账号的并发编辑。
         :return: API 返回的 JSON;dev 模式下只打印参数并返回 None,
             ``createonly`` 而页面已存在时也返回 None
         """
@@ -358,6 +360,30 @@ class Wiki:
                 logger.info(f"Page already exists, skip: {title or pageid}")
                 return None
             raise
+
+    async def edit_revision(
+        self, current: PageRevision, text: str, summary: str, *, bot: bool | None = True
+    ) -> bool:
+        """按读到的版本编辑已有页面。遇到并发更新或删除时留给下次运行处理。"""
+        if current.text == text:
+            return True
+        try:
+            await self.edit(
+                title=current.title,
+                text=text,
+                summary=summary,
+                bot=bot,
+                nocreate=True,
+                baserevid=current.revid,
+                basetimestamp=current.timestamp,
+                starttimestamp=current.starttimestamp,
+            )
+        except WikiError as exc:
+            if exc.code not in {"editconflict", "pagedeleted", "missingtitle"}:
+                raise
+            logger.warning(f"页面已变更，下次重新读取：{current.title} ({exc.code})")
+            return False
+        return True
 
     async def create(
         self,
@@ -579,6 +605,30 @@ class Wiki:
                 if target in existing:
                     result[title] = target
         return result
+
+    async def cargo_rows(
+        self, table: str, fields: str, *, order_by: str
+    ) -> list[dict[str, Any]]:
+        """读取 Cargo 表的全部行;order_by 须能稳定排序,避免跨页漏行。"""
+        limit = 500
+        rows = []
+        while True:
+            response = await self._get(
+                {
+                    "action": "cargoquery",
+                    "tables": table,
+                    "fields": fields,
+                    "order_by": order_by,
+                    "limit": limit,
+                    "offset": len(rows),
+                }
+            )
+            if error := response.get("error"):
+                raise WikiError(error["code"], error["info"])
+            batch = response["cargoquery"]
+            rows.extend(item["title"] for item in batch)
+            if len(batch) < limit:
+                return rows
 
     async def category(self, category: str) -> list[str]:
         CM_LIMIT = 1000  # noqa: N806

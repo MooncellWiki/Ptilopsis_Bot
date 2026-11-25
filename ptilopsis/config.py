@@ -85,6 +85,12 @@ class Settings(BaseSettings):
     """
     write_min_interval: float = Field(default=0.0, ge=0.0)
     """两次写请求的最小间隔秒数，对应 PTILOPSIS_WRITE_MIN_INTERVAL，默认不限制。"""
+    story_rules_path: Path | None = None
+    """剧情特例配置，可覆盖随仓库发布的 story_rules.json。"""
+    story_export_dir: Path | None = None
+    """旧版剧情工具的发布目录，供显式导入任务使用。"""
+    operator_ids_csv: Path | None = None
+    """要追加到干员一览/干员id 的新增行。"""
 
     def require_wiki_credentials(self) -> tuple[str, str]:
         """返回 (username, password)，缺失时抛出带指引的异常。"""
