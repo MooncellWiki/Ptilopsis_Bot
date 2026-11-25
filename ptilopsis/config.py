@@ -88,9 +88,7 @@ class Settings(BaseSettings):
     story_rules_path: Path | None = None
     """剧情特例配置，可覆盖随仓库发布的 story_rules.json。"""
     story_export_dir: Path | None = None
-    """旧版剧情工具的发布目录，供显式导入任务使用。"""
-    operator_ids_csv: Path | None = None
-    """要追加到干员一览/干员id 的新增行。"""
+    """定向发布剧本的导出目录。"""
 
     def require_wiki_credentials(self) -> tuple[str, str]:
         """返回 (username, password)，缺失时抛出带指引的异常。"""

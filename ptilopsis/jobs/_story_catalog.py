@@ -1,4 +1,4 @@
-"""把国服剧情回顾表和 Wiki 特例合成剧情页与导航所用的目录。"""
+"""把国服剧情回顾表和 Wiki 特例合成剧情页目录。"""
 
 import re
 from dataclasses import dataclass
@@ -21,7 +21,6 @@ RULES_PATH = Path(__file__).with_name("story_rules.json")
 
 class Variation(GameDataModel):
     id: str
-    name: str
 
 
 class StoryEntry(GameDataModel):
@@ -46,7 +45,6 @@ class ManualRow(GameDataModel):
 
 
 class ManualGroup(GameDataModel):
-    group_name: str
     story_type: str | None = None
     group_datas: list[ManualRow]
 
@@ -64,30 +62,14 @@ class StoryRules(GameDataModel):
 class Script:
     path: str
     title: str
-    label: str
     kind: str
     group: str
 
 
 @dataclass(frozen=True)
-class NavRow:
-    label: str
-    stories: tuple[Script, ...]
-
-
-@dataclass(frozen=True)
-class NavGroup:
-    label: str
-    rows: tuple[NavRow, ...]
-    manual: bool = False
-
-
-@dataclass(frozen=True)
 class StoryCatalog:
     stories: dict[str, Script]
-    main: list[NavGroup]
-    activities: list[NavGroup]
-    published: dict[str, set[str]]
+    ambiguous_paths: set[str]
     complete: set[str]
 
 
@@ -106,46 +88,29 @@ def valid_script_path(path: str) -> bool:
     )
 
 
-def _title(
-    entry: StoryEntry, rules: StoryRules, group_id: str
-) -> tuple[str, str] | None:
+def _title(entry: StoryEntry, rules: StoryRules, group_id: str) -> str | None:
     name = (entry.story_name or "").strip()
     if prefix := rules.act_code.get(group_id):
-        return f"{prefix}-ST{entry.story_sort:g} {name}/NBT", name
+        return f"{prefix}-ST{entry.story_sort:g} {name}/NBT"
     if not entry.story_code or not entry.avg_tag:
         return None
     code = entry.story_code.strip()
     subpage = rules.avg_tag.get(entry.avg_tag, entry.avg_tag)
-    label = f"{code} {name}".strip()
     if entry.story_review_type == "SP":
-        return f"{code}/{subpage}", name
-    title = f"{label}/{subpage}"
-    if subpage != "NBT" and entry.avg_tag in rules.avg_tag:
-        label += f" {entry.avg_tag}"
+        return f"{code}/{subpage}"
+    title = f"{code} {name}".strip() + f"/{subpage}"
     if variation := entry.story_variation:
         title += f"/{variation.id}"
-        label += f" {variation.name}"
-    return title, label
+    return title
 
 
 def _script(
-    path: str,
-    title: str,
-    label: str,
-    kind: str,
-    group: str,
-    published: dict[str, set[str]],
+    path: str, title: str, kind: str, group: str, published: dict[str, set[str]]
 ) -> Script:
     titles = published.get(path, set())
     if len(titles) == 1:
-        live_title = next(iter(titles))
-        base, _, suffix = title.partition("/")
-        live_base, _, live_suffix = live_title.partition("/")
-        # 标题和显示名同时沿用 Wiki 上的名称，保留行动前后等显示后缀。
-        if suffix == live_suffix and (label == base or label.startswith(base + " ")):
-            label = live_base + label[len(base) :]
-        title = live_title
-    return Script(path, title, label, kind, group)
+        title = next(iter(titles))
+    return Script(path, title, kind, group)
 
 
 def build_catalog(
@@ -162,7 +127,6 @@ def build_catalog(
     }
     stories: dict[str, Script] = {}
     metadata: dict[str, tuple[str, str]] = {}
-    groups: dict[str, list[NavGroup]] = {"main": [], "activities": []}
     for group_id, group in review.items():
         overrides = {
             story_id: patch.model_dump(by_alias=True, exclude_unset=True)
@@ -192,7 +156,6 @@ def build_catalog(
         kind = rules.act_type.get(group.act_type, "")
         group_name = group.name or group_id
         memory = MEMORY_GROUP.fullmatch(group_id)
-        row: list[Script] = []
         for entry in entries:
             path = script_path(entry.story_txt or "")
             if not valid_script_path(path):
@@ -206,9 +169,7 @@ def build_catalog(
                     if len(entries) > 1:
                         subpage += f"-{path.rsplit('_', 1)[-1]}"
                     title = f"{name}/干员密录/{subpage}"
-                    stories[path] = _script(
-                        path, title, name, "干员密录", name, published
-                    )
+                    stories[path] = _script(path, title, "干员密录", name, published)
                 else:
                     logger.warning(f"干员密录找不到干员：{group_id}")
                 continue
@@ -220,30 +181,22 @@ def build_catalog(
             if naming := _title(entry, rules, group_id):
                 story = _script(
                     path,
-                    *naming,
+                    naming,
                     entry.wiki_type or kind,
                     entry.wiki_group or group_name,
                     published,
                 )
-                row.append(story)
                 stories[path] = story
-        if row:
-            section = "main" if group.act_type == "MAIN_STORY" else "activities"
-            groups[section].append(NavGroup(group_name, (NavRow(kind, tuple(row)),)))
 
-    for section, groups_in_section in groups.items():
-        manual_groups = []
-        for group in rules.navigation.get(section, []):
-            rows = []
+    for section, groups in rules.navigation.items():
+        default_kind = "主线" if section == "main" else "支线"
+        for group in groups:
             for row in group.group_datas:
-                row_stories = []
                 for entry in row.info_unlock_datas:
                     path = script_path(entry.story_txt or "")
                     if entry.story_can_show == -1 or not valid_script_path(path):
                         continue
-                    naming = _title(entry, rules, entry.story_group or "")
-                    if naming:
-                        default_kind = "主线" if section == "main" else "支线"
+                    if title := _title(entry, rules, entry.story_group or ""):
                         kind, group_name = metadata.get(
                             path,
                             (
@@ -251,25 +204,18 @@ def build_catalog(
                                 row.name,
                             ),
                         )
-                        story = _script(
+                        stories[path] = _script(
                             path,
-                            *naming,
+                            title,
                             entry.wiki_type or kind,
                             entry.wiki_group or group_name,
                             published,
                         )
-                        row_stories.append(story)
-                        stories[path] = story
-                if row_stories:
-                    rows.append(NavRow(row.name, tuple(row_stories)))
-            if rows:
-                manual_groups.append(
-                    NavGroup(group.group_name, tuple(rows), manual=True)
-                )
-        groups_in_section[:0] = manual_groups
 
     return StoryCatalog(
-        stories, groups["main"], groups["activities"], published, complete
+        stories,
+        {path for path, titles in published.items() if len(titles) > 1},
+        complete,
     )
 
 

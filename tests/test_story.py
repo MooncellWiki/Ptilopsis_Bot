@@ -8,15 +8,15 @@ from ptilopsis.gamedata.story_review_table import StoryReviewTable
 from ptilopsis.jobs._story_catalog import RULES_PATH, Script, StoryRules, build_catalog
 from ptilopsis.jobs._story_wikitext import (
     DATA_REFERENCE,
-    add_stage_links,
+    add_display_title,
     add_story_fields,
     render_story,
 )
-from ptilopsis.jobs.story import _sync_story, _sync_widget
+from ptilopsis.jobs.story import _sync_story, display_titles
 from ptilopsis.utils.wiki import PageRevision, Wiki
 
 
-def test_catalog_uses_live_title_review_metadata_and_manual_navigation() -> None:
+def test_catalog_uses_live_title_review_metadata_and_special_scripts() -> None:
     rules = StoryRules.model_validate_json(RULES_PATH.read_bytes())
     variation = "obt/main/level_main_15-15_end_variation01"
     renamed = "obt/main/level_main_06-14_beg"
@@ -65,21 +65,16 @@ def test_catalog_uses_live_title_review_metadata_and_manual_navigation() -> None
     story = catalog.stories[variation]
     assert story.title == "15-17 “她”/END/SP1"
     assert story.group == "离解复合"
-    assert catalog.stories[renamed].label == "6-16 黑兔子，白兔子 行动前"
+    assert catalog.stories[renamed].title == "6-16 黑兔子，白兔子/BEG"
     assert catalog.stories["obt/memory/story_otter_1_2"].title == "梅尔/干员密录/1-2"
     ending = catalog.stories["obt/roguelike/ro6/level_rogue6_ending_4"]
-    assert (ending.title, ending.label, ending.kind) == (
-        "RO6-END-4/NBT",
-        "旧日重燃",
-        "剧情",
-    )
+    assert (ending.title, ending.kind) == ("RO6-END-4/NBT", "剧情")
     assert "obt/roguelike/ro6/level_rogue6_ending_5" not in catalog.stories
 
 
 STORY = Script(
     "obt/main/level_main_00-01_beg",
     "0-1 坍塌/BEG",
-    "0-1 坍塌 行动前",
     "主线",
     "黑暗时代·上",
 )
@@ -122,7 +117,7 @@ def revision(title: str, text: str, contentmodel: str = "wikitext") -> PageRevis
 @pytest.mark.anyio
 async def test_story_with_signature_creates_plain_text_before_linking() -> None:
     wiki = CaptureWiki()
-    await _sync_story(wiki, STORY, None, "[Dialog]\n~~~~")
+    await _sync_story(wiki, STORY, None, "[Dialog]\n~~~~", "显示标题")
     data, parent = wiki.edits
     assert (data["title"], data["contentmodel"], data["text"]) == (
         f"{STORY.title}/data",
@@ -131,6 +126,12 @@ async def test_story_with_signature_creates_plain_text_before_linking() -> None:
     )
     assert data["createonly"] and parent["createonly"]
     assert DATA_REFERENCE in parent["text"]
+    assert parent["text"].startswith(
+        "{{DISPLAYTITLE:显示标题}}\n{{剧情模拟器|文本路径="
+    )
+    assert all(
+        key not in parent["text"] for key in ("图片数据=", "角色数据=", "音频数据=")
+    )
 
 
 @pytest.mark.anyio
@@ -147,28 +148,23 @@ async def test_explicit_script_refresh_preserves_manual_wikitext_and_data_model(
     assert edit["nocreate"] and edit["text"] == "[Dialog]\n屏幕上有一行字"
 
 
-def test_stage_links_add_to_the_normal_stage_without_replacing_notes() -> None:
-    title = "0-1 坍塌"
-    normal = "==普通==\n{{普通关卡信息\n|关卡代号=0-1\n}}"
-    pair = {"BEG": STORY, "END": replace(STORY, title=f"{title}/END")}
-    source = f"{{{{pathnav2|关卡一览}}}}\n{normal}\n==注释与链接==\n手工注释"
-    expected = source.replace(normal, "==剧情==\n{{剧情跳转/关卡|0-1|坍塌}}\n" + normal)
-    assert add_stage_links(source, title, pair) == expected
-    assert add_stage_links(expected, title, pair) == expected
+def test_add_display_title_preserves_an_existing_localized_title() -> None:
+    original = render_story(STORY, "[Dialog]", subpage=False)
     assert (
-        add_stage_links(
-            expected.replace("==剧情==\n", "==剧情==\n手工备注\n"), title, pair
-        )
-        is None
+        add_display_title(original, "新标题") == "{{DISPLAYTITLE:新标题}}\n" + original
     )
+    manual = "{{显示标题:人工标题}}\n" + original
+    assert add_display_title(manual, "新标题") == manual
 
 
 @pytest.mark.anyio
-async def test_stale_widget_export_does_not_remove_live_entries() -> None:
-    wiki = CaptureWiki(revision("Widget:Data_Audio", '{"old":"a","new":"b"}'))
-    await _sync_widget(wiki, "story_variables.json", '{"old":"a"}')
-    assert wiki.edits == []
-
-    await _sync_widget(wiki, "story_variables.json", '{"old":"a","new":"b","next":"c"}')
+async def test_display_title_migration_writes_story_page_at_its_revision() -> None:
+    body = render_story(STORY, "[Dialog]", subpage=False)
+    prologue = revision("W2G/BEG", body)
+    unrecognized = revision("G2H/END", "已有内容")
+    manual = revision("EP09/ENTRY", "{{DISPLAYTITLE:人工标题}}\n" + body)
+    wiki = CaptureWiki(prologue, unrecognized, manual)
+    await display_titles.func(wiki)
     [edit] = wiki.edits
-    assert edit["baserevid"] == 123 and edit["nocreate"]
+    assert edit["title"] == prologue.title and edit["baserevid"] == prologue.revid
+    assert edit["nocreate"] and edit["text"] == "{{DISPLAYTITLE:序章·上}}\n" + body
