@@ -420,9 +420,9 @@ def build_rune_buffs(runes: list[LegacyInLevelRuneData]) -> tuple[int, list[str]
         if ebuff["max_hp"] != 1.0:
             ebuff_desc.append("生命值提升至{:.0%}".format(ebuff["max_hp"]))
         if ebuff_desc:
-            intelligence.append("敌方单位的" + "，".join(ebuff_desc))
+            intelligence.append("敌人类单位的" + "，".join(ebuff_desc))
         else:
-            intelligence.append("敌方单位无变化")
+            intelligence.append("敌人类单位无变化")
     return climit, intelligence
 
 
