@@ -42,6 +42,7 @@ from ptilopsis.jobs.stage import (
     render_basic_page,
     render_basic_stage,
     render_campaign_page,
+    render_enemies,
     render_normal_page,
     render_roguelike_page,
 )
@@ -169,6 +170,19 @@ def test_stage_rendering_matches_golden() -> None:
     )
 
     assert actual == expected
+
+
+def test_degenbrecher_links_to_enemy_page() -> None:
+    enemy_id = "enemy_1525_blkswb"
+    level = LevelData.model_validate(
+        {"enemyDbRefs": [{"id": enemy_id, "useDb": True, "level": 0}]}
+    )
+    handbook = {enemy_id: EnemyHandBookData(name="锏")}
+
+    rendered = render_enemies(build_enemies(level, handbook, {}, False))
+
+    assert "|敌人1=锏(敌方)\n" in rendered
+    assert "|敌人1显示名=锏\n" in rendered
 
 
 def test_zone_without_names_still_emits_the_parameter() -> None:

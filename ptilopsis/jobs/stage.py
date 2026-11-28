@@ -1135,7 +1135,7 @@ def build_enemies(
             handbook = enemy_table.get(enemy.id) if enemy.id is not None else None
             if handbook is not None:
                 enemy_name = _require(handbook.name, "name")
-                if enemy_name in ["W", "泥岩", "多萝西", "弑君者"]:
+                if enemy_name in ["W", "泥岩", "多萝西", "弑君者", "锏"]:
                     display_name = enemy_name
                     enemy_name += "(敌方)"
             else:
