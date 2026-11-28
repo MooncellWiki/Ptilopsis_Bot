@@ -55,6 +55,8 @@ class Config(BaseModel):
     """按服务器代号索引的配置。"""
     chat_mask_list: list[str]
     """历史上出现过的 chatMask，解密时逐个尝试。"""
+    enemy_level_template: str | None = None
+    """接收完整级别参数及数值变更名单的 Wiki 模板。省略时沿用现有模板。"""
 
 
 class Settings(BaseSettings):
