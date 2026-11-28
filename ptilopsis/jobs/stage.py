@@ -17,6 +17,7 @@ from ptilopsis.gamedata.enemy_handbook_table import (
     EnemyHandBookData,
     EnemyHandBookDataGroup,
 )
+from ptilopsis.gamedata.enemy_util import UNLISTED_ENEMY, enemy_sort_keys
 from ptilopsis.gamedata.handbook_info_table import HandbookStoryStageData
 from ptilopsis.gamedata.item_table import InventoryData
 from ptilopsis.gamedata.level_data import (
@@ -24,6 +25,7 @@ from ptilopsis.gamedata.level_data import (
     EnemyDatabaseEnemyData,
     LegacyInLevelRuneData,
     LevelData,
+    LevelDataDifficulty,
     LevelDataEnemyDataDbReference,
     LevelDataOptions,
     LevelDataWaveDataFragmentDataActionData,
@@ -591,8 +593,11 @@ def analyze_action(
     actions: list[LevelDataWaveDataFragmentDataActionData],
     normal_hidden_group: list[str | None],
     not_count_list: NotCountList,
+    *,
+    enemy_hidden_groups: set[str] | None = None,
+    replacements: dict[str, str] | None = None,
 ) -> tuple[float, int, int, bool]:
-    action_list = [ActionInfo(action) for action in actions]
+    action_list = [ActionInfo(action, replacements) for action in actions]
     pack_dict = {}
     for action in action_list:
         if action.random_key is not None and action.random_pack is not None:
@@ -609,13 +614,16 @@ def analyze_action(
         action.update_pack(pack_dict)
     min_time, action_enemy_min, action_enemy_max = 0.0, 0, 0
     fragment_flag = False
+    count_groups = (
+        normal_hidden_group if enemy_hidden_groups is None else enemy_hidden_groups
+    )
 
     def time_filter(action):
         return action.hidden_group is None or action.hidden_group in normal_hidden_group
 
     def num_filter(action):
         return (action.key is not None or action.random_key is not None) and (
-            action.hidden_group is None or action.hidden_group in normal_hidden_group
+            action.hidden_group is None or action.hidden_group in count_groups
         )
 
     time_dict = {"fix_time": -1.0, "random_group": {}}
@@ -672,8 +680,8 @@ def analyze_action(
 
     # 敌人数量
     for action in filter(num_filter, action_list):
-        if action.key in not_count_list:
-            continue
+        # 不计入总数的生成仍可能是随机组中的一个有效选项。
+        count = 0 if action.key in not_count_list else action.count
         if action.random_key is not None:
             if action.random_key not in num_dict["random_group"]:
                 num_dict["random_group"][action.random_key] = {"single": [], "pack": {}}
@@ -687,13 +695,11 @@ def analyze_action(
                     ] = 0
                 num_dict["random_group"][action.random_key]["pack"][
                     action.random_pack
-                ] += action.count
+                ] += count
             else:
-                num_dict["random_group"][action.random_key]["single"].append(
-                    action.count
-                )
+                num_dict["random_group"][action.random_key]["single"].append(count)
         else:
-            num_dict["base_num"] += action.count
+            num_dict["base_num"] += count
     if num_dict["random_group"] != {}:
         for action_k_iter in num_dict["random_group"]:
             pack_min, pack_max = 100000, -1
@@ -724,12 +730,19 @@ def analyze_action(
     return min_time, action_enemy_min, action_enemy_max, fragment_flag
 
 
-def build_level_info(
-    level: LevelData, not_count_list: NotCountList, *, use_countdown: bool = False
-) -> LevelInfoView:
+def analyze_level_waves(
+    level: LevelData,
+    not_count_list: NotCountList,
+    *,
+    difficulty: int = LevelDataDifficulty.NONE,
+) -> tuple[str, float]:
     enemy_count = {"min": 0, "max": 0}
     min_time = 0.0
     normal_hidden_group = analyze_normal_hidden_group(level)
+    enemy_hidden_groups = (
+        _enemy_wave_hidden_groups(level, difficulty) if difficulty else None
+    )
+    replacements = _enemy_wave_replacements(level, difficulty)
     not_count_list_level = copy.deepcopy(not_count_list)
     for enemy in level.enemy_db_refs or []:
         if enemy.use_db is False:
@@ -748,7 +761,11 @@ def build_level_info(
         min_time += wave.pre_delay + wave.post_delay
         for fragment in wave.fragments or []:
             time, action_enemy_min, action_enemy_max, fragment_flag = analyze_action(
-                fragment.actions or [], normal_hidden_group, not_count_list_level
+                fragment.actions or [],
+                normal_hidden_group,
+                not_count_list_level,
+                enemy_hidden_groups=enemy_hidden_groups,
+                replacements=replacements,
             )
             enemy_count["min"] += action_enemy_min
             enemy_count["max"] += action_enemy_max
@@ -759,7 +776,19 @@ def build_level_info(
         enemy_count_text = str(enemy_count["min"])
     else:
         enemy_count_text = f"{enemy_count['min']}~{enemy_count['max']}"
+    return enemy_count_text, min_time
 
+
+def build_level_info(
+    level: LevelData,
+    not_count_list: NotCountList,
+    *,
+    use_countdown: bool = False,
+    difficulty: int = LevelDataDifficulty.NONE,
+) -> LevelInfoView:
+    enemy_count_text, min_time = analyze_level_waves(
+        level, not_count_list, difficulty=difficulty
+    )
     options = level.options or LevelDataOptions()
     if use_countdown and options.max_play_time > 0:
         max_play_time = options.max_play_time
@@ -794,6 +823,80 @@ def analyze_normal_hidden_group(level: LevelData) -> list[str | None]:
                 if d.key == "key":
                     normal_hidden_group.append(d.value_str)
     return normal_hidden_group
+
+
+def _difficulty_mask(value: str) -> int:
+    mask = 0
+    for name in value.split(","):
+        name = name.strip()
+        mask |= (
+            int(name)
+            if name.isdecimal()
+            else LevelDataDifficulty.__members__.get(name, LevelDataDifficulty.NONE)
+        )
+    return mask
+
+
+def enemy_wave_difficulty(
+    stage_id: str, stage: StageData | None, activity_table: ActivityTable
+) -> int:
+    activity = activity_table.activity
+    if activity is not None:
+        for multiplayer in (activity.multiplay_v3 or {}).values():
+            stage_map = (multiplayer.map_data_dict or {}).get(stage_id)
+            if stage_map is None or stage_map.mode_id is None:
+                continue
+            mode = (multiplayer.map_type_data_dict or {}).get(stage_map.mode_id)
+            if mode is not None:
+                # 联机客户端按模式计算战斗难度，而 stage_table 中通常写 NORMAL。
+                return (
+                    LevelDataDifficulty.FOUR_STAR
+                    if mode.difficulty in ("DIFFICULTY", "3")
+                    else LevelDataDifficulty.NORMAL
+                )
+    mask = _difficulty_mask(stage.difficulty) if stage else 0
+    return mask or LevelDataDifficulty.NORMAL
+
+
+def _enemy_wave_replacements(level: LevelData, difficulty: int) -> dict[str, str]:
+    replacements: dict[str, str] = {}
+    if not difficulty:
+        return replacements
+    for rune in reversed(level.runes or []):
+        if (
+            rune.key != "level_enemy_replace"
+            or _difficulty_mask(rune.difficulty_mask) & difficulty != difficulty
+        ):
+            continue
+        args = {entry.key: entry.value_str for entry in rune.blackboard or []}
+        old, new = args.get("key"), args.get("value")
+        if old and new:
+            # 从后往前合并，得到按 rune 原顺序逐条替换后的最终 ID。
+            replacements[old] = replacements.get(new, new)
+    return replacements
+
+
+def _enemy_wave_hidden_groups(level: LevelData, difficulty: int) -> set[str]:
+    if not difficulty:
+        return {
+            group for group in analyze_normal_hidden_group(level) if group is not None
+        }
+    enabled: set[str] = set()
+    disabled: set[str] = set()
+    for rune in level.runes or []:
+        if rune.key not in ("level_hidden_group_enable", "level_hidden_group_disable"):
+            continue
+        if _difficulty_mask(rune.difficulty_mask) & difficulty != difficulty:
+            continue
+        group = next(
+            (entry.value_str for entry in rune.blackboard or [] if entry.key == "key"),
+            None,
+        )
+        if group is not None:
+            groups = enabled if rune.key == "level_hidden_group_enable" else disabled
+            groups.add(group)
+    # 调度器先添加全部启用组，再移除禁用组。
+    return enabled - disabled
 
 
 def _skill_name(
@@ -1018,16 +1121,17 @@ def build_enemies(
     enemy_table: EnemyTable,
     enemy_levels: EnemyLevelIndex,
     flag_skip0: bool,
+    *,
+    difficulty: int = LevelDataDifficulty.NONE,
 ) -> list[EnemyView]:
-    def enemy_db_refs_sort(item: LevelDataEnemyDataDbReference) -> int:
-        handbook = enemy_table.get(item.id) if item.id is not None else None
-        return handbook.sort_id if handbook is not None else 9999999
-
-    normal_hidden_group = analyze_normal_hidden_group(level)
+    hidden_groups = _enemy_wave_hidden_groups(level, difficulty)
+    replacements = _enemy_wave_replacements(level, difficulty)
     enemy_count_dict = {}
     for wave in level.waves or []:
         for fragment in wave.fragments or []:
-            action_list = [ActionInfo(action) for action in fragment.actions or []]
+            action_list = [
+                ActionInfo(action, replacements) for action in fragment.actions or []
+            ]
             pack_dict = {}
             actions_count_type = {}
             for action in action_list:
@@ -1042,8 +1146,7 @@ def build_enemies(
             actions_count = {"fixed": copy.deepcopy(actions_count_type), "random": {}}
             for action in action_list:
                 if (action.key is not None or action.random_key is not None) and (
-                    action.hidden_group is None
-                    or action.hidden_group in normal_hidden_group
+                    action.hidden_group is None or action.hidden_group in hidden_groups
                 ):
                     if action.random_key is not None:
                         if action.random_key not in actions_count["random"]:
@@ -1110,7 +1213,11 @@ def build_enemies(
             enemy_num_dict[k] = (
                 f"{enemy_count_dict[k]['min']},{enemy_count_dict[k]['max']}"
             )
-    enemy_db_refs_sorted = sorted(level.enemy_db_refs or [], key=enemy_db_refs_sort)
+    sort_keys = enemy_sort_keys(enemy_table, enemy_levels)
+    enemy_db_refs_sorted = sorted(
+        level.enemy_db_refs or [],
+        key=lambda enemy: sort_keys.get(enemy.id or "", UNLISTED_ENEMY),
+    )
     enemies = []
     for enemy in enemy_db_refs_sorted:
         if enemy.id not in enemy_num_dict:
@@ -1198,6 +1305,8 @@ def build_normal_stage(
     not_count_list: NotCountList,
     compile_rich_text: Callable[[str], str],
     map_override: str = "",
+    *,
+    enemy_difficulty: int = LevelDataDifficulty.NONE,
 ) -> BasicStageView:
     subtype = None
     if stage.hilight_mark:
@@ -1258,7 +1367,11 @@ def build_normal_stage(
         unlock_condition=", ".join(unlock_conditions),
         recommended_level=stage.danger_level or "-",
         zone=zone,
-        level=build_level_info(level, not_count_list) if level is not None else None,
+        level=(
+            build_level_info(level, not_count_list, difficulty=enemy_difficulty)
+            if level is not None
+            else None
+        ),
         description=description,
         ap_cost=stage.ap_cost,
         practice_cost=stage.practice_ticket_cost if stage.can_practice else -1,
@@ -1959,9 +2072,15 @@ def render_disambiguation(links: list[DisambiguationLinkView]) -> str:
 
 
 class ActionInfo:
-    def __init__(self, action: LevelDataWaveDataFragmentDataActionData) -> None:
-        if action.action_type == "SPAWN" and action.key != "":
-            self.key = action.key
+    def __init__(
+        self,
+        action: LevelDataWaveDataFragmentDataActionData,
+        replacements: dict[str, str] | None = None,
+    ) -> None:
+        if action.action_type == "SPAWN" and action.key:
+            self.key = (
+                replacements.get(action.key, action.key) if replacements else action.key
+            )
         else:
             self.key = None
         if self.key is not None:
@@ -2070,9 +2189,15 @@ def _build_enemy_views(
     enemy_handbook_table: EnemyHandBookDataGroup,
     enemy_levels: EnemyLevelIndex,
     flag_skip0: bool = False,
+    *,
+    difficulty: int = LevelDataDifficulty.NONE,
 ) -> list[EnemyView]:
     return build_enemies(
-        level, enemy_handbook_table.enemy_data or {}, enemy_levels, flag_skip0
+        level,
+        enemy_handbook_table.enemy_data or {},
+        enemy_levels,
+        flag_skip0,
+        difficulty=difficulty,
     )
 
 
@@ -2188,6 +2313,7 @@ async def run(
                 logger.info(f"Cannot find level data of {stage_page_name}.")
                 continue
 
+        enemy_difficulty = enemy_wave_difficulty(stage_id, stage, activity_table)
         normal_stage = build_normal_stage(
             stage,
             stage_table,
@@ -2199,9 +2325,15 @@ async def run(
             not_count_list,
             rts.compile,
             map_override=map_override,
+            enemy_difficulty=enemy_difficulty,
         )
         enemies = (
-            _build_enemy_views(level, enemy_handbook_table, enemy_levels)
+            _build_enemy_views(
+                level,
+                enemy_handbook_table,
+                enemy_levels,
+                difficulty=enemy_difficulty,
+            )
             if level is not None
             else None
         )

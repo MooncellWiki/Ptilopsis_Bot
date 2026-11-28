@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter
 
+from ptilopsis.gamedata.activity_table import ActivityTable
 from ptilopsis.gamedata.building_data import BuildingData
 from ptilopsis.gamedata.character_table import CharacterData, CharacterTable
 from ptilopsis.gamedata.enemy_database import EnemyDatabase, EnemyDatabaseEnemyLevel
@@ -37,6 +38,7 @@ from ptilopsis.jobs.stage import (
     build_sandbox_v2_stage,
     build_squad_sections,
     build_tile_effects,
+    enemy_wave_difficulty,
     insert_see_also,
     render_assault_stage,
     render_basic_page,
@@ -169,6 +171,106 @@ def test_stage_rendering_matches_golden() -> None:
     )
 
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("mode", "total", "counts"),
+    [
+        ("ORDINARY", "14", ["14", "0", "1", "0"]),
+        ("DIFFICULTY", "2~6", ["0", "6", "3", "0"]),
+    ],
+)
+def test_multiplay_page_counts_difficulty_waves(
+    mode: str, total: str, counts: list[str]
+) -> None:
+    fixture = load_fixture()
+    stage = stage_of(fixture.stage_table, "normal")
+    activity = ActivityTable.model_validate(
+        {
+            "activity": {
+                "MULTIPLAY_V3": {
+                    "multi": {
+                        "mapDataDict": {"normal": {"modeId": "mode"}},
+                        "mapTypeDataDict": {"mode": {"difficulty": mode}},
+                    }
+                }
+            }
+        }
+    )
+    names = {"base": "普通", "elite": "强化", "debris": "碎屑", "bonus": "候选"}
+    actions = [
+        {"key": "base", "count": 2},
+        {"key": "debris", "count": 1},
+        {"key": "base", "count": 3, "hiddenGroup": "normal"},
+        {"key": "base", "count": 9, "hiddenGroup": "muted"},
+    ]
+    actions.extend(
+        {
+            "key": key,
+            "count": count,
+            "hiddenGroup": "fstar",
+            "randomSpawnGroupKey": "bonus",
+        }
+        for key, count in (("elite", 4), ("bonus", 2))
+    )
+    runes = [
+        {
+            "key": f"level_hidden_group_{action}",
+            "difficultyMask": mask,
+            "blackboard": [{"key": "key", "valueStr": group}],
+        }
+        for action, mask, group in (
+            ("enable", "NORMAL", "normal"),
+            ("enable", "FOUR_STAR", "fstar"),
+            ("disable", "FOUR_STAR", "muted"),
+            ("enable", "ALL", "muted"),
+        )
+    ]
+    runes.extend(
+        {
+            "key": "level_enemy_replace",
+            "difficultyMask": mask,
+            "blackboard": [
+                {"key": "key", "valueStr": old},
+                {"key": "value", "valueStr": new},
+            ],
+        }
+        for mask, old, new in ((2, "base", "elite"), ("FOUR_STAR", "bonus", "debris"))
+    )
+    level = LevelData.model_validate(
+        {
+            **fixture.raw["level_table"],
+            "enemyDbRefs": [{"id": key, "useDb": True} for key in reversed(names)],
+            "waves": [{"fragments": [{"actions": actions}]}],
+            "runes": runes,
+        }
+    )
+    handbook = {
+        key: EnemyHandBookData(name=name, sort_id=rank)
+        for rank, (key, name) in enumerate(names.items())
+    }
+    difficulty = enemy_wave_difficulty("normal", stage, activity)
+    normal = build_normal_stage(
+        stage,
+        fixture.stage_table,
+        fixture.zone_table,
+        fixture.character_table,
+        fixture.building_data,
+        fixture.item_table,
+        level,
+        {"debris": [0]},
+        stub_compile_rich_text,
+        enemy_difficulty=difficulty,
+    )
+    enemies = build_enemies(level, handbook, {}, False, difficulty=difficulty)
+    source = render_normal_page(NormalPageView(normal=normal, enemies=enemies))
+    assert f"|敌人数量={total}\n" in source
+    assert [(enemy.name, enemy.count) for enemy in enemies] == list(
+        zip(names.values(), counts, strict=True)
+    )
+    if mode == "DIFFICULTY":
+        assert "|敌人2数量下限=2\n" in source
+        assert "|敌人3数量下限=1\n" in source
 
 
 def test_zone_without_names_still_emits_the_parameter() -> None:
