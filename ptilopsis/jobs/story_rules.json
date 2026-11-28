@@ -1,0 +1,338 @@
+{
+  "actCode": {
+    "act4d0": "SW",
+    "act6d5": "AF",
+    "act7d5": "SA",
+    "act10d5": "SV",
+    "act13d0": "FA",
+    "act15d5": "BH",
+    "act7mini": "PL",
+    "act8mini": "VI",
+    "act9mini": "PS",
+    "act10mini": "TB",
+    "act11mini": "TC",
+    "act12mini": "AW",
+    "act13mini": "BW",
+    "act14mini": "DC",
+    "act15mini": "FD",
+    "act16mini": "TG",
+    "act17mini": "KR",
+    "act18mini": "SE",
+    "act19mini": "FM",
+    "act20mini": "CG",
+    "act21mini": "BD"
+  },
+  "actType": {
+    "MINI_STORY": "剧情",
+    "ACTIVITY_STORY": "支线",
+    "MAIN_STORY": "主线"
+  },
+  "avgTag": {
+    "幕间": "NBT",
+    "行动前": "BEG",
+    "行动后": "END",
+    "序曲": "ENTRY",
+    "剧情": "剧情",
+    "剧情1": "剧情1",
+    "剧情2": "剧情2"
+  },
+  "override": {
+    "main_0": {
+      "main_0_0_welcome_to_guide": {
+        "storyReviewType": "SP",
+        "storyCode": "W2G",
+        "avgTag": "行动前"
+      },
+      "main_0_2_guide_to_home": {
+        "storyReviewType": "SP",
+        "storyCode": "G2H",
+        "avgTag": "行动后"
+      }
+    },
+    "main_15": {
+      "main_15_level_main_15-15_end_variation01": {
+        "storyCanShow": -1
+      },
+      "main_15_level_main_15-15_end_variation02": {
+        "storyCanShow": -1
+      }
+    },
+    "act3d0": {
+      "act3d0_ui_act3d0_campselect": {
+        "storyReviewType": "SP",
+        "storyCode": "火蓝之心",
+        "avgTag": "剧情"
+      }
+    },
+    "act5d0": {
+      "act5d0_ui_act5d0_firstenter": {
+        "storyReviewType": "SP",
+        "storyCode": "喧闹法则",
+        "avgTag": "剧情"
+      }
+    },
+    "act24side": {
+      "act24side_level_act24side_tr01_beg": {
+        "storyName": "来袭！天空王者！"
+      },
+      "act24side_level_act24side_tr01_end": {
+        "storyName": "来袭！天空王者！"
+      }
+    }
+  },
+  "navigation": {
+    "main": [
+      {
+        "groupName": "特殊",
+        "groupDatas": [
+          {
+            "name": "剧情",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "main_sp_01", "storyGroup": "main_sp", "storySort": 1, "storyCanShow": 1, "storyCode": "隐藏剧情", "storyName": "隐藏剧情", "storyTxt": "obt/guide/beg/1b_guide_1to2", "avgTag": "剧情"},
+              {"storyReviewType": "SP", "storyId": "main_sp_02", "storyGroup": "main_sp", "storySort": 2, "storyCanShow": 1, "storyCode": "采购中心", "storyName": "采购中心", "storyTxt": "obt/guide/shop/0_main_and_extraqc", "avgTag": "剧情"},
+              {"storyReviewType": "NONE", "storyId": "main_sp_03", "storyGroup": "main_sp", "storySort": 3, "storyCanShow": 1, "storyCode": "EP09", "storyName": "", "storyTxt": "obt/main/level_main_9_chapter_recap", "avgTag": "序曲", "wikiGroup": "风暴瞭望"},
+              {"storyReviewType": "NONE", "storyId": "main_sp_04", "storyGroup": "main_sp", "storySort": 4, "storyCanShow": 1, "storyCode": "EP10", "storyName": "", "storyTxt": "obt/main/main_10_zone_enter", "avgTag": "序曲"},
+              {"storyReviewType": "NONE", "storyId": "main_sp_05", "storyGroup": "main_sp", "storySort": 5, "storyCanShow": 1, "storyCode": "EP11", "storyName": "", "storyTxt": "obt/main/main_11_zone_enter", "avgTag": "序曲"},
+              {"storyReviewType": "NONE", "storyId": "main_sp_06", "storyGroup": "main_sp", "storySort": 6, "storyCanShow": 1, "storyCode": "EP12", "storyName": "", "storyTxt": "obt/main/main_12_zone_enter", "avgTag": "序曲"},
+              {"storyReviewType": "NONE", "storyId": "main_sp_level_main_15-15_end_variation01", "storyGroup": "main_sp", "storySort": 7, "storyCanShow": 1, "storyCode": "15-17", "storyName": "“她”", "storyTxt": "obt/main/level_main_15-15_end_variation01", "avgTag": "行动后", "storyVariation": {"id": "SP1", "name": "SIDE:ACCEPT"}},
+              {"storyReviewType": "NONE", "storyId": "main_sp_level_main_15-15_end_variation02", "storyGroup": "main_sp", "storySort": 8, "storyCanShow": 1, "storyCode": "15-17", "storyName": "“她”", "storyTxt": "obt/main/level_main_15-15_end_variation02", "avgTag": "行动后", "storyVariation": {"id": "SP2", "name": "SIDE:REJECT"}}
+            ]
+          }
+        ]
+      }
+    ],
+    "activities": [
+      {
+        "groupName": "特殊",
+        "groupDatas": [
+          {
+            "name": "剧情",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sp_act_01", "storyGroup": "sp_act", "storySort": 1, "storyCanShow": 1, "storyCode": "多维合作", "storyName": "多维合作", "storyTxt": "activities/act17d1/level_act17d1_entry", "avgTag": "剧情"},
+              {"storyReviewType": "SP", "storyId": "sp_act_02", "storyGroup": "sp_act", "storySort": 2, "storyCanShow": 1, "storyCode": "SL01", "storyName": "保全派驻", "storyTxt": "obt/legion/system_legion_01", "avgTag": "序曲", "wikiType": "剧情"},
+              {"storyReviewType": "SP", "storyId": "sp_act_03", "storyGroup": "sp_act", "storySort": 3, "storyCanShow": 1, "storyCode": "AC01", "storyName": "卫戍协议", "storyTxt": "activities/act1vautochess/level_act1vautochess_entry", "avgTag": "序曲", "wikiType": "剧情"}
+            ]
+          },
+          {
+            "name": "危机合约",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sp_rune_01", "storyGroup": "sp_rune", "storySort": 1, "storyCanShow": 1, "storyCode": "危机合约", "storyName": "危机合约", "storyTxt": "activities/act5d1/ui_act5d1_cc", "avgTag": "剧情", "wikiType": "剧情"},
+              {"storyReviewType": "SP", "storyId": "sp_rune_02", "storyGroup": "sp_rune", "storySort": 2, "storyCanShow": 1, "storyCode": "荒芜行动", "storyName": "荒芜行动 P1", "storyTxt": "obt/rune/ui_rune_overall_cc", "avgTag": "剧情1"},
+              {"storyReviewType": "SP", "storyId": "sp_rune_03", "storyGroup": "sp_rune", "storySort": 3, "storyCanShow": 1, "storyCode": "荒芜行动", "storyName": "荒芜行动 P2", "storyTxt": "obt/rune/rune_season_0_1/ui_rune_season_0_1_cc", "avgTag": "剧情2"}
+            ]
+          },
+          {
+            "name": "荷谟伊智境",
+            "storyType": "剧情",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sp_lock_01", "storyGroup": "sp_lock", "storySort": 1, "storyCanShow": 1, "storyCode": "CR-BEG", "storyName": "固定开头AVG", "storyTxt": "activities/act1lock/level_act1lock_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sp_lock_02", "storyGroup": "sp_lock", "storySort": 2, "storyCanShow": 1, "storyCode": "CR-ST1", "storyName": "开头AVG", "storyTxt": "activities/act1lock/level_act1lock_st01", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sp_lock_03", "storyGroup": "sp_lock", "storySort": 3, "storyCanShow": 1, "storyCode": "CR-ST2", "storyName": "结尾AVG", "storyTxt": "activities/act1lock/level_act1lock_st02", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "长夜临光",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sp_act13side_hidden_st01", "storyGroup": "sp_act13side", "storySort": 1, "storyCanShow": 1, "storyCode": "NL-HD-1", "storyName": "逃离", "storyTxt": "activities/act13side/level_act13side_hidden_st01", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sp_act13side_hidden_st02", "storyGroup": "sp_act13side", "storySort": 2, "storyCanShow": 1, "storyCode": "NL-HD-2", "storyName": "选择", "storyTxt": "activities/act13side/level_act13side_hidden_st02", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sp_act13side_hidden_st03", "storyGroup": "sp_act13side", "storySort": 3, "storyCanShow": 1, "storyCode": "NL-HD-3", "storyName": "路漫漫", "storyTxt": "activities/act13side/level_act13side_hidden_st03", "avgTag": "幕间"}
+            ]
+          }
+        ]
+      },
+      {
+        "groupName": "四月辑录",
+        "storyType": "剧情",
+        "groupDatas": [
+          {
+            "name": "断罪者的挑战状",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act1fun_entry", "storyGroup": "act1fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2020", "storyName": "艺术之神", "storyTxt": "activities/act8d2/level_act8d2_entry", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "泰拉 说唱之夜！",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act2fun_entry", "storyGroup": "act2fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2021", "storyName": "嘻哈之王", "storyTxt": "activities/act17d7/level_act17d7_entry", "avgTag": "幕间"},
+              {"storyReviewType": "NONE", "storyId": "act2fun_01", "storyGroup": "act2fun", "storySort": 2, "storyCanShow": 1, "storyCode": "LTTB", "storyName": "Extraordinary rap battle!", "storyTxt": "activities/act17d7/level_act17d7_01_end", "avgTag": "行动后"}
+            ]
+          },
+          {
+            "name": "狂弹要塞！罗德大兵集结",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act3fun_entry", "storyGroup": "act3fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2022", "storyName": "狂弹要塞", "storyTxt": "activities/act3fun/level_act3fun_entry", "avgTag": "幕间"},
+              {"storyReviewType": "NONE", "storyId": "act3fun_03", "storyGroup": "act3fun", "storySort": 2, "storyCanShow": 1, "storyCode": "BF-3", "storyName": "没想到还有一关", "storyTxt": "activities/act3fun/level_act3fun_03_end", "avgTag": "行动后"}
+            ]
+          },
+          {
+            "name": "主播U：全能系美少女",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act4fun_entry", "storyGroup": "act4fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2023", "storyName": "新星主播", "storyTxt": "activities/act4fun/level_act4fun_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_01", "storyGroup": "act4fun", "storySort": 2, "storyCanShow": 1, "storyCode": "UO-END-1", "storyName": "再也没有什么能阻止她了", "storyTxt": "activities/act4fun/level_act4fun_01_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_02", "storyGroup": "act4fun", "storySort": 3, "storyCanShow": 1, "storyCode": "UO-END-2", "storyName": "警惕新型金融诈骗", "storyTxt": "activities/act4fun/level_act4fun_02_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_03", "storyGroup": "act4fun", "storySort": 4, "storyCanShow": 1, "storyCode": "UO-END-3", "storyName": "她不禁开始思索是谁动了自己的瘤奶", "storyTxt": "activities/act4fun/level_act4fun_03_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_04", "storyGroup": "act4fun", "storySort": 5, "storyCanShow": 1, "storyCode": "UO-END-4", "storyName": "一生四，四生三，三生万物", "storyTxt": "activities/act4fun/level_act4fun_04_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_05", "storyGroup": "act4fun", "storySort": 6, "storyCanShow": 1, "storyCode": "UO-END-5", "storyName": "断罪者最喜欢的一集", "storyTxt": "activities/act4fun/level_act4fun_05_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_06", "storyGroup": "act4fun", "storySort": 7, "storyCanShow": 1, "storyCode": "UO-END-6", "storyName": "敬请收看：爱、主播&单推人", "storyTxt": "activities/act4fun/level_act4fun_06_end", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "act4fun_end_07", "storyGroup": "act4fun", "storySort": 8, "storyCanShow": 1, "storyCode": "UO-END-7", "storyName": "“就那样吧”", "storyTxt": "activities/act4fun/level_act4fun_07_end", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "好得不能再好了！泰拉投资大师课",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act5fun_entry", "storyGroup": "act5fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2024", "storyName": "金牌讲师", "storyTxt": "activities/act5fun/level_act5fun_entry", "avgTag": "幕间"},
+              {"storyReviewType": "NONE", "storyId": "act5fun_01", "storyGroup": "act5fun", "storySort": 2, "storyCanShow": 1, "storyCode": "IM-1", "storyName": "水中捞月", "storyTxt": "activities/act5fun/level_act5fun_01_end", "avgTag": "行动后"}
+            ]
+          },
+          {
+            "name": "ARKnoNIGHTS",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act6fun_entry", "storyGroup": "act5fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2025", "storyName": "意外的救援", "storyTxt": "activities/act6fun/level_act6fun_entry", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "Rhodes Island Epic 黑色博士坠落",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "act7fun_entry", "storyGroup": "act7fun", "storySort": 1, "storyCanShow": 1, "storyCode": "APF-2026", "storyName": "摧毁他们，不择手段", "storyTxt": "activities/act7fun/level_act7fun_entry", "avgTag": "幕间"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_01", "storyGroup": "act7fun", "storySort": 2, "storyCanShow": 1, "storyCode": "RE-1", "storyName": "活动手指", "storyTxt": "activities/act7fun/level_act7fun_01_end", "avgTag": "行动后"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_02", "storyGroup": "act7fun", "storySort": 3, "storyCanShow": 1, "storyCode": "RE-2", "storyName": "正式开打", "storyTxt": "activities/act7fun/level_act7fun_02_end", "avgTag": "行动后"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_03", "storyGroup": "act7fun", "storySort": 4, "storyCanShow": 1, "storyCode": "RE-3", "storyName": "狂轰乱炸", "storyTxt": "activities/act7fun/level_act7fun_03_end", "avgTag": "行动后"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_04", "storyGroup": "act7fun", "storySort": 5, "storyCanShow": 1, "storyCode": "RE-4", "storyName": "兵力压制", "storyTxt": "activities/act7fun/level_act7fun_04_end", "avgTag": "行动后"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_05", "storyGroup": "act7fun", "storySort": 6, "storyCanShow": 1, "storyCode": "RE-5", "storyName": "渐入佳境", "storyTxt": "activities/act7fun/level_act7fun_05_end", "avgTag": "行动后"},
+              {"storyReviewType": "NONE", "storyId": "act7fun_end_06", "storyGroup": "act7fun", "storySort": 7, "storyCanShow": 1, "storyCode": "RE-6", "storyName": "最终考核", "storyTxt": "activities/act7fun/level_act7fun_06_end", "avgTag": "行动后"}
+            ]
+          }
+        ]
+      },
+      {
+        "groupName": "集成战略",
+        "storyType": "剧情",
+        "groupDatas": [
+          {
+            "name": "刻俄柏的灰蕈迷境",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro_entry", "storyGroup": "ro", "storySort": 1, "storyCanShow": 1, "storyCode": "RO-BEG", "storyName": "序章", "storyTxt": "activities/act12d6/level_act12d6_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro_end_01", "storyGroup": "ro", "storySort": 2, "storyCanShow": 1, "storyCode": "RO-END-1", "storyName": "迷尘幻梦", "storyTxt": "activities/act12d6/level_act12d6_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro_end_02", "storyGroup": "ro", "storySort": 3, "storyCanShow": 1, "storyCode": "RO-END-2", "storyName": "茫然行者", "storyTxt": "activities/act12d6/level_act12d6_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro_end_03", "storyGroup": "ro", "storySort": 4, "storyCanShow": 1, "storyCode": "RO-END-3", "storyName": "归于荒野", "storyTxt": "activities/act12d6/level_act12d6_ending_3", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "傀影与猩红孤钻",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro1_entry", "storyGroup": "ro1", "storySort": 1, "storyCanShow": 1, "storyCode": "RO1-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro1/level_rogue1_entry", "avgTag": "幕间", "wikiType": "支线"},
+              {"storyReviewType": "SP", "storyId": "ro1_end_01", "storyGroup": "ro1", "storySort": 2, "storyCanShow": 1, "storyCode": "RO1-END-1", "storyName": "舞会终场", "storyTxt": "obt/roguelike/ro1/level_rogue1_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro1_end_02", "storyGroup": "ro1", "storySort": 3, "storyCanShow": 1, "storyCode": "RO1-END-2", "storyName": "滑稽喜剧", "storyTxt": "obt/roguelike/ro1/level_rogue1_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro1_end_03", "storyGroup": "ro1", "storySort": 4, "storyCanShow": 1, "storyCode": "RO1-END-3", "storyName": "盛大揭幕", "storyTxt": "obt/roguelike/ro1/level_rogue1_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro1_end_04", "storyGroup": "ro1", "storySort": 5, "storyCanShow": 1, "storyCode": "RO1-END-4", "storyName": "沉默之章", "storyTxt": "obt/roguelike/ro1/level_rogue1_ending_4", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "水月与深蓝之树",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro2_entry", "storyGroup": "ro2", "storySort": 1, "storyCanShow": 1, "storyCode": "RO2-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro2/level_rogue2_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro2_end_01", "storyGroup": "ro2", "storySort": 2, "storyCanShow": 1, "storyCode": "RO2-END-1", "storyName": "平凡即是喜乐", "storyTxt": "obt/roguelike/ro2/level_rogue2_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro2_end_02", "storyGroup": "ro2", "storySort": 3, "storyCanShow": 1, "storyCode": "RO2-END-2", "storyName": "静谧时代", "storyTxt": "obt/roguelike/ro2/level_rogue2_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro2_end_03", "storyGroup": "ro2", "storySort": 4, "storyCanShow": 1, "storyCode": "RO2-END-3", "storyName": "息潮的代价", "storyTxt": "obt/roguelike/ro2/level_rogue2_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro2_end_04", "storyGroup": "ro2", "storySort": 5, "storyCanShow": 1, "storyCode": "RO2-END-4", "storyName": "如星空般深蓝", "storyTxt": "obt/roguelike/ro2/level_rogue2_ending_4", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "探索者的银凇止境",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro3_entry", "storyGroup": "ro3", "storySort": 1, "storyCanShow": 1, "storyCode": "RO3-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro3/level_rogue3_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro3_end_01", "storyGroup": "ro3", "storySort": 2, "storyCanShow": 1, "storyCode": "RO3-END-1", "storyName": "越过群山", "storyTxt": "obt/roguelike/ro3/level_rogue3_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro3_end_02", "storyGroup": "ro3", "storySort": 3, "storyCanShow": 1, "storyCode": "RO3-END-2", "storyName": "直至冬夜降临", "storyTxt": "obt/roguelike/ro3/level_rogue3_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro3_end_03", "storyGroup": "ro3", "storySort": 4, "storyCanShow": 1, "storyCode": "RO3-END-3", "storyName": "自深处的一瞥", "storyTxt": "obt/roguelike/ro3/level_rogue3_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro3_end_04", "storyGroup": "ro3", "storySort": 5, "storyCanShow": 1, "storyCode": "RO3-END-4", "storyName": "终始", "storyTxt": "obt/roguelike/ro3/level_rogue3_ending_4", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "萨卡兹的无终奇语",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro4_entry", "storyGroup": "ro4", "storySort": 1, "storyCanShow": 1, "storyCode": "RO4-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro4/level_rogue4_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro4_end_01", "storyGroup": "ro4", "storySort": 2, "storyCanShow": 1, "storyCode": "RO4-END-1", "storyName": "憧憬未来", "storyTxt": "obt/roguelike/ro4/level_rogue4_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro4_end_02", "storyGroup": "ro4", "storySort": 3, "storyCanShow": 1, "storyCode": "RO4-END-2", "storyName": "双王记", "storyTxt": "obt/roguelike/ro4/level_rogue4_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro4_end_03", "storyGroup": "ro4", "storySort": 4, "storyCanShow": 1, "storyCode": "RO4-END-3", "storyName": "天使之城", "storyTxt": "obt/roguelike/ro4/level_rogue4_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro4_end_04", "storyGroup": "ro4", "storySort": 5, "storyCanShow": 1, "storyCode": "RO4-END-4", "storyName": "遁入阇那", "storyTxt": "obt/roguelike/ro4/level_rogue4_ending_4", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro4_end_05", "storyGroup": "ro4", "storySort": 6, "storyCanShow": 1, "storyCode": "RO4-END-5", "storyName": "无瑕之日", "storyTxt": "obt/roguelike/ro4/level_rogue4_ending_5", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "岁的界园志异",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro5_entry", "storyGroup": "ro5", "storySort": 1, "storyCanShow": 1, "storyCode": "RO5-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro5/level_rogue5_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro5_end_01", "storyGroup": "ro5", "storySort": 2, "storyCanShow": 1, "storyCode": "RO5-END-1", "storyName": "依律镇抚", "storyTxt": "obt/roguelike/ro5/level_rogue5_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro5_end_02", "storyGroup": "ro5", "storySort": 3, "storyCanShow": 1, "storyCode": "RO5-END-2", "storyName": "长卷留痕", "storyTxt": "obt/roguelike/ro5/level_rogue5_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro5_end_03", "storyGroup": "ro5", "storySort": 4, "storyCanShow": 1, "storyCode": "RO5-END-3", "storyName": "黑白入玄", "storyTxt": "obt/roguelike/ro5/level_rogue5_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro5_end_04", "storyGroup": "ro5", "storySort": 5, "storyCanShow": 1, "storyCode": "RO5-END-4", "storyName": "无中生有", "storyTxt": "obt/roguelike/ro5/level_rogue5_ending_4", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro5_end_05", "storyGroup": "ro5", "storySort": 6, "storyCanShow": 1, "storyCode": "RO5-END-5", "storyName": "落子无悔", "storyTxt": "obt/roguelike/ro5/level_rogue5_ending_5", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "沉沦者的黑流树海",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "ro6_entry", "storyGroup": "ro6", "storySort": 1, "storyCanShow": 1, "storyCode": "RO6-BEG", "storyName": "序章", "storyTxt": "obt/roguelike/ro6/level_rogue6_entry", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro6_end_01", "storyGroup": "ro6", "storySort": 2, "storyCanShow": 1, "storyCode": "RO6-END-1", "storyName": "强制重启", "storyTxt": "obt/roguelike/ro6/level_rogue6_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro6_end_02", "storyGroup": "ro6", "storySort": 3, "storyCanShow": 1, "storyCode": "RO6-END-2", "storyName": "维度重构", "storyTxt": "obt/roguelike/ro6/level_rogue6_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro6_end_03", "storyGroup": "ro6", "storySort": 4, "storyCanShow": 1, "storyCode": "RO6-END-3", "storyName": "纠缠，调和", "storyTxt": "obt/roguelike/ro6/level_rogue6_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro6_end_04", "storyGroup": "ro6", "storySort": 5, "storyCanShow": 1, "storyCode": "RO6-END-4", "storyName": "旧日重燃", "storyTxt": "obt/roguelike/ro6/level_rogue6_ending_4", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "ro6_end_05", "storyGroup": "ro6", "storySort": 6, "storyCanShow": -1, "storyCode": "RO6-END-5", "storyName": "？？？", "storyTxt": "obt/roguelike/ro6/level_rogue6_ending_5", "avgTag": "幕间"}
+            ]
+          }
+        ]
+      },
+      {
+        "groupName": "生息演算",
+        "storyType": "剧情",
+        "groupDatas": [
+          {
+            "name": "沙中之火",
+            "storyType": "支线",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sb_entry", "storyGroup": "sb", "storySort": 1, "storyCanShow": 1, "storyCode": "RA", "storyName": "沙中之火", "storyTxt": "activities/act1sandbox/level_act1sandbox_entry", "avgTag": "序曲"},
+              {"storyReviewType": "SP", "storyId": "sb_end_01", "storyGroup": "sb", "storySort": 2, "storyCanShow": 1, "storyCode": "RA-END-1", "storyName": "结局1", "storyTxt": "activities/act1sandbox/level_act1sandbox_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb_end_02", "storyGroup": "sb", "storySort": 3, "storyCanShow": 1, "storyCode": "RA-END-2", "storyName": "结局2", "storyTxt": "activities/act1sandbox/level_act1sandbox_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb_end_03", "storyGroup": "sb", "storySort": 4, "storyCanShow": 1, "storyCode": "RA-END-3", "storyName": "结局3", "storyTxt": "activities/act1sandbox/level_act1sandbox_ending_3", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "沙洲遗闻",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sb1_entry", "storyGroup": "sb1", "storySort": 1, "storyCanShow": 1, "storyCode": "RA1", "storyName": "初来乍到", "storyTxt": "obt/sandboxperm/sandbox_1/sandbox_1_entry", "avgTag": "序曲"},
+              {"storyReviewType": "SP", "storyId": "sb1_end_01", "storyGroup": "sb1", "storySort": 2, "storyCanShow": 1, "storyCode": "RA1-END-1", "storyName": "寻宝与援兵", "storyTxt": "obt/sandboxperm/sandbox_1/sandbox_1_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb1_end_02", "storyGroup": "sb1", "storySort": 3, "storyCanShow": 1, "storyCode": "RA1-END-2", "storyName": "阿尔萨兰的秘密", "storyTxt": "obt/sandboxperm/sandbox_1/sandbox_1_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb1_st1", "storyGroup": "sb1", "storySort": 4, "storyCanShow": 1, "storyCode": "RA1-ST1", "storyName": "见证往昔", "storyTxt": "obt/sandboxperm/sandbox_1/sandbox_1_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb1_end_03", "storyGroup": "sb1", "storySort": 5, "storyCanShow": 1, "storyCode": "RA1-END-3", "storyName": "和平的回归", "storyTxt": "obt/sandboxperm/sandbox_1/sandbox_1_ending_3", "avgTag": "幕间"}
+            ]
+          },
+          {
+            "name": "重启锚点",
+            "infoUnlockDatas": [
+              {"storyReviewType": "SP", "storyId": "sb2_entry", "storyGroup": "sb2", "storySort": 1, "storyCanShow": 1, "storyCode": "RA2", "storyName": "可露希尔的任务汇报", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_entry", "avgTag": "序曲"},
+              {"storyReviewType": "SP", "storyId": "sb2_end_01", "storyGroup": "sb2", "storySort": 2, "storyCanShow": 1, "storyCode": "RA2-END-1", "storyName": "希望的升空", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_ending_1", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb2_end_02", "storyGroup": "sb2", "storySort": 3, "storyCanShow": 1, "storyCode": "RA2-END-2", "storyName": "家园的样貌", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_ending_2", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb2_end_03", "storyGroup": "sb2", "storySort": 4, "storyCanShow": 1, "storyCode": "RA2-END-3", "storyName": "温暖的承诺", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_ending_3", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb2_end_04", "storyGroup": "sb2", "storySort": 5, "storyCanShow": 1, "storyCode": "RA2-END-4", "storyName": "一个拥抱可不够", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_ending_4", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb2_side_01", "storyGroup": "sb2", "storySort": 6, "storyCanShow": 1, "storyCode": "RA2-SP-1", "storyName": "那不是我", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_xb2smy", "avgTag": "幕间"},
+              {"storyReviewType": "SP", "storyId": "sb2_side_02", "storyGroup": "sb2", "storySort": 7, "storyCanShow": 1, "storyCode": "RA2-SP-2", "storyName": "赠予", "storyTxt": "obt/sandboxperm/sandbox_2/sandbox_2_xb2amy", "avgTag": "幕间"}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "append": {
+    "act12side_level_act12side_tr01_end": {
+      "storyReviewType": "NONE",
+      "storyId": "act12side_level_act12side_tr01_end",
+      "storyGroup": "act12side",
+      "storySort": 1.1,
+      "storyCanShow": 1,
+      "storyCode": "DH-TR-1",
+      "storyName": "初来乍到",
+      "storyTxt": "activities/act12side/level_act12side_tr01_end",
+      "avgTag": "行动后"
+    }
+  }
+}

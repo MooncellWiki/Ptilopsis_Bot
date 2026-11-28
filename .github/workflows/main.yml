@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
       modes:
-        description: 要跑的模式或 job，空格分隔 (模式 new/regular/special/jp/weedy/relic/medal/rogue，job 如 stage.run)
+        description: 要跑的模式或 job，空格分隔 (模式 new/regular/special/jp/weedy/relic/medal/story/rogue，job 如 stage.run)
         type: string
         default: new regular special
       dev:

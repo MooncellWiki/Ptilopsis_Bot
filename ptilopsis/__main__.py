@@ -49,6 +49,7 @@ MODE_JOBS: dict[str, list[str]] = {
     # 收藏品也在 regular 中;此模式可单独维护收藏品页面
     "relic": ["relic.run"],
     "medal": ["medal.run"],
+    "story": ["story.pages", "story.display_titles"],
     # 集成战略关卡,出新主题 / DLC 时手动跑;主题见 stage.ROGUE_TOPIC
     "rogue": ["stage.run_rogue_like"],
 }

@@ -140,6 +140,7 @@ ptil [flags] [modes ...]
 | `jp` | JP 服增量更新 |
 | `weedy` | 高规格自动任务 |
 | `relic` | 单独维护集成战略收藏品页面（`regular` 已包含）：新建缺失的页面，给已有页面补上新主题（见下文） |
+| `story` | 发布新版播放器的剧本，补齐 Cargo 参数和剧情页的显示标题 |
 | `demand` | 占位 / 调试入口 |
 
 ### 常用调用示例
@@ -190,6 +191,35 @@ ptil relic
 收藏品维护已包含在 `regular` 中，国服更新 workflow 会自动执行，不经过预览；也可用 `relic` 模式单独运行。
 首次运行可能批量新建或改写几百个页面，想先确认内容的话，要在下一次国服更新 workflow 之前手动跑
 `ptil --dev relic` 预览，再用 `ptil relic` 正式写入。
+
+### 剧情发布（`story`）
+
+`story.pages` 从同一国服资源版本读取剧情回顾表、干员表和剧本。它按 Cargo 的剧本路径识别
+已有页面，保留页面上的正文和已填写的参数，给缺字段的剧情模拟器调用补上
+`文本路径`、`剧情类型` 和 `剧情分组`。剧本内有会被 Wiki 解析掉的字符时，会先创建
+内容模型为 `text` 的 `/data` 子页，剧情页再引用它。
+
+剧情页用 `剧情模拟器` 的 `文本数据` 参数向 StoryPlayer 提供剧本，图片和音频由播放器取用。
+[story_rules.json](ptilopsis/jobs/story_rules.json) 保存幕间编号、分支及特殊剧本的页面映射。
+可用 `PTILOPSIS_STORY_RULES_PATH` 指定同格式的配置。
+
+[story_display_titles.json](ptilopsis/jobs/story_display_titles.json) 收录
+[旧版覆盖微件修订 445191](https://prts.wiki/w/Special:PermanentLink/445191) 中的显示标题。
+建页时写入 `{{DISPLAYTITLE:序章·上}}` 这类语法。`story.display_titles` 为已有剧情页补写，
+保留页面已经设置的显示标题。
+
+通过带参数的 `ptil` workflow 手动选 `story`。在本地可用下列命令预演。
+
+```bash
+uv run ptil --check --force --dev story
+```
+
+`story.backfill` 可单独补齐已有页面的空 Cargo 字段。`story.publish_scripts` 用于定向发布
+`PTILOPSIS_STORY_EXPORT_DIR/txtdata/` 下按剧本路径存放的 `.txt` 文件。已有的 `/data` 引用会继续使用。
+
+```bash
+PTILOPSIS_STORY_EXPORT_DIR=/path/to/story-export uv run ptil --dev story.publish_scripts
+```
 
 ## GitHub Actions
 
